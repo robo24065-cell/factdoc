@@ -3,7 +3,9 @@ import { useSearchParams } from 'react-router-dom'
 import { judge, parseClaim, type Judgement, type Verdict } from '../engine'
 import { geminiTriples } from '../lib/parseRemote'
 import { logQuery } from '../lib/db'
-import { getCachedVerdict, cacheVerdict } from '../lib/cache'
+import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
+import { embedText } from '../lib/embed'
+import { searchEvidence, type EvidenceChunk } from '../lib/search'
 import { explainVerdict } from '../lib/explain'
 
 const VUI: Record<Verdict, { label: string; sub: string; text: string; bg: string; accent: string }> = {
@@ -21,21 +23,34 @@ export default function Home() {
   const [result, setResult] = useState<Judgement | null>(null)
   const [explanation, setExplanation] = useState<string | null>(null)
   const [explaining, setExplaining] = useState(false)
-  const [hit, setHit] = useState(false)
+  const [hitKind, setHitKind] = useState<'exact' | 'semantic' | null>(null)
+  const [evidence, setEvidence] = useState<EvidenceChunk[]>([])
   const [loading, setLoading] = useState(false)
 
   async function check(text: string) {
     const claim = text.trim()
     if (!claim) return
-    setLoading(true); setExplanation(null); setExplaining(false)
+    setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
 
+    // 1) 정확 일치 캐시(무료·즉시)
     const cached = await getCachedVerdict(claim)
     if (cached) {
-      setResult(cached.judgement); setHit(true); setExplanation(cached.explanation); setLoading(false)
+      setResult(cached.judgement); setHitKind('exact'); setExplanation(cached.explanation); setLoading(false)
       return // 캐시 히트(중복 질문)는 로그/집계/AI호출 안 함
     }
 
-    // 규칙 파서 + Gemini 파서 결합 → 룰·그래프 판정
+    // 2) 임베딩 1회 → 의미 캐시(유사 질문) + 하이브리드 근거검색에 재사용
+    const vec = await embedText(claim)
+    if (vec) {
+      const sem = await getSemanticCachedVerdict(claim, vec)
+      if (sem) {
+        setResult(sem.judgement); setHitKind('semantic'); setExplanation(sem.explanation); setLoading(false)
+        if (vec) searchEvidence(claim, vec, 3).then(setEvidence)
+        return
+      }
+    }
+
+    // 3) 미스 → 규칙 파서 + Gemini 파서 결합 → 룰·그래프 판정
     const seen = new Set<string>()
     const triples = [...parseClaim(claim), ...(await geminiTriples(claim))].filter((t) => {
       const k = `${t.subject}|${t.relation}|${t.objectDisease}|${t.polarity}`
@@ -44,14 +59,17 @@ export default function Home() {
       return true
     })
     const j = judge(triples, claim)
-    setResult(j); setHit(false); setLoading(false)
+    setResult(j); setHitKind(null); setLoading(false)
     void logQuery(claim, j.verdict)
 
-    // AI 설명문(판정 표시 후 채움) → 캐시에 저장(반복 시 재생성 없음)
+    // 4) 하이브리드 근거검색(관련 공식 자료) — 임베딩 재사용
+    if (vec) searchEvidence(claim, vec, 3).then(setEvidence)
+
+    // 5) AI 설명문(판정 표시 후 채움) → 캐시에 임베딩과 함께 저장(반복/유사 시 재생성 없음)
     setExplaining(true)
     const exp = await explainVerdict(claim, j)
     setExplanation(exp); setExplaining(false)
-    void cacheVerdict(claim, j, exp)
+    void cacheVerdict(claim, j, exp, vec)
   }
 
   useEffect(() => {
@@ -110,7 +128,11 @@ export default function Home() {
               <p className={`text-lg font-semibold ${vui.text}`}>{vui.label}</p>
               <p className="text-xs text-slate-500">{vui.sub}</p>
             </div>
-            {hit && <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">빠른 응답</span>}
+            {hitKind && (
+              <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">
+                {hitKind === 'semantic' ? '유사 질문 매칭' : '빠른 응답'}
+              </span>
+            )}
           </div>
 
           <div className="p-4">
@@ -145,6 +167,28 @@ export default function Home() {
                     </li>
                   ))}
                 </ul>
+              </details>
+            )}
+
+            {evidence.length > 0 && (
+              <details className="group mt-2 rounded-xl border border-slate-200 dark:border-slate-800">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                  🔎 이 주제 관련 공식 자료 {evidence.length}건
+                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+                </summary>
+                <ul className="space-y-2 border-t border-slate-100 p-3 dark:border-slate-800">
+                  {evidence.map((e, i) => (
+                    <li key={i} className="text-sm">
+                      {e.section && <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{e.section}</span>}
+                      <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300">{e.text.length > 160 ? `${e.text.slice(0, 160)}…` : e.text}</p>
+                      <span className="text-[11px] text-slate-400">
+                        {e.portal || '질병관리청'}
+                        {e.url && (<> · <a href={e.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline dark:text-blue-400">원문 →</a></>)}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="px-3 pb-3 text-[11px] text-slate-400">하이브리드 검색(의미+키워드)으로 찾은 관련 공식 자료입니다. 판정 근거와는 별개의 참고 정보예요.</p>
               </details>
             )}
 

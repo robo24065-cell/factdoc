@@ -1,5 +1,7 @@
 import { supabase } from './supabase'
+import { parseClaim } from '../engine'
 import type { Citation, Judgement, TraceStep, Verdict } from '../engine'
+import { vecLiteral } from './embed'
 
 const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.'
 export type Tier = 'auto_unverified' | 'verified'
@@ -46,24 +48,88 @@ export async function getCachedVerdict(text: string): Promise<CacheHit | null> {
   }
 }
 
-export async function cacheVerdict(text: string, j: Judgement, explanation?: string | null): Promise<void> {
+export async function cacheVerdict(
+  text: string,
+  j: Judgement,
+  explanation?: string | null,
+  vec?: number[] | null,
+): Promise<void> {
   if (!supabase) return
   try {
-    await supabase.from('verdict_cache').upsert(
-      {
-        claim_hash: claimHash(text),
-        canonical_claim: text.trim(),
-        verdict: j.verdict,
-        citations: j.citations,
-        confidence: j.confidence,
-        decision_trace: j.trace,
-        explanation: explanation ?? null,
-        tier: 'auto_unverified',
-      },
-      { onConflict: 'claim_hash' },
-    )
+    const row: Record<string, unknown> = {
+      claim_hash: claimHash(text),
+      canonical_claim: text.trim(),
+      verdict: j.verdict,
+      citations: j.citations,
+      confidence: j.confidence,
+      decision_trace: j.trace,
+      explanation: explanation ?? null,
+      tier: 'auto_unverified',
+    }
+    if (vec && vec.length) row.embedding = vecLiteral(vec) // 시맨틱 캐시용 임베딩 동시 저장
+    await supabase.from('verdict_cache').upsert(row, { onConflict: 'claim_hash' })
   } catch {
     /* 캐시 실패는 무시 */
+  }
+}
+
+// ── 시맨틱 캐시: 임베딩 ANN으로 유사 과거판정 검색 + 규칙파서로 동일주장 확인 ──
+export interface SemanticHit extends CacheHit {
+  similarity: number
+  matchedClaim: string
+}
+
+// 핵심 트리플 키(관계|대상질환|극성) 집합 — 규칙파서(로컬·즉시·무료)로 추출
+function tripleKeys(text: string): Set<string> {
+  const out = new Set<string>()
+  for (const t of parseClaim(text)) out.add(`${t.relation}|${t.objectDisease}|${t.polarity}`)
+  return out
+}
+
+// 두 주장이 핵심(관계·대상질환·극성)에서 호환되는가 — 임베딩 거짓히트(특히 부정문 뒤집힘) 차단.
+// 한쪽이라도 규칙파싱 불가 → 유사도 임계(0.92)에만 의존(보수적).
+function claimsCompatible(query: string, cached: string): boolean {
+  const a = tripleKeys(query)
+  const b = tripleKeys(cached)
+  if (a.size === 0 || b.size === 0) return true
+  for (const k of a) if (b.has(k)) return true
+  return false
+}
+
+export async function getSemanticCachedVerdict(text: string, vec: number[]): Promise<SemanticHit | null> {
+  if (!supabase) return null
+  try {
+    const { data, error } = await supabase.rpc('match_verdict_cache', {
+      query_embedding: vecLiteral(vec),
+      match_threshold: 0.92,
+      fresh_only: true,
+    })
+    if (error || !Array.isArray(data) || data.length === 0) return null
+    const row = data[0] as {
+      id: number; canonical_claim: string; verdict: Verdict; citations: Citation[] | null
+      confidence: number | null; decision_trace: TraceStep[] | null; explanation: string | null
+      tier: Tier; query_count: number | null; similarity: number
+    }
+    if (!claimsCompatible(text, row.canonical_claim)) return null // 핵심 트리플 불일치 → 캐시 거부(미스 처리)
+    void supabase.from('verdict_cache').update({ query_count: (row.query_count ?? 0) + 1 }).eq('id', row.id)
+    return {
+      similarity: row.similarity,
+      matchedClaim: row.canonical_claim,
+      tier: row.tier,
+      explanation: row.explanation ?? null,
+      judgement: {
+        claimText: row.canonical_claim,
+        triples: [],
+        verdict: row.verdict,
+        confidence: row.confidence ?? 0,
+        citations: row.citations ?? [],
+        trace: row.decision_trace ?? [],
+        tier: row.tier,
+        disclaimer: DISCLAIMER,
+      },
+    }
+  } catch {
+    return null
   }
 }
 
