@@ -1,0 +1,71 @@
+// 온톨로지 확장(커버리지 폭) — 일반 건기식 성분 + 흔한 질환/기능 동의어. §13.1 폭 = 데이터.
+// 평가셋(독립 듀얼라벨)과 무관하게 일반 지식으로 작성(held-out 채점). 본체 ontology.ts가 spread.
+import type { OntologyEntry } from './ontology'
+
+export const ONTOLOGY_EXT: OntologyEntry[] = [
+  // ── 질환/기능 (건기식·만성질환 타깃) ──
+  { canonical: '간건강', variants: ['간 건강', '간건강', '지방간', '간기능', '간 기능', '간수치', '알코올성 간', '숙취'], type: 'disease' },
+  { canonical: '간염', variants: ['간염', 'a형간염', 'b형간염', 'c형간염', 'e형간염', 'a형 간염', 'b형 간염', 'c형 간염', 'e형 간염', '바이러스간염', '바이러스성 간염', '황달'], type: 'disease', tags: ['infectious'] },
+  { canonical: '암', variants: ['대장암', '위암', '간암', '유방암', '췌장암', '전립선암', '종양', '암 예방', '항암'], type: 'disease', tags: ['cancer'] },
+  { canonical: '치매', variants: ['알츠하이머', '치매 예방', '인지기능 저하', '기억력 감퇴'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '인지기능', variants: ['기억력', '집중력', '두뇌건강', '두뇌 건강', '인지력', '학습능력'], type: 'disease' },
+  { canonical: '심혈관질환', variants: ['심근경색', '동맥경화', '심장병', '심혈관', '뇌졸중', '중풍', '혈관 건강', '혈행', '혈행 개선', '협심증'], type: 'disease' },
+  { canonical: '갑상선', variants: ['갑상선결절', '갑상선 결절', '갑상샘', '갑상선기능', '갑상선 기능'], type: 'disease' },
+  { canonical: '관절건강', variants: ['관절', '연골', '관절염', '무릎 관절', '퇴행성관절염', '퇴행성 관절염', '뼈마디'], type: 'disease' },
+  { canonical: '체지방', variants: ['복부지방', '복부 지방', '내장지방', '뱃살', '체지방 감소', '체지방감소'], type: 'disease' },
+  { canonical: '감기', variants: ['감기', '상기도감염', '코감기', '잔기침'], type: 'disease', tags: ['infectious'] },
+  { canonical: '전립선건강', variants: ['전립선', '전립샘', '전립선 건강'], type: 'disease' },
+  { canonical: '피부건강', variants: ['피부 건강', '피부건강', '피부 보습', '주름', '피부 탄력'], type: 'disease' },
+  { canonical: '갱년기', variants: ['갱년기', '폐경', '갱년기 증상'], type: 'disease' },
+  { canonical: '홍역', variants: ['홍역', 'measles'], type: 'disease', tags: ['infectious'] },
+  { canonical: '폐렴', variants: ['폐렴', 'pneumonia', '폐렴구균'], type: 'disease', tags: ['infectious'] },
+  { canonical: '피로', variants: ['피로 개선', '피로회복', '만성피로', '활력'], type: 'disease' },
+
+  // ── 정보질문 커버리지: 흔히 묻는 감염병/질환 (오타 변형 포함) ──
+  { canonical: '뎅기열', variants: ['댕기열', '뎅기', 'dengue', '뎅기열병', '뎅기 바이러스'], type: 'disease', tags: ['infectious'] },
+  { canonical: '말라리아', variants: ['malaria', '학질'], type: 'disease', tags: ['infectious'] },
+  { canonical: '결핵', variants: ['폐결핵', 'tb', 'tuberculosis'], type: 'disease', tags: ['infectious'] },
+  { canonical: '수족구병', variants: ['수족구', '수족구 병', 'hfmd'], type: 'disease', tags: ['infectious'] },
+  { canonical: '노로바이러스감염증', variants: ['노로바이러스', '노로', 'norovirus'], type: 'disease', tags: ['infectious'] },
+  { canonical: '식중독', variants: ['식중독', '장염', '급성장염', '세균성 장염', '장관감염'], type: 'disease', tags: ['infectious'] },
+  { canonical: '백일해', variants: ['백일해', 'pertussis'], type: 'disease', tags: ['infectious'] },
+  { canonical: '성홍열', variants: ['성홍열', 'scarlet fever'], type: 'disease', tags: ['infectious'] },
+  { canonical: '엠폭스', variants: ['엠폭스', '원숭이두창', 'mpox', 'monkeypox'], type: 'disease', tags: ['infectious'] },
+  { canonical: '지카바이러스감염증', variants: ['지카', '지카바이러스', 'zika'], type: 'disease', tags: ['infectious'] },
+  { canonical: '수두', variants: ['수두', 'chickenpox', 'varicella'], type: 'disease', tags: ['infectious'] },
+  { canonical: '유행성이하선염', variants: ['볼거리', '이하선염', 'mumps'], type: 'disease', tags: ['infectious'] },
+  { canonical: '장티푸스', variants: ['장티푸스', 'typhoid'], type: 'disease', tags: ['infectious'] },
+  { canonical: '쯔쯔가무시증', variants: ['쯔쯔가무시', '쓰쓰가무시', 'scrub typhus'], type: 'disease', tags: ['infectious'] },
+
+  // ── 주체: 건강기능식품 성분 (supplement) — '식품' 취급 → 식약처 룰 발동 ──
+  { canonical: '오메가3', variants: ['오메가쓰리', 'omega3', 'omega-3', '어유', '오메가삼', 'epa', 'dha', '오메가3지방산'], type: 'subject', tags: ['supplement'] },
+  { canonical: '글루코사민', variants: ['glucosamine', '글루코사민황산염'], type: 'subject', tags: ['supplement'] },
+  { canonical: '가르시니아', variants: ['가르시니아캄보지아', 'garcinia', 'hca', '가르시니아 캄보지아'], type: 'subject', tags: ['supplement'] },
+  { canonical: '밀크씨슬', variants: ['실리마린', 'milk thistle', '카르두스마리아누스', '밀크시슬', '실리빈'], type: 'subject', tags: ['supplement'] },
+  { canonical: '코엔자임Q10', variants: ['코큐텐', 'coq10', '코엔자임큐텐', '코엔자임 큐텐', 'q10'], type: 'subject', tags: ['supplement'] },
+  { canonical: '은행잎추출물', variants: ['은행잎', '은행잎 추출물', '징코', 'ginkgo', '은행'], type: 'subject', tags: ['supplement'] },
+  { canonical: '크릴오일', variants: ['크릴 오일', 'krill', '크릴'], type: 'subject', tags: ['supplement'] },
+  { canonical: '홍국', variants: ['홍국쌀', '모나콜린', '홍국 분말', '레드이스트라이스'], type: 'subject', tags: ['supplement'] },
+  { canonical: '비타민C', variants: ['비타민씨', 'vitamin c', 'vitc', '아스코르브산', '비타민 c'], type: 'subject', tags: ['supplement'] },
+  { canonical: '마그네슘', variants: ['magnesium'], type: 'subject', tags: ['supplement'] },
+  { canonical: '아연', variants: ['zinc'], type: 'subject', tags: ['supplement'] },
+  { canonical: '쏘팔메토', variants: ['saw palmetto', '쏘팔메토열매추출물', '소팔메토'], type: 'subject', tags: ['supplement'] },
+  { canonical: '콜라겐', variants: ['collagen', '저분자콜라겐', '콜라겐펩타이드'], type: 'subject', tags: ['supplement'] },
+  { canonical: '크랜베리', variants: ['cranberry', '크랜베리추출물'], type: 'subject', tags: ['supplement'] },
+  { canonical: 'msm', variants: ['엠에스엠', '식이유황', 'methylsulfonylmethane'], type: 'subject', tags: ['supplement'] },
+  { canonical: '보스웰리아', variants: ['boswellia', '유향'], type: 'subject', tags: ['supplement'] },
+  { canonical: '프로폴리스', variants: ['propolis', '프로폴리스추출물'], type: 'subject', tags: ['supplement'] },
+  { canonical: '헛개', variants: ['헛개나무', '헛개추출물', '헛개나무열매', '지구자'], type: 'subject', tags: ['supplement', 'folk'] },
+  { canonical: '엽산', variants: ['folic acid', '엽산제'], type: 'subject', tags: ['supplement'] },
+  { canonical: '철분', variants: ['iron', '철분제'], type: 'subject', tags: ['supplement'] },
+
+  // ── 주체: 일반식품/민간요법 (food/folk) — 식약처 룰 발동(질병 치료·예방 표방 불가) ──
+  { canonical: '계피', variants: ['시나몬', 'cinnamon', '계피가루', '계핏가루'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '양파', variants: ['양파껍질', '양파 껍질', 'onion', '양파즙'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '마늘', variants: ['흑마늘', 'garlic', '생마늘', '마늘즙'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '바나바잎', variants: ['바나바', 'banaba', '바나바잎추출물'], type: 'subject', tags: ['folk'] },
+  { canonical: '강황', variants: ['커큐민', 'turmeric', 'curcumin', '울금'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '생강', variants: ['ginger', '생강차'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '도라지', variants: ['길경', '도라지즙', '도라지청'], type: 'subject', tags: ['food', 'folk'] },
+  { canonical: '노니', variants: ['noni', '노니주스'], type: 'subject', tags: ['folk'] },
+]

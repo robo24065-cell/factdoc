@@ -34,7 +34,8 @@ function sameDirection(e: EvidenceRecord, t: Triple): boolean {
   return harmful(e.relation) && harmful(t.relation)
 }
 
-function judgeTriple(t: Triple): SingleResult {
+// useGraph=false → 룰만 적용(클레임그래프 트리플 매칭·반증 매칭 비활성). ablation config (c) 'RAG+룰'용.
+function judgeTriple(t: Triple, useGraph = true): SingleResult {
   const trace: TraceStep[] = []
   const citations: Citation[] = []
 
@@ -78,12 +79,20 @@ function judgeTriple(t: Triple): SingleResult {
     return { verdict: 'false', confidence: 0.88, citations, trace }
   }
 
+  // 룰 B′ — 완치 부정 룰: "비가역 만성질환은 완치되지 않는다"는 주장은 공식 입장(관리만 인정·완치 불가)과 일치 = 사실. §13.3
+  if (t.relation === 'cures' && chronic && t.polarity === 'negate') {
+    trace.push({ kind: 'rule', label: '완치 룰(부정)', detail: `${t.objectDisease}은(는) 비가역 만성질환으로 완치되지 않고 '관리'만 인정됩니다 — 주장이 공식 입장과 일치합니다.`, outcome: '사실' })
+    const care = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.relation === 'manages')
+    if (care) citations.push(care.citation)
+    return { verdict: 'true', confidence: 0.85, citations, trace }
+  }
+
   // 반증 — '효과없음' 또는 부정형 주장이 공식 유익 근거와 모순 (예: 백신 무용론)
   const contradicts =
     t.relation === 'no_effect' ||
     ((t.relation === 'prevents' || t.relation === 'reduces_risk' || t.relation === 'manages') && t.polarity === 'negate')
   if (contradicts) {
-    const ev = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && beneficial(e.relation))
+    const ev = useGraph ? CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && beneficial(e.relation)) : undefined
     if (ev) {
       trace.push({ kind: 'graph_match', label: '반증 매칭', detail: `공식 근거 (${ev.subject})—[${ev.relation}]→(${ev.objectDisease}) · 근거수준 ${ev.evidenceLevel}`, outcome: '근거없음·허위(반증)' })
       citations.push(ev.citation)
@@ -94,7 +103,7 @@ function judgeTriple(t: Triple): SingleResult {
   }
 
   // 클레임그래프 매칭 (정확한 주체 일치만 — 다른 주체의 근거로 '대충 사실/과장' 금지)
-  const ev = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && sameDirection(e, t))
+  const ev = useGraph ? CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && sameDirection(e, t)) : undefined
   if (ev) {
     citations.push(ev.citation)
     trace.push({
@@ -129,7 +138,8 @@ function dedupeCitations(cs: Citation[]): Citation[] {
   })
 }
 
-export function judge(triples: Triple[], claimText: string): Judgement {
+export function judge(triples: Triple[], claimText: string, opts: { useGraph?: boolean } = {}): Judgement {
+  const useGraph = opts.useGraph !== false
   if (triples.length === 0) {
     return {
       claimText, triples: [], verdict: 'unverified', confidence: 0, citations: [],
@@ -138,7 +148,7 @@ export function judge(triples: Triple[], claimText: string): Judgement {
     }
   }
 
-  const results = triples.map(judgeTriple)
+  const results = triples.map((t) => judgeTriple(t, useGraph))
 
   let worst = results[0]
   for (const r of results) if (VERDICT_RANK[r.verdict] > VERDICT_RANK[worst.verdict]) worst = r

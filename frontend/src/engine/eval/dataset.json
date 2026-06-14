@@ -1,0 +1,800 @@
+[
+ {
+  "claim": "걷기운동이 당뇨에 좋다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "홍삼이 면역력에 도움이 된다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "인슐린은 당뇨 관리에 쓰인다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "독감백신은 독감을 예방한다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "식이요법이 고혈압 관리에 도움이 된다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "운동이 당뇨 위험을 낮춘다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "스타틴은 이상지질혈증 관리에 쓰인다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "유산균이 장 건강에 도움이 된다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "비타민D가 뼈 건강에 도움이 된다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "대상포진백신은 대상포진을 예방한다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "금연이 폐암 위험을 낮춘다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "당뇨는 △△즙으로 완치된다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "○○건강기능식품이 당뇨를 치료한다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "고혈압은 약초로 완치된다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "이상지질혈증은 △△로 완치된다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "독감백신은 효과 없다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "독감백신은 독감을 못 막는다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "홍삼이 당뇨를 예방한다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "유산균이 당뇨를 치료한다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "루테인이 당뇨를 완치한다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "당뇨에 좋다고 약 끊고 걷기만 하면 된다",
+  "gold": "partial",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "홍삼이 면역력에 무조건 도움이 된다",
+  "gold": "partial",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "걷기운동이 당뇨를 확실히 관리한다",
+  "gold": "partial",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "신종 약초가 혈당을 낮춘다",
+  "gold": "unverified",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "특정 버섯이 당뇨에 좋다",
+  "gold": "unverified",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "돼지감자가 당뇨에 좋다",
+  "gold": "unverified",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "신종 보조제가 콜레스테롤을 낮춘다",
+  "gold": "unverified",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "설탕을 많이 먹으면 당뇨에 걸린다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "토마토를 먹으면 코로나에 걸린다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "기립성저혈압은 설탕으로 완치된다",
+  "gold": "false",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "운동은 비만 관리에 도움이 된다",
+  "gold": "true",
+  "category": "코어(검증)",
+  "tier": "verified"
+ },
+ {
+  "claim": "여주즙을 아침저녁으로 꾸준히 마시면 당뇨가 완치돼서 더 이상 약 안 먹어도 됩니다.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "고혈압 환자가 매일 양파껍질 달인 물을 석 잔씩 마시면 혈압약을 완전히 끊을 수 있어요.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "돼지감자 분말 3개월만 먹으면 당뇨병이 뿌리째 낫는다더라고요.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "제2형 당뇨는 식이요법과 운동, 약물치료로 혈당을 관리하는 만성질환이라 꾸준한 관리가 필요합니다.",
+  "gold": "true",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "인슐린은 제1형 당뇨 환자에게 필수적인 치료제로, 임의로 중단하면 위험할 수 있습니다.",
+  "gold": "true",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "고혈압은 생활습관 개선과 함께 처방받은 약을 꾸준히 복용해 혈압을 조절하는 것이 표준 관리입니다.",
+  "gold": "true",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "꾸준한 유산소 운동과 체중 감량은 혈당 조절과 혈압 관리에 도움이 될 수 있습니다.",
+  "gold": "true",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "바나바잎 추출물을 먹으면 혈당이 잡혀서 당뇨약을 절반으로 줄일 수 있다고 해요.",
+  "gold": "partial",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "계피를 매일 챙겨 먹으면 혈당이 떨어져서 당뇨가 거의 다 나은 거나 마찬가지래요.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "이 발효홍삼을 먹고 콜레스테롤 수치가 정상으로 돌아와서 이상지질혈증이 완치됐대요.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당뇨에 좋다는 여주가 혈당 조절에 어느 정도 보조적으로 도움 될 수 있다고 들었어요.",
+  "gold": "partial",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 식물 추출 성분 'OO베린'이 당뇨를 단번에 완치시킨다는 연구가 곧 발표된대요.",
+  "gold": "unverified",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "해외에서 들여온 신소재 'XX펩타이드'가 고혈압을 근본 치료한다고 입소문이 났어요.",
+  "gold": "unverified",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "혈압약은 한번 먹기 시작하면 평생 먹어야 하니까 차라리 천연 한약으로 갈아타서 뿌리를 뽑는 게 낫대요.",
+  "gold": "false",
+  "category": "완치치료_고위험",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "오메가3가 혈중 중성지방 수치를 낮추는 데 도움을 줄 수 있대요.",
+  "gold": "true",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "이 비타민C 하나면 감기 같은 건 아예 안 걸리고 면역도 챙긴다니까.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "칼슘 영양제가 골밀도 유지에 도움이 된다고 하더라고요.",
+  "gold": "true",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "밀크씨슬이 간염이랑 지방간을 싹 치료해 준다고 단톡방에 올라왔어.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "프로바이오틱스 꾸준히 먹었더니 대장암이 예방된다던데 진짜야?",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "코엔자임Q10이 고혈압 환자 혈압을 정상으로 완치시켜 준대요.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "은행잎 추출물이 치매를 막아주고 기억력 떨어지는 걸 치료한다더라.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "글루코사민이 관절 건강에 도움을 줄 수 있다고 들었어요.",
+  "gold": "true",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "이 신종 발효 추출물 한 알이면 갑상선 결절이 사라진다던데 사실인가요?",
+  "gold": "unverified",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "루테인이 눈 건강 황반색소 유지에 도움이 된대요.",
+  "gold": "true",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "홍국 영양제 먹으면 콜레스테롤 약은 평생 안 먹어도 된다더라고.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "가르시니아가 체지방 감소에 도움을 줄 수 있다고 광고에 나오던데.",
+  "gold": "true",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "남극 크릴오일이 동맥경화로 막힌 혈관을 뚫어서 심근경색을 예방한대요.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "정체불명 약초즙이 췌장 기능을 되살려서 당뇨를 근본부터 고친다고 어르신들 사이에 돌더라.",
+  "gold": "false",
+  "category": "건기식_질병효능",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "독감 백신은 매년 새로 맞아야 효과가 있대요.",
+  "gold": "true",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "코로나 백신 맞으면 몸에 자석이 붙는다던데 진짜예요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "홍역은 백신 두 번만 맞으면 평생 안 걸린다고 하더라고요.",
+  "gold": "partial",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "마늘을 생으로 매일 먹으면 독감 바이러스가 죽어서 감기에 안 걸린대요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "대상포진 백신 맞으면 면역력이 떨어진 사람은 오히려 대상포진에 걸린다던데요.",
+  "gold": "partial",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "손만 깨끗이 잘 씻어도 감염병 예방에 도움이 된다잖아요.",
+  "gold": "true",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "비타민C 메가도스 하면 백신 안 맞아도 코로나 완전히 막을 수 있어요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "독감 백신 맞으면 그 주사 때문에 오히려 독감에 걸린다더라고요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 변종 바이러스에는 ◯◯추출물이 특효라서 백신보다 낫다는데요.",
+  "gold": "unverified",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "어린이 예방접종은 자폐증을 일으키니까 안 맞히는 게 낫대요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "임신부는 독감 백신을 절대 맞으면 안 된다던데 맞아요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "발효식품을 많이 먹으면 장 면역이 좋아져서 어떤 감염병도 다 막아준대요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "백신은 제약회사가 돈 벌려고 만든 거라 사실 아무 효과도 없다잖아요.",
+  "gold": "false",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "기침할 때 입을 가리는 것만으로도 호흡기 감염병 전파를 줄일 수 있대요.",
+  "gold": "true",
+  "category": "감염병_백신",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "혈압약은 한번 먹기 시작하면 평생 못 끊는다는데, 의사랑 상의해서 생활습관 관리로 용량을 조절하는 경우도 있다더라",
+  "gold": "true",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당화혈색소가 높으면 식단이랑 운동만으로는 한계가 있어서 약물 치료를 같이 해야 한대",
+  "gold": "true",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "이상지질혈증은 약 먹으면서 포화지방 줄이고 유산소 운동 꾸준히 하면 수치가 좋아진대",
+  "gold": "true",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "고혈압 환자는 나트륨 줄이고 싱겁게 먹는 식습관이 혈압 관리에 도움이 된다더라",
+  "gold": "true",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "혈압약 먹으면 신장 망가진다니까 혈압 좀 떨어지면 바로 끊고 자연요법으로만 관리하면 된대",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당뇨는 아침마다 양파즙 한 잔이면 인슐린 주사 안 맞아도 혈당이 정상으로 돌아온대",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "콜레스테롤약은 독해서 끊고 들기름이랑 견과류만 챙겨 먹으면 자연적으로 다 내려간다더라",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당뇨약 안 먹고 저탄고지 식단만 빡세게 하면 무조건 정상 혈당 만들 수 있대",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "현미밥으로 바꾸기만 하면 당뇨약 끊고도 혈당이 확실하게 잡힌다던데",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "혈압 높은 사람은 매일 30분씩 걷기만 하면 약 없이도 혈압이 완전히 정상으로 돌아온대",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당뇨 환자가 단 거 끊으면 그걸로 합병증까지 100퍼센트 예방된다더라",
+  "gold": "false",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 발효 효소가 인슐린 저항성을 풀어줘서 당뇨에 특효라던데",
+  "gold": "unverified",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "요즘 나온 수입 약초 분말이 콜레스테롤을 싹 녹여준다고 입소문이 났대",
+  "gold": "unverified",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "동남아에서 들여온 무슨 나무 수액이 혈압을 뚝 떨어뜨려 준다더라",
+  "gold": "unverified",
+  "category": "만성질환_관리",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "우리나라 30세 이상 성인 10명 중 3명꼴로 고혈압이 있대요.",
+  "gold": "true",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "요즘 20대 당뇨 유병률이 절반을 넘어서 두 명 중 한 명은 당뇨라더라고요.",
+  "gold": "false",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "65세 이상 어르신 당뇨 유병률이 30%에 가깝다는 국가 통계가 있어요.",
+  "gold": "true",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "성인 비만율이 이미 80%를 넘어서 거의 다 비만이라던데요.",
+  "gold": "false",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "30세 이상 당뇨병 환자 중에 자기가 당뇨인지 아는 사람이 한 90%는 된대요.",
+  "gold": "partial",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 호흡기 감염병이 지난주에만 전국에서 50만 명 넘게 확진됐다고 단톡방에 돌던데요.",
+  "gold": "unverified",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "당뇨 환자 중에 실제로 혈당이 잘 조절되는 사람은 채 절반도 안 된다더라고요.",
+  "gold": "true",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "고혈압 있는 사람이 약 먹고 혈압 잘 잡히는 비율이 90%가 넘는다던데요.",
+  "gold": "partial",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "남자 흡연율이 아직도 70%대라 남자 열에 일곱은 담배를 피운대요.",
+  "gold": "false",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "작년에 새로 발병한 결핵 환자 수가 갑자기 두 배로 뛰어서 10만 명을 넘겼다더라고요.",
+  "gold": "false",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "30세 넘으면 고지혈증 유병률이 거의 40%까지 올라간다는 조사가 있던데요.",
+  "gold": "true",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "요즘 새로 도는 변종 독감 치명률이 30%나 된다고 영상에서 그러던데요.",
+  "gold": "unverified",
+  "category": "통계인용형",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "여주즙을 매일 아침에 마시면 당뇨가 싹 낫는다더라.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "바나바잎차가 혈당을 뚝 떨어뜨려서 약 안 먹어도 된대.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "돼지감자를 갈아 먹으면 인슐린 주사를 끊을 수 있다던데.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "요즘 동남아에서 들여온 새 약초가 고혈압을 완전히 뿌리 뽑는다더라.",
+  "gold": "unverified",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "여주가 혈당 관리에 어느 정도 도움이 된다는 얘기를 들었어.",
+  "gold": "partial",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "단호박이랑 돼지감자를 같이 삶아 먹으면 살이 빠진다던데.",
+  "gold": "unverified",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 발효 효소 보조제 하나면 대사증후군이 다 해결된다더라.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "양파껍질 끓인 물이 혈관에 좋아서 콜레스테롤을 낮춘대.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "해외 직구한 정체불명 다이어트 환을 먹으면 지방간이 사라진다더라.",
+  "gold": "false",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "민들레 뿌리 달인 물이 간 해독에 좋다고 단톡방에 돌던데.",
+  "gold": "unverified",
+  "category": "민간요법_보류",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "유산소 운동이랑 식단 조절 같이 하면 대사증후군 관리에 도움이 된대요.",
+  "gold": "true",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "허리둘레 줄이고 체중 빼면 혈압이랑 혈당 수치도 같이 좋아진다더라고요.",
+  "gold": "true",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "이 효소 분말 아침마다 타 먹으면 복부지방이 싹 빠져서 뱃살이 완전히 없어진대요.",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "홈쇼핑에서 파는 그 다이어트 보조제가 내장지방을 녹여서 대사증후군을 치료해 준대요.",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "굶지 않아도 이 차만 꾸준히 마시면 비만이 완치된다던데요.",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "탄수화물을 아예 끊고 단백질만 먹으면 대사증후군이 깨끗하게 나아요.",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "녹차에 들어있는 성분이 지방 분해를 돕는다니까 녹차만 많이 마시면 살이 쭉쭉 빠진대요.",
+  "gold": "partial",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "야식 자주 먹고 운동 안 하면 복부비만이랑 대사증후군 위험이 올라간대요.",
+  "gold": "true",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "물만 충분히 마셔도 살이 알아서 빠지니까 따로 운동할 필요 없다던데요.",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "새로 나온 남미 약초 추출물이 식욕을 억제해서 비만에 효과가 좋다더라고요.",
+  "gold": "unverified",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "요즘 단톡방에서 도는 그 발효 곡물 가루가 인슐린 저항성을 없애 준다던데 진짜예요?",
+  "gold": "unverified",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "마른 사람은 아무리 먹어도 대사증후군 같은 건 절대 안 걸린다던데 맞나요?",
+  "gold": "false",
+  "category": "비만_대사",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "담배 오래 피우면 폐암 걸린다더라",
+  "gold": "true",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "짜게 먹는 습관이 고혈압을 부른다던데",
+  "gold": "true",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "술을 자주 마시면 간암 위험이 올라간대",
+  "gold": "true",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "비만이면 당뇨에 걸릴 위험이 높아진다네",
+  "gold": "true",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "운동 안 하고 앉아만 있으면 심장병 위험이 커진대",
+  "gold": "true",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "마늘 많이 먹으면 어떤 암에도 절대 안 걸린다더라",
+  "gold": "false",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "커피 한 잔만 마셔도 위암에 걸린다던데",
+  "gold": "false",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "양파즙을 매일 마시면 코로나 같은 바이러스가 절대 안 옮는대",
+  "gold": "false",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "스트레스 좀 받았다고 무조건 암 걸리는 거다",
+  "gold": "false",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "탄 고기를 조금만 먹어도 바로 대장암이 생긴다더라",
+  "gold": "partial",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "신종 합성감미료가 췌장암 위험을 높인다는 얘기가 돈다",
+  "gold": "unverified",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ },
+ {
+  "claim": "수입 향신료를 많이 먹으면 갑상선암에 걸린다는 말이 있다",
+  "gold": "unverified",
+  "category": "위험요인",
+  "tier": "dual_labeled"
+ }
+]

@@ -34,6 +34,11 @@ export const LABELS: Label[] = [
   { claim: '유산균이 당뇨를 치료한다', gold: 'false', basis: '식약처 룰: 식품의 질병 치료 표방 불가' },
   { claim: '루테인이 당뇨를 완치한다', gold: 'false', basis: '식약처 룰 + 완치 룰' },
 
+  // ── 부정문(완치·예방 부정) — polarity=negate 인식 ──
+  { claim: '당뇨는 어떤 즙으로도 완치되지 않는다', gold: 'true', basis: '완치 부정 룰: 비가역 만성질환은 완치되지 않음(공식 입장과 일치)' },
+  { claim: '고혈압은 완치되지 않는다', gold: 'true', basis: '완치 부정 룰: 고혈압은 관리만 인정(완치 불가)' },
+  { claim: '이상지질혈증은 약으로 완치되지 않는다', gold: 'true', basis: '완치 부정 룰: 이상지질혈증은 관리만 인정' },
+
   // ── 부분적·과장 ──
   { claim: '당뇨에 좋다고 약 끊고 걷기만 하면 된다', gold: 'partial', basis: '운동 도움은 사실이나 약물 중단 권유는 위험' },
   { claim: '홍삼이 면역력에 무조건 도움이 된다', gold: 'partial', basis: '인정기능성은 맞으나 강도(무조건) 과장' },

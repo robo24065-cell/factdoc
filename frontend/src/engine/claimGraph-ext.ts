@@ -1,0 +1,65 @@
+// 클레임그래프 확장 — 식약처 인정기능성(mfds_approved) + 질병청 위험요인/관리(official). §13.2 근거수준=출처.
+// 표준 인정기능성·역학 상식 기반(일반 지식, 평가셋과 무관). 본체 claimGraph.ts가 spread.
+// ⚠ 인정기능성은 '도움(manages/reduces_risk)' 수준만 — 질병 '치료/예방(cures/prevents)'은 식약처 룰로 자동 허위.
+import type { EvidenceRecord } from './types'
+
+const mfds = (title: string): EvidenceRecord['citation'] => ({
+  portal: '식품의약품안전처 건강기능식품', title, url: 'https://www.foodsafetykorea.go.kr',
+})
+const kdca = (title: string): EvidenceRecord['citation'] => ({
+  portal: '질병관리청 국가건강정보포털', title, url: 'https://health.kdca.go.kr',
+})
+
+export const CLAIM_GRAPH_EXT: EvidenceRecord[] = [
+  // ── 식약처 인정기능성(건기식 '도움' 수준) ──
+  { subject: '오메가3', relation: 'manages', objectDisease: '이상지질혈증', evidenceLevel: 'mfds_approved', strength: 'moderate',
+    citation: mfds('오메가3(EPA/DHA) — 인정 기능성(혈중 중성지방 개선·혈행 개선 도움)'), note: '질병 치료가 아닌 보조적 도움.' },
+  { subject: '오메가3', relation: 'manages', objectDisease: '심혈관질환', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('오메가3 — 인정 기능성(혈행 개선 도움)') },
+  { subject: '글루코사민', relation: 'manages', objectDisease: '관절건강', evidenceLevel: 'mfds_approved', strength: 'moderate',
+    citation: mfds('글루코사민 — 인정 기능성(관절·연골 건강에 도움)') },
+  { subject: 'msm', relation: 'manages', objectDisease: '관절건강', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('MSM — 인정 기능성(관절 건강에 도움)') },
+  { subject: '보스웰리아', relation: 'manages', objectDisease: '관절건강', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('보스웰리아 — 인정 기능성(관절 건강에 도움)') },
+  { subject: '가르시니아', relation: 'manages', objectDisease: '체지방', evidenceLevel: 'mfds_approved', strength: 'moderate',
+    citation: mfds('가르시니아캄보지아 추출물 — 인정 기능성(체지방 감소에 도움)') },
+  { subject: '밀크씨슬', relation: 'manages', objectDisease: '간건강', evidenceLevel: 'mfds_approved', strength: 'moderate',
+    citation: mfds('밀크씨슬(실리마린) — 인정 기능성(간 건강에 도움)'), note: '간 건강 보조이며 간염·간질환 치료 표방은 불가.' },
+  { subject: '헛개', relation: 'manages', objectDisease: '간건강', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('헛개나무 열매추출물 — 인정 기능성(간 건강에 도움)') },
+  { subject: '코엔자임Q10', relation: 'reduces_risk', objectDisease: '고혈압', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('코엔자임Q10 — 인정 기능성(높은 혈압 감소에 도움)'), note: '보조적 도움이며 고혈압 완치·약 대체는 불가.' },
+  { subject: '은행잎추출물', relation: 'manages', objectDisease: '심혈관질환', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('은행잎추출물 — 인정 기능성(혈행 개선 도움)') },
+  { subject: '은행잎추출물', relation: 'manages', objectDisease: '인지기능', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('은행잎추출물 — 인정 기능성(기억력 개선 도움)'), note: '기억력 보조이며 치매 치료·예방 표방은 불가.' },
+  { subject: '쏘팔메토', relation: 'manages', objectDisease: '전립선건강', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('쏘팔메토 열매추출물 — 인정 기능성(전립선 건강에 도움)') },
+  { subject: '콜라겐', relation: 'manages', objectDisease: '피부건강', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('콜라겐 — 인정 기능성(피부 보습에 도움)') },
+  { subject: '홍삼', relation: 'manages', objectDisease: '심혈관질환', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('홍삼 — 인정 기능성(혈행 개선·항산화 도움)') },
+  { subject: '홍삼', relation: 'manages', objectDisease: '피로', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('홍삼 — 인정 기능성(피로 개선 도움)') },
+  { subject: '비타민C', relation: 'manages', objectDisease: '면역기능', evidenceLevel: 'mfds_approved', strength: 'weak',
+    citation: mfds('비타민C — 인정 기능성(항산화·결합조직 형성·면역 보조)'), note: '감기 예방·치료 표방은 불가.' },
+  { subject: '프로바이오틱스', relation: 'manages', objectDisease: '장건강', evidenceLevel: 'mfds_approved', strength: 'moderate',
+    citation: mfds('프로바이오틱스 — 인정 기능성(유익균 증식·배변활동 원활)') },
+
+  // ── 질병청 위험요인/관리(official_guideline·statistics) ──
+  { subject: '나트륨', relation: 'increases_risk', objectDisease: '심혈관질환', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: kdca('심혈관질환 — 나트륨 과다 섭취 위험') },
+  { subject: '금연', relation: 'reduces_risk', objectDisease: '심혈관질환', evidenceLevel: 'official_guideline', strength: 'strong',
+    citation: kdca('심혈관질환 — 금연과 위험 감소') },
+  { subject: '운동요법', relation: 'reduces_risk', objectDisease: '심혈관질환', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: kdca('심혈관질환 — 신체활동과 위험 감소') },
+  { subject: '운동요법', relation: 'manages', objectDisease: '이상지질혈증', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: kdca('이상지질혈증 — 운동요법') },
+  { subject: '식이요법', relation: 'manages', objectDisease: '체지방', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: kdca('비만 — 식사 관리(체지방 감소)') },
+  { subject: '운동요법', relation: 'manages', objectDisease: '체지방', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: kdca('비만 — 신체활동(체지방 감소)') },
+  { subject: '설탕', relation: 'increases_risk', objectDisease: '비만', evidenceLevel: 'official_guideline', strength: 'strong',
+    citation: kdca('비만 — 당류·고열량 과다 섭취 위험') },
+]

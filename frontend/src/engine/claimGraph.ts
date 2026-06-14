@@ -2,8 +2,9 @@
 // 주의: W1 시드용 예시 근거. 실제 코퍼스(질병청·식약처) 적재 시 doc_id·원문 span으로 교체.
 
 import type { EvidenceRecord } from './types'
+import { CLAIM_GRAPH_EXT } from './claimGraph-ext'
 
-export const CLAIM_GRAPH: EvidenceRecord[] = [
+const CLAIM_GRAPH_BASE: EvidenceRecord[] = [
   // ── 당뇨 ──
   { subject: '인슐린', relation: 'manages', objectDisease: '제2형당뇨', evidenceLevel: 'official_guideline', strength: 'strong',
     citation: { portal: '질병관리청 국가건강정보포털', title: '당뇨병 — 표준 치료·관리', url: 'https://health.kdca.go.kr' },
@@ -61,3 +62,6 @@ export const CLAIM_GRAPH: EvidenceRecord[] = [
   { subject: '식이요법', relation: 'manages', objectDisease: '비만', evidenceLevel: 'official_guideline', strength: 'moderate',
     citation: { portal: '질병관리청 국가건강정보포털', title: '비만 — 식사 관리', url: 'https://health.kdca.go.kr' } },
 ]
+
+// 본체 + 확장(인정기능성·위험요인) 결합 — §13.1
+export const CLAIM_GRAPH: EvidenceRecord[] = [...CLAIM_GRAPH_BASE, ...CLAIM_GRAPH_EXT]

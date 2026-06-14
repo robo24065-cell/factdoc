@@ -1,4 +1,5 @@
 // 한국어 건강-클레임 온톨로지 (동의어층) + 분류 헬퍼 — CLAUDE.md §13.5
+import { ONTOLOGY_EXT } from './ontology-ext'
 
 export type TermType = 'subject' | 'disease'
 
@@ -6,10 +7,10 @@ export interface OntologyEntry {
   canonical: string
   variants: string[]
   type: TermType
-  tags?: string[]  // disease: 'chronic_irreversible','infectious' / subject: 'supplement','food','folk','drug','behavior','vaccine','nutrient'
+  tags?: string[]  // disease: 'chronic_irreversible','infectious','cancer' / subject: 'supplement','food','folk','drug','behavior','vaccine','nutrient'
 }
 
-export const ONTOLOGY: OntologyEntry[] = [
+const ONTOLOGY_BASE: OntologyEntry[] = [
   // ── 질환 ──
   { canonical: '제2형당뇨', variants: ['당뇨', '당뇨병', '성인당뇨', '제2형 당뇨병', '혈당병', 't2dm'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '고혈압', variants: ['고혈압', '고혈압증', 'hypertension', '높은 혈압'], type: 'disease', tags: ['chronic_irreversible'] },
@@ -46,6 +47,9 @@ export const ONTOLOGY: OntologyEntry[] = [
   { canonical: '식이요법', variants: ['식단관리', '식사조절', '당뇨식', '저당식', '저염식'], type: 'subject', tags: ['behavior'] },
   { canonical: '운동요법', variants: ['걷기운동', '걷기', '유산소운동', '운동', '신체활동'], type: 'subject', tags: ['behavior'] },
 ]
+
+// 본체 + 확장(폭) 결합 — §13.1
+export const ONTOLOGY: OntologyEntry[] = [...ONTOLOGY_BASE, ...ONTOLOGY_EXT]
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
