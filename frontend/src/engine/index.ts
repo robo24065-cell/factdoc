@@ -9,4 +9,6 @@ export function runPipeline(text: string): Judgement {
   return judge(triples, claim)
 }
 
-export type { Judgement, Verdict, TraceStep, Citation } from './types'
+export { parseClaim } from './parse'
+export { judge } from './judge'
+export type { Judgement, Verdict, TraceStep, Citation, Triple, Relation, Strength, Polarity } from './types'

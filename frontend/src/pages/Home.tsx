@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { runPipeline, type Judgement, type Verdict } from '../engine'
+import { judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { geminiTriples } from '../lib/parseRemote'
 import { logQuery } from '../lib/db'
 import { getCachedVerdict, cacheVerdict } from '../lib/cache'
 
@@ -28,7 +29,15 @@ export default function Home() {
     if (cached) {
       setResult(cached.judgement); setHit(true); void logQuery(claim, cached.judgement.verdict)
     } else {
-      const j = runPipeline(claim)
+      // 규칙 파서 + Gemini 파서 결합(중복 제거) → 룰·그래프 판정
+      const seen = new Set<string>()
+      const triples = [...parseClaim(claim), ...(await geminiTriples(claim))].filter((t) => {
+        const k = `${t.subject}|${t.relation}|${t.objectDisease}|${t.polarity}`
+        if (seen.has(k)) return false
+        seen.add(k)
+        return true
+      })
+      const j = judge(triples, claim)
       setResult(j); setHit(false); void cacheVerdict(claim, j); void logQuery(claim, j.verdict)
     }
     setLoading(false)

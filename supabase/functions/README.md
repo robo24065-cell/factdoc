@@ -21,4 +21,4 @@ const { data } = await supabase.functions.invoke('parse-claim', { body: { text }
 // data.claims → 엔진 judge()에 투입. 실패 시 규칙기반 parseClaim()으로 폴백.
 ```
 
-> 현재(2026-06-14): 전달받은 Gemini 값이 `AQ.`(임시토큰)라 미배포. `AIza...` 표준 키 확보 시 위 절차로 즉시 활성화. 그 전까지 앱은 규칙기반 파서(`engine/parse.ts`)로 동작.
+> 상태(2026-06-14): **배포 완료**(시크릿 GEMINI_API_KEY 등록, `--no-verify-jwt`). 프론트(`lib/parseRemote.ts`)가 규칙 파서 + Gemini를 결합해 판정. Edge Function 코드 수정 시 `supabase functions deploy parse-claim`로 재배포.
