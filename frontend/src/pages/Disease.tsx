@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { fetchDiseaseInfo, fetchOutbreak, type DiseaseSection, type OutbreakRow } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
+import { variantsOf } from '../engine/ontology'
+import Highlight from '../components/Highlight'
 
 export default function Disease() {
   const { name = '' } = useParams()
@@ -40,7 +42,7 @@ export default function Disease() {
           {cards.map((s, i) => (
             <div key={i} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               {s.section && <p className="text-xs font-medium text-blue-600 dark:text-blue-400">{s.section}</p>}
-              <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">{s.text}</p>
+              <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200"><Highlight text={s.text} terms={[name, ...variantsOf(name)]} /></p>
               {s.url && <a href={s.url} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs text-blue-600 dark:text-blue-400">원문 보기 →</a>}
             </div>
           ))}

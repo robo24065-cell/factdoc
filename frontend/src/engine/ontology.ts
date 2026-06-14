@@ -86,3 +86,9 @@ export function isInfectious(diseaseCanonical: string): boolean {
 export function subjectTags(subjectCanonical: string): string[] {
   return lookup.get(norm(subjectCanonical))?.tags ?? []
 }
+
+// canonical → 표면형(동의어 포함) 목록 — 근거 하이라이트(Span Grounding)용
+export function variantsOf(canonical: string): string[] {
+  const e = lookup.get(norm(canonical))
+  return e ? [e.canonical, ...e.variants] : [canonical]
+}

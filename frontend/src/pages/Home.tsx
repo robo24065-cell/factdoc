@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { checkStatClaim, classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
 import { logQuery } from '../lib/db'
@@ -11,6 +12,7 @@ import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
+import Highlight from '../components/Highlight'
 
 const VUI: Record<Verdict, { label: string; sub: string; text: string; bg: string; accent: string }> = {
   true: { label: '사실이에요', sub: '국가 공식 근거와 일치해요', text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', accent: 'bg-emerald-500' },
@@ -131,6 +133,10 @@ export default function Home() {
 
   const vui = result ? VUI[result.verdict] : null
   const steps = result ? result.trace.filter((s) => s.outcome && s.kind !== 'normalize') : []
+  // 근거 하이라이트(Span Grounding)용 — 주장의 질병·주체 표면형
+  const highlightTerms = result
+    ? [...new Set(result.triples.flatMap((t) => [...variantsOf(t.objectDisease), ...variantsOf(t.subject)]).filter((x) => x && x !== '(미상)'))]
+    : []
 
   return (
     <div>
@@ -294,7 +300,7 @@ export default function Home() {
                   {evidence.map((e, i) => (
                     <li key={i} className="text-sm">
                       {e.section && <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{e.section}</span>}
-                      <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300">{cleanSnippet(e.text)}</p>
+                      <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300"><Highlight text={cleanSnippet(e.text)} terms={highlightTerms} /></p>
                       <span className="text-[11px] text-slate-400">
                         {e.portal || '질병관리청'}
                         {e.url && (<> · <a href={e.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline dark:text-blue-400">원문 →</a></>)}
