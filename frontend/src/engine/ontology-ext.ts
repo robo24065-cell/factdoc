@@ -87,4 +87,17 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '생강', variants: ['ginger', '생강차'], type: 'subject', tags: ['food', 'folk'] },
   { canonical: '도라지', variants: ['길경', '도라지즙', '도라지청'], type: 'subject', tags: ['food', 'folk'] },
   { canonical: '노니', variants: ['noni', '노니주스'], type: 'subject', tags: ['folk'] },
+
+  // ── 위험요인 음식·행동(조언 질문·위험요인 판정용) ──
+  { canonical: '튀긴음식', variants: ['튀긴 음식', '튀김', '기름진음식', '기름진 음식', '기름진', '부침개', '치킨', '고지방식', '고지방 음식', '지방많은 음식', '지방 많은 음식'], type: 'subject', tags: ['food', 'nutrient'] },
+  { canonical: '포화지방', variants: ['동물성지방', '동물성 지방', '삼겹살', '버터', '비계', '라드'], type: 'subject', tags: ['food', 'nutrient'] },
+  { canonical: '트랜스지방', variants: ['마가린', '쇼트닝', '경화유'], type: 'subject', tags: ['food', 'nutrient'] },
+  { canonical: '가공식품', variants: ['인스턴트', '라면', '가공육', '햄', '소시지', '패스트푸드', '인스턴트 식품'], type: 'subject', tags: ['food'] },
+  { canonical: '음주', variants: ['술', '알코올', '과음', '맥주', '소주', '음주습관'], type: 'subject', tags: ['behavior', 'food'] },
+  { canonical: '야식', variants: ['밤참', '야식습관', '늦은 밤 음식'], type: 'subject', tags: ['behavior', 'food'] },
+  { canonical: '과식', variants: ['폭식', '과식습관'], type: 'subject', tags: ['behavior'] },
+  { canonical: '흡연', variants: ['담배', '담배를 피', '담배 피', '흡연습관', '골초', '담배를 오래'], type: 'subject', tags: ['behavior'] },
+  { canonical: '카페인', variants: ['커피', '에너지음료', '카페인 음료'], type: 'subject', tags: ['food'] },
+  { canonical: '아이스크림', variants: ['빙과', '찬 음식', '차가운 음식', '찬 음료'], type: 'subject', tags: ['food'] },
+  { canonical: '좌식생활', variants: ['운동부족', '운동 부족', '앉아만', '활동부족'], type: 'subject', tags: ['behavior'] },
 ]

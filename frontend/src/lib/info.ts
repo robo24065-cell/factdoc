@@ -2,12 +2,15 @@
 // 2단계: ① 공식 발췌 먼저(빠름) → ② AI 요약 비동기 채움.
 import { supabase } from './supabase'
 import { fetchDiseaseInfo, type DiseaseSection } from './db'
+import type { Citation } from '../engine'
 
 export interface InfoAnswer {
   disease: string
   summary: string
   sections: DiseaseSection[]
   hasOfficial: boolean
+  citation?: Citation     // 관리 안내 출처(질병청)
+  isGuidance?: boolean    // 조언/관리 안내(결정론) 여부
 }
 
 // ① 공식 발췌(코퍼스) — 빠른 1단계

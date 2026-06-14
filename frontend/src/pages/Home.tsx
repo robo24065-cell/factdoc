@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { checkStatClaim, classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { adviceAnswer, checkStatClaim, classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -70,13 +70,17 @@ export default function Home() {
     const intent = classifyIntent(claim)
     if (intent.intent === 'info' && intent.disease) {
       const disease = intent.disease
-      const sections = await fetchDiseaseSections(disease) // ① 공식 발췌 먼저
-      setInfo({ disease, summary: '', sections, hasOfficial: sections.length > 0 })
-      setLoading(false); setInfoSummarizing(true)
+      const adv = adviceAnswer(claim) // 조언/관리 안내(결정론, 있으면 즉시)
+      const sections = await fetchDiseaseSections(disease)
+      setInfo({ disease, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
+      setLoading(false)
       void logQuery(claim, 'unverified', 'info')
-      const summary = await explainDiseaseInfo(disease, sections) // ② 요약 채움
-      setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary } : prev))
-      setInfoSummarizing(false)
+      if (!adv) { // 정의형 질문이면 Gemini 요약
+        setInfoSummarizing(true)
+        const summary = await explainDiseaseInfo(disease, sections)
+        setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary } : prev))
+        setInfoSummarizing(false)
+      }
       return
     }
 
@@ -180,9 +184,9 @@ export default function Home() {
             <div className="h-11 w-1.5 rounded-full bg-blue-500" />
             <div>
               <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">{info.disease}</p>
-              <p className="text-xs text-slate-500">질병관리청 공식 건강정보</p>
+              <p className="text-xs text-slate-500">{info.isGuidance ? '질병관리청 건강관리 안내' : '질병관리청 공식 건강정보'}</p>
             </div>
-            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">정보</span>
+            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{info.isGuidance ? '관리 안내' : '정보'}</span>
           </div>
           <div className="p-4">
             {info.summary ? (
@@ -195,6 +199,9 @@ export default function Home() {
             ) : info.hasOfficial ? (
               <p className="text-sm text-slate-500">아래 질병관리청 공식 자료를 확인하세요.</p>
             ) : null}
+            {info.summary && info.citation && (
+              <p className="mt-1.5 text-[11px] text-slate-400">출처: {info.citation.portal} — {info.citation.title}</p>
+            )}
 
             {info.sections.length > 0 && (
               <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">

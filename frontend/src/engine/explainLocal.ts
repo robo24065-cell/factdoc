@@ -1,6 +1,7 @@
 // 결정론적 설명문 — 판정 + 발동한 룰/근거에서 사람 말로 즉시 생성(LLM 불필요).
 // Gemini가 다운/쿼터소진이어도 항상 진짜 답을 준다. Gemini 설명이 오면 그걸로 교체(더 자연스러움).
 import type { Judgement } from './types'
+import { guidanceFor } from './guidance'
 
 export function explainLocal(j: Judgement): string {
   const has = (label: string) => j.trace.some((s) => s.label.includes(label))
@@ -35,6 +36,10 @@ export function explainLocal(j: Judgement): string {
   if (j.verdict === 'false')
     return `국가 공식 근거와 맞지 않아 사실로 보기 어렵습니다${cite}.`
 
-  // 보류
+  // 보류 — 질환이 인식되면 차가운 '확인 어려움' 대신 표준 관리 안내를 제공
+  if (disease) {
+    const g = guidanceFor(disease)
+    if (g) return `이 주장 자체를 뒷받침할 공식 근거는 분명치 않지만, 참고로 ${g.text} 정확한 진단·처방은 전문가와 상담하세요.`
+  }
   return `${disease ? `'${disease}' 관련 ` : ''}이 주장에 대조할 국가 공식 근거가 아직 없어 사실 여부를 단정하기 어려워요. 근거가 없다는 건 효과를 보장하지도, 부정하지도 않는다는 뜻이에요. 정확한 정보는 전문가와 상담하세요.`
 }
