@@ -21,6 +21,11 @@ export function explainLocal(j: Judgement): string {
     return `약이나 병원 치료를 임의로 끊고 대체하라는 주장은 표준치료에 어긋나 위험할 수 있어요. 방향이 일부 맞더라도 과장된 주장입니다${cite}.`
   if (has('반증 매칭'))
     return `국가 공식 근거는 이 주장과 반대 방향을 가리켜요. 그래서 사실로 보기 어렵습니다${cite}.`
+  if (has('KNHANES 정합성')) {
+    if (j.verdict === 'true') return `주장한 수치가 질병관리청 국민건강영양조사(KNHANES) 공식 유병률 분포와 대체로 부합해요${cite}.`
+    if (j.verdict === 'partial') return `방향은 맞지만 수치가 공식 통계보다 과장(또는 축소)됐어요. 국민건강영양조사 분포와 비교하면 정확하지 않습니다${cite}.`
+    return `주장한 수치가 질병관리청 국민건강영양조사(KNHANES) 공식 유병률과 크게 어긋나요(과대/과소). 사실로 보기 어렵습니다${cite}.`
+  }
 
   // 판정 기반(클레임그래프 매칭 등)
   if (j.verdict === 'true')

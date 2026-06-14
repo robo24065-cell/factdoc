@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { checkStatClaim, classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
 import { logQuery } from '../lib/db'
@@ -53,7 +53,17 @@ export default function Home() {
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
     setInfo(null); setInfoSummarizing(false); setResult(null)
 
-    // 0) 의도 분류 — "X가 뭔가요/증상/예방" 정보질문이면 공식정보로 바로 응답(판정 아님)
+    // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론
+    const stat = checkStatClaim(claim)
+    if (stat) {
+      const local = explainLocal(stat)
+      setResult(stat); setHitKind(null); setLoading(false); setExplanation(local)
+      void logQuery(claim, stat.verdict)
+      void cacheVerdict(claim, stat, local)
+      return
+    }
+
+    // 0b) 의도 분류 — "X가 뭔가요/증상/예방" 정보질문이면 공식정보로 바로 응답(판정 아님)
     const intent = classifyIntent(claim)
     if (intent.intent === 'info' && intent.disease) {
       const disease = intent.disease
@@ -87,7 +97,7 @@ export default function Home() {
       }
     }
 
-    // 3) 미스 → 규칙 파서 + Gemini 파서 결합 → 룰·그래프 판정
+    // 3) 미스 → 규칙 + Gemini 파싱 결합 → 룰·그래프 판정
     const triples = mergeTriples(parseClaim(claim), await geminiTriples(claim))
     const j = judge(triples, claim)
     // 결정론 설명문 즉시 표시(LLM 없어도 항상 진짜 답) → Gemini 되면 더 자연스럽게 교체

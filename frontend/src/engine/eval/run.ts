@@ -1,6 +1,6 @@
 // 평가 하니스 — 정확도·클래스별 P/R/F1·매크로F1·인용·캘리브레이션(ECE)·과잉단정·보류적정성·티어·ablation. §13.6
 // 실제 제품 파이프라인 반영: Gemini 파서(오프라인 캐시 EVAL_RAW) + 규칙 파서 병합 → 결정론 judge.
-import { parseClaim, judge } from '../index'
+import { parseClaim, judge, checkStatClaim } from '../index'
 import { rawToTriples, mergeTriples } from '../fromRaw'
 import type { Triple, Verdict } from '../types'
 import { DATASET, EVAL_META } from './dataset'
@@ -80,7 +80,7 @@ const CAL_BINS = [
 
 export function runEval(): EvalReport {
   const rows: EvalRow[] = DATASET.map((l) => {
-    const j = judge(triplesFor(l.claim), l.claim)
+    const j = checkStatClaim(l.claim) ?? judge(triplesFor(l.claim), l.claim)
     return {
       claim: l.claim, gold: l.gold, pred: j.verdict, ok: j.verdict === l.gold,
       cited: j.citations.length > 0, confidence: j.confidence, basis: l.basis,
@@ -120,28 +120,29 @@ export function runEval(): EvalReport {
     dual: { n: dRows.length, acc: dRows.length ? dRows.filter((r) => r.ok).length / dRows.length : 0 },
   }
 
-  // ── Ablation: 같은 표본(무근거 LLM이 평가된 claim)에서 4개 구성 비교 ──
-  const subsetClaims = Object.keys(ABLATION.preds)
-  const pending = subsetClaims.length === 0
-  let ablation: AblationConfig[]
-  if (pending) {
-    ablation = [
-      { key: 'ungrounded', name: '무근거 LLM', desc: 'Gemini · 데이터 없음', accuracy: 0, n: 0, pending: true },
-      { key: 'rag', name: '일반 RAG', desc: '하이브리드 검색 + LLM', accuracy: 0, n: 0, pending: true },
-      { key: 'rules', name: '룰만', desc: '룰 — 클레임그래프 없음', accuracy: 0, n: 0, pending: true },
-      { key: 'full', name: '풀(룰+그래프)', desc: 'FactDoc 엔진', accuracy: 0, n: 0, pending: true },
-    ]
-  } else {
-    const goldOf = (c: string) => ABLATION.preds[c].gold as Verdict
-    const accOf = (fn: (c: string) => Verdict) =>
-      subsetClaims.filter((c) => fn(c) === goldOf(c)).length / subsetClaims.length
-    ablation = [
-      { key: 'ungrounded', name: '무근거 LLM', desc: 'Gemini · 데이터 없음', n: subsetClaims.length, accuracy: accOf((c) => ABLATION.preds[c].ungrounded as Verdict) },
-      { key: 'rag', name: '일반 RAG', desc: '하이브리드 검색 + LLM', n: subsetClaims.length, accuracy: accOf((c) => ABLATION.preds[c].rag as Verdict) },
-      { key: 'rules', name: '룰만', desc: '룰 — 클레임그래프 없음', n: subsetClaims.length, accuracy: accOf((c) => judge(triplesFor(c), c, { useGraph: false }).verdict) },
-      { key: 'full', name: '풀(룰+그래프)', desc: 'FactDoc 엔진', n: subsetClaims.length, accuracy: accOf((c) => judge(triplesFor(c), c).verdict) },
-    ]
+  // ── Ablation ──
+  // 룰만 vs 풀(룰+그래프)은 항상 라이브(결정론) — 클래스 균형 표본에서 '그래프 기여'를 demonstrate.
+  // 무근거 LLM / 일반 RAG는 오프라인 Gemini 예측이 있을 때만(없으면 외부 59.8% 기준선으로 대체).
+  const balanced = VERDICT_ORDER.flatMap((v) => DATASET.filter((d) => d.gold === v).slice(0, 12))
+  const bGold = new Map(balanced.map((d) => [d.claim, d.gold]))
+  const accLive = (fn: (c: string) => Verdict) => {
+    const cs = [...bGold.keys()]
+    return cs.length ? cs.filter((c) => fn(c) === bGold.get(c)).length / cs.length : 0
   }
+  const subsetClaims = Object.keys(ABLATION.preds)
+  const llmReady = subsetClaims.length > 0
+  const goldOf = (c: string) => ABLATION.preds[c].gold as Verdict
+  const accOf = (fn: (c: string) => Verdict) => subsetClaims.filter((c) => fn(c) === goldOf(c)).length / subsetClaims.length
+  const ablation: AblationConfig[] = [
+    llmReady
+      ? { key: 'ungrounded', name: '무근거 LLM', desc: 'Gemini · 데이터 없음', n: subsetClaims.length, accuracy: accOf((c) => ABLATION.preds[c].ungrounded as Verdict) }
+      : { key: 'ungrounded', name: '무근거 LLM', desc: '쿼터 대기 · 외부 기준선 참고', n: 0, accuracy: 0, pending: true },
+    llmReady
+      ? { key: 'rag', name: '일반 RAG', desc: '하이브리드 검색 + LLM', n: subsetClaims.length, accuracy: accOf((c) => ABLATION.preds[c].rag as Verdict) }
+      : { key: 'rag', name: '일반 RAG', desc: '쿼터 대기', n: 0, accuracy: 0, pending: true },
+    { key: 'rules', name: '룰만', desc: '룰 — 클레임그래프 없음', n: balanced.length, accuracy: accLive((c) => (checkStatClaim(c) ?? judge(triplesFor(c), c, { useGraph: false })).verdict) },
+    { key: 'full', name: '풀(룰+그래프)', desc: 'FactDoc 엔진', n: balanced.length, accuracy: accLive((c) => (checkStatClaim(c) ?? judge(triplesFor(c), c)).verdict) },
+  ]
 
   return {
     rows, total: rows.length, correct, accuracy, macroF1, citationCoverage, perClass, confusion,
