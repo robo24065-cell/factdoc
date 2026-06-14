@@ -121,14 +121,15 @@ export default function Home() {
     setResult(j); setHitKind(null); setLoading(false); setExplanation(local)
     void logQuery(claim, j.verdict)
 
-    // 3.5) 보류 + 질병 인식 → 코퍼스 그라운딩(손코딩 트리플 없어도 실제 KDCA 본문으로 답)
-    if (j.verdict === 'unverified') {
-      const dz = findInText(claim, 'disease')
-      const subjE = findInText(claim, 'subject')
-      if (dz) {
-        const g = await fetchGroundedAnswer(variantsOf(dz.canonical), subjE ? variantsOf(subjE.canonical) : [])
-        if (g.length) {
-          setGrounded(g)
+    // 3.5) 코퍼스 그라운딩 — 질병 인식 시 그 질병의 공식 본문에서만 관련 자료를 가져와 표시(무관 자료 방지).
+    //      보류면 치료맥락 본문으로 판정 보강(손코딩 트리플 없어도 실제 KDCA 본문으로 답).
+    const dz = findInText(claim, 'disease')
+    const subjE = findInText(claim, 'subject')
+    if (dz) {
+      const g = await fetchGroundedAnswer(variantsOf(dz.canonical), subjE ? variantsOf(subjE.canonical) : [])
+      if (g.length) {
+        setGrounded(g)
+        if (j.verdict === 'unverified') {
           const beneficial = /(효과|좋|낫|도움|바르|치료|관리|개선|쓰)/.test(claim) && !/(안\s|못\s|효과 ?없|소용없|거짓|아니)/.test(claim)
           const sN = subjE ? subjE.canonical.toLowerCase().replace(/\s+/g, '') : ''
           const treHit = g.find((x) => x.treatment && (!sN || x.text.toLowerCase().replace(/\s+/g, '').includes(sN)))
@@ -141,11 +142,10 @@ export default function Home() {
             setExplanation(local)
           }
         }
+      } else if (vec) {
+        searchEvidence(claim, vec, 3, termsOf(j.triples)).then(setEvidence) // 코퍼스 본문 없을 때만 하이브리드 보조
       }
     }
-
-    // 4) 하이브리드 근거검색(관련 공식 자료) — 임베딩 재사용 + 주장 용어로 관련성 필터
-    if (vec) searchEvidence(claim, vec, 3, termsOf(j.triples)).then(setEvidence)
 
     // 5) AI 설명문(되면 교체, 다운/쿼터소진이면 로컬 유지) → 캐시 저장
     setExplaining(true)
