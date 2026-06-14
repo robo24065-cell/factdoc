@@ -1,13 +1,40 @@
 <!doctype html>
-<html lang="en">
+<html lang="ko">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>frontend</title>
+    <title>FactDoc — 국가 공식데이터 건강정보 팩트체커</title>
+    <style>
+      #boot {
+        position: fixed; inset: 0; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 18px;
+        font-family: system-ui, 'Segoe UI', Roboto, sans-serif; color: #0f172a;
+        background: #ffffff;
+      }
+      #boot .logo { font-size: 28px; font-weight: 500; letter-spacing: -0.5px; }
+      #boot .tag { font-size: 13px; color: #64748b; max-width: 320px; text-align: center; }
+      #boot .spin {
+        width: 34px; height: 34px; border-radius: 50%;
+        border: 3px solid #e2e8f0; border-top-color: #0f172a;
+        animation: factdoc-spin 0.8s linear infinite;
+      }
+      @keyframes factdoc-spin { to { transform: rotate(360deg); } }
+      @media (prefers-color-scheme: dark) {
+        #boot { background: #020617; color: #f8fafc; }
+        #boot .tag { color: #94a3b8; }
+        #boot .spin { border-color: #1e293b; border-top-color: #f8fafc; }
+      }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <div id="boot">
+        <div class="spin"></div>
+        <div class="logo">FactDoc</div>
+        <div class="tag">국가 공식데이터로 건강정보를 검증하는 중…</div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
