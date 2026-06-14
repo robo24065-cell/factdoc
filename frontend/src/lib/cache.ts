@@ -70,6 +70,9 @@ export interface ReviewItem {
   verdict: Verdict
   tier: Tier
   query_count: number
+  created_at: string
+  needs_review: boolean
+  review_reason: string | null
 }
 
 export async function fetchReviewQueue(): Promise<ReviewItem[] | null> {
@@ -77,30 +80,55 @@ export async function fetchReviewQueue(): Promise<ReviewItem[] | null> {
   try {
     const { data } = await supabase
       .from('verdict_cache')
-      .select('id,canonical_claim,verdict,tier,query_count')
+      .select('id,canonical_claim,verdict,tier,query_count,created_at,needs_review,review_reason')
+      .order('needs_review', { ascending: false })
       .order('query_count', { ascending: false })
-      .limit(50)
+      .limit(100)
     return (data as ReviewItem[] | null) ?? []
   } catch {
     return null
   }
 }
 
+// 티어 변경(검증완료 시 재검토 플래그 해제)
 export async function setTier(id: number, tier: Tier): Promise<boolean> {
   if (!supabase) return false
   try {
-    const { error } = await supabase.from('verdict_cache').update({ tier }).eq('id', id)
+    const patch = tier === 'verified' ? { tier, needs_review: false, review_reason: null } : { tier }
+    const { error } = await supabase.from('verdict_cache').update(patch).eq('id', id)
     return !error
   } catch {
     return false
   }
 }
 
-// 관리자가 판정 자체를 교정(+검증완료 승격). RLS: verdict_cache update 허용(0003).
+// 관리자 판정 교정(+검증완료 승격, 재검토 해제)
 export async function setVerdict(id: number, verdict: Verdict): Promise<boolean> {
   if (!supabase) return false
   try {
-    const { error } = await supabase.from('verdict_cache').update({ verdict, tier: 'verified' }).eq('id', id)
+    const { error } = await supabase.from('verdict_cache').update({ verdict, tier: 'verified', needs_review: false, review_reason: null }).eq('id', id)
+    return !error
+  } catch {
+    return false
+  }
+}
+
+// 캐시 항목 삭제
+export async function deleteCached(id: number): Promise<boolean> {
+  if (!supabase) return false
+  try {
+    const { error } = await supabase.from('verdict_cache').delete().eq('id', id)
+    return !error
+  } catch {
+    return false
+  }
+}
+
+// 재검토로 보내기(검증완료 → 자동·미검증, 사유 표시)
+export async function flagForReview(id: number, reason: string): Promise<boolean> {
+  if (!supabase) return false
+  try {
+    const { error } = await supabase.from('verdict_cache').update({ needs_review: true, review_reason: reason, tier: 'auto_unverified' }).eq('id', id)
     return !error
   } catch {
     return false
