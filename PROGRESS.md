@@ -60,6 +60,7 @@
 - **(06-14) 기능 심화 A~D**: A 분석모델(6대 카테고리·식약처 인정기능성·Gemini Edge Function 배포준비, 평가 27/27) / B 감염병 패널 DB연동(+감염병포털 API 배치 템플릿) / C verdict_cache 캐시·사람검토큐(/review·검증완료 승격) / D 코퍼스 적재 파이프라인(문서→청크 source_span→자동트리플 tier=자동·미검증). DB: verified 19 + 자동 8 = 27 트리플. **미해결: Gemini 표준키(AIza…)·감염병포털 엔드포인트(OUTBREAK_ENDPOINT)·코퍼스 임베딩(BGE-m3).**
 - **(06-14) Gemini 파서 라이브 + 사용자/관리자 분리**: parse-claim Edge Function 배포(시크릿 등록·--no-verify-jwt), 프론트가 규칙+Gemini 결합 파싱→판정(브라우저 호출 검증). 사용자(홈/유행/내정보 토스풍 모바일)·관리자(/admin 게이트: 대시보드/검토/평가/비교) 분리. 감염병 API 엔드포인트(EIDAPIService) 확정·키 통과했으나 요청변수 104 에러(정의서 확인/키 전파 대기). **다음: 감염병 요청변수, BGE-m3 임베딩, 실제 Supabase Auth.**
 - **(06-14) 두 정부 API 라이브 + 실코퍼스 + UX 수정**: ① 감염병(data.go.kr EIDAPIService/Disease, resType=2·searchYear) → outbreak_trend 실데이터(전년 대비 추세). ② 국가건강정보포털(api.kdca.go.kr/healthInfo, https·curl) → 질병청 공식 콘텐츠 8개=127청크+22 자동트리플, Gemini 1024d 임베딩(132). ③ 임베딩+의미검색(chunk.embedding HNSW). ④ 소비자 PC 반응형·검토큐 판정교정·중복분포 인플레 수정·주간가짜정보 실데이터. **다음: 하이브리드 검색/시맨틱 캐시·평가 강화·Supabase Auth·QA. 코퍼스 확장(당뇨/고혈압 등 cntntsSn 추가).**
+- **(06-14) 엔진 커버리지·AI설명·검토큐·질병상세**: ① 최장일치 매칭(기립성저혈압 오매칭 수정)+위험요인/감염경로 룰+비만/코로나/설탕 등(평가 31/31). ② AI 설명문 Edge Function(explain-verdict, thinking off)→판정을 사람 말로(출처 인용·내부용어 제거), explanation 캐시. ③ 검토큐 삭제·재검토(사유)·오래됨 감지·재검증 배치. ④ 유행 '관련정보'→질병상세(/disease/:name, 코퍼스 섹션). **다음: 하이브리드 검색+시맨틱 캐시(임베딩 활용).**
 
 ## 블로커 / 필요한 것
 - [x] Gemini 표준 API 키(AIza) 수령 → parse-claim Edge Function 배포·프론트 연결 완료(규칙+Gemini 결합, 브라우저 호출 확인).
