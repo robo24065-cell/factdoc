@@ -42,7 +42,7 @@ export default function Dashboard() {
 
       <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi label="검증한 주장" value={db ? db.checks.toLocaleString() : '1,284'} hint={db ? '고유 주장(verdict_cache)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
-        <Kpi label="판정 정확도" value={`${(evalReport.accuracy * 100).toFixed(0)}%`} hint={`시드 ${evalReport.correct}/${evalReport.total}`} accent="text-emerald-600" />
+        <Kpi label="판정 정확도" value={`${(evalReport.byTier.verified.acc * 100).toFixed(0)}%`} hint={`검증코어 ${evalReport.byTier.verified.n}건 · 광역 ${(evalReport.accuracy * 100).toFixed(0)}%(복문=Gemini)`} accent="text-emerald-600" />
         <Kpi label="인용 정확도" value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
         <Kpi label="근거 트리플" value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
       </div>
@@ -96,10 +96,12 @@ export default function Dashboard() {
 
         <Panel title="AI 성능 검증" desc="시드 라벨셋 자동 채점 결과" badge="실데이터">
           <div className="space-y-3 pt-1">
-            <Metric label="판정 정확도" value={evalReport.accuracy} />
+            <Metric label="판정 정확도(검증코어)" value={evalReport.byTier.verified.acc} />
             <Metric label="인용 정확도" value={evalReport.citationCoverage} />
             <Metric label="평균 F1" value={f1Avg} />
-            <p className="pt-1 text-xs text-slate-400">진실판단은 룰·그래프 · LLM 아님</p>
+            <p className="pt-1 text-xs text-slate-400">
+              광역 듀얼라벨 {evalReport.byTier.dual.n}건(κ {evalReport.meta.kappa?.toFixed(2) ?? '—'}) {(evalReport.byTier.dual.acc * 100).toFixed(0)}% · 복문은 Gemini 파서 영역. 진실판단은 룰·그래프(LLM 아님).
+            </p>
           </div>
         </Panel>
 
