@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { fetchDiseaseInfo, fetchOutbreak, type DiseaseSection, type OutbreakRow } from '../lib/db'
+import { fetchDiseaseFakeClaims, fetchDiseaseInfo, fetchOutbreak, type DiseaseFakeClaim, type DiseaseSection, type OutbreakRow } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
 import { variantsOf } from '../engine/ontology'
 import Highlight from '../components/Highlight'
@@ -9,9 +9,11 @@ export default function Disease() {
   const { name = '' } = useParams()
   const [sections, setSections] = useState<DiseaseSection[] | null>(null)
   const [outbreak, setOutbreak] = useState<OutbreakRow | null>(null)
+  const [fakes, setFakes] = useState<DiseaseFakeClaim[]>([])
 
   useEffect(() => {
     fetchDiseaseInfo(name).then(setSections)
+    fetchDiseaseFakeClaims(name).then(setFakes)
     fetchOutbreak().then((rows) =>
       setOutbreak(rows?.find((r) => r.disease.includes(name) || name.includes(r.disease)) ?? null),
     )
@@ -35,6 +37,27 @@ export default function Disease() {
         </div>
       )}
 
+      {/* §13.10a 퍼널: 이 질병 관련 가짜정보 먼저 → 탭하면 검증 */}
+      {fakes.length > 0 && (
+        <div className="mt-4">
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이 질병 관련 가짜정보</h2>
+          <div className="mt-2 space-y-2">
+            {fakes.map((f, i) => (
+              <Link key={i} to={`/?q=${encodeURIComponent(f.claim)}`}
+                className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+                <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${f.verdict === 'false' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40'}`}>
+                  {f.verdict === 'false' ? '허위' : '과장'}
+                </span>
+                <span className="flex-1 truncate text-sm text-slate-800 dark:text-slate-100">{f.claim}</span>
+                <span className="text-slate-300">›</span>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-1 text-[11px] text-slate-400">탭하면 근거와 함께 검증 결과를 볼 수 있어요.</p>
+        </div>
+      )}
+
+      <h2 className="mt-5 text-sm font-medium text-slate-700 dark:text-slate-200">📘 질병청 공식 정보</h2>
       {sections === null ? (
         <p className="mt-4 text-sm text-slate-400">불러오는 중…</p>
       ) : cards.length > 0 ? (

@@ -83,6 +83,29 @@ export async function fetchOutbreak(): Promise<OutbreakRow[] | null> {
   }
 }
 
+export interface DiseaseFakeClaim { claim: string; verdict: Verdict }
+
+// 질병 관련 흔한 가짜정보(허위·과장 캐시) — §13.10a 디스커버리 퍼널. 동의어 확장 + 조회수 내림차순.
+export async function fetchDiseaseFakeClaims(name: string, limit = 4): Promise<DiseaseFakeClaim[]> {
+  if (!supabase) return []
+  try {
+    const entry = normalizeTerm(name)
+    const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
+      .filter((s) => s && s.length >= 2 && !s.includes(',')).slice(0, 5)
+    const orFilter = terms.map((s) => `canonical_claim.ilike.%${s}%`).join(',')
+    const { data } = await supabase
+      .from('verdict_cache')
+      .select('canonical_claim,verdict,query_count')
+      .in('verdict', ['false', 'partial'])
+      .or(orFilter)
+      .order('query_count', { ascending: false })
+      .limit(limit)
+    return (data ?? []).map((r) => ({ claim: r.canonical_claim as string, verdict: r.verdict as Verdict }))
+  } catch {
+    return []
+  }
+}
+
 export interface DiseaseSection { section: string; text: string; url: string | null; portal: string }
 
 // 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 동의어(온톨로지) 확장 검색 — 예: 제2형당뇨↔당뇨병.
