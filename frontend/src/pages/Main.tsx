@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { runPipeline, type Judgement, type Verdict } from '../engine'
+import { logQuery } from '../lib/db'
 
 const VERDICTS: Record<Verdict, { label: string; badge: string; ring: string }> = {
   true: { label: '사실', badge: 'bg-emerald-100 text-emerald-800', ring: 'border-emerald-300' },
@@ -27,7 +28,9 @@ export default function Main() {
   function check(text: string) {
     const claim = text.trim()
     if (!claim) return
-    setResult(runPipeline(claim))
+    const j = runPipeline(claim)
+    setResult(j)
+    void logQuery(claim, j.verdict) // Supabase query_log 적재(비차단)
   }
 
   const v = result ? VERDICTS[result.verdict] : null

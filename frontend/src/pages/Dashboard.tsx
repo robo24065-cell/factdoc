@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import {
   ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area,
   XAxis, YAxis, Tooltip, CartesianGrid,
@@ -7,12 +7,22 @@ import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
   diabetesPrevalence, outbreakTrend, topMisinfo, outbreakList,
 } from './dashboardData'
+import { fetchDbStats, type DbStats } from '../lib/db'
+import type { Verdict } from '../engine'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
 const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }
-const totalChecked = verdictDist.reduce((s, d) => s + d.value, 0)
 
 export default function Dashboard() {
+  const [db, setDb] = useState<DbStats | null>(null)
+  useEffect(() => { fetchDbStats().then(setDb) }, [])
+
+  const useDbDist = !!db && db.queries > 0
+  const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
+  const distTotal = distData.reduce((s, d) => s + d.value, 0)
+  const triples = db?.triples ?? assetCounts.triples
+  const terms = db?.terms ?? assetCounts.terms
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -20,36 +30,39 @@ export default function Dashboard() {
           <h1 className="text-2xl font-medium text-slate-900 dark:text-white">대시보드</h1>
           <p className="mt-1 text-sm text-slate-500">국가 공식데이터 기반 건강정보 검증 현황 · 반응형(PC 3열·태블릿 2열·모바일 1열)</p>
         </div>
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-800">일부 패널은 데모 데이터</span>
+        <div className="flex items-center gap-2">
+          <span className={`rounded-full px-3 py-1 text-xs ${db ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
+            {db ? '● DB 연결됨' : '○ 로컬 모드'}
+          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-800">일부 패널은 데모 데이터</span>
+        </div>
       </div>
 
-      {/* KPI */}
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label="누적 검증" value="1,284" hint="이번 주 +312" accent="text-indigo-600" demo />
+        <Kpi label="누적 검증" value={db ? db.queries.toLocaleString() : '1,284'} hint={db ? '실시간(query_log)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
         <Kpi label="판정 정확도" value={`${(evalReport.accuracy * 100).toFixed(0)}%`} hint={`시드 ${evalReport.correct}/${evalReport.total}`} accent="text-emerald-600" />
         <Kpi label="인용 정확도" value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
-        <Kpi label="커버 질환" value={`${assetCounts.diseases}`} hint={`트리플 ${assetCounts.triples}건`} accent="text-blue-600" />
+        <Kpi label="근거 트리플" value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
       </div>
 
-      {/* Bento */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-        <Panel title="판정 분포" desc="입력 주장의 4단계 판정 비율" badge="실데이터">
+        <Panel title="판정 분포" desc={useDbDist ? '실제 검증 로그의 4단계 비율' : '시드 라벨 기준 비율'} badge="실데이터">
           <div className="relative h-44">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={verdictDist} dataKey="value" nameKey="name" innerRadius={52} outerRadius={72} paddingAngle={2} stroke="none">
-                  {verdictDist.map((e) => <Cell key={e.key} fill={e.color} />)}
+                <Pie data={distData} dataKey="value" nameKey="name" innerRadius={52} outerRadius={72} paddingAngle={2} stroke="none">
+                  {distData.map((e) => <Cell key={e.key} fill={e.color} />)}
                 </Pie>
                 <Tooltip contentStyle={tooltipStyle} />
               </PieChart>
             </ResponsiveContainer>
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
-              <span className="text-2xl font-medium text-slate-900 dark:text-white">{totalChecked}</span>
+              <span className="text-2xl font-medium text-slate-900 dark:text-white">{distTotal}</span>
               <span className="text-xs text-slate-400">건</span>
             </div>
           </div>
           <div className="mt-3 grid grid-cols-2 gap-1 text-xs">
-            {verdictDist.map((e) => (
+            {distData.map((e) => (
               <div key={e.key} className="flex items-center gap-1.5">
                 <span className="h-2.5 w-2.5 rounded-full" style={{ background: e.color }} />
                 <span className="text-slate-500">{e.name}</span>
@@ -125,13 +138,15 @@ export default function Dashboard() {
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <Asset n={assetCounts.triples} label="근거 트리플" />
-            <Asset n={assetCounts.terms} label="온톨로지 용어" />
+            <Asset n={triples} label="근거 트리플" />
+            <Asset n={terms} label="온톨로지 용어" />
             <Asset n={assetCounts.synonyms} label="동의어 매핑" />
             <Asset n={assetCounts.diseases} label="질환" />
             <Asset n={assetCounts.rules} label="판정 룰" />
           </div>
-          <p className="mt-3 text-xs text-slate-400">파이프라인 1회 실행마다 질환·트리플이 누적됩니다(자동·미검증 → 검증완료 승격).</p>
+          <p className="mt-3 text-xs text-slate-400">
+            {db ? 'Supabase claim_triple·ontology_term 라이브 집계' : '파이프라인 1회 실행마다 누적(자동·미검증 → 검증완료 승격)'}
+          </p>
         </Panel>
 
         <Panel title="주간 가짜정보 TOP 5" desc="확산 중인 의심 주장" badge="데모">

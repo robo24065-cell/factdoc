@@ -1,0 +1,9 @@
+{
+  "name": "factdoc-scripts",
+  "private": true,
+  "type": "module",
+  "description": "DB 마이그레이션·시드 러너 (Supabase Postgres)",
+  "dependencies": {
+    "pg": "^8.13.1"
+  }
+}
