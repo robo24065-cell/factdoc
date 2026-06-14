@@ -1,6 +1,6 @@
 import { supabase } from './supabase'
 import { parseClaim, type Verdict } from '../engine'
-import { normalizeTerm } from '../engine/ontology'
+import { findInText, normalizeTerm } from '../engine/ontology'
 
 // 검증 1건을 query_log에 적재(비차단). ※ 캐시 히트(중복 질문)에는 호출하지 않음 → 분포 인플레 방지.
 export async function logQuery(rawText: string, verdict: Verdict, category?: string): Promise<void> {
@@ -71,6 +71,25 @@ export async function fetchTopMisinfo(limit = 5): Promise<TopClaim[] | null> {
       .map((g) => ({ claim: g.claim, verdict: g.verdict, count: g.count }))
   } catch {
     return null
+  }
+}
+
+export interface TopDisease { disease: string; count: number }
+
+// 사람들이 많이 물어본 질병 순위 — query_log 전체(주장·정보·제품 질문 불문)에서 질병 키워드 추출·집계.
+// 말이 달라도 같은 질병이면 합산(findInText 정규화). 등록된 질병만 카운트.
+export async function fetchTopDiseases(limit = 6): Promise<TopDisease[]> {
+  if (!supabase) return []
+  try {
+    const { data } = await supabase.from('query_log').select('raw_text').order('created_at', { ascending: false }).limit(600)
+    const counts = new Map<string, number>()
+    for (const r of (data ?? []) as { raw_text: string }[]) {
+      const d = findInText(r.raw_text, 'disease')
+      if (d) counts.set(d.canonical, (counts.get(d.canonical) ?? 0) + 1)
+    }
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, limit).map(([disease, count]) => ({ disease, count }))
+  } catch {
+    return []
   }
 }
 

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchOutbreak, fetchTopMisinfo, type OutbreakRow, type TopClaim } from '../lib/db'
+import { fetchOutbreak, fetchTopDiseases, fetchTopMisinfo, type OutbreakRow, type TopClaim, type TopDisease } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
 import { outbreakList } from './dashboardData'
 
@@ -20,7 +20,8 @@ const FAKE_TOP = [
 export default function Trending() {
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [top, setTop] = useState<TopClaim[] | null>(null)
-  useEffect(() => { fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop) }, [])
+  const [topDz, setTopDz] = useState<TopDisease[]>([])
+  useEffect(() => { fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchTopDiseases().then(setTopDz) }, [])
   const fakeRows = top && top.length ? top.map((t) => ({ label: t.claim, q: t.claim })) : FAKE_TOP
 
   const rows = outbreak && outbreak.length
@@ -31,6 +32,21 @@ export default function Trending() {
     <div>
       <h1 className="mt-2 text-[22px] font-semibold text-slate-900 dark:text-white">지금 조심하세요</h1>
       <p className="mt-1.5 text-sm text-slate-500">유행 중인 감염병과 떠도는 가짜정보를 모았어요.</p>
+
+      {topDz.length > 0 && (
+        <>
+          <h2 className="mt-6 text-sm font-medium text-slate-700 dark:text-slate-200">🔥 많이 찾는 질병</h2>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {topDz.map((d, i) => (
+              <Link key={d.disease} to={`/disease/${encodeURIComponent(d.disease)}`}
+                className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                <span className="text-xs font-semibold text-blue-500">{i + 1}</span>{d.disease}
+                <span className="text-[11px] text-slate-400">{d.count}</span>
+              </Link>
+            ))}
+          </div>
+        </>
+      )}
 
       <h2 className="mt-6 text-sm font-medium text-slate-700 dark:text-slate-200">🦠 유행 중인 감염병</h2>
       <div className="mt-2 space-y-2">
