@@ -9,6 +9,7 @@ import { embedText } from '../lib/embed'
 import { searchEvidence, type EvidenceChunk } from '../lib/search'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { explainVerdict } from '../lib/explain'
+import WhyTrace from '../components/WhyTrace'
 
 const VUI: Record<Verdict, { label: string; sub: string; text: string; bg: string; accent: string }> = {
   true: { label: '사실이에요', sub: '국가 공식 근거와 일치해요', text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', accent: 'bg-emerald-500' },
@@ -290,16 +291,12 @@ export default function Home() {
             {steps.length > 0 && (
               <details className="group mt-2 rounded-xl border border-slate-200 dark:border-slate-800">
                 <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-xs font-medium text-slate-500 [&::-webkit-details-marker]:hidden">
-                  판정 근거 자세히 (전문가용)
+                  🧭 판정 과정 보기 (룰·근거 추적)
                   <span className="text-slate-400 transition group-open:rotate-180">▾</span>
                 </summary>
-                <ol className="space-y-1 border-t border-slate-100 p-3 text-xs dark:border-slate-800">
-                  {steps.map((s, i) => (
-                    <li key={i} className="text-slate-500">
-                      <span className="font-medium text-slate-600 dark:text-slate-300">{s.label}</span>{s.detail ? ` · ${s.detail}` : ''}
-                    </li>
-                  ))}
-                </ol>
+                <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+                  <WhyTrace j={result} />
+                </div>
               </details>
             )}
 
