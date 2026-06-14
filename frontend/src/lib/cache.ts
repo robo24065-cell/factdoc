@@ -6,6 +6,9 @@ import { vecLiteral } from './embed'
 const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.'
 export type Tier = 'auto_unverified' | 'verified'
 
+// 엔진/온톨로지/룰을 의미 있게 바꾸면 이 버전을 올린다 → 구버전 캐시는 무시되고 재판정됨.
+export const ENGINE_VERSION = 'v3-2026-06-14'
+
 // 정규화 + FNV-1a 해시 → 시맨틱 캐시 키(추후 임베딩 ANN으로 확장)
 export function claimHash(text: string): string {
   const s = text.trim().toLowerCase().replace(/\s+/g, ' ')
@@ -26,8 +29,14 @@ export interface CacheHit {
 export async function getCachedVerdict(text: string): Promise<CacheHit | null> {
   if (!supabase) return null
   try {
-    const { data } = await supabase.from('verdict_cache').select('*').eq('claim_hash', claimHash(text)).maybeSingle()
+    const { data } = await supabase
+      .from('verdict_cache')
+      .select('*')
+      .eq('claim_hash', claimHash(text))
+      .eq('engine_version', ENGINE_VERSION) // 구버전 캐시 무시 → 재판정
+      .maybeSingle()
     if (!data) return null
+    if (data.verdict === 'unverified') return null // 보류는 서빙 안 함(엔진 개선 시 재판정)
     void supabase.from('verdict_cache').update({ query_count: (data.query_count ?? 0) + 1 }).eq('id', data.id)
     return {
       tier: data.tier as Tier,
@@ -55,6 +64,7 @@ export async function cacheVerdict(
   vec?: number[] | null,
 ): Promise<void> {
   if (!supabase) return
+  if (j.verdict === 'unverified') return // 보류는 캐시하지 않음(엔진/코퍼스 개선 시 매번 재판정)
   try {
     const row: Record<string, unknown> = {
       claim_hash: claimHash(text),
@@ -65,6 +75,7 @@ export async function cacheVerdict(
       decision_trace: j.trace,
       explanation: explanation ?? null,
       tier: 'auto_unverified',
+      engine_version: ENGINE_VERSION,
     }
     if (vec && vec.length) row.embedding = vecLiteral(vec) // 시맨틱 캐시용 임베딩 동시 저장
     await supabase.from('verdict_cache').upsert(row, { onConflict: 'claim_hash' })
@@ -103,6 +114,7 @@ export async function getSemanticCachedVerdict(text: string, vec: number[]): Pro
       query_embedding: vecLiteral(vec),
       match_threshold: 0.92,
       fresh_only: true,
+      req_version: ENGINE_VERSION,
     })
     if (error || !Array.isArray(data) || data.length === 0) return null
     const row = data[0] as {

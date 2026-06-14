@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import type { Verdict } from '../engine'
+import { normalizeTerm } from '../engine/ontology'
 
 // 검증 1건을 query_log에 적재(비차단). ※ 캐시 히트(중복 질문)에는 호출하지 않음 → 분포 인플레 방지.
 export async function logQuery(rawText: string, verdict: Verdict, category?: string): Promise<void> {
@@ -84,11 +85,17 @@ export async function fetchOutbreak(): Promise<OutbreakRow[] | null> {
 
 export interface DiseaseSection { section: string; text: string; url: string | null; portal: string }
 
-// 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 없으면 빈 배열.
+// 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 동의어(온톨로지) 확장 검색 — 예: 제2형당뇨↔당뇨병.
 export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] | null> {
   if (!supabase) return null
   try {
-    const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').ilike('title', `%${name}%`).limit(3)
+    // 검색어 = 입력 + 정규화 동의어(중복·짧은 토큰 제거, 최대 5개)
+    const entry = normalizeTerm(name)
+    const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
+      .filter((s) => s && s.length >= 2 && !s.includes(','))
+      .slice(0, 5)
+    const orFilter = terms.map((s) => `title.ilike.%${s}%`).join(',')
+    const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').or(orFilter).limit(4)
     if (!docs || docs.length === 0) return []
     const ids = (docs as { id: number }[]).map((d) => d.id)
     const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).limit(12)
