@@ -15,7 +15,7 @@ export const assetCounts = {
   terms: ONTOLOGY.length,
   synonyms: ONTOLOGY.reduce((s, e) => s + e.variants.length, 0),
   diseases: ONTOLOGY.filter((e) => e.type === 'disease').length,
-  rules: 4, // 식약처·완치·대체치료·반증
+  rules: 8, // 식약처·완치·완치부정·대체치료·감염경로·반증·유병률정합성·치명률
 }
 
 const dist: Record<Verdict, number> = { true: 0, partial: 0, false: 0, unverified: 0 }

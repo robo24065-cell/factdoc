@@ -23,7 +23,6 @@ export default function Dashboard() {
   const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
   const distTotal = distData.reduce((s, d) => s + d.value, 0)
   const triples = db?.triples ?? assetCounts.triples
-  const terms = db?.terms ?? assetCounts.terms
 
   return (
     <div>
@@ -153,14 +152,14 @@ export default function Dashboard() {
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <Asset n={triples} label="근거 트리플" />
-            <Asset n={terms} label="온톨로지 용어" />
+            <Asset n={assetCounts.triples} label="근거 트리플" />
+            <Asset n={assetCounts.terms} label="온톨로지 용어" />
             <Asset n={assetCounts.synonyms} label="동의어 매핑" />
             <Asset n={assetCounts.diseases} label="질환" />
             <Asset n={assetCounts.rules} label="판정 룰" />
           </div>
           <p className="mt-3 text-xs text-slate-400">
-            {db ? 'Supabase claim_triple·ontology_term 라이브 집계' : '파이프라인 1회 실행마다 누적(자동·미검증 → 검증완료 승격)'}
+            엔진 클레임그래프·한국어 온톨로지·판정 룰(손이 많이 가 못 베끼는 코드 자산) {db ? `· 코퍼스 적재 트리플 ${triples}건` : ''}
           </p>
         </Panel>
 
