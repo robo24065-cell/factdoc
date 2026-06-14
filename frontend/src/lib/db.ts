@@ -38,3 +38,24 @@ export async function fetchDbStats(): Promise<DbStats | null> {
     return null
   }
 }
+
+export interface OutbreakRow {
+  disease: string
+  period: string | null
+  case_count: number | null
+  trend: string | null
+}
+
+// 감염병 트렌드(outbreak_trend) — 발생건수 내림차순. 실패 시 null → 데모 폴백.
+export async function fetchOutbreak(): Promise<OutbreakRow[] | null> {
+  if (!supabase) return null
+  try {
+    const { data } = await supabase
+      .from('outbreak_trend')
+      .select('disease,period,case_count,trend')
+      .order('case_count', { ascending: false })
+    return (data as OutbreakRow[] | null) ?? []
+  } catch {
+    return null
+  }
+}

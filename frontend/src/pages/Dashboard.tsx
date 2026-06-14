@@ -5,9 +5,9 @@ import {
 } from 'recharts'
 import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
-  diabetesPrevalence, outbreakTrend, topMisinfo, outbreakList,
+  diabetesPrevalence, topMisinfo, outbreakList,
 } from './dashboardData'
-import { fetchDbStats, type DbStats } from '../lib/db'
+import { fetchDbStats, fetchOutbreak, type DbStats, type OutbreakRow } from '../lib/db'
 import type { Verdict } from '../engine'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
@@ -15,7 +15,8 @@ const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 
 
 export default function Dashboard() {
   const [db, setDb] = useState<DbStats | null>(null)
-  useEffect(() => { fetchDbStats().then(setDb) }, [])
+  const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
+  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak) }, [])
 
   const useDbDist = !!db && db.queries > 0
   const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
@@ -115,25 +116,36 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="🚨 실시간 유행 감염병" desc="감염병포털 — 클릭 시 가짜뉴스 팩트체크 + 공식 수칙" badge="데모">
-          <div className="h-24">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={outbreakTrend} margin={{ top: 4, right: 6, left: -28, bottom: 0 }}>
-                <XAxis dataKey="week" tick={axis} axisLine={false} tickLine={false} />
-                <Tooltip contentStyle={tooltipStyle} />
-                <Area type="monotone" dataKey="인플루엔자" stroke="#f43f5e" strokeWidth={2} fill="#f43f5e" fillOpacity={0.12} />
-                <Area type="monotone" dataKey="코로나19" stroke="#6366f1" strokeWidth={2} fill="#6366f1" fillOpacity={0.1} />
-              </AreaChart>
-            </ResponsiveContainer>
-          </div>
-          <ul className="mt-2 space-y-1.5 text-sm">
-            {outbreakList.map((o) => (
-              <li key={o.name} className="flex items-center justify-between">
-                <span className="text-slate-700 dark:text-slate-200">{o.name}</span>
-                <span className={`text-xs font-medium ${o.color}`}>{o.level} · {o.trend}</span>
-              </li>
-            ))}
-          </ul>
+        <Panel title="🚨 실시간 유행 감염병" desc="감염병포털 발생현황 — 클릭 시 팩트체크 + 공식 수칙" badge={outbreak ? '실데이터' : '데모'}>
+          {outbreak && outbreak.length ? (
+            <ul className="space-y-2.5 text-sm">
+              {outbreak.map((r) => {
+                const t = trendInfo(r.trend)
+                const max = Math.max(...outbreak.map((x) => x.case_count ?? 0), 1)
+                return (
+                  <li key={r.disease}>
+                    <div className="flex items-center justify-between">
+                      <span className="text-slate-700 dark:text-slate-200">{r.disease}</span>
+                      <span className={`text-xs font-medium ${t.color}`}>{t.arrow} {(r.case_count ?? 0).toLocaleString()}건</span>
+                    </div>
+                    <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                      <div className="h-1.5 rounded-full" style={{ width: `${((r.case_count ?? 0) / max) * 100}%`, background: t.bar }} />
+                    </div>
+                  </li>
+                )
+              })}
+            </ul>
+          ) : (
+            <ul className="space-y-1.5 text-sm">
+              {outbreakList.map((o) => (
+                <li key={o.name} className="flex items-center justify-between">
+                  <span className="text-slate-700 dark:text-slate-200">{o.name}</span>
+                  <span className={`text-xs font-medium ${o.color}`}>{o.level} · {o.trend}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-3 text-xs text-slate-400">{outbreak ? 'outbreak_trend 라이브 · 최신 주차' : '데모 데이터'}</p>
         </Panel>
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
@@ -163,6 +175,12 @@ export default function Dashboard() {
       </div>
     </div>
   )
+}
+
+function trendInfo(trend: string | null) {
+  if (trend === 'up') return { arrow: '▲', color: 'text-rose-600', bar: '#f43f5e' }
+  if (trend === 'down') return { arrow: '▼', color: 'text-blue-600', bar: '#3b82f6' }
+  return { arrow: '—', color: 'text-slate-500', bar: '#94a3b8' }
 }
 
 function Panel({ title, desc, badge, span, children }: { title: string; desc: string; badge: '실데이터' | '데모'; span?: string; children: ReactNode }) {
