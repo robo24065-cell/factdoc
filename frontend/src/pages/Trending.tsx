@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
-import { fetchOutbreak, type OutbreakRow } from '../lib/db'
+import { fetchOutbreak, fetchTopMisinfo, type OutbreakRow, type TopClaim } from '../lib/db'
 import { outbreakList } from './dashboardData'
 
 function trendBadge(trend: string | null) {
@@ -18,7 +18,9 @@ const FAKE_TOP = [
 
 export default function Trending() {
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
-  useEffect(() => { fetchOutbreak().then(setOutbreak) }, [])
+  const [top, setTop] = useState<TopClaim[] | null>(null)
+  useEffect(() => { fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop) }, [])
+  const fakeRows = top && top.length ? top.map((t) => ({ label: t.claim, q: t.claim })) : FAKE_TOP
 
   const rows = outbreak && outbreak.length
     ? outbreak.map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend }))
@@ -50,7 +52,7 @@ export default function Trending() {
 
       <h2 className="mt-7 text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
       <div className="mt-2 space-y-2">
-        {FAKE_TOP.map((f, i) => (
+        {fakeRows.map((f, i) => (
           <Link key={f.q} to={`/?q=${encodeURIComponent(f.q)}`}
             className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
             <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>

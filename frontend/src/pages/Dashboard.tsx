@@ -7,7 +7,7 @@ import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
   diabetesPrevalence, topMisinfo, outbreakList,
 } from './dashboardData'
-import { fetchDbStats, fetchOutbreak, type DbStats, type OutbreakRow } from '../lib/db'
+import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import type { Verdict } from '../engine'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
@@ -16,9 +16,10 @@ const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 
 export default function Dashboard() {
   const [db, setDb] = useState<DbStats | null>(null)
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
-  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak) }, [])
+  const [top, setTop] = useState<TopClaim[] | null>(null)
+  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop) }, [])
 
-  const useDbDist = !!db && db.queries > 0
+  const useDbDist = !!db && db.checks > 0
   const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
   const distTotal = distData.reduce((s, d) => s + d.value, 0)
   const triples = db?.triples ?? assetCounts.triples
@@ -40,7 +41,7 @@ export default function Dashboard() {
       </div>
 
       <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <Kpi label="누적 검증" value={db ? db.queries.toLocaleString() : '1,284'} hint={db ? '실시간(query_log)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
+        <Kpi label="검증한 주장" value={db ? db.checks.toLocaleString() : '1,284'} hint={db ? '고유 주장(verdict_cache)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
         <Kpi label="판정 정확도" value={`${(evalReport.accuracy * 100).toFixed(0)}%`} hint={`시드 ${evalReport.correct}/${evalReport.total}`} accent="text-emerald-600" />
         <Kpi label="인용 정확도" value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
         <Kpi label="근거 트리플" value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
@@ -161,13 +162,13 @@ export default function Dashboard() {
           </p>
         </Panel>
 
-        <Panel title="주간 가짜정보 TOP 5" desc="확산 중인 의심 주장" badge="데모">
+        <Panel title="주간 가짜정보 TOP 5" desc="실제 빈출 허위·과장 주장" badge={top && top.length ? '실데이터' : '데모'}>
           <ol className="space-y-2 text-sm">
-            {topMisinfo.map((t) => (
-              <li key={t.rank} className="flex items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{t.rank}</span>
-                <span className="text-slate-700 dark:text-slate-200">{t.claim}</span>
-                <span className="ml-auto text-xs text-slate-400">{t.delta}</span>
+            {(top && top.length ? top.map((t) => ({ claim: t.claim, count: t.count })) : topMisinfo.map((t) => ({ claim: t.claim, count: 0 }))).map((t, i) => (
+              <li key={i} className="flex items-center gap-3">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{i + 1}</span>
+                <span className="flex-1 truncate text-slate-700 dark:text-slate-200">{t.claim}</span>
+                {t.count ? <span className="text-xs text-slate-400">{t.count}회</span> : null}
               </li>
             ))}
           </ol>

@@ -95,3 +95,14 @@ export async function setTier(id: number, tier: Tier): Promise<boolean> {
     return false
   }
 }
+
+// 관리자가 판정 자체를 교정(+검증완료 승격). RLS: verdict_cache update 허용(0003).
+export async function setVerdict(id: number, verdict: Verdict): Promise<boolean> {
+  if (!supabase) return false
+  try {
+    const { error } = await supabase.from('verdict_cache').update({ verdict, tier: 'verified' }).eq('id', id)
+    return !error
+  } catch {
+    return false
+  }
+}

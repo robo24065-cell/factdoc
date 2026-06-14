@@ -27,7 +27,7 @@ export default function Home() {
     setLoading(true)
     const cached = await getCachedVerdict(claim)
     if (cached) {
-      setResult(cached.judgement); setHit(true); void logQuery(claim, cached.judgement.verdict)
+      setResult(cached.judgement); setHit(true) // 캐시 히트(중복 질문)는 로그/집계 안 함
     } else {
       // 규칙 파서 + Gemini 파서 결합(중복 제거) → 룰·그래프 판정
       const seen = new Set<string>()
