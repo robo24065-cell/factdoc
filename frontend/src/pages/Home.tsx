@@ -7,6 +7,7 @@ import { logQuery } from '../lib/db'
 import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
 import { embedText } from '../lib/embed'
 import { searchEvidence, type EvidenceChunk } from '../lib/search'
+import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
@@ -192,6 +193,13 @@ export default function Home() {
                   ))}
                 </ul>
               </details>
+            )}
+
+            {preventionHint(info.disease) && (
+              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800/50">
+                <span className="font-medium text-slate-700 dark:text-slate-200">🛡 예방수칙</span>
+                <p className="mt-0.5 text-slate-600 dark:text-slate-300">{preventionHint(info.disease)}</p>
+              </div>
             )}
 
             {!info.hasOfficial && (
