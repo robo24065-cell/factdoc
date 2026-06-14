@@ -57,12 +57,14 @@ const SYS_RAG = `너는 건강 주장 판정기다. 아래 [공식자료 발췌]
 const c = new pg.Client({ connectionString: DB, ssl: { rejectUnauthorized: false } })
 await c.connect()
 
+// 무료 RPM(flash ~10-15/분) 안전 페이싱: flash 호출 간 ~4s. 단독 실행 전제(다른 Gemini 작업 종료 후).
 const preds = {}
 let i = 0
+let fails = 0
 for (const d of subset) {
   i++
   const ungrounded = await geminiVerdict(SYS_UNGROUNDED, `[주장] ${d.claim}`)
-  await sleep(1200)
+  await sleep(4000)
   let rag = 'unverified'
   try {
     const v = await embed(d.claim)
@@ -70,10 +72,12 @@ for (const d of subset) {
     const ctx = rows.map((r, k) => `(${k + 1}) ${r.text}`).join('\n') || '(관련 자료 없음)'
     rag = await geminiVerdict(SYS_RAG, `[공식자료 발췌]\n${ctx}\n\n[주장] ${d.claim}`)
   } catch (e) { console.error('RAG 실패', d.claim, e.message) }
-  await sleep(1200)
+  await sleep(4000)
+  if (ungrounded === 'unverified' && rag === 'unverified') fails++ // 모니터링: 과도하면 429 오염 의심
   preds[d.claim] = { gold: d.gold, ungrounded, rag }
-  if (i % 5 === 0) console.log(`  ${i}/${subset.length}`)
+  if (i % 5 === 0) console.log(`  ${i}/${subset.length} (both-unverified ${fails})`)
 }
+console.log(`완료 — both-unverified ${fails}/${subset.length} (높으면 429 오염 → 재실행 필요)`)
 await c.end()
 
 const out = { generatedAtNote: 'offline ablation; Gemini-2.5-flash(무근거/RAG) vs 엔진(룰만/풀)은 프론트 라이브', classCap: CLASS_CAP, subsetSize: subset.length, preds }

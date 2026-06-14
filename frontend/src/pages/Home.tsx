@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { classifyIntent, judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
 import { logQuery } from '../lib/db'
@@ -68,7 +68,8 @@ export default function Home() {
     // 1) 정확 일치 캐시(무료·즉시)
     const cached = await getCachedVerdict(claim)
     if (cached) {
-      setResult(cached.judgement); setHitKind('exact'); setExplanation(cached.explanation); setLoading(false)
+      setResult(cached.judgement); setHitKind('exact')
+      setExplanation(cached.explanation ?? explainLocal(cached.judgement)); setLoading(false)
       return // 캐시 히트(중복 질문)는 로그/집계/AI호출 안 함
     }
 
@@ -77,7 +78,8 @@ export default function Home() {
     if (vec) {
       const sem = await getSemanticCachedVerdict(claim, vec)
       if (sem) {
-        setResult(sem.judgement); setHitKind('semantic'); setExplanation(sem.explanation); setLoading(false)
+        setResult(sem.judgement); setHitKind('semantic')
+        setExplanation(sem.explanation ?? explainLocal(sem.judgement)); setLoading(false)
         if (vec) searchEvidence(claim, vec, 3, termsOf(parseClaim(claim))).then(setEvidence)
         return
       }
@@ -86,17 +88,20 @@ export default function Home() {
     // 3) 미스 → 규칙 파서 + Gemini 파서 결합 → 룰·그래프 판정
     const triples = mergeTriples(parseClaim(claim), await geminiTriples(claim))
     const j = judge(triples, claim)
-    setResult(j); setHitKind(null); setLoading(false)
+    // 결정론 설명문 즉시 표시(LLM 없어도 항상 진짜 답) → Gemini 되면 더 자연스럽게 교체
+    const local = explainLocal(j)
+    setResult(j); setHitKind(null); setLoading(false); setExplanation(local)
     void logQuery(claim, j.verdict)
 
     // 4) 하이브리드 근거검색(관련 공식 자료) — 임베딩 재사용 + 주장 용어로 관련성 필터
     if (vec) searchEvidence(claim, vec, 3, termsOf(j.triples)).then(setEvidence)
 
-    // 5) AI 설명문(판정 표시 후 채움) → 캐시에 임베딩과 함께 저장(반복/유사 시 재생성 없음)
+    // 5) AI 설명문(되면 교체, 다운/쿼터소진이면 로컬 유지) → 캐시 저장
     setExplaining(true)
     const exp = await explainVerdict(claim, j)
-    setExplanation(exp); setExplaining(false)
-    void cacheVerdict(claim, j, exp, vec)
+    if (exp) setExplanation(exp)
+    setExplaining(false)
+    void cacheVerdict(claim, j, exp || local, vec)
   }
 
   useEffect(() => {
