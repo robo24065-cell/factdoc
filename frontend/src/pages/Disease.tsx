@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 import { fetchDiseaseFakeClaims, fetchDiseaseInfo, fetchOutbreak, type DiseaseFakeClaim, type DiseaseSection, type OutbreakRow } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
 import { variantsOf } from '../engine/ontology'
+import { findInText, symptomsFor } from '../engine'
 import Highlight from '../components/Highlight'
 
 export default function Disease() {
@@ -36,6 +37,20 @@ export default function Disease() {
           <p className="mt-1 text-[11px] text-slate-400">출처: 질병관리청 감염병포털</p>
         </div>
       )}
+
+      {(() => { const sx = symptomsFor(findInText(name, 'disease')?.canonical ?? name); return sx && (
+        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+          <p className="text-sm font-medium text-slate-700 dark:text-slate-200">🩺 주요 증상 (자가 참고용)</p>
+          <ul className="mt-2 grid grid-cols-1 gap-1 sm:grid-cols-2">
+            {sx.map((s, i) => (
+              <li key={i} className="flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />{s}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 text-[11px] text-slate-400">진단이 아니에요. 증상이 의심되면 의료기관에서 확인하세요.</p>
+        </div>
+      ); })()}
 
       {/* §13.10a 퍼널: 이 질병 관련 가짜정보 먼저 → 탭하면 검증 */}
       {fakes.length > 0 && (

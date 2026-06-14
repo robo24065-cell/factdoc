@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, judge, parseClaim, targetMatchNote, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, judge, parseClaim, symptomsFor, targetMatchNote, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -267,11 +267,28 @@ export default function Home() {
               </details>
             )}
 
-            {preventionHint(info.disease) && (
-              <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm dark:bg-slate-800/50">
-                <span className="font-medium text-slate-700 dark:text-slate-200">🛡 예방수칙</span>
-                <p className="mt-0.5 text-slate-600 dark:text-slate-300">{preventionHint(info.disease)}</p>
+            {symptomsFor(info.disease) && (
+              <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">🩺 주요 증상 (자가 참고용)</p>
+                <ul className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                  {symptomsFor(info.disease)!.map((s, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />{s}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] text-slate-400">진단이 아니에요. 증상이 의심되면 의료기관에서 확인하세요.</p>
               </div>
+            )}
+
+            {preventionHint(info.disease) && (
+              <details className="group mt-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                  🛡 예방·관리 수칙 보기
+                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+                </summary>
+                <p className="px-3 pb-3 text-sm text-slate-600 dark:text-slate-300">{preventionHint(info.disease)}</p>
+              </details>
             )}
 
             {!info.hasOfficial && (
