@@ -37,7 +37,7 @@ function judgeTriple(t: Triple): SingleResult {
   trace.push({
     kind: 'normalize',
     label: '정규화',
-    detail: `(${t.subject}) —[${t.relation}]→ (${t.objectDisease}) · 강도 ${t.strength}`,
+    detail: `(${t.subject}) —[${t.relation}${t.polarity === 'negate' ? '/부정' : ''}]→ (${t.objectDisease}) · 강도 ${t.strength}`,
   })
 
   const tags = subjectTags(t.subject)
@@ -45,7 +45,7 @@ function judgeTriple(t: Triple): SingleResult {
   const chronic = isChronicIrreversible(t.objectDisease)
 
   // 룰 A — 식약처: 식품/건기식이 질병 치료·예방 표방
-  if (isFood && (t.relation === 'cures' || t.relation === 'prevents')) {
+  if (isFood && (t.relation === 'cures' || t.relation === 'prevents') && t.polarity === 'assert') {
     trace.push({ kind: 'rule', label: '식약처 룰 발동', detail: MFDS_DISEASE_CLAIM_RULE.description, outcome: '근거없음·허위' })
     citations.push(MFDS_DISEASE_CLAIM_RULE.citation)
     return { verdict: 'false', confidence: 0.9, citations, trace }
@@ -60,11 +60,26 @@ function judgeTriple(t: Triple): SingleResult {
   }
 
   // 룰 B — 완치 룰: 비가역 만성질환의 완치
-  if (t.relation === 'cures' && chronic) {
+  if (t.relation === 'cures' && chronic && t.polarity === 'assert') {
     trace.push({ kind: 'rule', label: '완치 룰 발동', detail: `${t.objectDisease}은(는) 비가역 만성질환으로 공식적으로 '관리'만 인정됩니다(완치 불가).`, outcome: '근거없음·허위' })
     const care = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.relation === 'manages')
     if (care) citations.push(care.citation)
     return { verdict: 'false', confidence: 0.88, citations, trace }
+  }
+
+  // 반증 — '효과없음' 또는 부정형 주장이 공식 유익 근거와 모순 (예: 백신 무용론)
+  const contradicts =
+    t.relation === 'no_effect' ||
+    ((t.relation === 'prevents' || t.relation === 'reduces_risk' || t.relation === 'manages') && t.polarity === 'negate')
+  if (contradicts) {
+    const ev = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && beneficial(e.relation))
+    if (ev) {
+      trace.push({ kind: 'graph_match', label: '반증 매칭', detail: `공식 근거 (${ev.subject})—[${ev.relation}]→(${ev.objectDisease}) · 근거수준 ${ev.evidenceLevel}`, outcome: '근거없음·허위(반증)' })
+      citations.push(ev.citation)
+      return { verdict: 'false', confidence: CONF[ev.evidenceLevel], citations, trace }
+    }
+    trace.push({ kind: 'coverage', label: '반증 근거 없음', detail: '이 부정 주장을 반박할 공식 근거가 코퍼스에 없습니다.', outcome: '공식근거없음·보류' })
+    return { verdict: 'unverified', confidence: 0, citations, trace }
   }
 
   // 클레임그래프 매칭

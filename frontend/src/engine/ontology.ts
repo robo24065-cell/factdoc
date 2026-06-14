@@ -6,7 +6,7 @@ export interface OntologyEntry {
   canonical: string
   variants: string[]
   type: TermType
-  tags?: string[]  // disease: 'chronic_irreversible' / subject: 'supplement','food','folk','drug','behavior'
+  tags?: string[]  // disease: 'chronic_irreversible' / subject: 'supplement','food','folk','drug','behavior','vaccine','nutrient'
 }
 
 export const ONTOLOGY: OntologyEntry[] = [
@@ -16,14 +16,16 @@ export const ONTOLOGY: OntologyEntry[] = [
   { canonical: '혈당조절', variants: ['혈당', '공복혈당', '당화혈색소', 'hba1c', '식후혈당'], type: 'disease' },
   { canonical: '면역기능', variants: ['면역', '면역력', '면역증진'], type: 'disease' },
   { canonical: '인플루엔자', variants: ['독감', '계절독감', 'flu'], type: 'disease' },
-  // ── 주체(성분/식품/요법/약물) ──
+  // ── 주체(성분/식품/요법/약물/백신) ──
   { canonical: '건강기능식품', variants: ['건기식', '보조제', '영양제', '건강식품'], type: 'subject', tags: ['supplement'] },
   { canonical: '홍삼', variants: ['홍삼농축액', '홍삼정', '고려홍삼', 'red ginseng'], type: 'subject', tags: ['supplement'] },
   { canonical: '여주', variants: ['여주즙', '여주차', '비터멜론', 'bitter melon'], type: 'subject', tags: ['food', 'folk'] },
   { canonical: '돼지감자', variants: ['뚱딴지', '돼지감자즙'], type: 'subject', tags: ['food', 'folk'] },
   { canonical: '메트포르민', variants: ['메트포민', 'metformin'], type: 'subject', tags: ['drug'] },
   { canonical: '인슐린', variants: ['insulin', '인슐린주사', '기저인슐린'], type: 'subject', tags: ['drug'] },
-  { canonical: '식이요법', variants: ['식단관리', '식사조절', '당뇨식', '저당식'], type: 'subject', tags: ['behavior'] },
+  { canonical: '인플루엔자백신', variants: ['독감백신', '독감주사', '인플루엔자 예방접종', '독감 예방접종', '독감예방주사'], type: 'subject', tags: ['vaccine'] },
+  { canonical: '나트륨', variants: ['소금', '짠 음식', '짜게', '염분'], type: 'subject', tags: ['nutrient'] },
+  { canonical: '식이요법', variants: ['식단관리', '식사조절', '당뇨식', '저당식', '저염식'], type: 'subject', tags: ['behavior'] },
   { canonical: '운동요법', variants: ['걷기운동', '걷기', '유산소운동', '운동', '신체활동'], type: 'subject', tags: ['behavior'] },
 ]
 
