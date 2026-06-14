@@ -82,25 +82,21 @@ function judgeTriple(t: Triple): SingleResult {
     return { verdict: 'unverified', confidence: 0, citations, trace }
   }
 
-  // 클레임그래프 매칭
-  const matches = CLAIM_GRAPH.filter((e) => e.objectDisease === t.objectDisease && sameDirection(e, t))
-  const exact = matches.find((e) => e.subject === t.subject)
-  const best = exact ?? matches[0]
-
-  if (best) {
-    citations.push(best.citation)
+  // 클레임그래프 매칭 (정확한 주체 일치만 — 다른 주체의 근거로 '대충 사실/과장' 금지)
+  const ev = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.subject === t.subject && sameDirection(e, t))
+  if (ev) {
+    citations.push(ev.citation)
     trace.push({
       kind: 'graph_match', label: '클레임그래프 매칭',
-      detail: `근거 (${best.subject}) —[${best.relation}]→ (${best.objectDisease}) · 근거수준 ${best.evidenceLevel}`,
-      outcome: exact ? '핵심 트리플 일치' : '동일 방향 근거 존재',
+      detail: `근거 (${ev.subject}) —[${ev.relation}]→ (${ev.objectDisease}) · 근거수준 ${ev.evidenceLevel}`,
+      outcome: '핵심 트리플 일치',
     })
-    const overstated = STRENGTH_RANK[t.strength] > STRENGTH_RANK[best.strength] || !exact
-    if (overstated) {
-      trace.push({ kind: 'boundary', label: '경계 판정', detail: '근거 방향은 일치하나 강도 과장 또는 주체 불일치', outcome: '부분적·과장' })
-      return { verdict: 'partial', confidence: CONF[best.evidenceLevel] * 0.85, citations, trace }
+    if (STRENGTH_RANK[t.strength] > STRENGTH_RANK[ev.strength]) {
+      trace.push({ kind: 'boundary', label: '경계 판정', detail: '근거 방향·주체는 일치하나 강도 과장', outcome: '부분적·과장' })
+      return { verdict: 'partial', confidence: CONF[ev.evidenceLevel] * 0.85, citations, trace }
     }
     trace.push({ kind: 'boundary', label: '경계 판정', detail: '방향·강도·주체 일치', outcome: '사실' })
-    return { verdict: 'true', confidence: CONF[best.evidenceLevel], citations, trace }
+    return { verdict: 'true', confidence: CONF[ev.evidenceLevel], citations, trace }
   }
 
   // 커버리지 — 보류
