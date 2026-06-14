@@ -137,6 +137,41 @@ export async function fetchDiseaseFakeClaims(name: string, limit = 4): Promise<D
   }
 }
 
+export interface GroundedPassage { text: string; section: string; url: string | null; portal: string; treatment: boolean }
+
+// 코퍼스 그라운딩 — 손코딩 트리플이 없어도 실제 질병청 본문에서 (질병 문서 ∩ 주제어) 본문을 찾아 답.
+// 주제어가 그 질병의 '치료/관리' 맥락에 등장하면 treatment=true(주장 뒷받침 신호). 렉시컬(Gemini 불필요).
+export async function fetchGroundedAnswer(diseaseTerms: string[], subjectTerms: string[]): Promise<GroundedPassage[]> {
+  if (!supabase) return []
+  try {
+    const dTerms = [...new Set(diseaseTerms)].filter((s) => s && s.length >= 2 && !s.includes(',')).slice(0, 5)
+    if (!dTerms.length) return []
+    const dOr = dTerms.map((s) => `title.ilike.%${s}%`).join(',')
+    const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').or(dOr).limit(6)
+    if (!docs || !docs.length) return []
+    const ids = (docs as { id: number }[]).map((d) => d.id)
+    const docMap = new Map((docs as { id: number; url: string | null; portal: string }[]).map((d) => [d.id, d]))
+    const subj = [...new Set(subjectTerms)].filter((s) => s && s.length >= 2 && !s.includes(',')).slice(0, 6)
+    // 주제어 매칭 + 치료/관리 맥락 본문을 함께(공백·표기차 대비) — 질병의 치료 청크는 늘 후보
+    const orParts = [...subj.map((s) => `text.ilike.%${s}%`), 'text.ilike.%치료%', 'text.ilike.%관리%', 'text.ilike.%예방%', 'text.ilike.%연고%']
+    const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).or(orParts.join(',')).limit(10)
+    const TX = /(치료|약물|연고|도포|바르|복용|관리|요법|예방|권고|표준)/
+    const sNorm = subj.map((s) => s.toLowerCase().replace(/\s+/g, ''))
+    const out = (chunks ?? []).map((c) => {
+      const span = c.source_span as { section?: string } | null
+      const d = docMap.get(c.source_doc_id as number)
+      const text = c.text as string
+      const hasSubj = sNorm.some((s) => text.toLowerCase().replace(/\s+/g, '').includes(s))
+      return { text, section: span?.section ?? '', url: d?.url ?? null, portal: d?.portal ?? '질병관리청', treatment: TX.test(text) || TX.test(span?.section ?? ''), _subj: hasSubj }
+    })
+    // 주제어 포함 본문 우선, 그다음 치료 맥락
+    out.sort((a, b) => (Number(b._subj) - Number(a._subj)) || (Number(b.treatment) - Number(a.treatment)))
+    return out.slice(0, 4).map(({ _subj, ...g }) => g)
+  } catch {
+    return []
+  }
+}
+
 export interface DiseaseSection { section: string; text: string; url: string | null; portal: string }
 
 // 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 동의어(온톨로지) 확장 검색 — 예: 제2형당뇨↔당뇨병.

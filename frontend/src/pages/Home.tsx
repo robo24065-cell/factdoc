@@ -4,7 +4,7 @@ import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLo
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
-import { logQuery } from '../lib/db'
+import { fetchGroundedAnswer, logQuery, type GroundedPassage } from '../lib/db'
 import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
 import { embedText } from '../lib/embed'
 import { searchEvidence, type EvidenceChunk } from '../lib/search'
@@ -45,6 +45,7 @@ export default function Home() {
   const [explaining, setExplaining] = useState(false)
   const [hitKind, setHitKind] = useState<'exact' | 'semantic' | null>(null)
   const [evidence, setEvidence] = useState<EvidenceChunk[]>([])
+  const [grounded, setGrounded] = useState<GroundedPassage[]>([])
   const [info, setInfo] = useState<InfoAnswer | null>(null)
   const [product, setProduct] = useState<{ a: ProductAnalysis; note: string | null } | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
@@ -55,7 +56,7 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([])
 
     // 0a-1) 제품/성분 질문이면 성분 분석(제품 효과 단정 X, 성분 효능만) — 제품명은 항상, 성분은 질환 없을 때
     const prodA = analyzeProduct(claim)
@@ -115,11 +116,33 @@ export default function Home() {
 
     // 3) 미스 → 규칙 + Gemini 파싱 결합 → 룰·그래프 판정
     const triples = mergeTriples(parseClaim(claim), await geminiTriples(claim))
-    const j = judge(triples, claim)
-    // 결정론 설명문 즉시 표시(LLM 없어도 항상 진짜 답) → Gemini 되면 더 자연스럽게 교체
-    const local = explainLocal(j)
+    let j = judge(triples, claim)
+    let local = explainLocal(j)
     setResult(j); setHitKind(null); setLoading(false); setExplanation(local)
     void logQuery(claim, j.verdict)
+
+    // 3.5) 보류 + 질병 인식 → 코퍼스 그라운딩(손코딩 트리플 없어도 실제 KDCA 본문으로 답)
+    if (j.verdict === 'unverified') {
+      const dz = findInText(claim, 'disease')
+      const subjE = findInText(claim, 'subject')
+      if (dz) {
+        const g = await fetchGroundedAnswer(variantsOf(dz.canonical), subjE ? variantsOf(subjE.canonical) : [])
+        if (g.length) {
+          setGrounded(g)
+          const beneficial = /(효과|좋|낫|도움|바르|치료|관리|개선|쓰)/.test(claim) && !/(안\s|못\s|효과 ?없|소용없|거짓|아니)/.test(claim)
+          const sN = subjE ? subjE.canonical.toLowerCase().replace(/\s+/g, '') : ''
+          const treHit = g.find((x) => x.treatment && (!sN || x.text.toLowerCase().replace(/\s+/g, '').includes(sN)))
+          if (treHit && subjE && beneficial) {
+            j = { ...j, verdict: 'true', confidence: 0.72, citations: [{ portal: treHit.portal, title: `${dz.canonical} — 질병청 공식 정보`, url: treHit.url ?? undefined }] }
+            local = `질병관리청 공식 자료에 따르면 ${subjE.canonical}은(는) ${dz.canonical}의 치료·관리에 쓰여요. 아래 공식 자료를 확인하세요.`
+            setResult(j); setExplanation(local)
+          } else {
+            local = `이 주장만으로 단정하긴 어렵지만, ${dz.canonical} 관련 질병관리청 공식 자료에 참고할 내용이 있어요. 아래를 확인해보세요.`
+            setExplanation(local)
+          }
+        }
+      }
+    }
 
     // 4) 하이브리드 근거검색(관련 공식 자료) — 임베딩 재사용 + 주장 용어로 관련성 필터
     if (vec) searchEvidence(claim, vec, 3, termsOf(j.triples)).then(setEvidence)
@@ -342,6 +365,21 @@ export default function Home() {
             )}
 
             <p className="mt-3 text-xs text-slate-400">입력한 내용: “{result.claimText}”</p>
+
+            {grounded.length > 0 && (
+              <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-950 dark:bg-blue-950/20">
+                <p className="text-sm font-medium text-blue-900 dark:text-blue-200">📄 질병청 공식 자료</p>
+                <ul className="mt-1.5 space-y-2">
+                  {grounded.slice(0, 2).map((g, i) => (
+                    <li key={i} className="text-sm">
+                      {g.section && <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{g.section}</span>}
+                      <p className="mt-0.5 leading-relaxed text-slate-700 dark:text-slate-200"><Highlight text={cleanSnippet(g.text, 220)} terms={highlightTerms} /></p>
+                      {g.url && <a href={g.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline dark:text-blue-400">원문 →</a>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {result.warning && (
               <div className="mt-3 rounded-xl bg-rose-50 p-3 text-sm text-rose-700 dark:bg-rose-950/40 dark:text-rose-200">⚠ {result.warning}</div>

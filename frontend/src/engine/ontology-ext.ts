@@ -55,6 +55,18 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '우울증', variants: ['우울증', '우울감', '불안장애', '불안증'], type: 'disease' },
   { canonical: '치질', variants: ['치질', '치핵', '항문질환'], type: 'disease' },
   { canonical: '담석', variants: ['담석', '담석증', '쓸개돌'], type: 'disease' },
+  // ── 코퍼스 보유 질환(국가건강정보포털 콘텐츠) + 흔한 피부/기타 ──
+  { canonical: '건선', variants: ['건선', 'psoriasis'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '객혈', variants: ['객혈', '피를 토', '가래에 피'], type: 'disease' },
+  { canonical: '골절', variants: ['골절', '뼈가 부러', '뼈 부러'], type: 'disease' },
+  { canonical: '구취', variants: ['구취', '입냄새', '입 냄새'], type: 'disease' },
+  { canonical: '기흉', variants: ['기흉', '폐가 쪼그라'], type: 'disease' },
+  { canonical: '낙상', variants: ['낙상', '넘어짐', '미끄러져'], type: 'disease' },
+  { canonical: '여드름', variants: ['여드름', '뾰루지', 'acne'], type: 'disease' },
+  { canonical: '무좀', variants: ['무좀', '발톱무좀', '족부백선'], type: 'disease', tags: ['infectious'] },
+  { canonical: '두드러기', variants: ['두드러기', '담마진'], type: 'disease' },
+  { canonical: '습진', variants: ['습진', '피부염', '접촉성피부염'], type: 'disease' },
+  { canonical: '관절염', variants: ['관절염', '류마티스', '류마티스관절염', '퇴행성관절염'], type: 'disease' },
 
   // ── 주체: 건강기능식품 성분 (supplement) — '식품' 취급 → 식약처 룰 발동 ──
   { canonical: '오메가3', variants: ['오메가쓰리', 'omega3', 'omega-3', '어유', '오메가삼', 'epa', 'dha', '오메가3지방산'], type: 'subject', tags: ['supplement'] },
