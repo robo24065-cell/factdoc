@@ -51,4 +51,13 @@ export const CLAIM_GRAPH: EvidenceRecord[] = [
     citation: { portal: '식품의약품안전처 건강기능식품', title: '프로바이오틱스 — 인정 기능성(유익균 증식·장 건강)', url: 'https://www.foodsafetykorea.go.kr' } },
   { subject: '루테인', relation: 'manages', objectDisease: '눈건강', evidenceLevel: 'mfds_approved', strength: 'moderate',
     citation: { portal: '식품의약품안전처 건강기능식품', title: '루테인 — 인정 기능성(황반색소 밀도 유지)', url: 'https://www.foodsafetykorea.go.kr' } },
+  // ── 위험요인(식이/생활습관) ──
+  { subject: '설탕', relation: 'increases_risk', objectDisease: '제2형당뇨', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: { portal: '질병관리청 국가건강정보포털', title: '당뇨병 — 위험요인(당류·고열량 과다 섭취)', url: 'https://health.kdca.go.kr' } },
+  { subject: '설탕', relation: 'increases_risk', objectDisease: '비만', evidenceLevel: 'official_guideline', strength: 'strong',
+    citation: { portal: '질병관리청 국가건강정보포털', title: '비만 — 위험요인(당류·고열량 섭취)', url: 'https://health.kdca.go.kr' } },
+  { subject: '운동요법', relation: 'reduces_risk', objectDisease: '비만', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: { portal: '질병관리청 국가건강정보포털', title: '비만 — 신체활동', url: 'https://health.kdca.go.kr' } },
+  { subject: '식이요법', relation: 'manages', objectDisease: '비만', evidenceLevel: 'official_guideline', strength: 'moderate',
+    citation: { portal: '질병관리청 국가건강정보포털', title: '비만 — 식사 관리', url: 'https://health.kdca.go.kr' } },
 ]

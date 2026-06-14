@@ -44,4 +44,10 @@ export const LABELS: Label[] = [
   { claim: '특정 버섯이 당뇨에 좋다', gold: 'unverified', basis: '해당 성분 공식 근거 없음' },
   { claim: '돼지감자가 당뇨에 좋다', gold: 'unverified', basis: '돼지감자-당뇨 공식 근거 미수록' },
   { claim: '신종 보조제가 콜레스테롤을 낮춘다', gold: 'unverified', basis: '해당 성분 공식 근거 없음' },
+
+  // ── 위험요인·감염경로(추가 커버리지) ──
+  { claim: '설탕을 많이 먹으면 당뇨에 걸린다', gold: 'true', basis: '질병청: 당류 과다 섭취는 당뇨 위험요인' },
+  { claim: '토마토를 먹으면 코로나에 걸린다', gold: 'false', basis: '감염 경로 룰: 식품은 감염병 감염 경로 아님' },
+  { claim: '기립성저혈압은 설탕으로 완치된다', gold: 'false', basis: '식약처 룰: 식품의 질병 치료 표방 불가' },
+  { claim: '운동은 비만 관리에 도움이 된다', gold: 'true', basis: '질병청: 신체활동은 비만 관리' },
 ]

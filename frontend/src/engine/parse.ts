@@ -6,7 +6,7 @@ import { findInText } from './ontology'
 // 우선순위 순서가 중요(replaces_treatment·cures를 manages보다 먼저 잡음)
 const REL_KEYWORDS: { rel: Relation; words: string[] }[] = [
   { rel: 'replaces_treatment', words: ['약 끊', '약을 끊', '약 대신', '병원 안 가', '병원 안가', '약 안 먹어도', '치료 안 받아도'] },
-  { rel: 'cures', words: ['완치', '낫는다', '낫게', '고친다', '없앤다', '치료된다', '치료한다', '치료된'] },
+  { rel: 'cures', words: ['완치', '낫는', '낫나', '낫게', '나아', '나았', '고친다', '없앤다', '치료된다', '치료한다', '치료된'] },
   { rel: 'prevents', words: ['예방', '막아준다', '안 걸리', '안걸리'] },
   { rel: 'increases_risk', words: ['위험을 높', '위험이 높', '위험 높', '유발', '높인다', '악화', '발병률 증가'] },
   { rel: 'reduces_risk', words: ['위험을 낮', '위험이 낮', '위험 낮', '발병률 감소', '낮춘다', '낮춰', '내린다'] },
@@ -31,9 +31,12 @@ export function parseClaim(text: string): Triple[] {
 
   // 부정형 예방 주장(예: "백신이 독감을 못 막는다")
   const negPrevent = /(못\s*막|안\s*막|막지\s*못|예방.*(못|안 됨|안돼|안 된))/.test(text)
+  // "~에 걸린다/걸리나/생긴다" → 질병 발생(위험 증가). 단 부정형(안 걸리/예방)은 제외.
+  const getsDisease = /(걸린|걸리나|걸려|걸리게|생긴|잘\s*생)/.test(text) && !/(안\s*걸|못\s*걸|예방|막아|안\s*생)/.test(text)
 
   let relations = REL_KEYWORDS.filter((k) => k.words.some((w) => text.includes(w))).map((k) => k.rel)
   if (negPrevent && !relations.includes('prevents')) relations.push('prevents')
+  if (getsDisease && !relations.includes('increases_risk')) relations.push('increases_risk')
   if (relations.length === 0) relations = ['manages']
   relations = [...new Set(relations)]
 

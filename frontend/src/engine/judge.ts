@@ -2,7 +2,7 @@
 import type { Citation, EvidenceRecord, Judgement, Strength, TraceStep, Triple, Verdict } from './types'
 import { CLAIM_GRAPH } from './claimGraph'
 import { MFDS_DISEASE_CLAIM_RULE } from './mfdsRules'
-import { isChronicIrreversible, subjectTags } from './ontology'
+import { isChronicIrreversible, isInfectious, subjectTags } from './ontology'
 
 const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.'
 const RISK_WARNING = '약물·치료를 임의로 중단하지 마세요. 반드시 표준치료를 따르고 전문가와 상담하세요.'
@@ -24,10 +24,14 @@ interface SingleResult {
 function beneficial(rel: Triple['relation']): boolean {
   return rel === 'manages' || rel === 'reduces_risk' || rel === 'prevents' || rel === 'cures'
 }
+function harmful(rel: Triple['relation']): boolean {
+  return rel === 'increases_risk' || rel === 'causes_or_worsens'
+}
 
 function sameDirection(e: EvidenceRecord, t: Triple): boolean {
   if (e.relation === t.relation) return true
-  return beneficial(e.relation) && beneficial(t.relation)
+  if (beneficial(e.relation) && beneficial(t.relation)) return true
+  return harmful(e.relation) && harmful(t.relation)
 }
 
 function judgeTriple(t: Triple): SingleResult {
@@ -42,7 +46,14 @@ function judgeTriple(t: Triple): SingleResult {
 
   const tags = subjectTags(t.subject)
   const isFood = tags.includes('food') || tags.includes('supplement')
+  const isFoodLike = isFood || tags.includes('nutrient')
   const chronic = isChronicIrreversible(t.objectDisease)
+
+  // 감염 경로 룰: 일반 식품 섭취로 감염병에 '걸린다'는 주장 → 근거없음(식품은 감염 경로 아님)
+  if (isFoodLike && (t.relation === 'increases_risk' || t.relation === 'causes_or_worsens') && isInfectious(t.objectDisease) && t.polarity === 'assert') {
+    trace.push({ kind: 'rule', label: '감염 경로 룰', detail: `일반 식품 섭취는 ${t.objectDisease}의 감염 경로가 아닙니다(공식 근거상 무관).`, outcome: '근거없음·허위' })
+    return { verdict: 'false', confidence: 0.85, citations, trace }
+  }
 
   // 룰 A — 식약처: 식품/건기식이 질병 치료·예방 표방
   if (isFood && (t.relation === 'cures' || t.relation === 'prevents') && t.polarity === 'assert') {
