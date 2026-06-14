@@ -44,7 +44,7 @@ let i = 0
 for (const d of ds) {
   i++
   map[d.claim] = await parse(d.claim)
-  await sleep(900)
+  await sleep(2500) // RPM 안전 페이싱(쿼터 복귀 후 단독 실행 전제)
   if (i % 10 === 0) console.log(`  ${i}/${ds.length}`)
 }
 
