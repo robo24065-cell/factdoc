@@ -1,0 +1,54 @@
+// Supabase Edge Function (Deno): 판정 + 공식 근거 → 사람이 읽기 쉬운 AI 설명문(한국어)
+// 진실 판정은 바꾸지 않음(주어진 판정을 설명만). CLAUDE.md §6②(설명은 LLM 가장자리)
+// 배포: supabase functions deploy explain-verdict  · 시크릿: GEMINI_API_KEY(이미 등록)
+
+const MODEL = 'gemini-2.5-flash'
+
+const SYSTEM = `너는 건강정보 팩트체커의 '설명 작성기'다. 주어진 판정과 공식 근거로, 일반 사용자가 이해하기 쉬운 2~3문장의 한국어 설명을 작성한다.
+규칙:
+- 내부 처리 용어(트리플, 클레임그래프, 룰, 근거수준, 매칭, 엔티티 등)는 절대 쓰지 마라.
+- 출처 기관명(질병관리청, 식품의약품안전처 등)을 자연스럽게 언급하라.
+- 주어진 '판정'을 바꾸지 말고 그 판정을 설명만 하라. 친근하고 명확하게, 단정적 의료조언은 피하라.
+- 공식 근거가 없는 경우(확인 어려움)에는 "근거가 없다는 것이 효과를 보증하지도 부정하지도 않는다"는 점과 전문가 상담을 안내하라.
+- 위험 경고가 있으면 마지막에 한 문장으로 주의를 덧붙여라.
+출력은 설명 문장만(따옴표·머리말 없이).`
+
+const cors = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, content-type, apikey, x-client-info',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+}
+function json(obj: unknown, status = 200): Response {
+  return new Response(JSON.stringify(obj), { status, headers: { ...cors, 'Content-Type': 'application/json' } })
+}
+
+Deno.serve(async (req: Request) => {
+  if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
+  try {
+    const key = Deno.env.get('GEMINI_API_KEY')
+    if (!key) return json({ error: 'GEMINI_API_KEY 미설정' }, 500)
+    const { claim, verdict, sources, points, warning } = await req.json()
+
+    const srcText = Array.isArray(sources) && sources.length
+      ? sources.map((s: { portal?: string; title?: string }) => `- ${s.portal ?? ''}: ${s.title ?? ''}`).join('\n')
+      : '(공식 근거 없음)'
+    const ptText = Array.isArray(points) && points.length ? points.join(' / ') : ''
+    const prompt = `[주장] ${claim}\n[판정] ${verdict}\n[공식 출처]\n${srcText}\n[핵심 근거] ${ptText}\n${warning ? `[위험 경고] ${warning}` : ''}`
+
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        systemInstruction: { parts: [{ text: SYSTEM }] },
+        contents: [{ parts: [{ text: prompt }] }],
+        generationConfig: { temperature: 0.4, maxOutputTokens: 512, thinkingConfig: { thinkingBudget: 0 } },
+      }),
+    })
+    if (!res.ok) return json({ error: `Gemini ${res.status}`, detail: await res.text() }, 502)
+    const data = await res.json()
+    const explanation = (data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '').trim()
+    return json({ explanation })
+  } catch (e) {
+    return json({ error: String(e) }, 500)
+  }
+})

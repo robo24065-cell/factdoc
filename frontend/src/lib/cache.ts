@@ -18,6 +18,7 @@ export function claimHash(text: string): string {
 export interface CacheHit {
   tier: Tier
   judgement: Judgement
+  explanation: string | null
 }
 
 export async function getCachedVerdict(text: string): Promise<CacheHit | null> {
@@ -28,6 +29,7 @@ export async function getCachedVerdict(text: string): Promise<CacheHit | null> {
     void supabase.from('verdict_cache').update({ query_count: (data.query_count ?? 0) + 1 }).eq('id', data.id)
     return {
       tier: data.tier as Tier,
+      explanation: (data.explanation as string | null) ?? null,
       judgement: {
         claimText: data.canonical_claim as string,
         triples: [],
@@ -44,7 +46,7 @@ export async function getCachedVerdict(text: string): Promise<CacheHit | null> {
   }
 }
 
-export async function cacheVerdict(text: string, j: Judgement): Promise<void> {
+export async function cacheVerdict(text: string, j: Judgement, explanation?: string | null): Promise<void> {
   if (!supabase) return
   try {
     await supabase.from('verdict_cache').upsert(
@@ -55,6 +57,7 @@ export async function cacheVerdict(text: string, j: Judgement): Promise<void> {
         citations: j.citations,
         confidence: j.confidence,
         decision_trace: j.trace,
+        explanation: explanation ?? null,
         tier: 'auto_unverified',
       },
       { onConflict: 'claim_hash' },
