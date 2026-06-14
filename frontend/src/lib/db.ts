@@ -81,3 +81,24 @@ export async function fetchOutbreak(): Promise<OutbreakRow[] | null> {
     return null
   }
 }
+
+export interface DiseaseSection { section: string; text: string; url: string | null; portal: string }
+
+// 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 없으면 빈 배열.
+export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] | null> {
+  if (!supabase) return null
+  try {
+    const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').ilike('title', `%${name}%`).limit(3)
+    if (!docs || docs.length === 0) return []
+    const ids = (docs as { id: number }[]).map((d) => d.id)
+    const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).limit(12)
+    const docMap = new Map((docs as { id: number; url: string | null; portal: string }[]).map((d) => [d.id, d]))
+    return (chunks ?? []).map((c) => {
+      const span = c.source_span as { section?: string } | null
+      const d = docMap.get(c.source_doc_id as number)
+      return { section: span?.section ?? '', text: c.text as string, url: d?.url ?? null, portal: d?.portal ?? '' }
+    })
+  } catch {
+    return null
+  }
+}

@@ -43,7 +43,7 @@ export default function Trending() {
               </div>
               {r.count != null && <p className="mt-0.5 text-xs text-slate-400">이번 주 {r.count.toLocaleString()}건</p>}
               <p className="mt-2 text-sm text-slate-500">예방수칙: 손 씻기 · 기침 예절 · 예방접종 (질병청 권고)</p>
-              <Link to={`/?q=${encodeURIComponent(`${r.name} 백신은 효과 없대요`)}`}
+              <Link to={`/disease/${encodeURIComponent(r.name)}`}
                 className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">관련 정보 확인하기 →</Link>
             </div>
           )

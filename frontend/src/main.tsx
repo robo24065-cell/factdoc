@@ -8,6 +8,7 @@ import Home from './pages/Home'
 
 // 사용자(지연로딩)
 const Trending = lazy(() => import('./pages/Trending'))
+const Disease = lazy(() => import('./pages/Disease'))
 const Me = lazy(() => import('./pages/Me'))
 // 관리자(지연로딩)
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
         <Route element={<ConsumerLayout />}>
           <Route index element={<Home />} />
           <Route path="trending" element={<Trending />} />
+          <Route path="disease/:name" element={<Disease />} />
           <Route path="me" element={<Me />} />
         </Route>
         {/* 관리자 (비밀번호 게이트) */}
