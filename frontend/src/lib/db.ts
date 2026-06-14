@@ -1,5 +1,5 @@
 import { supabase } from './supabase'
-import type { Verdict } from '../engine'
+import { parseClaim, type Verdict } from '../engine'
 import { normalizeTerm } from '../engine/ontology'
 
 // 검증 1건을 query_log에 적재(비차단). ※ 캐시 히트(중복 질문)에는 호출하지 않음 → 분포 인플레 방지.
@@ -42,7 +42,7 @@ export async function fetchDbStats(): Promise<DbStats | null> {
 
 export interface TopClaim { claim: string; verdict: Verdict; count: number }
 
-// 실제 빈출 가짜정보(허위·과장) — 조회수 내림차순. 주간 가짜정보 TOP/유행 탭에 사용.
+// 실제 빈출 가짜정보(허위·과장). 토씨가 달라도 **의미가 같으면(핵심 트리플=관계+질환) 묶어 카운트 합산** → 순위.
 export async function fetchTopMisinfo(limit = 5): Promise<TopClaim[] | null> {
   if (!supabase) return null
   try {
@@ -51,12 +51,24 @@ export async function fetchTopMisinfo(limit = 5): Promise<TopClaim[] | null> {
       .select('canonical_claim,verdict,query_count')
       .in('verdict', ['false', 'partial'])
       .order('query_count', { ascending: false })
-      .limit(limit)
-    return (data ?? []).map((r) => ({
-      claim: r.canonical_claim as string,
-      verdict: r.verdict as Verdict,
-      count: (r.query_count as number) ?? 0,
-    }))
+      .limit(80)
+    const rows = (data ?? []) as { canonical_claim: string; verdict: Verdict; query_count: number | null }[]
+    // 의미 그룹핑: 핵심 트리플(관계|대상질환)로 묶고, 파싱 불가 시 텍스트로. 대표=최다 조회.
+    const groups = new Map<string, { claim: string; verdict: Verdict; count: number; rep: number }>()
+    for (const r of rows) {
+      const t = parseClaim(r.canonical_claim)[0]
+      const key = t ? `${t.relation}|${t.objectDisease}` : `t|${r.canonical_claim}`
+      const cnt = (r.query_count ?? 0) + 1 // 변형 하나당 최소 1
+      const g = groups.get(key)
+      if (g) {
+        g.count += cnt
+        if ((r.query_count ?? 0) > g.rep) { g.claim = r.canonical_claim; g.rep = r.query_count ?? 0; g.verdict = r.verdict }
+      } else {
+        groups.set(key, { claim: r.canonical_claim, verdict: r.verdict, count: cnt, rep: r.query_count ?? 0 })
+      }
+    }
+    return [...groups.values()].sort((a, b) => b.count - a.count).slice(0, limit)
+      .map((g) => ({ claim: g.claim, verdict: g.verdict, count: g.count }))
   } catch {
     return null
   }
