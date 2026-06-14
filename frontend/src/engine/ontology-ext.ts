@@ -37,6 +37,25 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '장티푸스', variants: ['장티푸스', 'typhoid'], type: 'disease', tags: ['infectious'] },
   { canonical: '쯔쯔가무시증', variants: ['쯔쯔가무시', '쓰쓰가무시', 'scrub typhus'], type: 'disease', tags: ['infectious'] },
 
+  // ── 정보질문·검증 커버리지: 흔히 묻는 비감염 질환(인식만으로 식약처/완치 룰 발동 → 보류 감소) ──
+  { canonical: '위염', variants: ['위장병', '위궤양', '속쓰림', '위산과다', '위장질환', '소화불량', '위장장애'], type: 'disease' },
+  { canonical: '역류성식도염', variants: ['역류성 식도염', '위식도역류', '식도염'], type: 'disease' },
+  { canonical: '변비', variants: ['변비', '쾌변', '배변장애'], type: 'disease' },
+  { canonical: '빈혈', variants: ['빈혈', '철결핍', '철분부족'], type: 'disease' },
+  { canonical: '천식', variants: ['천식', '기관지천식', '쌕쌕'], type: 'disease' },
+  { canonical: '아토피피부염', variants: ['아토피', '습진', '피부염'], type: 'disease' },
+  { canonical: '알레르기비염', variants: ['비염', '알레르기 비염', '코막힘', '콧물 알레르기'], type: 'disease' },
+  { canonical: '불면증', variants: ['불면', '불면증', '수면장애', '수면 장애'], type: 'disease' },
+  { canonical: '편두통', variants: ['두통', '편두통', '긴장성두통'], type: 'disease' },
+  { canonical: '통풍', variants: ['통풍', '요산', '고요산혈증'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '탈모', variants: ['탈모', '모발건강', '머리카락'], type: 'disease' },
+  { canonical: '치주질환', variants: ['치주염', '잇몸병', '풍치', '잇몸질환', '치은염'], type: 'disease' },
+  { canonical: '방광염', variants: ['방광염', '요로감염', '요로감염증', '오줌소태'], type: 'disease', tags: ['infectious'] },
+  { canonical: '백내장', variants: ['백내장', '녹내장'], type: 'disease' },
+  { canonical: '우울증', variants: ['우울증', '우울감', '불안장애', '불안증'], type: 'disease' },
+  { canonical: '치질', variants: ['치질', '치핵', '항문질환'], type: 'disease' },
+  { canonical: '담석', variants: ['담석', '담석증', '쓸개돌'], type: 'disease' },
+
   // ── 주체: 건강기능식품 성분 (supplement) — '식품' 취급 → 식약처 룰 발동 ──
   { canonical: '오메가3', variants: ['오메가쓰리', 'omega3', 'omega-3', '어유', '오메가삼', 'epa', 'dha', '오메가3지방산'], type: 'subject', tags: ['supplement'] },
   { canonical: '글루코사민', variants: ['glucosamine', '글루코사민황산염'], type: 'subject', tags: ['supplement'] },
