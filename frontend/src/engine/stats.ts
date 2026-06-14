@@ -52,6 +52,19 @@ export function checkStatClaim(text: string): Judgement | null {
   const pct = parsePercent(text)
   if (pct == null) return null
 
+  // 치명률 공포조장 — 계절성 호흡기(독감·코로나·감기)는 공식 치명률 < ~1%. 신종/기타는 천차만별 → 보류.
+  if (/치명률/.test(text)) {
+    if (!/(독감|인플루엔자|코로나|감기|계절성|호흡기)/.test(text)) return null
+    const cite: Citation = { portal: '질병관리청', title: '계절성 호흡기 감염병 치명률(통상 1% 미만)', url: 'https://health.kdca.go.kr' }
+    const trace: TraceStep[] = [{ kind: 'normalize', label: '치명률 주장 인식', detail: `계절성 호흡기 감염병 치명률 ${pct.toFixed(0)}% 주장` }]
+    let verdict: Verdict, outcome: string, confidence: number
+    if (pct >= 5) { verdict = 'false'; outcome = '계절성 호흡기 치명률은 통상 1% 미만 — 크게 과장(공포조장)'; confidence = 0.85 }
+    else if (pct >= 1) { verdict = 'partial'; outcome = '실제보다 높게 과장(통상 1% 미만)'; confidence = 0.7 }
+    else { verdict = 'true'; outcome = '통상 범위(1% 미만)와 부합'; confidence = 0.7 }
+    trace.push({ kind: 'graph_match', label: '치명률 정합성 검사', detail: '공식 계절성 호흡기 치명률 ≈ 0.1~1%', outcome })
+    return { claimText: text, triples: [], verdict, confidence, citations: [cite], trace, tier: 'auto_unverified', disclaimer: DISCLAIMER }
+  }
+
   const isSmoking = /(흡연율|담배.*피우|흡연)/.test(text)
   const disease = isSmoking ? null : findInText(text, 'disease')
   const ref: Ref | null = isSmoking ? SMOKING : (disease ? REFERENCE[disease.canonical] ?? null : null)

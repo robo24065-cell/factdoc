@@ -49,6 +49,17 @@ export default function Eval() {
           <div className="w-16 shrink-0 text-right text-xs text-slate-400">{pct1(r.baselineRef.acc)}</div>
         </div>
         <p className="text-[11px] text-slate-400">기준선 = {r.baselineRef.name} {pct1(r.baselineRef.acc)} ({r.baselineRef.note})</p>
+        {(() => {
+          const rules = r.ablation.find((a) => a.key === 'rules')
+          const full = r.ablation.find((a) => a.key === 'full')
+          if (!rules || !full || rules.pending || full.pending) return null
+          const d = (full.accuracy - rules.accuracy) * 100
+          return (
+            <p className="mt-1 rounded-lg bg-emerald-50 p-2 text-xs text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+              🔗 클레임그래프 기여: <b>+{d.toFixed(1)}%p</b> (룰만 {pct1(rules.accuracy)} → 풀 {pct1(full.accuracy)}) · 균형표본 {full.n}건 · 풀 엔진이 외부 무근거 LLM({pct1(r.baselineRef.acc)})도 상회
+            </p>
+          )
+        })()}
       </div>
 
       {/* ── 클래스별 지표 ── */}
