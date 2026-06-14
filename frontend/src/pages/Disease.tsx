@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { fetchDiseaseInfo, fetchOutbreak, type DiseaseSection, type OutbreakRow } from '../lib/db'
+import { preventionHint } from '../lib/prevention'
 
 export default function Disease() {
   const { name = '' } = useParams()
@@ -47,7 +48,7 @@ export default function Disease() {
         </div>
       ) : (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="text-slate-700 dark:text-slate-200">예방수칙: 손 씻기 · 기침 예절 · 예방접종 등 기본 수칙을 지키세요.</p>
+          {preventionHint(name) && <p className="text-slate-700 dark:text-slate-200">예방: {preventionHint(name)}</p>}
           <p className="mt-2 text-slate-500">이 질병의 공식 상세 정보(증상·예방·치료)는 질병관리청 국가건강정보포털에서 확인할 수 있어요.</p>
           <a href="https://health.kdca.go.kr" target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">
             질병관리청 국가건강정보포털 →

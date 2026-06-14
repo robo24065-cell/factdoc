@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOutbreak, fetchTopMisinfo, type OutbreakRow, type TopClaim } from '../lib/db'
+import { preventionHint } from '../lib/prevention'
 import { outbreakList } from './dashboardData'
 
 function trendBadge(trend: string | null) {
@@ -42,7 +43,9 @@ export default function Trending() {
                 <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${b.c}`}>{b.t}</span>
               </div>
               {r.count != null && <p className="mt-0.5 text-xs text-slate-400">이번 주 {r.count.toLocaleString()}건</p>}
-              <p className="mt-2 text-sm text-slate-500">예방수칙: 손 씻기 · 기침 예절 · 예방접종 (질병청 권고)</p>
+              {(() => { const h = preventionHint(r.name); return (
+                <p className="mt-2 text-sm text-slate-500">{h ? `예방: ${h}` : '증상·예방수칙은 아래 관련 정보에서 확인하세요.'}</p>
+              ) })()}
               <Link to={`/disease/${encodeURIComponent(r.name)}`}
                 className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">관련 정보 확인하기 →</Link>
             </div>
