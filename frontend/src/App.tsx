@@ -7,6 +7,13 @@ const linkClass = (isActive: boolean) =>
       : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'
   }`
 
+const NAV = [
+  { to: '/', label: '검증', end: true },
+  { to: '/compare', label: '비교', end: false },
+  { to: '/dashboard', label: '대시보드', end: false },
+  { to: '/mypage', label: '마이페이지', end: false },
+]
+
 function Layout() {
   return (
     <div className="min-h-screen bg-white text-slate-700 dark:bg-slate-950 dark:text-slate-300">
@@ -18,16 +25,12 @@ function Layout() {
               국가 공식데이터 건강정보 팩트체커
             </span>
           </div>
-          <nav className="flex gap-1">
-            <NavLink to="/" end className={({ isActive }) => linkClass(isActive)}>
-              검증
-            </NavLink>
-            <NavLink to="/dashboard" className={({ isActive }) => linkClass(isActive)}>
-              대시보드
-            </NavLink>
-            <NavLink to="/mypage" className={({ isActive }) => linkClass(isActive)}>
-              마이페이지
-            </NavLink>
+          <nav className="flex flex-wrap gap-1">
+            {NAV.map((n) => (
+              <NavLink key={n.to} to={n.to} end={n.end} className={({ isActive }) => linkClass(isActive)}>
+                {n.label}
+              </NavLink>
+            ))}
           </nav>
         </div>
       </header>
