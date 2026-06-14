@@ -2,27 +2,35 @@ import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
-import Layout from './App'
-import Main from './pages/Main'
+import ConsumerLayout from './layouts/ConsumerLayout'
+import AdminLayout from './layouts/AdminLayout'
+import Home from './pages/Home'
 
-// 무거운 라우트는 코드 분할(지연 로딩) — 첫 화면(검증)을 가볍게 유지
-const Compare = lazy(() => import('./pages/Compare'))
-const Eval = lazy(() => import('./pages/Eval'))
-const Review = lazy(() => import('./pages/Review'))
+// 사용자(지연로딩)
+const Trending = lazy(() => import('./pages/Trending'))
+const Me = lazy(() => import('./pages/Me'))
+// 관리자(지연로딩)
 const Dashboard = lazy(() => import('./pages/Dashboard'))
-const MyPage = lazy(() => import('./pages/MyPage'))
+const Review = lazy(() => import('./pages/Review'))
+const Eval = lazy(() => import('./pages/Eval'))
+const Compare = lazy(() => import('./pages/Compare'))
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        <Route element={<Layout />}>
-          <Route index element={<Main />} />
-          <Route path="compare" element={<Compare />} />
-          <Route path="eval" element={<Eval />} />
+        {/* 일반 사용자 */}
+        <Route element={<ConsumerLayout />}>
+          <Route index element={<Home />} />
+          <Route path="trending" element={<Trending />} />
+          <Route path="me" element={<Me />} />
+        </Route>
+        {/* 관리자 (비밀번호 게이트) */}
+        <Route path="admin" element={<AdminLayout />}>
+          <Route index element={<Dashboard />} />
           <Route path="review" element={<Review />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="mypage" element={<MyPage />} />
+          <Route path="eval" element={<Eval />} />
+          <Route path="compare" element={<Compare />} />
         </Route>
       </Routes>
     </BrowserRouter>
