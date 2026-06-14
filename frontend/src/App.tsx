@@ -12,6 +12,7 @@ const NAV = [
   { to: '/', label: '검증', end: true },
   { to: '/compare', label: '비교', end: false },
   { to: '/eval', label: '평가', end: false },
+  { to: '/review', label: '검토', end: false },
   { to: '/dashboard', label: '대시보드', end: false },
   { to: '/mypage', label: '마이페이지', end: false },
 ]

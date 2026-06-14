@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { runPipeline, type Judgement, type Verdict } from '../engine'
 import { logQuery } from '../lib/db'
+import { getCachedVerdict, cacheVerdict } from '../lib/cache'
 
 const VERDICTS: Record<Verdict, { label: string; badge: string; ring: string }> = {
   true: { label: '사실', badge: 'bg-emerald-100 text-emerald-800', ring: 'border-emerald-300' },
@@ -24,13 +25,23 @@ const EXAMPLES = [
 export default function Main() {
   const [input, setInput] = useState('')
   const [result, setResult] = useState<Judgement | null>(null)
+  const [cacheHit, setCacheHit] = useState(false)
 
-  function check(text: string) {
+  async function check(text: string) {
     const claim = text.trim()
     if (!claim) return
+    const cached = await getCachedVerdict(claim) // 시맨틱 캐시 우선
+    if (cached) {
+      setResult(cached.judgement)
+      setCacheHit(true)
+      void logQuery(claim, cached.judgement.verdict)
+      return
+    }
     const j = runPipeline(claim)
     setResult(j)
-    void logQuery(claim, j.verdict) // Supabase query_log 적재(비차단)
+    setCacheHit(false)
+    void cacheVerdict(claim, j) // verdict_cache 적재(tier=자동·미검증)
+    void logQuery(claim, j.verdict)
   }
 
   const v = result ? VERDICTS[result.verdict] : null
@@ -79,7 +90,10 @@ export default function Main() {
         <section className={`mt-8 rounded-xl border bg-white p-5 dark:bg-slate-900 ${v.ring}`}>
           <div className="flex flex-wrap items-center gap-3">
             <span className={`rounded-full px-3 py-1 text-sm font-medium ${v.badge}`}>{v.label}</span>
-            <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-500">자동·미검증</span>
+            <span className="rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-500">
+              {result.tier === 'verified' ? '검증완료' : '자동·미검증'}
+            </span>
+            {cacheHit && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs text-indigo-700">캐시 히트</span>}
             {result.verdict !== 'unverified' && (
               <span className="text-xs text-slate-400">신뢰도 {(result.confidence * 100).toFixed(0)}%</span>
             )}

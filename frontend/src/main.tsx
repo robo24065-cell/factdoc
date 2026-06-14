@@ -8,6 +8,7 @@ import Main from './pages/Main'
 // 무거운 라우트는 코드 분할(지연 로딩) — 첫 화면(검증)을 가볍게 유지
 const Compare = lazy(() => import('./pages/Compare'))
 const Eval = lazy(() => import('./pages/Eval'))
+const Review = lazy(() => import('./pages/Review'))
 const Dashboard = lazy(() => import('./pages/Dashboard'))
 const MyPage = lazy(() => import('./pages/MyPage'))
 
@@ -19,6 +20,7 @@ createRoot(document.getElementById('root')!).render(
           <Route index element={<Main />} />
           <Route path="compare" element={<Compare />} />
           <Route path="eval" element={<Eval />} />
+          <Route path="review" element={<Review />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="mypage" element={<MyPage />} />
         </Route>
