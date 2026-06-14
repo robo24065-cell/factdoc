@@ -48,6 +48,7 @@ export default function Home() {
   const [info, setInfo] = useState<InfoAnswer | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
+  const [copied, setCopied] = useState(false)
 
   async function check(text: string) {
     const claim = text.trim()
@@ -126,9 +127,11 @@ export default function Home() {
 
   function share() {
     if (!result) return
-    const text = `[FactDoc] "${result.claimText}" → ${VUI[result.verdict].label}\n${explanation ?? '국가 공식데이터로 확인했어요.'}`
-    if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text }).catch(() => {})
-    else navigator.clipboard?.writeText(text).catch(() => {})
+    const src = result.citations[0]?.portal
+    const text = `[FactDoc 팩트체크]\n"${result.claimText}"\n→ ${VUI[result.verdict].label}\n\n${explanation ?? '국가 공식데이터로 확인했어요.'}${src ? `\n📌 출처: ${src}` : ''}\n\n※ 의료 진단이 아니며 참고용입니다.`
+    const flash = () => { setCopied(true); setTimeout(() => setCopied(false), 1800) }
+    if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text }).then(flash).catch(() => {})
+    else navigator.clipboard?.writeText(text).then(flash).catch(() => {})
   }
 
   const vui = result ? VUI[result.verdict] : null
@@ -325,8 +328,8 @@ export default function Home() {
             )}
 
             <button type="button" onClick={share}
-              className="mt-4 w-full rounded-xl bg-amber-300 py-3 text-sm font-semibold text-amber-900 active:scale-[0.99]">
-              카카오톡으로 공유하기
+              className="mt-4 w-full rounded-xl bg-amber-300 py-3 text-sm font-semibold text-amber-900 transition active:scale-[0.99]">
+              {copied ? '✓ 복사됐어요 — 붙여넣어 공유하세요' : '카카오톡으로 공유하기'}
             </button>
             <p className="mt-3 text-[11px] leading-relaxed text-slate-400">{result.disclaimer}</p>
           </div>
