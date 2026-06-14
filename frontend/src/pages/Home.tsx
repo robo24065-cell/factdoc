@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, checkStatClaim, classifyIntent, explainLocal, judge, parseClaim, type Judgement, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, judge, parseClaim, targetMatchNote, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -46,6 +46,7 @@ export default function Home() {
   const [hitKind, setHitKind] = useState<'exact' | 'semantic' | null>(null)
   const [evidence, setEvidence] = useState<EvidenceChunk[]>([])
   const [info, setInfo] = useState<InfoAnswer | null>(null)
+  const [product, setProduct] = useState<{ a: ProductAnalysis; note: string | null } | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -54,7 +55,15 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null)
+
+    // 0a-1) 제품/성분 질문이면 성분 분석(제품 효과 단정 X, 성분 효능만) — 제품명은 항상, 성분은 질환 없을 때
+    const prodA = analyzeProduct(claim)
+    if (prodA && (prodA.kind === 'product' || !findInText(claim, 'disease'))) {
+      setProduct({ a: prodA, note: targetMatchNote(prodA, claim) }); setLoading(false)
+      void logQuery(claim, 'unverified', 'product')
+      return
+    }
 
     // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론
     const stat = checkStatClaim(claim)
@@ -176,6 +185,43 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* 제품/성분 분석 카드 — 성분별 효능(제품 효과 단정 X) */}
+      {product && (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 bg-violet-50 p-4 dark:bg-violet-950/30">
+            <div className="h-11 w-1.5 rounded-full bg-violet-500" />
+            <div>
+              <p className="text-lg font-semibold text-violet-700 dark:text-violet-300">{product.a.name}</p>
+              <p className="text-xs text-slate-500">
+                {product.a.kind === 'product'
+                  ? `${product.a.maker ? product.a.maker + ' · ' : ''}${product.a.category ?? ''}`
+                  : '성분 정보'}
+              </p>
+            </div>
+            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">성분 분석</span>
+          </div>
+          <div className="p-4">
+            <p className="text-sm text-slate-500">주요 성분과 일반적으로 알려진 효능이에요.</p>
+            <ul className="mt-2 space-y-2">
+              {product.a.ingredients.map((ing, i) => (
+                <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
+                    {ing.name}
+                    {ing.info.mfds && <span className="rounded bg-emerald-100 px-1 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">식약처 인정기능성</span>}
+                  </p>
+                  <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{ing.info.efficacy}</p>
+                  {ing.info.caution && <p className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">⚠ {ing.info.caution}</p>}
+                </li>
+              ))}
+            </ul>
+            {product.note && <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">{product.note}</p>}
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+              특정 제품의 효과를 보장하는 정보가 아니라 ‘성분’의 일반적 효능 정보예요. 정확한 효능·복용은 제품 표시사항과 전문가 상담을 따르세요. 출처: 식품의약품안전처 인정기능성 등.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 정보질문 응답 카드 (질병청 공식 정보) */}
       {info && (
