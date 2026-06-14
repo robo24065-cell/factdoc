@@ -7,7 +7,7 @@ import { geminiTriples } from '../lib/parseRemote'
 import { fetchGroundedAnswer, logQuery, type GroundedPassage } from '../lib/db'
 import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
 import { embedText } from '../lib/embed'
-import { searchEvidence, type EvidenceChunk } from '../lib/search'
+import { type EvidenceChunk } from '../lib/search'
 import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { explainVerdict } from '../lib/explain'
@@ -23,10 +23,6 @@ const VUI: Record<Verdict, { label: string; sub: string; text: string; bg: strin
 
 const EXAMPLES = ['당뇨는 △△즙으로 완치된대요', '설탕 많이 먹으면 당뇨 걸리나요', '뎅기열이 뭔가요?', 'E형 간염이 뭔가요?']
 
-// 트리플에서 관련성 필터용 용어(질병·주체) 추출
-function termsOf(triples: { subject: string; objectDisease: string }[]): string[] {
-  return [...new Set(triples.flatMap((t) => [t.objectDisease, t.subject]).filter((x) => x && x !== '(미상)'))]
-}
 // 스니펫 정리: 선행 "[섹션]" 라벨 제거 + 문장경계로 자연스럽게 절단
 function cleanSnippet(text: string, max = 180): string {
   let s = text.replace(/^\s*\[[^\]]+\]\s*/, '').trim()
@@ -109,7 +105,6 @@ export default function Home() {
       if (sem) {
         setResult(sem.judgement); setHitKind('semantic')
         setExplanation(sem.explanation ?? explainLocal(sem.judgement)); setLoading(false)
-        if (vec) searchEvidence(claim, vec, 3, termsOf(parseClaim(claim))).then(setEvidence)
         return
       }
     }
@@ -142,8 +137,6 @@ export default function Home() {
             setExplanation(local)
           }
         }
-      } else if (vec) {
-        searchEvidence(claim, vec, 3, termsOf(j.triples)).then(setEvidence) // 코퍼스 본문 없을 때만 하이브리드 보조
       }
     }
 
