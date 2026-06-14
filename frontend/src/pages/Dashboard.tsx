@@ -30,7 +30,7 @@ export default function Dashboard() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-medium text-slate-900 dark:text-white">대시보드</h1>
-          <p className="mt-1 text-sm text-slate-500">국가 공식데이터 기반 건강정보 검증 현황 · 반응형(PC 3열·태블릿 2열·모바일 1열)</p>
+          <p className="mt-1 text-sm text-slate-500">국가 공식데이터 기반 건강정보 검증 현황 · 폼팩터별 레이아웃(데스크톱 3열 다패널 / 태블릿 2열 / 모바일 1열·핵심카드 우선)</p>
         </div>
         <div className="flex items-center gap-2">
           <span className={`rounded-full px-3 py-1 text-xs ${db ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
@@ -40,14 +40,14 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi label="검증한 주장" value={db ? db.checks.toLocaleString() : '1,284'} hint={db ? '고유 주장(verdict_cache)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
         <Kpi label="판정 정확도" value={`${(evalReport.accuracy * 100).toFixed(0)}%`} hint={`시드 ${evalReport.correct}/${evalReport.total}`} accent="text-emerald-600" />
         <Kpi label="인용 정확도" value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
         <Kpi label="근거 트리플" value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
       </div>
 
-      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Panel title="판정 분포" desc={useDbDist ? '실제 검증 로그의 4단계 비율' : '시드 라벨 기준 비율'} badge="실데이터">
           <div className="relative h-44">
             <ResponsiveContainer width="100%" height="100%">
@@ -74,7 +74,7 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="주간 가짜정보 추세" desc="질문 로그에서 검출된 의심 주장 (트렌드 레이더)" badge="데모" span="lg:col-span-2">
+        <Panel title="주간 가짜정보 추세" desc="질문 로그에서 검출된 의심 주장 (트렌드 레이더)" badge="데모" span="lg:col-span-2 order-last md:order-none">
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={weeklyMisinfo} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
@@ -117,7 +117,7 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="🚨 실시간 유행 감염병" desc="감염병포털 발생현황 — 클릭 시 팩트체크 + 공식 수칙" badge={outbreak ? '실데이터' : '데모'}>
+        <Panel title="🚨 실시간 유행 감염병" desc="감염병포털 발생현황 — 클릭 시 팩트체크 + 공식 수칙" badge={outbreak ? '실데이터' : '데모'} span="order-first md:order-none">
           {outbreak && outbreak.length ? (
             <ul className="space-y-2.5 text-sm">
               {outbreak.map((r) => {
