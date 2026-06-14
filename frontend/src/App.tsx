@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 
 const linkClass = (isActive: boolean) =>
@@ -37,7 +38,9 @@ function Layout() {
       </header>
 
       <main className="mx-auto max-w-5xl px-4 py-8">
-        <Outlet />
+        <Suspense fallback={<div className="py-20 text-center text-sm text-slate-400">불러오는 중…</div>}>
+          <Outlet />
+        </Suspense>
       </main>
 
       <footer className="mx-auto max-w-5xl px-4 pb-10 pt-4 text-center text-xs text-slate-400">
