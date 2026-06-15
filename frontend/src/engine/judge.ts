@@ -35,6 +35,16 @@ function sameDirection(e: EvidenceRecord, t: Triple): boolean {
   return harmful(e.relation) && harmful(t.relation)
 }
 
+// 잘 알려진 공식 반증 보건 미신 — 공식기관이 '인과관계 없음'을 확립한 거짓 주장 → 허위로 디벙크(§10 안전).
+const MYTH_COUNTERS: { subj: RegExp; obj: RegExp; note: string; cite: Citation }[] = [
+  { subj: /(백신|예방\s*접종|예방주사|접종)/, obj: /(자폐|아스퍼거|autism)/i,
+    note: '대규모 역학연구에서 백신과 자폐(자폐스펙트럼장애)의 인과관계는 확인되지 않았습니다. 백신-자폐 연관설은 조작·철회된 연구에서 비롯된 잘못된 정보입니다.',
+    cite: { portal: '질병관리청', title: '예방접종 안전성 — 백신과 자폐는 무관', url: 'https://nip.kdca.go.kr' } },
+  { subj: /(코로나|covid|화이자|모더나|mrna|백신)/i, obj: /(불임|난임)/,
+    note: '코로나19 백신이 불임·난임을 유발한다는 과학적 근거는 없습니다(질병관리청·식약처).',
+    cite: { portal: '질병관리청', title: '코로나19 백신 안전성 — 불임 무관' } },
+]
+
 // useGraph=false → 룰만 적용(클레임그래프 트리플 매칭·반증 매칭 비활성). ablation config (c) 'RAG+룰'용.
 function judgeTriple(t: Triple, useGraph = true): SingleResult {
   const trace: TraceStep[] = []
@@ -45,6 +55,17 @@ function judgeTriple(t: Triple, useGraph = true): SingleResult {
     label: '정규화',
     detail: `(${t.subject}) —[${t.relation}${t.polarity === 'negate' ? '/부정' : ''}]→ (${t.objectDisease}) · 강도 ${t.strength}`,
   })
+
+  // 보건 미신 디벙크 — 공식 반증이 확립된 거짓 인과주장(예: 백신→자폐)을 허위로. 위해/유발 주장(assert)에 한함.
+  const claimT = t.claimText ?? ''
+  if ((t.relation === 'increases_risk' || t.relation === 'causes_or_worsens' || t.relation === 'cures') && t.polarity === 'assert') {
+    const myth = MYTH_COUNTERS.find((m) => m.subj.test(claimT) && m.obj.test(claimT))
+    if (myth) {
+      trace.push({ kind: 'rule', label: '보건 미신 반증', detail: myth.note, outcome: '근거없음·허위(공식 반증)' })
+      citations.push(myth.cite)
+      return { verdict: 'false', confidence: 0.9, citations, trace }
+    }
+  }
 
   const tags = subjectTags(t.subject)
   const isFood = tags.includes('food') || tags.includes('supplement')

@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isCureClaim, judge, officialFunction, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -327,7 +327,10 @@ export default function Home() {
     // 0b) 의도 분류 — "X가 뭔가요/증상/예방" 정보질문이면 공식정보로 바로 응답(판정 아님)
     //     ★단, 완치·약대체 주장(약 끊고 등)은 정보질문으로 흘리지 않고 판정(허위+경고)으로 보냄(안전).
     const intent = classifyIntent(claim)
-    if (intent.intent === 'info' && intent.disease && !isCureClaim(claim)) {
+    //     주체(식품/약 제외한 백신·운동 등)+관계가 있으면 '주장'이므로 정보질문이 아니라 판정 대상 → verify로.
+    //     (완치·약대체·위해·효과 주장 모두 포함). 순수 정의/증상/조언 질문만 info 카드.
+    const isRelationalClaim = !!findInText(claim, 'subject') && (isCureClaim(claim) || isHarmfulClaim(claim) || isBeneficialClaim(claim))
+    if (intent.intent === 'info' && intent.disease && !isRelationalClaim) {
       const disease = intent.disease
       const adv = adviceAnswer(claim) // 조언/관리 안내(결정론, 있으면 즉시)
       const sections = await fetchDiseaseSections(disease)
