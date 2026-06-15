@@ -354,15 +354,23 @@ export default function Home() {
     const isRelationalClaim = !!findInText(claim, 'subject') && (isCureClaim(claim) || isHarmfulClaim(claim) || isBeneficialClaim(claim))
     if (intent.intent === 'info' && intent.disease && !isRelationalClaim) {
       const disease = intent.disease
-      const adv = adviceAnswer(claim) // 조언/관리 안내(결정론, 있으면 즉시)
       const sections = await fetchDiseaseSections(disease)
-      setInfo({ disease, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
+      // ★측면 질문(합병증/증상/원인…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.
+      const aspectKw = (claim.match(/합병증|증상|원인|진단|검사|치료|예방|관리|종류|단계|경과|예후|위험요인|전조/) || [])[0]
+      let summary = '', isGuid = false
+      let cite: { portal: string; title: string; url?: string } | undefined
+      if (aspectKw && sections.length) {
+        const best = sections.find((s) => (s.section + s.text).includes(aspectKw)) || sections[0]
+        summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || '공식 정보'}`, url: best.url ?? undefined }
+      }
+      if (!summary) { const adv = adviceAnswer(claim); if (adv) { summary = adv.text; isGuid = true; cite = adv.citation } }
+      setInfo({ disease, summary, sections, hasOfficial: sections.length > 0, citation: cite, isGuidance: isGuid })
       setLoading(false)
       void logQuery(claim, 'unverified', 'info')
-      if (!adv) { // 정의형 질문이면 Gemini 요약
+      if (!summary) { // 코퍼스·안내 없으면 Gemini 요약
         setInfoSummarizing(true)
-        const summary = await explainDiseaseInfo(disease, sections)
-        setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary } : prev))
+        const s = await explainDiseaseInfo(disease, sections)
+        setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary: s } : prev))
         setInfoSummarizing(false)
       }
       return
