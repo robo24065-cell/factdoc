@@ -88,6 +88,33 @@ export function subjectTags(subjectCanonical: string): string[] {
   return lookup.get(norm(subjectCanonical))?.tags ?? []
 }
 
+// 검색 자동완성 — 입력 접두사로 질병/음식/주체를 추천(네이버·구글식). 동의어 중복은 canonical로 제거.
+export interface Suggestion { text: string; kind: TermType; tags?: string[] }
+export function suggest(input: string, max = 6): Suggestion[] {
+  const q = norm(input)
+  if (q.length < 1) return []
+  const seen = new Set<string>()
+  const starts: Suggestion[] = []
+  const contains: Suggestion[] = []
+  for (const e of ONTOLOGY) {
+    if (seen.has(e.canonical)) continue
+    let surf: string | undefined
+    let isStart = false
+    for (const v of [e.canonical, ...e.variants]) {
+      const nv = norm(v)
+      if (nv.length < 1) continue
+      if (nv.startsWith(q)) { surf = v; isStart = true; break }
+      if (!surf && nv.includes(q)) surf = v
+    }
+    if (!surf) continue
+    seen.add(e.canonical)
+    ;(isStart ? starts : contains).push({ text: surf, kind: e.type, tags: e.tags })
+  }
+  // 질병·주체 우선순위: 접두 일치 먼저, 짧은(대표) 표면형 우선
+  const rank = (s: Suggestion) => s.text.length
+  return [...starts.sort((a, b) => rank(a) - rank(b)), ...contains.sort((a, b) => rank(a) - rank(b))].slice(0, max)
+}
+
 // canonical → 표면형(동의어 포함) 목록 — 근거 하이라이트(Span Grounding)용
 export function variantsOf(canonical: string): string[] {
   const e = lookup.get(norm(canonical))

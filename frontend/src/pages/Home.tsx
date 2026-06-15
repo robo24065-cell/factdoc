@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -286,6 +286,8 @@ export default function Home() {
   const [topComment, setTopComment] = useState<string | null>(null)
   const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
   const [related, setRelated] = useState<string[]>([])
+  const [focused, setFocused] = useState(false)
+  const suggestions = focused && input.trim().length >= 1 ? suggest(input, 6) : []
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -463,17 +465,34 @@ export default function Home() {
       <h1 className="mt-2 text-[22px] font-semibold leading-snug text-slate-900 dark:text-white">건강 정보,<br />진짜일까요?</h1>
       <p className="mt-1.5 text-sm text-slate-500">TV·유튜브·단톡방에서 본 건강 주장을 검증하거나, 궁금한 질병·증상 정보를 물어보세요. 국가 공식 데이터로 답해드려요.</p>
 
-      <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+      <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
         <textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 150)}
+          onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); setFocused(false); check(input) } }}
           rows={2}
           placeholder="예: 설탕 많이 먹으면 당뇨 걸리나요?"
           className="w-full resize-none rounded-xl bg-transparent p-2 text-base text-slate-900 outline-none placeholder:text-slate-400 dark:text-white"
         />
+        {/* 검색 자동완성 — 질병·음식·성분 추천(네이버·구글식) */}
+        {suggestions.length > 0 && (
+          <div className="absolute inset-x-2 top-[58px] z-20 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-lg dark:border-slate-700 dark:bg-slate-800">
+            {suggestions.map((s) => (
+              <button key={s.text} type="button"
+                onMouseDown={(e) => { e.preventDefault(); setInput(s.text); setFocused(false); check(s.text) }}
+                className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-slate-700 hover:bg-slate-50 dark:text-slate-200 dark:hover:bg-slate-700/50">
+                <span className="text-slate-300">🔍</span>
+                <span className="flex-1">{s.text}</span>
+                <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-400 dark:bg-slate-700">{s.kind === 'disease' ? '질병·증상' : '음식·성분'}</span>
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
-          onClick={() => check(input)}
+          onClick={() => { setFocused(false); check(input) }}
           disabled={!input.trim() || loading}
           className="mt-1 w-full rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white transition active:scale-[0.99] disabled:opacity-40"
         >
