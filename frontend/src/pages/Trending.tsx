@@ -2,19 +2,18 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOutbreak, fetchTopDiseases, fetchTopMisinfo, type OutbreakRow, type TopClaim, type TopDisease } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
-import { EID_YEARS, EID_PARTIAL_YEAR, EID_DISEASES, EID_GROUP, EID_WEEKLY } from '../data/eid-region'
+import { EID_CUR_YEAR, EID_PARTIAL_YEAR, EID_GROUP, EID_WEEKLY_DISEASES, EID_WK_NAT } from '../data/eid-region'
 
-// 질병청 전수신고 주별 데이터에서 '최근 4주' 발생 현황 산출(최신 주차 기준, 신고지연 보정). 정적 2024 대체.
+// 질병청 감염병포털 주별 데이터에서 '최근 4주' 발생 현황 산출(최신 주차 기준, 신고지연 보정). 정적 2024 대체.
 function latestWeekly() {
-  const year = EID_YEARS[EID_YEARS.length - 1]
-  const wk = EID_WEEKLY[year] || {}
+  const year = EID_CUR_YEAR
   let last = -1
-  for (const d of EID_DISEASES) { const a = wk[d]; if (a) for (let i = a.length - 1; i >= 0; i--) { if (a[i] > 0) { if (i > last) last = i; break } } }
+  for (const d of EID_WEEKLY_DISEASES) { const a = EID_WK_NAT[d]; if (a) for (let i = a.length - 1; i >= 0; i--) { if (a[i] > 0) { if (i > last) last = i; break } } }
   if (last < 0) return { year, week: 0, rows: [] as { name: string; count: number; trend: string }[] }
   const sum = (a: number[] | undefined, s: number, e: number) => { let t = 0; if (a) for (let i = Math.max(0, s); i <= e; i++) t += a[i] || 0; return t }
   const ws = Math.max(0, last - 3) // 최근 4주 윈도
-  const rows = EID_DISEASES.map((d) => {
-    const a = wk[d]
+  const rows = EID_WEEKLY_DISEASES.map((d) => {
+    const a = EID_WK_NAT[d]
     const recent = sum(a, ws, last)
     const prior = sum(a, ws - 4, ws - 1)
     return { name: d.replace(/^@/, ''), grp: EID_GROUP[d], count: recent, trend: recent > prior * 1.1 ? 'up' : recent < prior * 0.9 ? 'down' : 'flat' }

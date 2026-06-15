@@ -1,12 +1,15 @@
-// 감염병 발생 현황판 — 질병관리청 전수신고 감염병 발생현황(시도별·질병별·연도별).
-// 선거개표식 시도 choropleth + 질병 선택 + [발생수/10만명당 발생률] 지표 토글 + 연도 기간바 + 주별 전국 시계열 + 분석 차트.
-// 데이터: 배치 정적 캐시(eid-region.ts), 지도: 시도 경계 path(kr-geo.ts). per-request 외부호출 없음(§13.7).
+// 감염병 발생 현황판 — 질병관리청 감염병포털 EDW(시도×연 + 시도×주).
+// 연간/주별 토글: 연간=연도 슬라이더 다년 지도, 주별=주차 슬라이더가 지도를 직접 변경(시도×주). 발생수/발생률 칩, 에피데믹 커브, 분석 패널.
+// 데이터: 배치 정적 캐시(eid-region.ts), 지도경계: kr-geo.ts. per-request 외부호출 없음(§13.7).
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, Cell, LabelList, ReferenceLine,
 } from 'recharts'
-import { EID_YEARS, EID_PARTIAL_YEAR, EID_WEEKS, EID_SIDO, EID_DISEASES, EID_GROUP, EID_COUNT, EID_RATE, EID_WEEKLY } from '../data/eid-region'
+import {
+  EID_YEARS, EID_PARTIAL_YEAR, EID_CUR_YEAR, EID_CUR_WEEK, EID_SIDO, EID_DISEASES, EID_GROUP,
+  EID_WEEKLY_DISEASES, EID_COUNT, EID_RATE, EID_WK_SIDO, EID_WK_NAT,
+} from '../data/eid-region'
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 
 type Metric = 'count' | 'rate'
@@ -14,16 +17,9 @@ const ALL = '__ALL__'
 const cleanName = (d: string) => d.replace(/^@/, '')
 const nf = (n: number) => n.toLocaleString('ko-KR')
 const SIDO_NAME: Record<string, string> = Object.fromEntries(EID_SIDO.map((s) => [s.code, s.name]))
-
-const METRIC: Record<Metric, { label: string; unit: string; store: typeof EID_COUNT }> = {
-  count: { label: '발생 수', unit: '건', store: EID_COUNT },
-  rate: { label: '10만 명당 발생률', unit: '명', store: EID_RATE },
-}
-// 값 포맷(발생수=정수, 발생률=소수)
 const fmt = (v: number, m: Metric) => m === 'count' ? nf(Math.round(v)) : (v >= 10 ? v.toFixed(1) : v.toFixed(2))
 const unitSuffix = (m: Metric) => m === 'count' ? '건' : '명/10만'
 
-// 은/는 조사(마지막 한글 음절 받침 기준; 비한글 종결은 '는')
 function eunNeun(word: string): string {
   const m = word.replace(/[)\]\s]+$/, '')
   const c = m.charCodeAt(m.length - 1)
@@ -31,19 +27,30 @@ function eunNeun(word: string): string {
   return '는'
 }
 
-// 지표·질병·연도·시도별 값('00'=전국). disease=ALL 이면 전 질병 합산(발생률도 동일 인구기준이라 가산 가능).
-function valueFor(metric: Metric, disease: string, year: string, sido: string): number {
-  const yd = METRIC[metric].store[year]
+// 연간 값(발생수/발생률) — '00'=전국
+function annualVal(metric: Metric, disease: string, year: string, sido: string): number {
+  const yd = (metric === 'rate' ? EID_RATE : EID_COUNT)[year]
   if (!yd) return 0
-  if (disease === ALL) {
-    let s = 0
-    for (const d of EID_DISEASES) s += yd[d]?.[sido] ?? 0
-    return s
-  }
+  if (disease === ALL) { let s = 0; for (const d of EID_DISEASES) s += yd[d]?.[sido] ?? 0; return s }
   return yd[disease]?.[sido] ?? 0
 }
+// 현재년 주별 시도 발생수
+function weekVal(disease: string, week: number, sido: string): number {
+  if (disease === ALL) { let s = 0; for (const d of EID_WEEKLY_DISEASES) s += EID_WK_SIDO[d]?.[week]?.[sido] ?? 0; return s }
+  return EID_WK_SIDO[disease]?.[week]?.[sido] ?? 0
+}
+const weeklyAvail = (disease: string) => disease === ALL || !!EID_WK_SIDO[disease]
+// 전국 인구(연도별) — 시도 발생률은 합산 불가하므로, 시도별 인구(=발생수/발생률×10만)를 역산·합산해 전국 인구 추정.
+function nationalPop(year: string): number {
+  let pop = 0
+  for (const s of EID_SIDO) {
+    let c = 0, r = 0
+    for (const d of EID_DISEASES) { c += EID_COUNT[year]?.[d]?.[s.code] ?? 0; r += EID_RATE[year]?.[d]?.[s.code] ?? 0 }
+    if (r > 0) pop += (c / r) * 100000
+  }
+  return pop || 51000000
+}
 
-// 색상 램프(발생강도): 회색→앰버→오렌지→레드. sqrt 스케일로 분포 펼침.
 const RAMP: [number, [number, number, number]][] = [
   [0, [238, 242, 247]], [0.16, [254, 240, 199]], [0.36, [253, 211, 90]],
   [0.56, [249, 145, 58]], [0.78, [236, 72, 60]], [1, [150, 24, 28]],
@@ -62,145 +69,145 @@ function rampColor(t: number): string {
   return `rgb(${last[0]},${last[1]},${last[2]})`
 }
 
-const CHIPS = [ALL, '백일해', '수두', '매독', 'A형간염', '쯔쯔가무시증', '말라리아']
-
-// 수도권 등 작은 시도 라벨 겹침 보정(dx, dy)
+const CHIPS = [ALL, ...EID_DISEASES.slice(0, 6)]
 const LABEL_OFFSET: Record<string, [number, number]> = {
   '08': [26, 34], '04': [-16, 4], '17': [-2, -7], '06': [10, 6], '07': [13, 2],
 }
+const GRP_COLOR: Record<string, string> = { '1급': '#dc2626', '2급': '#f97316', '3급': '#eab308', '4급': '#3b82f6' }
 
 export default function InfectiousMap() {
   const [disease, setDisease] = useState<string>(ALL)
   const [metric, setMetric] = useState<Metric>('count')
+  const [gran, setGran] = useState<'year' | 'week'>('year')
   const [yearIdx, setYearIdx] = useState(EID_YEARS.length - 1)
+  const [weekIdx, setWeekIdx] = useState(EID_CUR_WEEK - 1)
   const [selected, setSelected] = useState<string | null>(null)
   const [hover, setHover] = useState<string | null>(null)
   const [playing, setPlaying] = useState(false)
-  const [weekIdx, setWeekIdx] = useState(0)
-  const [wkPlaying, setWkPlaying] = useState(false)
   const [tip, setTip] = useState<{ x: number; y: number; code: string } | null>(null)
   const mapRef = useRef<HTMLDivElement>(null)
-  const year = EID_YEARS[yearIdx]
-  const isPartial = year === EID_PARTIAL_YEAR
-  const diseaseLabel = disease === ALL ? '전체 감염병' : cleanName(disease)
 
+  const inWeek = gran === 'week'
+  const effMetric: Metric = inWeek ? 'count' : metric
+  const year = inWeek ? EID_CUR_YEAR : EID_YEARS[yearIdx]
+  const week = weekIdx + 1
+  const isPartial = !inWeek && year === EID_PARTIAL_YEAR
+  const wkAvail = weeklyAvail(disease)
+  const diseaseLabel = disease === ALL ? '전체 감염병' : cleanName(disease)
+  const periodLabel = inWeek ? `${EID_CUR_YEAR}년 ${week}주차` : `${year}년`
+  const u = unitSuffix(effMetric)
+
+  // 재생(연간=연도 순환, 주별=주차 순환)
   useEffect(() => {
     if (!playing) return
-    const id = setInterval(() => setYearIdx((i) => (i + 1) % EID_YEARS.length), 1100)
+    const id = setInterval(() => {
+      if (inWeek) setWeekIdx((i) => (i + 1) % EID_CUR_WEEK)
+      else setYearIdx((i) => (i + 1) % EID_YEARS.length)
+    }, inWeek ? 430 : 1100)
     return () => clearInterval(id)
-  }, [playing])
+  }, [playing, inWeek])
 
-  // 시도별 값 + 최대값(전국 제외)
+  // 시도별 값
   const { perSido, maxV, nationTotal } = useMemo(() => {
-    const per: Record<string, number> = {}
-    let mx = 0
-    for (const s of EID_SIDO) { const v = valueFor(metric, disease, year, s.code); per[s.code] = v; if (v > mx) mx = v }
-    return { perSido: per, maxV: mx || 1, nationTotal: valueFor(metric, disease, year, '00') }
-  }, [metric, disease, year])
+    const per: Record<string, number> = {}; let mx = 0
+    for (const s of EID_SIDO) {
+      const v = inWeek ? weekVal(disease, week, s.code) : annualVal(effMetric, disease, year, s.code)
+      per[s.code] = v; if (v > mx) mx = v
+    }
+    const sum = EID_SIDO.reduce((t, s) => t + (per[s.code] || 0), 0)
+    let nat: number
+    if (inWeek) nat = sum
+    else if (effMetric === 'rate') { const cnt = annualVal('count', disease, year, '00'); nat = cnt / nationalPop(year) * 100000 }
+    else nat = annualVal('count', disease, year, '00') || sum
+    return { perSido: per, maxV: mx || 1, nationTotal: nat }
+  }, [inWeek, disease, week, effMetric, year])
 
   const ranking = useMemo(
-    () => EID_SIDO.map((s) => ({ code: s.code, name: s.name, value: perSido[s.code] || 0 }))
-      .sort((a, b) => b.value - a.value),
+    () => EID_SIDO.map((s) => ({ code: s.code, name: s.name, value: perSido[s.code] || 0 })).sort((a, b) => b.value - a.value),
     [perSido],
   )
   const topSido = ranking[0]
+  const rankPos = ranking.filter((r) => r.value > 0)
 
-  // 연도별 전국 추이(+ 선택 시도 오버레이)
+  // 연도별 추이(다년, 전국+선택시도)
   const trend = useMemo(() => EID_YEARS.map((y) => {
-    const row: Record<string, number | string> = { year: y, 전국: valueFor(metric, disease, y, '00') }
-    if (selected) row[SIDO_NAME[selected]] = valueFor(metric, disease, y, selected)
+    const row: Record<string, number | string> = { year: y, 전국: annualVal(effMetric, disease, y, '00') }
+    if (selected) row[SIDO_NAME[selected]] = annualVal(effMetric, disease, y, selected)
     return row
-  }), [metric, disease, selected])
-  const prevTotal = yearIdx > 0 ? valueFor(metric, disease, EID_YEARS[yearIdx - 1], '00') : null
+  }), [effMetric, disease, selected])
+
+  // 전기간 대비(연간=전년, 주별=전주)
+  const prevTotal = inWeek
+    ? (weekIdx > 0 ? EID_SIDO.reduce((t, s) => t + weekVal(disease, week - 1, s.code), 0) : null)
+    : (yearIdx > 0 ? annualVal(effMetric, disease, EID_YEARS[yearIdx - 1], '00') : null)
   const yoy = prevTotal && prevTotal > 0 ? Math.round(((nationTotal - prevTotal) / prevTotal) * 100) : null
   const yoyMult = prevTotal && prevTotal > 0 ? nationTotal / prevTotal : null
-  // 6배(=500%) 이상 급증은 %대신 배수로 표기(가독성)
   const bigJump = yoyMult !== null && yoyMult >= 6
   const yoyBadge = yoy === null ? '—' : bigJump ? `▲${Math.round(yoyMult!)}배` : `${yoy > 0 ? '▲' : yoy < 0 ? '▼' : ''}${Math.abs(yoy)}%`
-  const yoyPhrase = yoy === null ? '' : bigJump ? ` 전년 대비 약 ${Math.round(yoyMult!)}배 급증했습니다.` : yoy > 0 ? ` 전년 대비 ${yoy}% 증가했습니다.` : yoy < 0 ? ` 전년 대비 ${Math.abs(yoy)}% 감소했습니다.` : ' 전년과 비슷한 수준입니다.'
+  const yoyPhrase = yoy === null ? '' : bigJump ? ` ${inWeek ? '전주' : '전년'} 대비 약 ${Math.round(yoyMult!)}배 급증했습니다.` : yoy > 0 ? ` ${inWeek ? '전주' : '전년'} 대비 ${yoy}% 증가했습니다.` : yoy < 0 ? ` ${inWeek ? '전주' : '전년'} 대비 ${Math.abs(yoy)}% 감소했습니다.` : ` ${inWeek ? '전주' : '전년'}와 비슷합니다.`
 
-  // 주별 전국 발생수 시계열(선택 연도, ALL은 전 질병 합산). 발생수 기준(주별 발생률 미수집).
-  const weekly = useMemo(() => {
-    const wk = EID_WEEKLY[year] || {}
-    const arr = new Array(EID_WEEKS).fill(0)
-    const add = (a?: number[]) => { if (a) for (let i = 0; i < EID_WEEKS; i++) arr[i] += a[i] || 0 }
-    if (disease === ALL) EID_DISEASES.forEach((d) => add(wk[d])); else add(wk[disease])
-    let last = -1
-    for (let i = arr.length - 1; i >= 0; i--) if (arr[i] > 0) { last = i; break }
-    const trimmed = last >= 0 ? arr.slice(0, last + 1) : arr
-    const series = trimmed.map((v, i) => ({ week: i + 1, value: v }))
+  // 현재년 주별 전국 에피데믹 커브
+  const curve = useMemo(() => {
+    const len = EID_CUR_WEEK; const arr = new Array(len).fill(0)
+    const add = (a?: number[]) => { if (a) for (let i = 0; i < len; i++) arr[i] += a[i] || 0 }
+    if (disease === ALL) EID_WEEKLY_DISEASES.forEach((d) => add(EID_WK_NAT[d])); else add(EID_WK_NAT[disease])
+    let last = -1; for (let i = len - 1; i >= 0; i--) if (arr[i] > 0) { last = i; break }
+    const series = (last >= 0 ? arr.slice(0, last + 1) : arr).map((v, i) => ({ week: i + 1, value: v }))
     const peak = series.reduce((m, r) => (r.value > m.value ? r : m), { week: 0, value: 0 })
     return { series, total: arr.reduce((a, b) => a + b, 0), peak, has: last >= 0 }
-  }, [disease, year])
-  const lastWeek = weekly.series.length
-  // 주별 데이터 바뀌면 최신 주차로 맞춤
-  useEffect(() => { setWeekIdx(Math.max(0, lastWeek - 1)) }, [lastWeek])
-  // 주별 슬라이더 자동재생
-  useEffect(() => {
-    if (!wkPlaying || lastWeek === 0) return
-    const id = setInterval(() => setWeekIdx((i) => (i + 1) % lastWeek), 480)
-    return () => clearInterval(id)
-  }, [wkPlaying, lastWeek])
-  const curWeek = weekly.series[Math.min(weekIdx, lastWeek - 1)] || { week: 0, value: 0 }
-  const weekCum = weekly.series.slice(0, weekIdx + 1).reduce((s, r) => s + r.value, 0)
+  }, [disease])
 
-  // 자동 분석 인사이트(결정론)
+  // 인사이트
   const insight = useMemo(() => {
-    const u = unitSuffix(metric)
-    if (nationTotal <= 0) return `${year}년 ${diseaseLabel}의 전수신고 발생 기록이 없습니다.`
+    if (nationTotal <= 0) return `${periodLabel} ${diseaseLabel}의 발생 기록이 없습니다.${inWeek && !wkAvail ? ' (이 감염병은 주별 데이터 미수집 — 연간 보기로 전환하세요.)' : ''}`
     const top3 = ranking.slice(0, 3).filter((r) => r.value > 0)
     const top3Share = Math.round((top3.reduce((s, r) => s + r.value, 0) / (ranking.reduce((s, r) => s + r.value, 0) || 1)) * 100)
-    const lead = topSido ? `${topSido.name}(${fmt(topSido.value, metric)}${u})` : ''
-    const conc = top3Share >= 50 ? '특정 지역에 집중' : top3Share >= 35 ? '일부 지역에 편중' : '전국에 비교적 고르게 분포'
-    const yoyTxt = yoyPhrase
-    const head = metric === 'count'
-      ? `${year}년 ${diseaseLabel}${eunNeun(diseaseLabel)} 전국 ${fmt(nationTotal, metric)}건 발생했고`
-      : `${year}년 ${diseaseLabel}의 전국 발생률은 인구 10만 명당 ${fmt(nationTotal, metric)}명이고`
-    const wkTxt = disease !== ALL && weekly.has ? ` 주별로는 ${weekly.peak.week}주차에 ${nf(weekly.peak.value)}건으로 가장 많았습니다.` : ''
+    const lead = topSido ? `${topSido.name}(${fmt(topSido.value, effMetric)}${u})` : ''
+    const conc = top3Share >= 50 ? '특정 지역에 집중' : top3Share >= 35 ? '일부 지역에 편중' : '비교적 고르게 분포'
+    const head = effMetric === 'count'
+      ? `${periodLabel} ${diseaseLabel}${eunNeun(diseaseLabel)} 전국 ${fmt(nationTotal, effMetric)}건 발생했고`
+      : `${periodLabel} ${diseaseLabel}의 전국 발생률은 인구 10만 명당 ${fmt(nationTotal, effMetric)}명이고`
     const partTxt = isPartial ? ` (${year}년은 진행 중인 잠정 수치입니다.)` : ''
-    return `${head}, ${lead}에서 가장 ${metric === 'count' ? '많았습니다' : '높았습니다'}. 상위 3개 시·도(${top3.map((t) => t.name).join('·')})가 전체의 ${top3Share}%로 ${conc}되어 있습니다.${yoyTxt}${wkTxt}${partTxt}`
-  }, [metric, disease, year, nationTotal, ranking, topSido, yoyPhrase, weekly, diseaseLabel, isPartial])
+    return `${head}, ${lead}에서 가장 ${effMetric === 'count' ? '많았습니다' : '높았습니다'}. 상위 3개 시·도(${top3.map((t) => t.name).join('·')})가 전체의 ${top3Share}%로 ${conc}되어 있습니다.${yoyPhrase}${partTxt}`
+  }, [nationTotal, periodLabel, diseaseLabel, ranking, topSido, effMetric, u, yoyPhrase, isPartial, year, inWeek, wkAvail])
 
-  // 선택 시도의 질병 구성(드릴다운)
+  // 시도 드릴다운 질병 구성(현재 기간)
   const sidoBreakdown = useMemo(() => {
     if (!selected) return []
-    return EID_DISEASES.map((d) => ({ name: cleanName(d), value: valueFor(metric, d, year, selected) }))
+    const list = inWeek ? EID_WEEKLY_DISEASES : EID_DISEASES
+    return list.map((d) => ({ name: cleanName(d), value: inWeek ? weekVal(d, week, selected) : annualVal(effMetric, d, year, selected) }))
       .filter((d) => d.value > 0).sort((a, b) => b.value - a.value).slice(0, 8)
-  }, [metric, selected, year])
+  }, [inWeek, effMetric, selected, year, week])
 
-  // 전국 감염병 Top(연도, 발생수 기준) — 어떤 병이 많이 도는지
+  // 전국 감염병 Top(현재 기간)
   const diseaseTop = useMemo(() => {
     const scope = selected ?? '00'
-    return EID_DISEASES.map((d) => ({ key: d, name: cleanName(d), grp: EID_GROUP[d], value: valueFor('count', d, year, scope) }))
+    const list = inWeek ? EID_WEEKLY_DISEASES : EID_DISEASES
+    return list.map((d) => ({ key: d, name: cleanName(d), grp: EID_GROUP[d], value: inWeek ? weekVal(d, week, scope === '00' ? '00' : scope) : annualVal('count', d, year, scope) }))
       .filter((d) => d.value > 0).sort((a, b) => b.value - a.value)
-  }, [year, selected])
+  }, [inWeek, year, week, selected])
 
-  // 급(군)별 발생 구성(전국, 발생수) — disease=ALL일 때 의미
+  // 급별 구성(현재 기간, 전체 볼 때)
   const groupMix = useMemo(() => {
     const g: Record<string, number> = {}
-    for (const d of EID_DISEASES) {
-      const v = valueFor('count', d, year, selected ?? '00')
+    const list = inWeek ? EID_WEEKLY_DISEASES : EID_DISEASES
+    for (const d of list) {
+      const v = inWeek ? weekVal(d, week, selected ?? '00') : annualVal('count', d, year, selected ?? '00')
       if (v > 0) g[EID_GROUP[d]] = (g[EID_GROUP[d]] || 0) + v
     }
     return ['1급', '2급', '3급', '4급'].map((k) => ({ name: k, value: g[k] || 0 })).filter((x) => x.value > 0)
-  }, [year, selected])
+  }, [inWeek, year, week, selected])
 
-  // 추가 통계: 발생 시도 수 / 전국 평균(시도) / 최저 발생지
   const stats = useMemo(() => {
-    const active = ranking.filter((r) => r.value > 0)
-    const lowest = active.length ? active[active.length - 1] : null
-    return { activeSido: active.length, lowest }
-  }, [ranking])
+    const active = rankPos
+    return { activeSido: active.length, lowest: active.length ? active[active.length - 1] : null }
+  }, [rankPos])
 
   function onEnter(code: string, e: React.MouseEvent) {
     setHover(code)
     const r = mapRef.current?.getBoundingClientRect()
     if (r) setTip({ x: e.clientX - r.left, y: e.clientY - r.top, code })
   }
-
-  const u = unitSuffix(metric)
-  const rankPos = ranking.filter((r) => r.value > 0)
-  const GRP_COLOR: Record<string, string> = { '1급': '#dc2626', '2급': '#f97316', '3급': '#eab308', '4급': '#3b82f6' }
 
   return (
     <div className="lg:w-screen lg:max-w-none lg:relative lg:left-1/2 lg:right-1/2 lg:-ml-[50vw] lg:-mr-[50vw] lg:px-6">
@@ -212,27 +219,20 @@ export default function InfectiousMap() {
               <span className="text-rose-500">🦠</span> 감염병 발생 현황판
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              질병관리청 <b>전수신고 감염병 발생현황</b> · 전국 17개 시·도 · {EID_YEARS[0]}–{EID_YEARS[EID_YEARS.length - 1]}
+              질병관리청 <b>감염병포털 발생현황</b> · 전국 17개 시·도 · 시도별 <b>주(週) 단위</b>까지
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">
-            출처: 질병관리청 감염병포털
-          </span>
+          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">출처: 질병관리청 감염병포털</span>
         </div>
 
-        {/* 컨트롤: 질병 선택 + 지표 토글 */}
+        {/* 컨트롤 */}
         <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-center gap-2">
             <label className="text-xs font-semibold text-slate-500">감염병</label>
-            <select
-              value={disease}
-              onChange={(e) => setDisease(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100"
-            >
+            <select value={disease} onChange={(e) => setDisease(e.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
               <option value={ALL}>전체 감염병 (합계)</option>
-              {EID_DISEASES.map((d) => (
-                <option key={d} value={d}>{cleanName(d)} · {EID_GROUP[d]}</option>
-              ))}
+              {EID_DISEASES.map((d) => (<option key={d} value={d}>{cleanName(d)} · {EID_GROUP[d]}</option>))}
             </select>
             <div className="flex flex-wrap gap-1.5">
               {CHIPS.map((c) => (
@@ -244,125 +244,137 @@ export default function InfectiousMap() {
             </div>
           </div>
 
-          {/* 지표 토글(칩) */}
-          <div className="mt-3 flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold text-slate-500">지표</label>
-            <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
-              {(['count', 'rate'] as Metric[]).map((mk) => (
-                <button key={mk} onClick={() => setMetric(mk)}
-                  className={`rounded-md px-3 py-1 text-xs font-semibold transition ${metric === mk ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>
-                  {mk === 'count' ? '발생 수' : '인구 10만 명당 발생률'}
-                </button>
-              ))}
+          <div className="mt-3 flex flex-wrap items-center gap-x-5 gap-y-2">
+            {/* 기간 단위 토글 */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500">기간</label>
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+                {(['year', 'week'] as const).map((g) => (
+                  <button key={g} onClick={() => { setGran(g); setSelected(null); setPlaying(false) }}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold transition ${gran === g ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>
+                    {g === 'year' ? '연간' : '주별 (지도 변화)'}
+                  </button>
+                ))}
+              </div>
             </div>
-            <span className="text-[11px] text-slate-400">
-              {metric === 'count' ? '신고된 환자 수' : '인구수 대비 발생률 — 인구 적은 지역의 유행 강도까지 공정 비교'}
-            </span>
+            {/* 지표 토글 */}
+            <div className="flex items-center gap-2">
+              <label className="text-xs font-semibold text-slate-500">지표</label>
+              <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+                {(['count', 'rate'] as Metric[]).map((mk) => (
+                  <button key={mk} disabled={inWeek && mk === 'rate'} onClick={() => !inWeek && setMetric(mk)}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold transition ${(inWeek ? 'count' : metric) === mk ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'} ${inWeek && mk === 'rate' ? 'cursor-not-allowed opacity-40' : ''}`}>
+                    {mk === 'count' ? '발생 수' : '인구 10만 명당 발생률'}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <span className="text-[11px] text-slate-400">{inWeek ? '주별은 시도×주 발생수 — 주차 슬라이더가 지도를 바꿉니다' : effMetric === 'count' ? '신고된 환자 수' : '인구 대비 발생률 — 인구 적은 지역 유행강도까지 공정비교'}</span>
           </div>
         </div>
 
-        {/* 자동 분석 인사이트 */}
+        {/* 인사이트 */}
         <div className="mb-4 flex items-start gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-slate-200">
           <span className="mt-0.5 text-base">📊</span>
           <p><b className="text-blue-700 dark:text-blue-300">한눈에</b> · {insight}</p>
         </div>
 
-        {/* 본문: 지도(좌) + 분석(우) */}
+        {/* 본문 */}
         <div className="grid gap-4 lg:grid-cols-12">
           {/* 지도 */}
           <div className="lg:col-span-7">
             <div ref={mapRef} className="relative rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-white p-3 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
               <div className="mb-1 flex items-center justify-between px-1">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  {diseaseLabel} · {year}년 시·도 {metric === 'count' ? '발생 분포' : '발생률(10만명당) 분포'}
+                  {diseaseLabel} · {periodLabel} 시·도 {effMetric === 'count' ? '발생 분포' : '발생률(10만명당) 분포'}
                 </h2>
-                {selected && (
-                  <button onClick={() => setSelected(null)} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 hover:bg-slate-200 dark:bg-slate-800">전국 보기 ✕</button>
-                )}
+                {selected && (<button onClick={() => setSelected(null)} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 hover:bg-slate-200 dark:bg-slate-800">전국 보기 ✕</button>)}
               </div>
-              <svg viewBox={KR_VIEWBOX} className="h-auto w-full" style={{ maxHeight: 560 }}>
-                {KR_GEO.map((g) => {
-                  const v = perSido[g.code] || 0
-                  const t = Math.sqrt(v / maxV)
-                  const isSel = selected === g.code
-                  const isHov = hover === g.code
-                  return (
-                    <path
-                      key={g.code} d={g.d} fill={v === 0 ? '#eef2f7' : rampColor(t)}
-                      stroke={isSel ? '#0f172a' : isHov ? '#334155' : '#ffffff'}
-                      strokeWidth={isSel ? 2.6 : isHov ? 1.8 : 0.8}
-                      style={{ cursor: 'pointer', filter: isHov && !isSel ? 'brightness(1.08)' : undefined, transition: 'fill .35s' }}
-                      onMouseMove={(e) => onEnter(g.code, e)}
-                      onMouseLeave={() => { setHover(null); setTip(null) }}
-                      onClick={() => setSelected((s) => (s === g.code ? null : g.code))}
-                    />
-                  )
-                })}
-                {/* 라벨 */}
-                {KR_GEO.map((g) => {
-                  const v = perSido[g.code] || 0
-                  const [dx, dy] = LABEL_OFFSET[g.code] || [0, 0]
-                  const lx = g.cx + dx, ly = g.cy + dy
-                  return (
-                    <g key={'l' + g.code} pointerEvents="none" style={{ paintOrder: 'stroke' }}>
-                      {(dx || dy) ? <line x1={g.cx} y1={g.cy} x2={lx} y2={ly - 2} stroke="#94a3b8" strokeWidth={0.6} /> : null}
-                      <text x={lx} y={ly - 4} textAnchor="middle" fontSize={13} fontWeight={600}
-                        stroke="#fff" strokeWidth={3} fill="#1e293b">{g.name}</text>
-                      <text x={lx} y={ly + 11} textAnchor="middle" fontSize={11.5} fontWeight={700}
-                        stroke="#fff" strokeWidth={3} fill={v > maxV * 0.5 ? '#7f1d1d' : '#334155'}>{v > 0 ? fmt(v, metric) : '-'}</text>
-                    </g>
-                  )
-                })}
-              </svg>
+              {inWeek && !wkAvail ? (
+                <div className="flex h-[420px] flex-col items-center justify-center gap-2 text-center text-sm text-slate-400">
+                  <span className="text-3xl">📅</span>
+                  이 감염병은 주별 시도 데이터가 수집되지 않았습니다.<br />상단에서 <b className="text-slate-500">연간</b>으로 전환하면 시·도 분포를 볼 수 있어요.
+                </div>
+              ) : (
+                <svg viewBox={KR_VIEWBOX} className="h-auto w-full" style={{ maxHeight: 560 }}>
+                  {KR_GEO.map((g) => {
+                    const v = perSido[g.code] || 0; const t = Math.sqrt(v / maxV)
+                    const isSel = selected === g.code; const isHov = hover === g.code
+                    return (
+                      <path key={g.code} d={g.d} fill={v === 0 ? '#eef2f7' : rampColor(t)}
+                        stroke={isSel ? '#0f172a' : isHov ? '#334155' : '#ffffff'} strokeWidth={isSel ? 2.6 : isHov ? 1.8 : 0.8}
+                        style={{ cursor: 'pointer', filter: isHov && !isSel ? 'brightness(1.08)' : undefined, transition: 'fill .3s' }}
+                        onMouseMove={(e) => onEnter(g.code, e)} onMouseLeave={() => { setHover(null); setTip(null) }}
+                        onClick={() => setSelected((s) => (s === g.code ? null : g.code))} />
+                    )
+                  })}
+                  {KR_GEO.map((g) => {
+                    const v = perSido[g.code] || 0; const [dx, dy] = LABEL_OFFSET[g.code] || [0, 0]
+                    const lx = g.cx + dx, ly = g.cy + dy
+                    return (
+                      <g key={'l' + g.code} pointerEvents="none" style={{ paintOrder: 'stroke' }}>
+                        {(dx || dy) ? <line x1={g.cx} y1={g.cy} x2={lx} y2={ly - 2} stroke="#94a3b8" strokeWidth={0.6} /> : null}
+                        <text x={lx} y={ly - 4} textAnchor="middle" fontSize={13} fontWeight={600} stroke="#fff" strokeWidth={3} fill="#1e293b">{g.name}</text>
+                        <text x={lx} y={ly + 11} textAnchor="middle" fontSize={11.5} fontWeight={700} stroke="#fff" strokeWidth={3} fill={v > maxV * 0.5 ? '#7f1d1d' : '#334155'}>{v > 0 ? fmt(v, effMetric) : '-'}</text>
+                      </g>
+                    )
+                  })}
+                </svg>
+              )}
 
               {/* 범례 */}
               <div className="mt-1 flex items-center gap-2 px-1 text-[11px] text-slate-500">
-                <span>{metric === 'count' ? '적음' : '낮음'}</span>
+                <span>{effMetric === 'count' ? '적음' : '낮음'}</span>
                 <div className="h-2.5 flex-1 rounded-full" style={{ background: `linear-gradient(to right, ${rampColor(0)}, ${rampColor(0.3)}, ${rampColor(0.55)}, ${rampColor(0.8)}, ${rampColor(1)})` }} />
-                <span>{metric === 'count' ? '많음' : '높음'}</span>
-                <span className="ml-1 tabular-nums text-slate-400">최대 {fmt(maxV, metric)}{u}</span>
+                <span>{effMetric === 'count' ? '많음' : '높음'}</span>
+                <span className="ml-1 tabular-nums text-slate-400">최대 {fmt(maxV, effMetric)}{u}</span>
               </div>
 
-              {/* 기간 바(타임라인) — 지도 아래 */}
+              {/* 기간 바(타임라인) */}
               <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
                 <div className="flex items-center gap-3">
                   <button onClick={() => setPlaying((p) => !p)}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm text-white hover:bg-blue-700"
-                    title={playing ? '일시정지' : '연도별 재생'}>
-                    {playing ? '❚❚' : '▶'}
-                  </button>
+                    className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm text-white ${inWeek ? 'bg-rose-600 hover:bg-rose-700' : 'bg-blue-600 hover:bg-blue-700'}`}
+                    title={playing ? '일시정지' : '재생'}>{playing ? '❚❚' : '▶'}</button>
                   <div className="flex-1">
-                    <input type="range" min={0} max={EID_YEARS.length - 1} step={1} value={yearIdx}
-                      onChange={(e) => { setPlaying(false); setYearIdx(Number(e.target.value)) }}
-                      className="w-full accent-blue-600" aria-label="연도 선택" />
-                    <div className="mt-0.5 flex justify-between px-0.5">
-                      {EID_YEARS.map((y, i) => (
-                        <button key={y} onClick={() => { setPlaying(false); setYearIdx(i) }}
-                          className={`text-xs font-semibold tabular-nums ${i === yearIdx ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>{y}</button>
-                      ))}
-                    </div>
+                    {inWeek ? (
+                      <>
+                        <input type="range" min={0} max={EID_CUR_WEEK - 1} step={1} value={weekIdx}
+                          onChange={(e) => { setPlaying(false); setWeekIdx(Number(e.target.value)) }} className="w-full accent-rose-600" aria-label="주차 선택" />
+                        <div className="mt-0.5 flex justify-between px-0.5 text-[10px] text-slate-400">
+                          <span>1주</span><span>{Math.ceil(EID_CUR_WEEK / 2)}주</span><span>{EID_CUR_WEEK}주</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <input type="range" min={0} max={EID_YEARS.length - 1} step={1} value={yearIdx}
+                          onChange={(e) => { setPlaying(false); setYearIdx(Number(e.target.value)) }} className="w-full accent-blue-600" aria-label="연도 선택" />
+                        <div className="mt-0.5 flex justify-between px-0.5">
+                          {EID_YEARS.map((y, i) => (<button key={y} onClick={() => { setPlaying(false); setYearIdx(i) }} className={`text-xs font-semibold tabular-nums ${i === yearIdx ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>{y}</button>))}
+                        </div>
+                      </>
+                    )}
                   </div>
                   <div className="flex shrink-0 flex-col items-center">
-                    <span className="rounded-lg bg-slate-900 px-3 py-1 text-lg font-bold tabular-nums text-white dark:bg-white dark:text-slate-900">{year}</span>
-                    {isPartial && <span className="mt-0.5 text-[10px] font-semibold text-amber-600">잠정·진행중</span>}
+                    <span className={`rounded-lg px-3 py-1 text-lg font-bold tabular-nums text-white ${inWeek ? 'bg-rose-600' : 'bg-slate-900 dark:bg-white dark:text-slate-900'}`}>{inWeek ? `${week}주` : year}</span>
+                    <span className="mt-0.5 text-[10px] font-semibold text-slate-400">{inWeek ? `${EID_CUR_YEAR}년` : isPartial ? '잠정·진행중' : ''}</span>
                   </div>
                 </div>
               </div>
 
-              {/* 호버 툴팁 — 발생수·발생률 동시 표기 */}
+              {/* 툴팁 */}
               {tip && (() => {
-                const cv = valueFor('count', disease, year, tip.code)
-                const rv = valueFor('rate', disease, year, tip.code)
-                const natC = valueFor('count', disease, year, '00') || 1
+                const cv = inWeek ? weekVal(disease, week, tip.code) : annualVal('count', disease, year, tip.code)
+                const rv = inWeek ? 0 : annualVal('rate', disease, year, tip.code)
+                const natC = nationTotal || 1
                 return (
-                  <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-lg bg-slate-900/95 px-3 py-2 text-xs text-white shadow-lg"
-                    style={{ left: tip.x, top: tip.y - 8 }}>
+                  <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full rounded-lg bg-slate-900/95 px-3 py-2 text-xs text-white shadow-lg" style={{ left: tip.x, top: tip.y - 8 }}>
                     <div className="font-bold">{SIDO_NAME[tip.code]} <span className="font-normal text-slate-400">· {diseaseLabel}</span></div>
                     <div className="mt-1 flex items-baseline gap-1">
                       <span className="text-base font-bold tabular-nums text-amber-300">{nf(cv)}</span><span className="text-[10px] text-slate-400">건</span>
-                      <span className="ml-2 text-base font-bold tabular-nums text-sky-300">{fmt(rv, 'rate')}</span><span className="text-[10px] text-slate-400">명/10만</span>
+                      {!inWeek && <><span className="ml-2 text-base font-bold tabular-nums text-sky-300">{fmt(rv, 'rate')}</span><span className="text-[10px] text-slate-400">명/10만</span></>}
                     </div>
-                    <div className="text-[10px] text-slate-400">전국 발생수의 {Math.round((cv / natC) * 100)}%</div>
+                    <div className="text-[10px] text-slate-400">{inWeek ? `${week}주차 ` : ''}전국의 {Math.round((cv / natC) * 100)}%</div>
                   </div>
                 )
               })()}
@@ -371,70 +383,56 @@ export default function InfectiousMap() {
 
           {/* 분석 패널 */}
           <div className="space-y-4 lg:col-span-5">
-            {/* KPI */}
             <div className="grid grid-cols-3 gap-2">
-              <Kpi label={metric === 'count' ? '전국 발생수' : '전국 발생률'} value={fmt(nationTotal, metric)} unit={metric === 'count' ? '건' : '명/10만'} tone="slate" />
-              <Kpi label={metric === 'count' ? '최다 발생지' : '최고 발생률'} value={topSido && topSido.value > 0 ? topSido.name : '—'} unit={topSido && topSido.value > 0 ? `${fmt(topSido.value, metric)}${u}` : '발생 없음'} tone="rose" />
-              <Kpi label="전년 대비" value={yoyBadge} unit={year === EID_YEARS[0] ? '기준' : '증감'} tone={yoy === null ? 'slate' : yoy > 0 ? 'red' : 'blue'} />
+              <Kpi label={effMetric === 'count' ? '전국 발생수' : '전국 발생률'} value={fmt(nationTotal, effMetric)} unit={effMetric === 'count' ? '건' : '명/10만'} tone="slate" />
+              <Kpi label={effMetric === 'count' ? '최다 발생지' : '최고 발생률'} value={topSido && topSido.value > 0 ? topSido.name : '—'} unit={topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음'} tone="rose" />
+              <Kpi label={inWeek ? '전주 대비' : '전년 대비'} value={yoyBadge} unit={(inWeek ? weekIdx === 0 : yearIdx === 0) ? '기준' : '증감'} tone={yoy === null ? 'slate' : yoy > 0 ? 'red' : 'blue'} />
             </div>
-            {/* 보조 통계 */}
             <div className="-mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 px-1 text-xs text-slate-500">
               <span>발생 시·도 <b className="text-slate-700 dark:text-slate-200">{stats.activeSido}</b>/17곳</span>
               {disease === ALL && <span>대상 감염병 <b className="text-slate-700 dark:text-slate-200">{diseaseTop.length}</b>종</span>}
-              {stats.lowest && <span>최저 {selected ? '' : '발생지'} <b className="text-slate-700 dark:text-slate-200">{stats.lowest.name}</b> ({fmt(stats.lowest.value, metric)}{u})</span>}
+              {stats.lowest && <span>최저 <b className="text-slate-700 dark:text-slate-200">{stats.lowest.name}</b> ({fmt(stats.lowest.value, effMetric)}{u})</span>}
             </div>
 
-            {/* 시도 순위 */}
-            <Panel title={`시·도 ${metric === 'count' ? '발생' : '발생률'} 순위 — ${diseaseLabel} (${year})`}>
-              <ResponsiveContainer width="100%" height={Math.max(200, rankPos.length * 18 + 20)}>
-                <BarChart data={rankPos} layout="vertical" margin={{ top: 0, right: 40, left: 6, bottom: 0 }}>
-                  <XAxis type="number" hide />
-                  <YAxis type="category" dataKey="name" width={36} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                  <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [fmt(Number(v), metric) + u, diseaseLabel]} />
-                  <Bar dataKey="value" radius={[0, 4, 4, 0]} onClick={(d) => { const c = (d as unknown as { code?: string; payload?: { code?: string } }); const code = c.code ?? c.payload?.code; if (code) setSelected(code) }} cursor="pointer">
-                    {rankPos.map((r) => (
-                      <Cell key={r.code} fill={selected === r.code ? '#0f172a' : rampColor(Math.sqrt(r.value / maxV))} />
-                    ))}
-                    <LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), metric)} style={{ fontSize: 10, fill: '#94a3b8' }} />
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+            <Panel title={`시·도 ${effMetric === 'count' ? '발생' : '발생률'} 순위 — ${diseaseLabel} (${periodLabel})`}>
+              {rankPos.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">발생 데이터가 없습니다.</p> : (
+                <ResponsiveContainer width="100%" height={Math.max(180, rankPos.length * 18 + 20)}>
+                  <BarChart data={rankPos} layout="vertical" margin={{ top: 0, right: 40, left: 6, bottom: 0 }}>
+                    <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={36} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                    <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [fmt(Number(v), effMetric) + u, diseaseLabel]} />
+                    <Bar dataKey="value" radius={[0, 4, 4, 0]} onClick={(d) => { const c = (d as unknown as { code?: string; payload?: { code?: string } }); const code = c.code ?? c.payload?.code; if (code) setSelected(code) }} cursor="pointer">
+                      {rankPos.map((r) => (<Cell key={r.code} fill={selected === r.code ? '#0f172a' : rampColor(Math.sqrt(r.value / maxV))} />))}
+                      <LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), effMetric)} style={{ fontSize: 10, fill: '#94a3b8' }} />
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
             </Panel>
 
-            {/* 연도 추이 */}
             <Panel title={`연도별 추이 — ${diseaseLabel}${selected ? ` · ${SIDO_NAME[selected]} 비교` : ' (전국)'}`}>
-              <ResponsiveContainer width="100%" height={185}>
+              <ResponsiveContainer width="100%" height={175}>
                 <LineChart data={trend} margin={{ top: 8, right: 14, left: -16, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                   <XAxis dataKey="year" tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                   <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <RTooltip formatter={(v, n) => [fmt(Number(v), metric) + u, String(n)]} />
+                  <RTooltip formatter={(v, n) => [fmt(Number(v), effMetric) + u, String(n)]} />
                   <Line type="monotone" dataKey="전국" stroke="#3b82f6" strokeWidth={2.5} dot={{ r: 3 }} activeDot={{ r: 5 }} />
                   {selected && <Line type="monotone" dataKey={SIDO_NAME[selected]} stroke="#ef4444" strokeWidth={2.5} dot={{ r: 3 }} />}
                 </LineChart>
               </ResponsiveContainer>
             </Panel>
 
-            {/* 급(군)별 발생 구성 — 전체 감염병 볼 때 */}
             {disease === ALL && groupMix.length > 0 && (
-              <Panel title={`법정 감염병 급(군)별 구성 — ${selected ? SIDO_NAME[selected] : '전국'} (${year})`}>
+              <Panel title={`법정 감염병 급(군)별 구성 — ${selected ? SIDO_NAME[selected] : '전국'} (${periodLabel})`}>
                 {(() => {
                   const tot = groupMix.reduce((s, g) => s + g.value, 0) || 1
                   return (
                     <div className="px-1">
                       <div className="flex h-5 w-full overflow-hidden rounded-md">
-                        {groupMix.map((g) => (
-                          <div key={g.name} style={{ width: `${(g.value / tot) * 100}%`, background: GRP_COLOR[g.name] }}
-                            title={`${g.name} ${nf(g.value)}건`} className="h-full" />
-                        ))}
+                        {groupMix.map((g) => (<div key={g.name} style={{ width: `${(g.value / tot) * 100}%`, background: GRP_COLOR[g.name] }} title={`${g.name} ${nf(g.value)}건`} className="h-full" />))}
                       </div>
                       <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
-                        {groupMix.map((g) => (
-                          <span key={g.name} className="flex items-center gap-1 text-xs text-slate-500">
-                            <span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: GRP_COLOR[g.name] }} />
-                            {g.name} <b className="tabular-nums text-slate-700 dark:text-slate-200">{nf(g.value)}</b> ({Math.round((g.value / tot) * 100)}%)
-                          </span>
-                        ))}
+                        {groupMix.map((g) => (<span key={g.name} className="flex items-center gap-1 text-xs text-slate-500"><span className="inline-block h-2.5 w-2.5 rounded-sm" style={{ background: GRP_COLOR[g.name] }} />{g.name} <b className="tabular-nums text-slate-700 dark:text-slate-200">{nf(g.value)}</b> ({Math.round((g.value / tot) * 100)}%)</span>))}
                       </div>
                     </div>
                   )
@@ -442,21 +440,17 @@ export default function InfectiousMap() {
               </Panel>
             )}
 
-            {/* 전국 감염병 Top — 어떤 병이 많이 도나(클릭→해당 병 지도) */}
             {disease === ALL && !selected && diseaseTop.length > 0 && (
-              <Panel title={`전국 감염병 Top — 발생수 (${year})`}>
+              <Panel title={`전국 감염병 Top — 발생수 (${periodLabel})`}>
                 <div className="space-y-1">
                   {diseaseTop.slice(0, 10).map((d, i) => {
                     const max = diseaseTop[0].value || 1
                     return (
-                      <button key={d.key} onClick={() => setDisease(d.key)}
-                        className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                      <button key={d.key} onClick={() => setDisease(d.key)} className="flex w-full items-center gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
                         <span className="w-4 shrink-0 text-xs font-bold text-slate-400">{i + 1}</span>
                         <span className="w-7 shrink-0 rounded px-1 text-center text-[10px] font-semibold text-white" style={{ background: GRP_COLOR[d.grp] || '#94a3b8' }}>{d.grp}</span>
                         <span className="w-28 shrink-0 truncate text-xs text-slate-700 dark:text-slate-200">{d.name}</span>
-                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
-                          <span className="block h-full rounded-full" style={{ width: `${(d.value / max) * 100}%`, background: rampColor(Math.sqrt(d.value / max)) }} />
-                        </span>
+                        <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-full rounded-full" style={{ width: `${(d.value / max) * 100}%`, background: rampColor(Math.sqrt(d.value / max)) }} /></span>
                         <span className="w-12 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300">{nf(d.value)}</span>
                       </button>
                     )
@@ -466,20 +460,14 @@ export default function InfectiousMap() {
               </Panel>
             )}
 
-            {/* 드릴다운: 선택 시도 질병 구성 */}
             {selected && (
-              <Panel title={`${SIDO_NAME[selected]} 주요 감염병 (${year})`}>
-                {sidoBreakdown.length === 0 ? (
-                  <p className="py-6 text-center text-sm text-slate-400">해당 연도 발생 데이터가 없습니다.</p>
-                ) : (
+              <Panel title={`${SIDO_NAME[selected]} 주요 감염병 (${periodLabel})`}>
+                {sidoBreakdown.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">해당 기간 발생 데이터가 없습니다.</p> : (
                   <ResponsiveContainer width="100%" height={sidoBreakdown.length * 26 + 16}>
                     <BarChart data={sidoBreakdown} layout="vertical" margin={{ top: 0, right: 42, left: 6, bottom: 0 }}>
-                      <XAxis type="number" hide />
-                      <YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
-                      <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [fmt(Number(v), metric) + u, SIDO_NAME[selected!]]} />
-                      <Bar dataKey="value" radius={[0, 4, 4, 0]} fill="#6366f1">
-                        <LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), metric)} style={{ fontSize: 10, fill: '#94a3b8' }} />
-                      </Bar>
+                      <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={120} tick={{ fontSize: 10, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                      <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [fmt(Number(v), effMetric) + u, SIDO_NAME[selected!]]} />
+                      <Bar dataKey="value" radius={[0, 4, 4, 0]} fill="#6366f1"><LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), effMetric)} style={{ fontSize: 10, fill: '#94a3b8' }} /></Bar>
                     </BarChart>
                   </ResponsiveContainer>
                 )}
@@ -488,63 +476,32 @@ export default function InfectiousMap() {
           </div>
         </div>
 
-        {/* 주별 전국 시계열(에피데믹 커브) + 주(週) 슬라이더 — 시간 흐름 */}
+        {/* 주별 전국 에피데믹 커브 */}
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 주별 전국 발생 추이 — {diseaseLabel} ({year})</h3>
-            <span className="text-[11px] text-slate-400">
-              {weekly.has ? `연 ${nf(weekly.total)}건 · 최다 ${weekly.peak.week}주차 ${nf(weekly.peak.value)}건` : '해당 연도 주별 데이터 없음'} · 주(週) 단위
-            </span>
+            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 {EID_CUR_YEAR}년 주별 전국 발생 추이 — {diseaseLabel}</h3>
+            <span className="text-[11px] text-slate-400">{curve.has ? `누적 ${nf(curve.total)}건 · 최다 ${curve.peak.week}주차 ${nf(curve.peak.value)}건` : '주별 데이터 없음'} · 주(週) 단위{inWeek ? ' · 슬라이더와 연동' : ''}</span>
           </div>
-          {weekly.has ? (
-            <>
-              {/* 선택 주차 readout */}
-              <div className="mb-1 flex flex-wrap items-baseline gap-x-4 gap-y-1 px-1">
-                <span className="text-sm text-slate-500">선택 주차 <b className="text-rose-600">{year}년 {curWeek.week}주차</b></span>
-                <span className="text-sm text-slate-500">해당 주 <b className="tabular-nums text-slate-800 dark:text-slate-100">{nf(curWeek.value)}</b>건</span>
-                <span className="text-sm text-slate-500">연초~해당주 누적 <b className="tabular-nums text-slate-800 dark:text-slate-100">{nf(weekCum)}</b>건</span>
-              </div>
-              <ResponsiveContainer width="100%" height={210}>
-                <AreaChart data={weekly.series} margin={{ top: 6, right: 16, left: -12, bottom: 0 }}>
-                  <defs>
-                    <linearGradient id="wkfill" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.55} />
-                      <stop offset="100%" stopColor="#f43f5e" stopOpacity={0.04} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                  <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false}
-                    ticks={[1, 10, 20, 30, 40, 50]} tickFormatter={(w) => `${w}주`} />
-                  <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                  <RTooltip formatter={(v) => [nf(Number(v)) + '건', '발생 수']} labelFormatter={(w) => `${year}년 ${w}주차`} />
-                  {weekly.peak.week > 0 && <ReferenceLine x={weekly.peak.week} stroke="#fb7185" strokeDasharray="4 3" label={{ value: '최다', fontSize: 10, fill: '#fb7185', position: 'top' }} />}
-                  {curWeek.week > 0 && <ReferenceLine x={curWeek.week} stroke="#2563eb" strokeWidth={1.8} label={{ value: `${curWeek.week}주`, fontSize: 10, fill: '#2563eb', position: 'insideTopRight' }} />}
-                  <Area type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={2} fill="url(#wkfill)" />
-                </AreaChart>
-              </ResponsiveContainer>
-              {/* 주(週) 슬라이더 — 시간을 주 단위로 스크럽/재생 */}
-              <div className="mt-1 flex items-center gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
-                <button onClick={() => setWkPlaying((p) => !p)}
-                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-rose-600 text-sm text-white hover:bg-rose-700"
-                  title={wkPlaying ? '일시정지' : '주별 재생'}>
-                  {wkPlaying ? '❚❚' : '▶'}
-                </button>
-                <input type="range" min={0} max={Math.max(0, lastWeek - 1)} step={1} value={Math.min(weekIdx, lastWeek - 1)}
-                  onChange={(e) => { setWkPlaying(false); setWeekIdx(Number(e.target.value)) }}
-                  className="flex-1 accent-rose-600" aria-label="주차 선택" />
-                <span className="shrink-0 rounded-lg bg-rose-600 px-2.5 py-1 text-sm font-bold tabular-nums text-white">{curWeek.week}주차</span>
-              </div>
-            </>
-          ) : (
-            <p className="py-8 text-center text-sm text-slate-400">{year}년 {diseaseLabel}의 주별 발생 데이터가 없습니다.</p>
-          )}
-          <p className="mt-1 px-1 text-[11px] text-slate-400">※ 질병관리청은 전수신고 감염병을 <b>주(週) 단위</b>로 집계·공개합니다(일 단위 미제공). 주별 시도별 분리 데이터는 제공되지 않아 추이는 전국 기준입니다.</p>
+          {curve.has ? (
+            <ResponsiveContainer width="100%" height={210}>
+              <AreaChart data={curve.series} margin={{ top: 6, right: 16, left: -12, bottom: 0 }}>
+                <defs><linearGradient id="wkfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f43f5e" stopOpacity={0.55} /><stop offset="100%" stopColor="#f43f5e" stopOpacity={0.04} /></linearGradient></defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(w) => `${w}주`} />
+                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                <RTooltip formatter={(v) => [nf(Number(v)) + '건', '발생 수']} labelFormatter={(w) => `${EID_CUR_YEAR}년 ${w}주차`} />
+                {curve.peak.week > 0 && <ReferenceLine x={curve.peak.week} stroke="#fb7185" strokeDasharray="4 3" label={{ value: '최다', fontSize: 10, fill: '#fb7185', position: 'top' }} />}
+                {inWeek && <ReferenceLine x={week} stroke="#2563eb" strokeWidth={1.8} label={{ value: `${week}주`, fontSize: 10, fill: '#2563eb', position: 'insideTopRight' }} />}
+                <Area type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={2} fill="url(#wkfill)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {EID_CUR_YEAR}년 주별 데이터가 없습니다.</p>}
+          <p className="mt-1 px-1 text-[11px] text-slate-400">※ 질병관리청 감염병포털 기준. 주(週) 단위 집계이며 최근 주차는 신고 지연으로 잠정치일 수 있습니다.</p>
         </div>
 
-        {/* 안내/면책 */}
         <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-400">
-          본 현황판은 질병관리청 「전수신고 감염병 발생현황」 공공데이터를 시각화한 참고 정보입니다(공공누리 제4유형, 출처표시·변경 요약).
-          전수신고 대상 법정감염병 기준이며, 인플루엔자 등 표본감시 감염병은 포함되지 않습니다. 발생률은 인구 10만 명당 기준입니다. 진단·의료적 판단을 대체하지 않습니다.
+          본 현황판은 질병관리청 감염병포털 발생현황 데이터를 시각화한 참고 정보입니다(공공누리 제4유형, 출처표시·요약).
+          전수신고 대상 법정감염병 기준이며, 발생률은 인구 10만 명당입니다. 진단·의료적 판단을 대체하지 않습니다.
         </p>
       </div>
     </div>

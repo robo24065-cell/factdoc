@@ -46,3 +46,4 @@ scripts/*.gen.txt
 scripts/_eid_detail.html
 _kr_prov.json
 scripts/_*.html
+_edw.html
