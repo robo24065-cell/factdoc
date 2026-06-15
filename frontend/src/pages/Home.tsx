@@ -4,7 +4,8 @@ import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswe
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
-import { fetchGroundedAnswer, logQuery, type GroundedPassage } from '../lib/db'
+import { fetchGroundedAnswer, fetchOutbreak, fetchTopMisinfo, logQuery, type GroundedPassage, type OutbreakRow, type TopClaim } from '../lib/db'
+import { outbreakList } from './dashboardData'
 import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
 import { embedText } from '../lib/embed'
 import { type EvidenceChunk } from '../lib/search'
@@ -269,6 +270,9 @@ export default function Home() {
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
+  const [topMisinfo, setTopMisinfo] = useState<TopClaim[] | null>(null)
+  useEffect(() => { fetchOutbreak().then(setOutbreak).catch(() => {}); fetchTopMisinfo().then(setTopMisinfo).catch(() => {}) }, [])
 
   async function check(text: string) {
     const claim = text.trim()
@@ -452,6 +456,54 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* 디스커버리 — 초기 화면 빈 공간에 신뢰 신호 + 유행/가짜정보 발견 퍼널 */}
+      {!loading && !result && !info && !topJudgment && !topComment && substances.length === 0 && (() => {
+        const out = (outbreak && outbreak.length ? outbreak.map((o) => ({ name: o.disease, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
+        const fakes = (topMisinfo && topMisinfo.length ? topMisinfo.map((t) => ({ label: t.claim, q: t.claim })) : [
+          { label: '당뇨가 특정 즙으로 완치된다', q: '당뇨는 △△즙으로 완치된대요' },
+          { label: '건강기능식품이 병을 치료한다', q: '이 영양제가 당뇨를 치료한대요' },
+          { label: '약 끊고 자연요법만 하면 된다', q: '당뇨에 좋다고 약 끊고 걷기만 하면 된대요' },
+        ]).slice(0, 3)
+        return (
+          <div className="mt-5 space-y-5">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
+              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">💡 <b className="text-slate-700 dark:text-slate-200">국가 공식데이터</b>(질병관리청·식약처)의 룰로 판정해요. AI가 진실을 임의로 판단하지 않고, 근거 출처를 함께 보여드려요.</p>
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🦠 지금 유행·주의 감염병</h2>
+                <Link to="/trending" className="text-xs text-blue-500 dark:text-blue-400">전체 보기 →</Link>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {out.map((o) => (
+                  <Link key={o.name} to={`/disease/${encodeURIComponent(o.name)}`}
+                    className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                    {o.name}
+                    {o.trend === 'up' && <span className="text-[11px] font-medium text-rose-500">▲</span>}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
+              <div className="mt-2 space-y-2">
+                {fakes.map((f, i) => (
+                  <button key={f.q} type="button" onClick={() => { setInput(f.q); check(f.q) }}
+                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-left dark:border-slate-800 dark:bg-slate-900">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
+                    <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>
+                    <span className="text-slate-300">›</span>
+                  </button>
+                ))}
+              </div>
+              <p className="mt-3 text-center text-[11px] text-slate-400">탭하면 바로 검증할 수 있어요</p>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* AI 종합 판단 카드 — 질병 + 약/음식: '먹어도 되는지' 판단 + 근거(최상단) */}
       {topJudgment && (
