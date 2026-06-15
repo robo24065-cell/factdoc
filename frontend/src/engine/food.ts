@@ -2,11 +2,12 @@
 // AI 강점: 임의 음식도 성분·효과로 안전하게 설명. 치료 단정 X(명예훼손·부당광고 회피).
 import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry } from './food-kb'
 import { FOOD_KB_EXT } from './food-kb-ext'
+import { FOOD_KB_COMMON } from './food-kb-common'
 import { findInText, variantsOf } from './ontology'
 import { isCureClaim } from './relationLex'
 
-// 본체 139종 + 확장(일상 음식) — §13.1 폭
-const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT]
+// 본체 139 + 확장(일상) + 흔한 정크/일상푸드 — §13.1 폭
+const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT, ...FOOD_KB_COMMON]
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
