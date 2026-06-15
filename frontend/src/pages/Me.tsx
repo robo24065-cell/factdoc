@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { compareToMma } from '../engine/mma-bodyspec'
 
 const AGE_BANDS = ['10대', '20대', '30대', '40대', '50대', '60대', '70대 이상']
 const KEY = 'factdoc_profile'
@@ -34,6 +35,9 @@ export default function Me() {
   const w = parseFloat(weight)
   const bmi = h > 0 && w > 0 ? w / (h / 100) ** 2 : null
   const cat = bmi != null ? bmiCategory(bmi) : null
+  // 병무청 또래 비교(병역판정 = 사실상 남성 → 남성일 때만)
+  const mma = sex === 'male' ? compareToMma(h, w) : null
+  const fmt = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
 
@@ -86,8 +90,45 @@ export default function Me() {
         <p className="mt-2 text-[11px] text-blue-900/50 dark:text-blue-200/50">※ 인구통계·BMI 참고 정보이며 개인 의료 진단이 아닙니다. 입력값은 서버로 전송되지 않습니다.</p>
       </div>
 
+      {/* 병무청 또래 신체스펙 비교 (남성 · 키·몸무게 입력 시) — 주최기관(병무청) 데이터 */}
+      {mma && (() => {
+        const pos = (delta: number, range: number) => 50 + Math.max(-48, Math.min(48, (delta / range) * 50))
+        const Row = ({ label, you, unit, delta, range, band }: { label: string; you: number; unit: string; delta: number; range: number; band: string }) => (
+          <div className="mt-3">
+            <div className="flex items-baseline justify-between text-sm">
+              <span className="text-slate-600 dark:text-slate-300">{label}</span>
+              <span className="text-slate-900 dark:text-white"><b>{you}{unit}</b> <span className="text-slate-400">· 또래 평균 {fmt(delta)}{unit}</span></span>
+            </div>
+            <div className="relative mt-1.5 h-2 rounded-full bg-slate-200 dark:bg-slate-700">
+              <div className="absolute top-1/2 h-3 w-px -translate-y-1/2 bg-slate-400" style={{ left: '50%' }} />
+              <div className="absolute top-1/2 h-3.5 w-3.5 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white bg-indigo-500 shadow dark:border-slate-900" style={{ left: `${pos(delta, range)}%` }} />
+            </div>
+            <p className="mt-1 text-[12px] text-indigo-600 dark:text-indigo-300">{band}</p>
+          </div>
+        )
+        return (
+          <div className="mt-3 rounded-2xl border border-indigo-100 bg-indigo-50/60 p-4 dark:border-indigo-950 dark:bg-indigo-950/20">
+            <div className="flex items-center justify-between">
+              <p className="font-medium text-indigo-900 dark:text-indigo-200">병무청 또래 신체스펙 비교</p>
+              <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[11px] text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300">병무청 데이터</span>
+            </div>
+            <p className="mt-1 text-[12px] text-indigo-800/70 dark:text-indigo-200/70">
+              또래 평균(병역판정검사 수검자, 주로 19세 남성) — 키 {mma.ref.meanHeight}cm · 몸무게 {mma.ref.meanWeight}kg · BMI {mma.ref.meanBmi}
+            </p>
+            <Row label="키" you={h} unit="cm" delta={mma.dHeight} range={15} band={mma.heightBand} />
+            <Row label="몸무게" you={w} unit="kg" delta={mma.dWeight} range={25} band={mma.weightBand} />
+            <p className="mt-3 text-[12px] text-indigo-800/80 dark:text-indigo-200/80">
+              BMI <b>{mma.bmi}</b> — 또래 평균({mma.ref.meanBmi})보다 {fmt(mma.dBmi)}
+            </p>
+            <p className="mt-2 text-[11px] text-indigo-900/50 dark:text-indigo-200/50">
+              ※ 출처: {mma.ref.source}. 병역판정검사는 사실상 남성 대상이라 여성에는 표시하지 않아요. 또래 평균과의 ‘비교 참고’이며 개인 의료 진단이 아닙니다.
+            </p>
+          </div>
+        )
+      })()}
+
       <p className="mt-5 text-center text-[11px] text-slate-400">
-        본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처
+        본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처 · 병무청
       </p>
     </div>
   )
