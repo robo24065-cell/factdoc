@@ -7,7 +7,8 @@ import { isChronicIrreversible, isInfectious, subjectTags } from './ontology'
 const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.'
 const RISK_WARNING = '약물·치료를 임의로 중단하지 마세요. 반드시 표준치료를 따르고 전문가와 상담하세요.'
 
-const VERDICT_RANK: Record<Verdict, number> = { true: 0, partial: 1, unverified: 2, false: 3 }
+// 다중 트리플 결합 시 '가장 결정적/주의해야 할' 판정 우선. 보류(무근거)는 결정적 판정을 가리지 않음(false>partial>true>unverified).
+const VERDICT_RANK: Record<Verdict, number> = { unverified: 0, true: 1, partial: 2, false: 3 }
 const STRENGTH_RANK: Record<Strength, number> = { weak: 0, moderate: 1, strong: 2, absolute: 3 }
 const CONF: Record<EvidenceRecord['evidenceLevel'], number> = {
   official_guideline: 0.9, regulatory_counter: 0.9, mfds_approved: 0.85, statistics: 0.8, limited: 0.5, none: 0.2,

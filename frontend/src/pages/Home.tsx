@@ -52,6 +52,13 @@ function subLabel(s: SubCard): string {
   return s.kind === 'ingredient' ? s.name : s.data.name
 }
 
+// 한국어 조사 — 받침 유무로 이/가·은/는·을/를 선택
+function josa(word: string, pair: '이가' | '은는' | '을를'): string {
+  const ch = word.charCodeAt(word.length - 1)
+  const hasFinal = ch >= 0xac00 && ch <= 0xd7a3 ? (ch - 0xac00) % 28 !== 0 : /[a-z0-9]/i.test(word.slice(-1))
+  return word + (hasFinal ? pair[0] : pair[1])
+}
+
 // 합성 코멘트(질병 없이 2개 이상일 때) — Gemini 불필요 결정론
 function synthComment(disease: string | null, subs: SubCard[]): string {
   const list = subs.map(subLabel).join(' · ')
@@ -63,7 +70,7 @@ function synthComment(disease: string | null, subs: SubCard[]): string {
 export type TJTone = 'good' | 'caution' | 'consult' | 'neutral'
 export interface TJChip { subject: string; link: string; object: string }
 export interface TJStep { icon: string; tag: string; label: string; outcome?: string }
-export interface TopJudgment { tone: TJTone; label: string; comment: string; basis: string; chips: TJChip[]; steps: TJStep[] }
+export interface TopJudgment { tone: TJTone; label: string; comment: string; basis: string; chips: TJChip[]; steps: TJStep[]; mfds: { raw: string; func: string; total: number } | null }
 
 const TJ_UI: Record<TJTone, { sub: string; text: string; bg: string; accent: string }> = {
   good: { sub: '공식 정보로 종합한 참고 판단', text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', accent: 'bg-emerald-500' },
@@ -76,10 +83,11 @@ const TJ_LABEL: Record<TJTone, string> = { good: '도움이 될 수 있어요', 
 // 약 효능 문구가 가리키는 증상 — 질병의 '증상 완화'에 쓰는 약인지 판단
 const SYMPTOM_KW = ['발열', '열', '해열', '통증', '진통', '두통', '몸살', '근육통', '신경통', '감기', '콧물', '코막힘', '기침', '가래', '인후', '소화', '속쓰림', '설사', '변비', '메스꺼움', '구역', '가려움', '염증', '부기', '콜레스테롤', '혈압', '혈당', '피로']
 
-function buildTopJudgment(disease: string, subs: SubCard[]): TopJudgment {
+function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJudgment {
   const parts: string[] = []
   const chips: TJChip[] = []
   const steps: TJStep[] = []
+  const mfds = officialFunction(claim)
   let good = false, caution = false, consult = false
   for (const s of subs) {
     if (s.kind === 'drug') {
@@ -103,7 +111,7 @@ function buildTopJudgment(disease: string, subs: SubCard[]): TopJudgment {
       const f = s.data
       const best = f.matched ? f.effects[0] : null
       chips.push({ subject: f.name, link: best ? '효과' : '효과(근거?)', object: disease })
-      if (best?.level === 'caution') { caution = true; parts.push(`${f.name}은(는) ${disease}가 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '⚠ 섭취 주의' }) }
+      if (best?.level === 'caution') { caution = true; parts.push(`${josa(f.name, '은는')} ${josa(disease, '이가')} 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '⚠ 섭취 주의' }) }
       else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${f.components[0] ?? '성분'}이(가) ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님).`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: best.level === 'mfds' ? '식약처 인정 기능성' : '연구됨(공식 효능 인정은 아님)' }) }
       else if (best?.level === 'folk') { parts.push(`${f.name}은(는) 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '민간 사용(공식 효능 아님)' }) }
       else { parts.push(`${f.name}이(가) ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} ↔ ${disease} 근거`, outcome: '공식 근거 충분치 않음' }) }
@@ -119,11 +127,16 @@ function buildTopJudgment(disease: string, subs: SubCard[]): TopJudgment {
       steps.push({ icon: '🔍', tag: '근거', label: `${s.data.name} 성분`, outcome: '성분별 효능(아래 카드)' })
     }
   }
+  // 건기식 원료가 질병을 예방·치료한다는 뉘앙스면 식약처 룰을 명시(인정 기능성 박스는 카드에서 표시)
+  if (mfds) {
+    parts.push(`참고로 ${josa(mfds.raw, '은는')} 건강기능식품 원료로, 인정 기능성은 ‘${mfds.func.slice(0, 40)}…’ 수준이며 질병을 직접 치료·예방한다고 표방할 수 없어요(식약처).`)
+    steps.push({ icon: '⚖️', tag: '룰', label: `${mfds.raw} 식약처 인정 기능성`, outcome: '질병 치료·예방은 표방 불가' })
+  }
   const tone: TJTone = caution ? 'caution' : good ? 'good' : consult ? 'consult' : 'neutral'
   steps.push({ icon: '✅', tag: '판단', label: '종합 판단', outcome: TJ_LABEL[tone] })
   const comment = parts.join(' ') + ' 증상이 심하거나 지속되면 의료기관에서 진료받으세요.'
   const basis = `${subs.map((s) => (s.kind === 'drug' ? s.data.itemName.split('(')[0] : subLabel(s))).join('·')} · ${disease} 공식 정보를 종합했어요.`
-  return { tone, label: TJ_LABEL[tone], comment, basis, chips, steps }
+  return { tone, label: TJ_LABEL[tone], comment, basis, chips, steps, mfds }
 }
 
 // 식품/약/성분 카드 1개 — collapsed면 아코디언(접힘), 아니면 펼친 카드
@@ -297,7 +310,7 @@ export default function Home() {
           const sections = await fetchDiseaseSections(dz.canonical)
           setInfo({ disease: dz.canonical, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
           // 질병 + 약/음식 → 최상단 AI 종합 판단('먹어도 되는지' + 근거)
-          setTopJudgment(buildTopJudgment(dz.canonical, subs))
+          setTopJudgment(buildTopJudgment(dz.canonical, subs, claim))
         } else if (subs.length >= 2) {
           setTopComment(synthComment(null, subs))
         }
@@ -308,8 +321,9 @@ export default function Home() {
     }
 
     // 0b) 의도 분류 — "X가 뭔가요/증상/예방" 정보질문이면 공식정보로 바로 응답(판정 아님)
+    //     ★단, 완치·약대체 주장(약 끊고 등)은 정보질문으로 흘리지 않고 판정(허위+경고)으로 보냄(안전).
     const intent = classifyIntent(claim)
-    if (intent.intent === 'info' && intent.disease) {
+    if (intent.intent === 'info' && intent.disease && !isCureClaim(claim)) {
       const disease = intent.disease
       const adv = adviceAnswer(claim) // 조언/관리 안내(결정론, 있으면 즉시)
       const sections = await fetchDiseaseSections(disease)
@@ -452,6 +466,14 @@ export default function Home() {
           </div>
           <div className="p-4">
             <p className="text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{topJudgment.comment}</p>
+
+            {topJudgment.mfds && (
+              <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-950 dark:bg-emerald-950/20">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">💊 {topJudgment.mfds.raw} — 식약처 인정 기능성</p>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{topJudgment.mfds.func}</p>
+                <p className="mt-1 text-[11px] text-slate-400">출처: 식품의약품안전처 건강기능식품정보 (전국 {topJudgment.mfds.total.toLocaleString()}개 품목 기준)</p>
+              </div>
+            )}
 
             {/* 판단 근거 연결고리(Why-Trace) — 주장 분해 칩 + 룰·근거 단계 */}
             <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800" open>

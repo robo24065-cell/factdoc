@@ -28,10 +28,36 @@ const COND_SYN: Record<string, string[]> = {
   위염: ['위', '소화'],
 }
 
+// 도메인 기반 매칭 — 음식 효과 condition ↔ 질병을 '건강 영역'으로 연결(205개 질병 일반화).
+const DOMAINS: { cond: RegExp; dz: RegExp }[] = [
+  { cond: /혈당|당뇨/, dz: /당뇨|혈당/ },
+  { cond: /콜레스테롤|지질|중성지방/, dz: /지질|콜레스테롤|고지혈/ },
+  { cond: /혈압/, dz: /혈압/ },
+  { cond: /체중|비만|체지방|다이어트|살/, dz: /비만|체중|체지방|과체중/ },
+  { cond: /위|소화|속쓰림|위장/, dz: /위염|위궤양|위장|소화|역류|식도|십이지장|속쓰림|담/ },
+  { cond: /장건강|변비|배변|장/, dz: /장|변비|설사|대장|과민성|게실|크론|궤양성|치질|치핵/ },
+  { cond: /간/, dz: /간염|간경변|지방간|간건강|숙취/ },
+  { cond: /눈|시력|황반/, dz: /눈|시력|황반|백내장|녹내장|결막|안구|비문/ },
+  { cond: /관절|연골/, dz: /관절|연골|디스크|오십견|통풍|류마|회전근|엘보|근막/ },
+  { cond: /뼈|골다공/, dz: /골다공|뼈|골절|골밀도/ },
+  { cond: /면역/, dz: /면역|감염|감기|독감|대상포진/ },
+  { cond: /심혈관|혈행|혈관|심장|동맥/, dz: /심혈관|심장|동맥|협심|심근|혈관|뇌졸중|부정맥|판막/ },
+  { cond: /기침|가래|호흡|기관지|인후|목|코/, dz: /기침|기관지|천식|폐렴|감기|인후|호흡|코로나|독감|비염|축농|편도|copd/ },
+  { cond: /근육|단백질/, dz: /근육|근감소|단백/ },
+  { cond: /신장|콩팥/, dz: /신장|콩팥|신증|사구체|요로|방광|결석/ },
+  { cond: /갱년|여성|월경/, dz: /갱년|여성|월경|생리|난소|자궁/ },
+  { cond: /수면|불면|스트레스|긴장/, dz: /불면|수면|공황|불안|우울|스트레스/ },
+  { cond: /피부/, dz: /피부|아토피|여드름|건선|습진|두드러기|무좀/ },
+  { cond: /전립선/, dz: /전립선/ },
+  { cond: /빈혈|조혈/, dz: /빈혈/ },
+]
+
 function condMatches(condition: string, diseaseCanonical: string): boolean {
   const c = norm(condition)
   const keys = [...new Set([...(COND_SYN[diseaseCanonical] ?? []), ...variantsOf(diseaseCanonical), diseaseCanonical])]
-  return keys.some((k) => k && c.includes(norm(k)))
+  if (keys.some((k) => k && c.includes(norm(k)))) return true
+  // 도메인 매칭(일반화): condition과 질병이 같은 건강 영역이면 매칭
+  return DOMAINS.some((d) => d.cond.test(condition) && d.dz.test(diseaseCanonical))
 }
 
 export interface FoodResult { name: string; components: string[]; effects: FoodEffect[]; disease: string | null; matched: boolean }
