@@ -3,6 +3,13 @@
 import type { OntologyEntry } from './ontology'
 
 export const ONTOLOGY_EXT: OntologyEntry[] = [
+  // ── 흔한 증상(condition) — "열나는데 약"·"두통에 ○○" 류에 판단이 뜨도록. 안전한 변형만(과매칭 회피) ──
+  { canonical: '발열', variants: ['발열', '열나', '열이 나', '열이나', '고열', '미열', '몸에 열', '열이 올라'], type: 'disease' },
+  { canonical: '두통', variants: ['두통', '머리 아프', '머리 아픈', '머리 아파', '머리가 아프', '머리가 아픈', '머리가 아파', '머리 통증', '머리가 지끈'], type: 'disease' },
+  { canonical: '몸살', variants: ['몸살', '몸살기', '온몸이 쑤', '몸이 쑤'], type: 'disease' },
+  { canonical: '인후통', variants: ['인후통', '목 아프', '목 아픈', '목 아파', '목이 아프', '목이 아픈', '목이 아파', '목감기', '목 통증', '목이 따끔', '목이 칼칼', '목이 부었'], type: 'disease' },
+  { canonical: '치통', variants: ['치통', '이가 아프', '이가 아픈', '이가 아파', '잇몸 아프', '잇몸 아픈'], type: 'disease' },
+  { canonical: '복통', variants: ['복통', '배 아프', '배 아픈', '배 아파', '배가 아프', '배가 아픈', '배가 아파', '아랫배 아프'], type: 'disease' },
   // ── 질환 대량 확장 (expand-disease-ontology 워크플로 147종, 생성+적대검증) — §13.1 폭 ──
   { canonical: "심방세동", variants: ["심방세동", "심방 세동", "atrial fibrillation", "afib", "심방잔떨림"], type: "disease", tags: ["chronic_irreversible"] },
   { canonical: "심장판막증", variants: ["심장판막증", "판막질환", "판막질환증", "승모판협착", "승모판막", "대동맥판막", "판막역류", "심장판막", "valvular"], type: "disease", tags: ["chronic_irreversible"] },

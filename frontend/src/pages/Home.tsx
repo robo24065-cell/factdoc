@@ -98,12 +98,12 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
       chips.push({ subject: nm, link: '허가 효능', object: relevant ? hit.join('·') : disease })
       if (relevant) {
         good = true
-        parts.push(`${nm}은(는) ${hit.join('·')} 등 증상 완화에 쓰는 약이에요(식약처 허가 효능). 다만 ${disease} 자체를 치료하는 약은 아니에요.`)
+        parts.push(`${josa(nm, '은는')} ${hit.join('·')} 등 증상 완화에 쓰는 약이에요(식약처 허가 효능). 다만 ${disease} 자체를 치료하는 약은 아니에요.`)
         steps.push({ icon: '⚖️', tag: '룰', label: `${nm} 식약처 허가 효능`, outcome: `${hit.join('·')} 등 증상에 사용` })
         steps.push({ icon: '📏', tag: '경계', label: '질병 치료 여부', outcome: `${disease} 자체 치료가 아니라 증상 완화용` })
       } else {
         consult = true
-        parts.push(`${nm}이(가) ${disease}에 맞는 약인지는 분명치 않아, 복용 전 약사·의사와 상담하세요.`)
+        parts.push(`${josa(nm, '이가')} ${disease}에 맞는 약인지는 분명치 않아, 복용 전 약사·의사와 상담하세요.`)
         steps.push({ icon: '📏', tag: '경계', label: `${nm} ↔ ${disease} 적응증`, outcome: '명확치 않음 → 전문가 상담' })
       }
       if (s.data.interact) { parts.push('함께 먹으면 안 되는 약·음식이 있으니 상호작용을 꼭 확인하세요.'); steps.push({ icon: '⚠️', tag: '주의', label: '약물·음식 상호작용', outcome: '함께 먹으면 안 되는 것 있음' }) }
@@ -112,13 +112,13 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
       const best = f.matched ? f.effects[0] : null
       chips.push({ subject: f.name, link: best ? '효과' : '효과(근거?)', object: disease })
       if (best?.level === 'caution') { caution = true; parts.push(`${josa(f.name, '은는')} ${josa(disease, '이가')} 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '⚠ 섭취 주의' }) }
-      else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${f.components[0] ?? '성분'}이(가) ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님).`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: best.level === 'mfds' ? '식약처 인정 기능성' : '연구됨(공식 효능 인정은 아님)' }) }
-      else if (best?.level === 'folk') { parts.push(`${f.name}은(는) 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '민간 사용(공식 효능 아님)' }) }
-      else { parts.push(`${f.name}이(가) ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} ↔ ${disease} 근거`, outcome: '공식 근거 충분치 않음' }) }
+      else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${josa(f.components[0] ?? '성분', '이가')} ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님).`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: best.level === 'mfds' ? '식약처 인정 기능성' : '연구됨(공식 효능 인정은 아님)' }) }
+      else if (best?.level === 'folk') { parts.push(`${josa(f.name, '은는')} 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '민간 사용(공식 효능 아님)' }) }
+      else { parts.push(`${josa(f.name, '이가')} ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} ↔ ${disease} 근거`, outcome: '공식 근거 충분치 않음' }) }
     } else if (s.kind === 'ingredient') {
       if (s.info.mfds) good = true
       chips.push({ subject: s.name, link: s.info.mfds ? '식약처 인정' : '알려진 효능', object: disease })
-      parts.push(`${s.name}은(는) ${s.info.efficacy}`)
+      parts.push(`${josa(s.name, '은는')} ${s.info.efficacy}`)
       steps.push({ icon: '🔍', tag: '근거', label: `${s.name} 기능성`, outcome: s.info.mfds ? '식약처 인정 기능성' : '일반 효능 정보' })
       if (s.info.caution) { caution = true; parts.push(`${s.name}은(는) ${s.info.caution}.`) }
     } else {
