@@ -475,8 +475,8 @@ export default function Home() {
               </div>
             )}
 
-            {/* 판단 근거 연결고리(Why-Trace) — 주장 분해 칩 + 룰·근거 단계 */}
-            <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800" open>
+            {/* 판단 근거 연결고리(Why-Trace) — 주장 분해 칩 + 룰·근거 단계. 기본 접힘(사용자가 펼침) */}
+            <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
               <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-xs font-medium text-slate-500 [&::-webkit-details-marker]:hidden">
                 🧭 판단 근거 (룰·근거 추적)
                 <span className="text-slate-400 transition group-open:rotate-180">▾</span>
