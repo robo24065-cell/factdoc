@@ -17,3 +17,6 @@ export const SearchIcon = ({ className }: P) => (
 export const ShieldIcon = ({ className }: P) => (
   <svg className={className ?? base} viewBox="0 0 24 24" {...common}><path d="M12 3l7 3v5c0 4.5-3 7.7-7 9-4-1.3-7-4.5-7-9V6l7-3Z" /></svg>
 )
+export const MapIcon = ({ className }: P) => (
+  <svg className={className ?? base} viewBox="0 0 24 24" {...common}><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg>
+)
