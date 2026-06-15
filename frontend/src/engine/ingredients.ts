@@ -90,6 +90,20 @@ export function analyzeProduct(text: string): ProductAnalysis | null {
   return null
 }
 
+// 텍스트에 직접 언급된 성분 전부 추출(비타민C 등 단독 성분). 최장 일치·부분문자열 제거.
+export function ingredientsInText(text: string, max = 4): { name: string; info: IngredientInfo }[] {
+  const t = norm(text)
+  const hits = Object.keys(INGREDIENTS).filter((n) => norm(n).length >= 2 && t.includes(norm(n)))
+  hits.sort((a, b) => b.length - a.length)
+  const kept: string[] = []
+  for (const n of hits) {
+    if (kept.some((k) => norm(k).includes(norm(n)))) continue
+    kept.push(n)
+    if (kept.length >= max) break
+  }
+  return kept.map((name) => ({ name, info: INGREDIENTS[name] }))
+}
+
 // 질문에 특정 효능/질환 의도가 있으면, 그 성분 중 관련된 게 있는지 짚어줌(없으면 honest).
 export function targetMatchNote(a: ProductAnalysis, claim: string): string | null {
   const disease = findInText(claim, 'disease')

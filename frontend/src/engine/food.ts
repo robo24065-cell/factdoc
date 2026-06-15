@@ -33,6 +33,7 @@ export interface FoodResult { name: string; components: string[]; effects: FoodE
 
 // 강한 허위주장(완치·특효·치료단정·약대체)은 음식카드 대상 아님 → 룰엔진(허위) 경로로.
 const CURE_CLAIM = /(완치|특효|치료한다|치료된다|치료해 ?준|뿌리 ?뽑|뿌리째|약 ?끊|약 ?안 ?먹|대체|싹 ?낫|100\s*%|단번에|확실히 ?낫)/
+export function isCureClaim(claim: string): boolean { return CURE_CLAIM.test(claim) }
 
 export function foodAnswer(claim: string): FoodResult | null {
   if (CURE_CLAIM.test(claim)) return null
@@ -56,4 +57,39 @@ export function foodAnswer(claim: string): FoodResult | null {
   // 매칭 안 되면(그 질병 효과 정보 없음) 대표 효과 일부만
   if (!matched) effects = f.effects.slice(0, 3)
   return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
+}
+
+// 한 문장에 음식이 여러 개일 때 전부 추출(질병 인식 시 해당 효과만 필터). 완치 주장이면 [].
+export function foodAnswerAll(claim: string, max = 4): FoodResult[] {
+  if (CURE_CLAIM.test(claim)) return []
+  const t = norm(claim)
+  const dz = findInText(claim, 'disease')
+  // 음식별 최장 매칭 토큰 수집
+  const hits: { f: FoodEntry; token: string }[] = []
+  for (const f of FOOD_KB) {
+    let tok = ''
+    for (const n of [f.name, ...(f.aka ?? [])]) {
+      const nn = norm(n)
+      if (nn.length >= 2 && t.includes(nn) && nn.length > tok.length) tok = nn
+    }
+    if (tok) hits.push({ f, token: tok })
+  }
+  // 긴 토큰 우선 + 다른 토큰의 부분문자열이면 제거(도라지 ⊂ 도라지차)
+  hits.sort((a, b) => b.token.length - a.token.length)
+  const kept: { f: FoodEntry; token: string }[] = []
+  for (const h of hits) {
+    if (kept.some((k) => k.token.includes(h.token))) continue
+    kept.push(h)
+    if (kept.length >= max) break
+  }
+  return kept.map(({ f }) => {
+    let effects = f.effects
+    let matched = false
+    if (dz) {
+      const rel = f.effects.filter((e) => condMatches(e.condition, dz.canonical))
+      if (rel.length) { effects = rel; matched = true }
+    }
+    if (!matched) effects = f.effects.slice(0, 3)
+    return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
+  })
 }

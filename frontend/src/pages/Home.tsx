@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswer, judge, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isCureClaim, judge, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -33,6 +33,146 @@ function cleanSnippet(text: string, max = 180): string {
   return s
 }
 
+// 합성 카드용 통합 식품/약/성분 타입
+type SubCard =
+  | { kind: 'drug'; data: DrugResult }
+  | { kind: 'food'; data: FoodResult }
+  | { kind: 'ingredient'; name: string; info: IngredientInfo }
+  | { kind: 'product'; data: ProductAnalysis; note: string | null }
+
+const FOOD_LV: Record<string, { t: string; c: string }> = {
+  mfds: { t: '식약처 인정', c: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
+  research: { t: '연구됨', c: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' },
+  folk: { t: '민간', c: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
+  caution: { t: '주의', c: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' },
+  none: { t: '효과 미확인', c: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' },
+}
+
+function subLabel(s: SubCard): string {
+  return s.kind === 'ingredient' ? s.name : s.data.name
+}
+
+// 합성 코멘트(2개 이상일 때 최상단) — Gemini 불필요 결정론
+function synthComment(disease: string | null, subs: SubCard[]): string {
+  const list = subs.map(subLabel).join(' · ')
+  if (disease) return `‘${disease}’와 관련해 ${list}을(를) 살펴봤어요. 아래에서 각각의 성분·효과를 확인하세요. 식품·성분이 질병을 ‘치료’한다고 단정하진 않아요.`
+  return `${list}을(를) 살펴봤어요. 아래에서 각각의 성분·효과를 확인하세요.`
+}
+
+// 식품/약/성분 카드 1개 — collapsed면 아코디언(접힘), 아니면 펼친 카드
+function SubstanceCard({ sub, collapsed }: { sub: SubCard; collapsed: boolean }) {
+  const meta = ((): { accent: string; bg: string; titleColor: string; title: string; subtitle: string; badge: string; body: ReactNode } => {
+    if (sub.kind === 'drug') {
+      const d = sub.data
+      return {
+        accent: 'bg-cyan-500', bg: 'bg-cyan-50 dark:bg-cyan-950/30', titleColor: 'text-cyan-700 dark:text-cyan-300',
+        title: `💊 ${d.itemName}`, subtitle: d.entp || '식약처 허가 의약품', badge: '식약처 공식',
+        body: (
+          <>
+            {d.efcy && (<><p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">이 약의 효능</p><p className="mt-0.5 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{d.efcy}</p></>)}
+            {d.interact && (<div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200"><span className="font-medium">⚠ 같이 먹으면 안 되는 것(상호작용):</span> {d.interact.length > 200 ? `${d.interact.slice(0, 200)}…` : d.interact}</div>)}
+            {(d.use || d.caution || d.side) && (
+              <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">용법·주의사항·부작용 보기<span className="text-slate-400 transition group-open:rotate-180">▾</span></summary>
+                <div className="space-y-2 border-t border-slate-100 p-3 text-sm dark:border-slate-800">
+                  {d.use && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">용법:</b> {d.use}</p>}
+                  {d.caution && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">주의사항:</b> {d.caution.length > 300 ? `${d.caution.slice(0, 300)}…` : d.caution}</p>}
+                  {d.side && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">이상반응:</b> {d.side.length > 200 ? `${d.side.slice(0, 200)}…` : d.side}</p>}
+                </div>
+              </details>
+            )}
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">출처: 식품의약품안전처 의약품개요정보(e약은요). 같은 성분이라도 제품·함량이 다를 수 있어요. 정확한 복용은 약사·의사와 상담하세요. 의료 진단이 아닙니다.</p>
+          </>
+        ),
+      }
+    }
+    if (sub.kind === 'food') {
+      const f = sub.data
+      return {
+        accent: 'bg-teal-500', bg: 'bg-teal-50 dark:bg-teal-950/30', titleColor: 'text-teal-700 dark:text-teal-300',
+        title: f.name, subtitle: f.disease ? `${f.disease}와(과)의 관계` : '성분·효과 분석', badge: '음식·성분',
+        body: (
+          <>
+            {f.components.length > 0 && (<p className="text-sm text-slate-600 dark:text-slate-300"><span className="font-medium">주요 성분:</span> {f.components.join(' · ')}</p>)}
+            <ul className="mt-2 space-y-2">
+              {f.effects.map((e, i) => (
+                <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">{e.condition}<span className={`rounded px-1 text-[10px] ${FOOD_LV[e.level]?.c ?? FOOD_LV.none.c}`}>{FOOD_LV[e.level]?.t ?? '미확인'}</span></p>
+                  <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{e.effect}</p>
+                </li>
+              ))}
+            </ul>
+            {!f.matched && f.disease && (<p className="mt-2 text-sm text-slate-500">‘{f.disease}’에 대한 직접적인 효과 정보는 충분치 않아요. 위는 일반적으로 알려진 효과예요.</p>)}
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">음식·성분의 일반적 효과 정보예요(치료를 보장하지 않음). 표준 치료를 대체하지 말고, 정확한 건 전문가와 상담하세요.</p>
+          </>
+        ),
+      }
+    }
+    if (sub.kind === 'ingredient') {
+      return {
+        accent: 'bg-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/30', titleColor: 'text-violet-700 dark:text-violet-300',
+        title: sub.name, subtitle: '성분 정보', badge: '성분',
+        body: (
+          <>
+            <p className="flex items-center gap-1.5 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{sub.info.efficacy}{sub.info.mfds && <span className="rounded bg-emerald-100 px-1 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">식약처 인정기능성</span>}</p>
+            {sub.info.caution && <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">⚠ {sub.info.caution}</p>}
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">성분의 일반적 효능 정보예요. 특정 제품의 효과를 보장하지 않아요. 출처: 식품의약품안전처 인정기능성 등.</p>
+          </>
+        ),
+      }
+    }
+    // product
+    const a = sub.data
+    return {
+      accent: 'bg-violet-500', bg: 'bg-violet-50 dark:bg-violet-950/30', titleColor: 'text-violet-700 dark:text-violet-300',
+      title: a.name, subtitle: `${a.maker ? a.maker + ' · ' : ''}${a.category ?? ''}`, badge: '성분 분석',
+      body: (
+        <>
+          <p className="text-sm text-slate-500">주요 성분과 일반적으로 알려진 효능이에요.</p>
+          <ul className="mt-2 space-y-2">
+            {a.ingredients.map((ing, i) => (
+              <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">{ing.name}{ing.info.mfds && <span className="rounded bg-emerald-100 px-1 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">식약처 인정기능성</span>}</p>
+                <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{ing.info.efficacy}</p>
+                {ing.info.caution && <p className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">⚠ {ing.info.caution}</p>}
+              </li>
+            ))}
+          </ul>
+          {sub.note && <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">{sub.note}</p>}
+          <p className="mt-3 text-[11px] leading-relaxed text-slate-400">특정 제품의 효과를 보장하는 정보가 아니라 ‘성분’의 일반적 효능 정보예요. 정확한 효능·복용은 제품 표시사항과 전문가 상담을 따르세요.</p>
+        </>
+      ),
+    }
+  })()
+
+  if (collapsed) {
+    return (
+      <details className="group mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+        <summary className={`flex cursor-pointer list-none items-center gap-3 p-4 ${meta.bg} [&::-webkit-details-marker]:hidden`}>
+          <div className={`h-9 w-1.5 rounded-full ${meta.accent}`} />
+          <div className="min-w-0">
+            <p className={`truncate text-base font-semibold ${meta.titleColor}`}>{meta.title}</p>
+            <p className="truncate text-xs text-slate-500">{meta.subtitle}</p>
+          </div>
+          <span className="ml-auto shrink-0 rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{meta.badge}</span>
+          <span className="shrink-0 text-slate-400 transition group-open:rotate-180">▾</span>
+        </summary>
+        <div className="border-t border-slate-100 p-4 dark:border-slate-800">{meta.body}</div>
+      </details>
+    )
+  }
+  return (
+    <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <div className={`flex items-center gap-3 p-4 ${meta.bg}`}>
+        <div className={`h-11 w-1.5 rounded-full ${meta.accent}`} />
+        <div className="min-w-0"><p className={`text-lg font-semibold ${meta.titleColor}`}>{meta.title}</p><p className="text-xs text-slate-500">{meta.subtitle}</p></div>
+        <span className="ml-auto shrink-0 rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{meta.badge}</span>
+      </div>
+      <div className="p-4">{meta.body}</div>
+    </div>
+  )
+}
+
 export default function Home() {
   const [params] = useSearchParams()
   const [input, setInput] = useState('')
@@ -43,9 +183,8 @@ export default function Home() {
   const [evidence, setEvidence] = useState<EvidenceChunk[]>([])
   const [grounded, setGrounded] = useState<GroundedPassage[]>([])
   const [info, setInfo] = useState<InfoAnswer | null>(null)
-  const [product, setProduct] = useState<{ a: ProductAnalysis; note: string | null } | null>(null)
-  const [foodRes, setFoodRes] = useState<FoodResult | null>(null)
-  const [drug, setDrug] = useState<DrugResult | null>(null)
+  const [substances, setSubstances] = useState<SubCard[]>([])
+  const [topComment, setTopComment] = useState<string | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -54,33 +193,9 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([]); setFoodRes(null); setDrug(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null)
 
-    // 0a-0) 의약품(일반약) 인식 시 식약처 공식 정보(e약은요) — 가장 구체적인 공식 레코드라 최우선
-    const drugA = drugAnswer(claim)
-    if (drugA) {
-      setDrug(drugA); setLoading(false)
-      void logQuery(claim, 'unverified', 'drug')
-      return
-    }
-
-    // 0a-1) 제품/성분 질문이면 성분 분석(제품 효과 단정 X, 성분 효능만) — 제품명은 항상, 성분은 질환 없을 때
-    const prodA = analyzeProduct(claim)
-    if (prodA && (prodA.kind === 'product' || !findInText(claim, 'disease'))) {
-      setProduct({ a: prodA, note: targetMatchNote(prodA, claim) }); setLoading(false)
-      void logQuery(claim, 'unverified', 'product')
-      return
-    }
-
-    // 0a-2) 음식·성분이 인식되면 효과 분석(성분·효과·근거레벨) — 임의 음식도 추론. 완치/특효 주장은 제외(룰엔진行)
-    const foodA = foodAnswer(claim)
-    if (foodA) {
-      setFoodRes(foodA); setLoading(false)
-      void logQuery(claim, 'unverified', 'food')
-      return
-    }
-
-    // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론
+    // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론. 합성카드보다 먼저.
     const stat = checkStatClaim(claim)
     if (stat) {
       const local = explainLocal(stat)
@@ -88,6 +203,37 @@ export default function Home() {
       void logQuery(claim, stat.verdict)
       void cacheVerdict(claim, stat, local)
       return
+    }
+
+    // 0b) 합성 카드 — 식품/약/성분/제품이 인식되면 (질환 위 + 식품·약 아래 아코디언).
+    //     완치/특효 단정 주장은 제외(룰엔진 허위 경로로). 효과·정보 조회만 여기서 처리.
+    if (!isCureClaim(claim)) {
+      const subs: SubCard[] = []
+      const drugA = drugAnswer(claim)
+      if (drugA) subs.push({ kind: 'drug', data: drugA })
+      const prodA = analyzeProduct(claim)
+      if (prodA && prodA.kind === 'product') subs.push({ kind: 'product', data: prodA, note: targetMatchNote(prodA, claim) })
+      for (const f of foodAnswerAll(claim)) subs.push({ kind: 'food', data: f })
+      // 단독 성분(비타민C 등) — 이미 음식/제품/약으로 잡힌 것과 겹치지 않을 때만
+      const norm = (x: string) => x.toLowerCase().replace(/\s+/g, '')
+      const covered = subs.map((s) => norm(subLabel(s)))
+      for (const ing of ingredientsInText(claim)) {
+        const n = norm(ing.name)
+        if (!covered.some((c) => c.includes(n) || n.includes(c))) { subs.push({ kind: 'ingredient', name: ing.name, info: ing.info }); covered.push(n) }
+      }
+      if (subs.length > 0) {
+        setSubstances(subs)
+        const dz = findInText(claim, 'disease')
+        if (dz) {
+          const adv = adviceAnswer(claim)
+          const sections = await fetchDiseaseSections(dz.canonical)
+          setInfo({ disease: dz.canonical, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
+        }
+        if (subs.length >= 2) setTopComment(synthComment(dz?.canonical ?? null, subs))
+        setLoading(false)
+        void logQuery(claim, 'unverified', subs[0].kind)
+        return
+      }
     }
 
     // 0b) 의도 분류 — "X가 뭔가요/증상/예방" 정보질문이면 공식정보로 바로 응답(판정 아님)
@@ -220,132 +366,15 @@ export default function Home() {
         ))}
       </div>
 
-      {/* 의약품 공식정보 카드 — 식약처 e약은요(효능·주의·상호작용·부작용) */}
-      {drug && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-3 bg-cyan-50 p-4 dark:bg-cyan-950/30">
-            <div className="h-11 w-1.5 rounded-full bg-cyan-500" />
-            <div>
-              <p className="text-lg font-semibold text-cyan-700 dark:text-cyan-300">💊 {drug.itemName}</p>
-              <p className="text-xs text-slate-500">{drug.entp || '식약처 허가 의약품'}</p>
-            </div>
-            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">식약처 공식</span>
-          </div>
-          <div className="p-4">
-            {drug.efcy && (
-              <>
-                <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">이 약의 효능</p>
-                <p className="mt-0.5 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{drug.efcy}</p>
-              </>
-            )}
-            {drug.interact && (
-              <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
-                <span className="font-medium">⚠ 같이 먹으면 안 되는 것(상호작용):</span> {drug.interact.length > 200 ? `${drug.interact.slice(0, 200)}…` : drug.interact}
-              </div>
-            )}
-            {(drug.use || drug.caution || drug.side) && (
-              <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
-                  용법·주의사항·부작용 보기
-                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
-                </summary>
-                <div className="space-y-2 border-t border-slate-100 p-3 text-sm dark:border-slate-800">
-                  {drug.use && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">용법:</b> {drug.use}</p>}
-                  {drug.caution && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">주의사항:</b> {drug.caution.length > 300 ? `${drug.caution.slice(0, 300)}…` : drug.caution}</p>}
-                  {drug.side && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">이상반응:</b> {drug.side.length > 200 ? `${drug.side.slice(0, 200)}…` : drug.side}</p>}
-                </div>
-              </details>
-            )}
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-              출처: 식품의약품안전처 의약품개요정보(e약은요). 같은 성분이라도 제품·함량이 다를 수 있어요. 정확한 복용은 약사·의사와 상담하고 첨부문서를 확인하세요. 의료 진단이 아닙니다.
-            </p>
-          </div>
+      {/* 합성 코멘트 — 2개 이상 식품/성분 질문 시 최상단 정리 */}
+      {topComment && (
+        <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[15px] leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200">
+          <span className="mr-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">AI 정리</span>
+          {topComment}
         </div>
       )}
 
-      {/* 제품/성분 분석 카드 — 성분별 효능(제품 효과 단정 X) */}
-      {product && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-3 bg-violet-50 p-4 dark:bg-violet-950/30">
-            <div className="h-11 w-1.5 rounded-full bg-violet-500" />
-            <div>
-              <p className="text-lg font-semibold text-violet-700 dark:text-violet-300">{product.a.name}</p>
-              <p className="text-xs text-slate-500">
-                {product.a.kind === 'product'
-                  ? `${product.a.maker ? product.a.maker + ' · ' : ''}${product.a.category ?? ''}`
-                  : '성분 정보'}
-              </p>
-            </div>
-            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">성분 분석</span>
-          </div>
-          <div className="p-4">
-            <p className="text-sm text-slate-500">주요 성분과 일반적으로 알려진 효능이에요.</p>
-            <ul className="mt-2 space-y-2">
-              {product.a.ingredients.map((ing, i) => (
-                <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
-                  <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
-                    {ing.name}
-                    {ing.info.mfds && <span className="rounded bg-emerald-100 px-1 text-[10px] text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300">식약처 인정기능성</span>}
-                  </p>
-                  <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{ing.info.efficacy}</p>
-                  {ing.info.caution && <p className="mt-0.5 text-[11px] text-amber-600 dark:text-amber-400">⚠ {ing.info.caution}</p>}
-                </li>
-              ))}
-            </ul>
-            {product.note && <p className="mt-3 rounded-xl bg-blue-50 p-3 text-sm text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">{product.note}</p>}
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-              특정 제품의 효과를 보장하는 정보가 아니라 ‘성분’의 일반적 효능 정보예요. 정확한 효능·복용은 제품 표시사항과 전문가 상담을 따르세요. 출처: 식품의약품안전처 인정기능성 등.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {/* 음식·성분 효과 분석 카드 — 성분·효과·근거레벨(치료 단정 X) */}
-      {foodRes && (() => {
-        const LV: Record<string, { t: string; c: string }> = {
-          mfds: { t: '식약처 인정', c: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
-          research: { t: '연구됨', c: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' },
-          folk: { t: '민간', c: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
-          caution: { t: '주의', c: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' },
-          none: { t: '효과 미확인', c: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' },
-        }
-        return (
-          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-            <div className="flex items-center gap-3 bg-teal-50 p-4 dark:bg-teal-950/30">
-              <div className="h-11 w-1.5 rounded-full bg-teal-500" />
-              <div>
-                <p className="text-lg font-semibold text-teal-700 dark:text-teal-300">{foodRes.name}</p>
-                <p className="text-xs text-slate-500">{foodRes.disease ? `${foodRes.disease}와(과)의 관계` : '성분·효과 분석'}</p>
-              </div>
-              <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">음식·성분</span>
-            </div>
-            <div className="p-4">
-              {foodRes.components.length > 0 && (
-                <p className="text-sm text-slate-600 dark:text-slate-300"><span className="font-medium">주요 성분:</span> {foodRes.components.join(' · ')}</p>
-              )}
-              <ul className="mt-2 space-y-2">
-                {foodRes.effects.map((e, i) => (
-                  <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
-                    <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
-                      {e.condition}
-                      <span className={`rounded px-1 text-[10px] ${LV[e.level]?.c ?? LV.none.c}`}>{LV[e.level]?.t ?? '미확인'}</span>
-                    </p>
-                    <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{e.effect}</p>
-                  </li>
-                ))}
-              </ul>
-              {!foodRes.matched && foodRes.disease && (
-                <p className="mt-2 text-sm text-slate-500">‘{foodRes.disease}’에 대한 직접적인 효과 정보는 충분치 않아요. 위는 일반적으로 알려진 효과예요.</p>
-              )}
-              <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-                음식·성분의 일반적 효과 정보예요(치료를 보장하지 않음). 표준 치료를 대체하지 말고, 정확한 건 전문가와 상담하세요.
-              </p>
-            </div>
-          </div>
-        )
-      })()}
-
-      {/* 정보질문 응답 카드 (질병청 공식 정보) */}
+      {/* 정보질문 응답 카드 (질병청 공식 정보) — 합성 시 최상단(질환) 카드 */}
       {info && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
           <div className="flex items-center gap-3 bg-blue-50 p-4 dark:bg-blue-950/30">
@@ -434,6 +463,11 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* 식품·약·성분 카드 — 질환 카드 아래 아코디언(질환 있거나 2개↑면 접힘), 단독이면 펼침 */}
+      {substances.map((s, i) => (
+        <SubstanceCard key={i} sub={s} collapsed={info != null || substances.length >= 2} />
+      ))}
 
       {result && vui && (
         <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">

@@ -35,8 +35,10 @@ export default function Me() {
   const w = parseFloat(weight)
   const bmi = h > 0 && w > 0 ? w / (h / 100) ** 2 : null
   const cat = bmi != null ? bmiCategory(bmi) : null
-  // 병무청 또래 비교(병역판정 = 사실상 남성 → 남성일 때만)
-  const mma = sex === 'male' ? compareToMma(h, w) : null
+  // 병무청 또래 비교 — 병역판정검사는 사실상 남성·19세 기준이라, 남성 + (20대·10대·미선택)일 때만.
+  // 다른 나이대 분포는 불러올 수 없어 표시하지 않음(오해 방지).
+  const mmaAgeOk = age === '' || age === '20대' || age === '10대'
+  const mma = sex === 'male' && mmaAgeOk ? compareToMma(h, w) : null
   const fmt = (n: number) => (n > 0 ? `+${n}` : `${n}`)
 
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
