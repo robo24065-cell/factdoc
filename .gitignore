@@ -39,3 +39,6 @@ _*.txt
 
 # gov 원문 XML(중간 산출물)
 scripts/corpus_raw/
+
+# 배치 스크래치 산출물
+scripts/*.out.json

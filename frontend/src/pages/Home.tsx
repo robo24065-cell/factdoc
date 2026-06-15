@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, foodAnswer, judge, parseClaim, symptomsFor, targetMatchNote, type FoodResult, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswer, judge, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -45,6 +45,7 @@ export default function Home() {
   const [info, setInfo] = useState<InfoAnswer | null>(null)
   const [product, setProduct] = useState<{ a: ProductAnalysis; note: string | null } | null>(null)
   const [foodRes, setFoodRes] = useState<FoodResult | null>(null)
+  const [drug, setDrug] = useState<DrugResult | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -53,7 +54,15 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([]); setFoodRes(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([]); setFoodRes(null); setDrug(null)
+
+    // 0a-0) 의약품(일반약) 인식 시 식약처 공식 정보(e약은요) — 가장 구체적인 공식 레코드라 최우선
+    const drugA = drugAnswer(claim)
+    if (drugA) {
+      setDrug(drugA); setLoading(false)
+      void logQuery(claim, 'unverified', 'drug')
+      return
+    }
 
     // 0a-1) 제품/성분 질문이면 성분 분석(제품 효과 단정 X, 성분 효능만) — 제품명은 항상, 성분은 질환 없을 때
     const prodA = analyzeProduct(claim)
@@ -210,6 +219,49 @@ export default function Home() {
           </button>
         ))}
       </div>
+
+      {/* 의약품 공식정보 카드 — 식약처 e약은요(효능·주의·상호작용·부작용) */}
+      {drug && (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 bg-cyan-50 p-4 dark:bg-cyan-950/30">
+            <div className="h-11 w-1.5 rounded-full bg-cyan-500" />
+            <div>
+              <p className="text-lg font-semibold text-cyan-700 dark:text-cyan-300">💊 {drug.itemName}</p>
+              <p className="text-xs text-slate-500">{drug.entp || '식약처 허가 의약품'}</p>
+            </div>
+            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">식약처 공식</span>
+          </div>
+          <div className="p-4">
+            {drug.efcy && (
+              <>
+                <p className="text-xs font-medium text-cyan-700 dark:text-cyan-300">이 약의 효능</p>
+                <p className="mt-0.5 text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{drug.efcy}</p>
+              </>
+            )}
+            {drug.interact && (
+              <div className="mt-3 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+                <span className="font-medium">⚠ 같이 먹으면 안 되는 것(상호작용):</span> {drug.interact.length > 200 ? `${drug.interact.slice(0, 200)}…` : drug.interact}
+              </div>
+            )}
+            {(drug.use || drug.caution || drug.side) && (
+              <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                  용법·주의사항·부작용 보기
+                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+                </summary>
+                <div className="space-y-2 border-t border-slate-100 p-3 text-sm dark:border-slate-800">
+                  {drug.use && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">용법:</b> {drug.use}</p>}
+                  {drug.caution && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">주의사항:</b> {drug.caution.length > 300 ? `${drug.caution.slice(0, 300)}…` : drug.caution}</p>}
+                  {drug.side && <p className="text-slate-600 dark:text-slate-300"><b className="text-slate-700 dark:text-slate-200">이상반응:</b> {drug.side.length > 200 ? `${drug.side.slice(0, 200)}…` : drug.side}</p>}
+                </div>
+              </details>
+            )}
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+              출처: 식품의약품안전처 의약품개요정보(e약은요). 같은 성분이라도 제품·함량이 다를 수 있어요. 정확한 복용은 약사·의사와 상담하고 첨부문서를 확인하세요. 의료 진단이 아닙니다.
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* 제품/성분 분석 카드 — 성분별 효능(제품 효과 단정 X) */}
       {product && (
