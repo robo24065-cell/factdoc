@@ -273,7 +273,7 @@ export default function InfectiousMap() {
         {/* 본문 */}
         <div className="grid gap-4 lg:grid-cols-12">
           {/* 지도 */}
-          <div className="lg:col-span-7">
+          <div className="lg:col-span-7 2xl:col-span-5">
             <div ref={mapRef} className="relative rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-white p-3 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
               <div className="mb-1 flex items-center justify-between px-1">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -372,8 +372,8 @@ export default function InfectiousMap() {
             </div>
           </div>
 
-          {/* 분석 패널 */}
-          <div className="space-y-4 lg:col-span-5">
+          {/* 핵심 분석 */}
+          <div className="space-y-4 lg:col-span-5 2xl:col-span-4">
             <div className="grid grid-cols-3 gap-2">
               <Kpi label={effMetric === 'count' ? '전국 발생수' : '전국 발생률'} value={fmt(nationTotal, effMetric)} unit={effMetric === 'count' ? '건' : '명/10만'} tone="slate" />
               <Kpi label={effMetric === 'count' ? '최다 발생지' : '최고 발생률'} value={topSido && topSido.value > 0 ? topSido.name : '—'} unit={topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음'} tone="rose" />
@@ -387,13 +387,13 @@ export default function InfectiousMap() {
 
             <Panel title={`시·도 ${effMetric === 'count' ? '발생' : '발생률'} 순위 — ${diseaseLabel} (${periodLabel})`}>
               {rankPos.length === 0 ? <p className="py-6 text-center text-sm text-slate-400">발생 데이터가 없습니다.</p> : (
-                <ResponsiveContainer width="100%" height={Math.max(180, rankPos.length * 18 + 20)}>
-                  <BarChart data={rankPos} layout="vertical" margin={{ top: 0, right: 40, left: 6, bottom: 0 }}>
-                    <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={36} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
+                <ResponsiveContainer width="100%" height={Math.max(180, rankPos.length * 19 + 20)}>
+                  <BarChart data={rankPos} layout="vertical" margin={{ top: 0, right: 42, left: 6, bottom: 0 }}>
+                    <XAxis type="number" hide /><YAxis type="category" dataKey="name" width={34} interval={0} tick={{ fontSize: 11, fill: '#64748b' }} axisLine={false} tickLine={false} />
                     <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [fmt(Number(v), effMetric) + u, diseaseLabel]} />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]} onClick={(d) => { const c = (d as unknown as { code?: string; payload?: { code?: string } }); const code = c.code ?? c.payload?.code; if (code) setSelected(code) }} cursor="pointer">
-                      {rankPos.map((r) => (<Cell key={r.code} fill={selected === r.code ? '#0f172a' : rampColor(Math.sqrt(r.value / maxV))} />))}
-                      <LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), effMetric)} style={{ fontSize: 10, fill: '#94a3b8' }} />
+                      {rankPos.map((r) => (<Cell key={r.code} fill={selected === r.code ? '#0ea5e9' : rampColor(Math.sqrt(r.value / maxV))} stroke={selected === r.code ? '#0369a1' : 'none'} strokeWidth={selected === r.code ? 1.5 : 0} />))}
+                      <LabelList dataKey="value" position="right" formatter={(v) => fmt(Number(v), effMetric)} style={{ fontSize: 10, fontWeight: 600, fill: '#64748b' }} />
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -412,7 +412,10 @@ export default function InfectiousMap() {
                 </LineChart>
               </ResponsiveContainer>
             </Panel>
+          </div>
 
+          {/* 보조 분석 (와이드 화면에서 별도 열로 분산) */}
+          <div className="space-y-4 lg:col-span-12 2xl:col-span-3">
             {disease === ALL && groupMix.length > 0 && (
               <Panel title={`법정 감염병 급(군)별 구성 — ${selected ? SIDO_NAME[selected] : '전국'} (${periodLabel})`}>
                 {(() => {
@@ -465,16 +468,17 @@ export default function InfectiousMap() {
               </Panel>
             )}
           </div>
-        </div>
-
         {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
-        <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
+          <div className="lg:col-span-12 2xl:col-span-8">
+            <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
+          </div>
 
-        {/* 인구학·역학 심층 분석(질병청 대시보드급) */}
-        <div className="mt-4 grid gap-4 lg:grid-cols-3">
-          <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} />
-          <DonutPanel title="환자분류" data={aggRecord(disease, EID_PTNT)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현" />
-          <DonutPanel title="추정 감염지역" data={aggRecord(disease, EID_AREA)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정" />
+          {/* 인구학·역학 심층 분석(질병청 대시보드급) */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-12 2xl:col-span-4 2xl:grid-cols-1">
+            <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} />
+            <DonutPanel title="환자분류" data={aggRecord(disease, EID_PTNT)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현" />
+            <DonutPanel title="추정 감염지역" data={aggRecord(disease, EID_AREA)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정" />
+          </div>
         </div>
 
         <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-400">
@@ -601,7 +605,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string;
   const TG = [{ k: 'day', t: '일' }, { k: 'week', t: '주' }, { k: 'month', t: '월' }, { k: 'year', t: '년' }] as const
 
   return (
-    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 전국 발생 추이 — {diseaseLabel}</h3>
         <div className="flex items-center gap-3">
