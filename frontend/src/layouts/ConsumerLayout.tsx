@@ -1,6 +1,7 @@
 import { Suspense } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
 import { HomeIcon, FireIcon, UserIcon } from '../components/icons'
+import FontScale from '../components/FontScale'
 
 const TABS = [
   { to: '/', label: '홈', Icon: HomeIcon, end: true },
@@ -14,22 +15,24 @@ export default function ConsumerLayout() {
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <span className="text-lg font-medium text-slate-900 dark:text-white">FactDoc</span>
-          {/* 데스크톱: 상단 네비 */}
-          <nav className="hidden gap-1 lg:flex">
-            {TABS.map(({ to, label, end }) => (
-              <NavLink
-                key={to}
-                to={to}
-                end={end}
-                className={({ isActive }) =>
-                  `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`
-                }
-              >
-                {label}
-              </NavLink>
-            ))}
-          </nav>
-          <span className="text-[11px] text-slate-400 lg:hidden">국가 공식데이터 팩트체크</span>
+          <div className="flex items-center gap-2">
+            {/* 데스크톱: 상단 네비 */}
+            <nav className="hidden gap-1 lg:flex">
+              {TABS.map(({ to, label, end }) => (
+                <NavLink
+                  key={to}
+                  to={to}
+                  end={end}
+                  className={({ isActive }) =>
+                    `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? 'bg-blue-600 text-white' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`
+                  }
+                >
+                  {label}
+                </NavLink>
+              ))}
+            </nav>
+            <FontScale />
+          </div>
         </div>
       </header>
 
