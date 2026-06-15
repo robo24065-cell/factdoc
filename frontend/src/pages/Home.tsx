@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -331,9 +331,10 @@ export default function Home() {
         setSubstances(subs)
         const dz = findInText(claim, 'disease')
         if (dz) {
-          const adv = adviceAnswer(claim)
+          // 합성 카드에선 질병 카드는 '순수 질병 관리 안내'만(음식별 평가는 위의 AI 판단이 담당 — 중복·사족 제거)
+          const g = guidanceFor(dz.canonical)
           const sections = await fetchDiseaseSections(dz.canonical)
-          setInfo({ disease: dz.canonical, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
+          setInfo({ disease: dz.canonical, summary: g?.text ?? '', sections, hasOfficial: sections.length > 0, citation: g?.citation, isGuidance: !!g })
           // 질병 + 약/음식 → 최상단 AI 종합 판단('먹어도 되는지' + 근거)
           setTopJudgment(buildTopJudgment(dz.canonical, subs, claim))
         } else if (subs.length >= 2) {
