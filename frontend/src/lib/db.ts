@@ -1,6 +1,15 @@
 import { supabase } from './supabase'
 import { parseClaim, type Verdict } from '../engine'
 import { findInText, normalizeTerm } from '../engine/ontology'
+import { KDCA_CORPUS } from '../engine/kdca-corpus'
+
+// 질병청 국가건강정보포털 정적 코퍼스(건강정보검색 API 배치 수집) — Supabase 없이도 그라운딩 동작.
+const KDCA_URL = 'https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do'
+const TX_RE = /(치료|약물|연고|도포|바르|복용|관리|요법|예방|권고|표준|개선|조절)/
+function staticDocs(terms: string[]) {
+  const t = [...new Set(terms)].filter((s) => s && s.length >= 2 && !s.includes(','))
+  return KDCA_CORPUS.filter((d) => t.some((term) => d.title.includes(term)))
+}
 
 // 검증 1건을 query_log에 적재(비차단). ※ 캐시 히트(중복 질문)에는 호출하지 않음 → 분포 인플레 방지.
 export async function logQuery(rawText: string, verdict: Verdict, category?: string): Promise<void> {
@@ -142,7 +151,7 @@ export interface GroundedPassage { text: string; section: string; url: string | 
 // 코퍼스 그라운딩 — 손코딩 트리플이 없어도 실제 질병청 본문에서 (질병 문서 ∩ 주제어) 본문을 찾아 답.
 // 주제어가 그 질병의 '치료/관리' 맥락에 등장하면 treatment=true(주장 뒷받침 신호). 렉시컬(Gemini 불필요).
 export async function fetchGroundedAnswer(diseaseTerms: string[], subjectTerms: string[]): Promise<GroundedPassage[]> {
-  if (!supabase) return []
+  if (!supabase) return staticGrounded(diseaseTerms, subjectTerms)
   try {
     const dTerms = [...new Set(diseaseTerms)].filter((s) => s && s.length >= 2 && !s.includes(',')).slice(0, 5)
     if (!dTerms.length) return []
@@ -166,35 +175,55 @@ export async function fetchGroundedAnswer(diseaseTerms: string[], subjectTerms: 
     })
     // 주제어 포함 본문 우선, 그다음 치료 맥락
     out.sort((a, b) => (Number(b._subj) - Number(a._subj)) || (Number(b.treatment) - Number(a.treatment)))
-    return out.slice(0, 4).map(({ _subj, ...g }) => g)
+    const sup = out.slice(0, 4).map(({ _subj, ...g }) => g)
+    return sup.length ? sup : staticGrounded(diseaseTerms, subjectTerms)
   } catch {
-    return []
+    return staticGrounded(diseaseTerms, subjectTerms)
   }
+}
+
+// 정적 코퍼스(KDCA) 그라운딩 — Supabase 미스/오프라인 폴백.
+function staticGrounded(diseaseTerms: string[], subjectTerms: string[]): GroundedPassage[] {
+  const docs = staticDocs(diseaseTerms)
+  if (!docs.length) return []
+  const sNorm = [...new Set(subjectTerms)].filter((s) => s && s.length >= 2).map((s) => s.toLowerCase().replace(/\s+/g, ''))
+  const out = docs.flatMap((d) => d.chunks.map((c) => {
+    const hasSubj = sNorm.some((s) => c.text.toLowerCase().replace(/\s+/g, '').includes(s))
+    return { text: c.text, section: c.section, url: KDCA_URL, portal: d.portal, treatment: TX_RE.test(c.text) || TX_RE.test(c.section), _subj: hasSubj }
+  }))
+  out.sort((a, b) => (Number(b._subj) - Number(a._subj)) || (Number(b.treatment) - Number(a.treatment)))
+  return out.slice(0, 4).map(({ _subj, ...g }) => g)
 }
 
 export interface DiseaseSection { section: string; text: string; url: string | null; portal: string }
 
 // 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 동의어(온톨로지) 확장 검색 — 예: 제2형당뇨↔당뇨병.
 export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] | null> {
-  if (!supabase) return null
+  // 검색어 = 입력 + 정규화 동의어(중복·짧은 토큰 제거, 최대 5개)
+  const entry = normalizeTerm(name)
+  const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
+    .filter((s) => s && s.length >= 2 && !s.includes(','))
+    .slice(0, 5)
+  if (!supabase) return staticDiseaseInfo(terms)
   try {
-    // 검색어 = 입력 + 정규화 동의어(중복·짧은 토큰 제거, 최대 5개)
-    const entry = normalizeTerm(name)
-    const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
-      .filter((s) => s && s.length >= 2 && !s.includes(','))
-      .slice(0, 5)
     const orFilter = terms.map((s) => `title.ilike.%${s}%`).join(',')
     const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').or(orFilter).limit(4)
-    if (!docs || docs.length === 0) return []
+    if (!docs || docs.length === 0) return staticDiseaseInfo(terms)
     const ids = (docs as { id: number }[]).map((d) => d.id)
     const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).limit(12)
     const docMap = new Map((docs as { id: number; url: string | null; portal: string }[]).map((d) => [d.id, d]))
-    return (chunks ?? []).map((c) => {
+    const sup = (chunks ?? []).map((c) => {
       const span = c.source_span as { section?: string } | null
       const d = docMap.get(c.source_doc_id as number)
       return { section: span?.section ?? '', text: c.text as string, url: d?.url ?? null, portal: d?.portal ?? '' }
     })
+    return sup.length ? sup : staticDiseaseInfo(terms)
   } catch {
-    return null
+    return staticDiseaseInfo(terms)
   }
+}
+
+// 정적 코퍼스(KDCA) 질병정보 — Supabase 미스/오프라인 폴백.
+function staticDiseaseInfo(terms: string[]): DiseaseSection[] {
+  return staticDocs(terms).flatMap((d) => d.chunks.map((c) => ({ section: c.section, text: c.text, url: KDCA_URL, portal: d.portal })))
 }
