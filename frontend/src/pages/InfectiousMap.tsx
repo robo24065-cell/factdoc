@@ -175,30 +175,7 @@ export default function InfectiousMap() {
                 </button>
               ))}
             </div>
-          </div>
-
-          <div className="mt-3 flex items-center gap-3">
-            <button
-              onClick={() => setPlaying((p) => !p)}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-700"
-              title={playing ? '일시정지' : '연도 재생'}
-            >
-              {playing ? '❚❚' : '▶'}
-            </button>
-            <div className="flex-1">
-              <input
-                type="range" min={0} max={EID_YEARS.length - 1} step={1} value={yearIdx}
-                onChange={(e) => { setPlaying(false); setYearIdx(Number(e.target.value)) }}
-                className="w-full accent-blue-600"
-              />
-              <div className="mt-0.5 flex justify-between px-0.5">
-                {EID_YEARS.map((y, i) => (
-                  <button key={y} onClick={() => { setPlaying(false); setYearIdx(i) }}
-                    className={`text-xs font-semibold ${i === yearIdx ? 'text-blue-600' : 'text-slate-400'}`}>{y}</button>
-                ))}
-              </div>
-            </div>
-            <span className="shrink-0 rounded-lg bg-slate-900 px-3 py-1 text-lg font-bold tabular-nums text-white dark:bg-white dark:text-slate-900">{year}</span>
+            <span className="ml-auto hidden text-xs text-slate-400 sm:block">지도 아래 <b className="text-slate-500">기간 바</b>로 연도를 넘겨보세요 ▾</span>
           </div>
         </div>
 
@@ -260,6 +237,34 @@ export default function InfectiousMap() {
                 <div className="h-2.5 flex-1 rounded-full" style={{ background: `linear-gradient(to right, ${rampColor(0)}, ${rampColor(0.3)}, ${rampColor(0.55)}, ${rampColor(0.8)}, ${rampColor(1)})` }} />
                 <span>많음</span>
                 <span className="ml-1 tabular-nums text-slate-400">최대 {nf(maxV)}건</span>
+              </div>
+
+              {/* 기간 바(타임라인) — 지도 아래 */}
+              <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 dark:bg-slate-800/50">
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={() => setPlaying((p) => !p)}
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm text-white hover:bg-blue-700"
+                    title={playing ? '일시정지' : '연도별 재생'}
+                  >
+                    {playing ? '❚❚' : '▶'}
+                  </button>
+                  <div className="flex-1">
+                    <input
+                      type="range" min={0} max={EID_YEARS.length - 1} step={1} value={yearIdx}
+                      onChange={(e) => { setPlaying(false); setYearIdx(Number(e.target.value)) }}
+                      className="w-full accent-blue-600"
+                      aria-label="연도 선택"
+                    />
+                    <div className="mt-0.5 flex justify-between px-0.5">
+                      {EID_YEARS.map((y, i) => (
+                        <button key={y} onClick={() => { setPlaying(false); setYearIdx(i) }}
+                          className={`text-xs font-semibold tabular-nums ${i === yearIdx ? 'text-blue-600' : 'text-slate-400 hover:text-slate-600'}`}>{y}</button>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="shrink-0 rounded-lg bg-slate-900 px-3 py-1 text-lg font-bold tabular-nums text-white dark:bg-white dark:text-slate-900">{year}</span>
+                </div>
               </div>
 
               {/* 호버 툴팁 */}
