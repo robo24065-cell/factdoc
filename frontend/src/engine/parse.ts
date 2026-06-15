@@ -28,10 +28,27 @@ function isNegated(text: string, hitWords: string[]): boolean {
 }
 
 export function parseClaim(text: string): Triple[] {
-  const disease = findInText(text, 'disease')
-  if (!disease) return []
+  const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  const nrm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+  const surfaceOf = (e: { canonical: string; variants: string[] }) =>
+    [e.canonical, ...e.variants].filter((v) => nrm(text).includes(nrm(v))).sort((a, b) => b.length - a.length)[0]
 
   const subjectEntry = findInText(text, 'subject')
+  let disease = findInText(text, 'disease')
+  // 안전: 질병 표면형이 주체 표면형 안에 들어있고(독감백신⊃독감) + 다른 질병이 따로 있으면, 주체를 가린 질병이 진짜 대상.
+  // '백신이 자폐 유발' 류의 의미 역전 방지. 단 '당뇨식↔당뇨'처럼 다른 질병이 없으면 그대로 둠(회귀 방지). §10
+  if (subjectEntry && disease) {
+    const ss = surfaceOf(subjectEntry)
+    const ds = surfaceOf(disease)
+    if (ss && ds && nrm(ss).includes(nrm(ds)) && nrm(ss) !== nrm(ds)) {
+      let masked = text
+      for (const v of [subjectEntry.canonical, ...subjectEntry.variants]) if (v.length >= 2) masked = masked.replace(new RegExp(escRe(v), 'gi'), ' ')
+      const dz2 = findInText(masked, 'disease')
+      if (dz2 && dz2.canonical !== disease.canonical) disease = dz2
+    }
+  }
+  if (!disease) return []
+
   const subject = subjectEntry?.canonical ?? '(미상)'
   const subjectSurface = subjectEntry?.variants[0]
   const strength = detectStrength(text)

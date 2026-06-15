@@ -7,7 +7,7 @@ const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다.
 export type Tier = 'auto_unverified' | 'verified'
 
 // 엔진/온톨로지/룰을 의미 있게 바꾸면 이 버전을 올린다 → 구버전 캐시는 무시되고 재판정됨.
-export const ENGINE_VERSION = 'v3-2026-06-14'
+export const ENGINE_VERSION = 'v4-2026-06-15'
 
 // 정규화 + FNV-1a 해시 → 시맨틱 캐시 키(추후 임베딩 ANN으로 확장)
 export function claimHash(text: string): string {

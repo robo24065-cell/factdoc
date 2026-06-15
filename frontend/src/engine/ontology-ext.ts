@@ -10,6 +10,7 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '인후통', variants: ['인후통', '목 아프', '목 아픈', '목 아파', '목이 아프', '목이 아픈', '목이 아파', '목감기', '목 통증', '목이 따끔', '목이 칼칼', '목이 부었'], type: 'disease' },
   { canonical: '치통', variants: ['치통', '이가 아프', '이가 아픈', '이가 아파', '잇몸 아프', '잇몸 아픈'], type: 'disease' },
   { canonical: '복통', variants: ['복통', '배 아프', '배 아픈', '배 아파', '배가 아프', '배가 아픈', '배가 아파', '아랫배 아프'], type: 'disease' },
+  { canonical: '자폐스펙트럼장애', variants: ['자폐', '자폐증', '자폐 스펙트럼', '자폐스펙트럼', 'autism', '아스퍼거'], type: 'disease', tags: ['chronic_irreversible'] },
   // ── 질환 대량 확장 (expand-disease-ontology 워크플로 147종, 생성+적대검증) — §13.1 폭 ──
   { canonical: "심방세동", variants: ["심방세동", "심방 세동", "atrial fibrillation", "afib", "심방잔떨림"], type: "disease", tags: ["chronic_irreversible"] },
   { canonical: "심장판막증", variants: ["심장판막증", "판막질환", "판막질환증", "승모판협착", "승모판막", "대동맥판막", "판막역류", "심장판막", "valvular"], type: "disease", tags: ["chronic_irreversible"] },
