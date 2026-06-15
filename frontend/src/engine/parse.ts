@@ -2,17 +2,7 @@
 // ⚠ 이것은 §13.4의 LLM(Gemini) 파서 자리의 임시 대체물. 진실판단은 하지 않고 '모양'만 추출.
 import type { Relation, Strength, Triple } from './types'
 import { findInText } from './ontology'
-
-// 우선순위 순서가 중요(replaces_treatment·cures를 manages보다 먼저 잡음)
-const REL_KEYWORDS: { rel: Relation; words: string[] }[] = [
-  { rel: 'replaces_treatment', words: ['약 끊', '약을 끊', '약 대신', '병원 안 가', '병원 안가', '약 안 먹어도', '치료 안 받아도', '약 안 먹어도 된', '약을 줄'] },
-  { rel: 'cures', words: ['완치', '낫는', '낫나', '낫게', '나아', '나았', '고친', '고쳐', '없앤다', '없애', '치료된', '치료한', '치료해', '치료가 된', '치료시', '싹 낫', '뿌리 뽑', '뿌리째', '근본 치료', '근본부터', '근본적으로 치료', '완전히 낫', '특효'] },
-  { rel: 'prevents', words: ['예방', '막아준다', '막아 준다', '안 걸리', '안걸리', '걸리지 않', '예방접종', '예방 접종', '면역이 생'] },
-  { rel: 'increases_risk', words: ['위험을 높', '위험이 높', '위험 높', '위험이 올라', '위험을 올라', '위험 올라', '위험이 커', '위험 커', '유발', '높인다', '높아진', '올라간', '올라가', '올린다', '악화', '발병률 증가', '잘 걸린', '원인이 된', '원인이다', '부른다', '불러일으', '불러온', '초래', '일으킨', '일으키'] },
-  { rel: 'reduces_risk', words: ['위험을 낮', '위험이 낮', '위험 낮', '위험이 내려', '발병률 감소', '낮춘다', '낮춰', '낮아진', '내린다', '내려간', '예방에 도움', '줄여준', '줄인다'] },
-  { rel: 'no_effect', words: ['효과 없', '효과없', '효과가 없', '소용없', '소용 없', '의미 없', '쓸모 없', '도움 안'] },
-  { rel: 'manages', words: ['도움', '좋다', '좋아', '좋대', '좋은', '개선', '완화', '관리', '조절', '잡아준', '잡는다', '효능', '효과적'] },
-]
+import { relationHits } from './relationLex'
 
 function detectStrength(text: string): Strength {
   if (/(완치|무조건|유일|100%|반드시 낫)/.test(text)) return 'absolute'
@@ -58,7 +48,8 @@ export function parseClaim(text: string): Triple[] {
     !/(안\s*걸|못\s*걸|예방|막아|안\s*생|되지\s*않|안\s*된|안\s*생기)/.test(text)
 
   // 매칭된 관계 + 각 관계가 부정되는지(polarity). 부정 표지가 그 관계 동사에 인접할 때만 negate.
-  const matched = REL_KEYWORDS.filter((k) => k.words.some((w) => text.includes(w)))
+  // relationHits: 1,100+ 어간 사전(relationLex)으로 무한한 표현을 닫힌 관계집합에 매핑(LLM 없이 일반화).
+  const matched = relationHits(text)
   const negated = new Set<Relation>()
   for (const k of matched) {
     if (isNegated(text, k.words.filter((w) => text.includes(w)))) negated.add(k.rel)

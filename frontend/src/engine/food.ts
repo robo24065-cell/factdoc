@@ -2,6 +2,7 @@
 // AI 강점: 임의 음식도 성분·효과로 안전하게 설명. 치료 단정 X(명예훼손·부당광고 회피).
 import { FOOD_KB, type FoodEffect, type FoodEntry } from './food-kb'
 import { findInText, variantsOf } from './ontology'
+import { isCureClaim } from './relationLex'
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
@@ -32,11 +33,9 @@ function condMatches(condition: string, diseaseCanonical: string): boolean {
 export interface FoodResult { name: string; components: string[]; effects: FoodEffect[]; disease: string | null; matched: boolean }
 
 // 강한 허위주장(완치·특효·치료단정·약대체)은 음식카드 대상 아님 → 룰엔진(허위) 경로로.
-const CURE_CLAIM = /(완치|특효|치료한다|치료된다|치료해 ?준|뿌리 ?뽑|뿌리째|약 ?끊|약 ?안 ?먹|대체|싹 ?낫|100\s*%|단번에|확실히 ?낫)/
-export function isCureClaim(claim: string): boolean { return CURE_CLAIM.test(claim) }
-
+// isCureClaim은 relationLex(1,100+ 어간) 기반 — '치료/완치/약끊/대체' 등 무한한 표현 일반화.
 export function foodAnswer(claim: string): FoodResult | null {
-  if (CURE_CLAIM.test(claim)) return null
+  if (isCureClaim(claim)) return null
   const t = norm(claim)
   let best: { f: FoodEntry; len: number } | undefined
   for (const f of FOOD_KB) {
@@ -61,7 +60,7 @@ export function foodAnswer(claim: string): FoodResult | null {
 
 // 한 문장에 음식이 여러 개일 때 전부 추출(질병 인식 시 해당 효과만 필터). 완치 주장이면 [].
 export function foodAnswerAll(claim: string, max = 4): FoodResult[] {
-  if (CURE_CLAIM.test(claim)) return []
+  if (isCureClaim(claim)) return []
   const t = norm(claim)
   const dz = findInText(claim, 'disease')
   // 음식별 최장 매칭 토큰 수집
