@@ -1,8 +1,12 @@
 // 음식·성분 효과 답변 — "사과/여주/바나나가 ○○에 효과있나" 류를 KB로 추론(성분·효과·근거레벨).
 // AI 강점: 임의 음식도 성분·효과로 안전하게 설명. 치료 단정 X(명예훼손·부당광고 회피).
-import { FOOD_KB, type FoodEffect, type FoodEntry } from './food-kb'
+import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry } from './food-kb'
+import { FOOD_KB_EXT } from './food-kb-ext'
 import { findInText, variantsOf } from './ontology'
 import { isCureClaim } from './relationLex'
+
+// 본체 139종 + 확장(일상 음식) — §13.1 폭
+const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT]
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 

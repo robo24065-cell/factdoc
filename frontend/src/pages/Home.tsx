@@ -52,11 +52,57 @@ function subLabel(s: SubCard): string {
   return s.kind === 'ingredient' ? s.name : s.data.name
 }
 
-// 합성 코멘트(2개 이상일 때 최상단) — Gemini 불필요 결정론
+// 합성 코멘트(질병 없이 2개 이상일 때) — Gemini 불필요 결정론
 function synthComment(disease: string | null, subs: SubCard[]): string {
   const list = subs.map(subLabel).join(' · ')
   if (disease) return `‘${disease}’와 관련해 ${list}을(를) 살펴봤어요. 아래에서 각각의 성분·효과를 확인하세요. 식품·성분이 질병을 ‘치료’한다고 단정하진 않아요.`
-  return `${list}을(를) 살펴봤어요. 아래에서 각각의 성분·효과를 확인하세요.`
+  return `${list}을(를) 살펴봤어요. 아래에서 각각 확인하세요.`
+}
+
+// ── AI 종합 판단 카드(질병 + 약/음식) — "먹어도 되는지" 판단+근거. 결정론(약 효능↔증상, 음식 근거레벨) ──
+export type TJTone = 'good' | 'caution' | 'consult' | 'neutral'
+export interface TopJudgment { tone: TJTone; label: string; comment: string; basis: string }
+
+const TJ_UI: Record<TJTone, { sub: string; text: string; bg: string; accent: string }> = {
+  good: { sub: '공식 정보로 종합한 참고 판단', text: 'text-emerald-700 dark:text-emerald-300', bg: 'bg-emerald-50 dark:bg-emerald-950/30', accent: 'bg-emerald-500' },
+  caution: { sub: '섭취·복용에 주의가 필요해요', text: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-950/30', accent: 'bg-amber-500' },
+  consult: { sub: '전문가 확인을 권하는 사안이에요', text: 'text-blue-700 dark:text-blue-300', bg: 'bg-blue-50 dark:bg-blue-950/30', accent: 'bg-blue-500' },
+  neutral: { sub: '공식 근거가 제한적이에요', text: 'text-slate-700 dark:text-slate-300', bg: 'bg-slate-100 dark:bg-slate-800/60', accent: 'bg-slate-400' },
+}
+const TJ_LABEL: Record<TJTone, string> = { good: '도움이 될 수 있어요', caution: '주의가 필요해요', consult: '전문가 상담을 권해요', neutral: '효과 근거는 제한적이에요' }
+
+// 약 효능 문구가 가리키는 증상 — 질병의 '증상 완화'에 쓰는 약인지 판단
+const SYMPTOM_KW = ['발열', '열', '해열', '통증', '진통', '두통', '몸살', '근육통', '신경통', '감기', '콧물', '코막힘', '기침', '가래', '인후', '소화', '속쓰림', '설사', '변비', '메스꺼움', '구역', '가려움', '염증', '부기', '콜레스테롤', '혈압', '혈당', '피로']
+
+function buildTopJudgment(disease: string, subs: SubCard[]): TopJudgment {
+  const parts: string[] = []
+  let good = false, caution = false, consult = false
+  for (const s of subs) {
+    if (s.kind === 'drug') {
+      const nm = s.data.itemName.split('(')[0]
+      const relevant = SYMPTOM_KW.some((k) => (s.data.efcy || '').includes(k))
+      if (relevant) { good = true; parts.push(`${nm}은(는) 발열·통증 등 증상 완화에 쓰는 약이에요(식약처 허가 효능). 다만 ${disease} 자체를 치료하는 약은 아니에요.`) }
+      else { consult = true; parts.push(`${nm}이(가) ${disease}에 맞는 약인지는 분명치 않아, 복용 전 약사·의사와 상담하세요.`) }
+      if (s.data.interact) parts.push('함께 먹으면 안 되는 약·음식이 있으니 상호작용을 꼭 확인하세요.')
+    } else if (s.kind === 'food') {
+      const f = s.data
+      const best = f.matched ? f.effects[0] : null
+      if (best?.level === 'caution') { caution = true; parts.push(`${f.name}은(는) ${disease}가 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`) }
+      else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${f.components[0] ?? '성분'}이(가) ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님).`) }
+      else if (best?.level === 'folk') { parts.push(`${f.name}은(는) 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`) }
+      else { parts.push(`${f.name}이(가) ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`) }
+    } else if (s.kind === 'ingredient') {
+      if (s.info.mfds) good = true
+      parts.push(`${s.name}은(는) ${s.info.efficacy}`)
+      if (s.info.caution) { caution = true; parts.push(`${s.name}은(는) ${s.info.caution}.`) }
+    } else {
+      parts.push(`${s.data.name}의 성분 효능은 아래 카드를 참고하세요. 제품 자체가 ${disease}를 치료하는 건 아니에요.`)
+    }
+  }
+  const tone: TJTone = caution ? 'caution' : good ? 'good' : consult ? 'consult' : 'neutral'
+  const comment = parts.join(' ') + ' 증상이 심하거나 지속되면 의료기관에서 진료받으세요.'
+  const basis = `아래 ${subs.map((s) => (s.kind === 'drug' ? s.data.itemName.split('(')[0] : subLabel(s))).join('·')} · ${disease} 공식 정보를 종합했어요.`
+  return { tone, label: TJ_LABEL[tone], comment, basis }
 }
 
 // 식품/약/성분 카드 1개 — collapsed면 아코디언(접힘), 아니면 펼친 카드
@@ -185,6 +231,7 @@ export default function Home() {
   const [info, setInfo] = useState<InfoAnswer | null>(null)
   const [substances, setSubstances] = useState<SubCard[]>([])
   const [topComment, setTopComment] = useState<string | null>(null)
+  const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -193,7 +240,7 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null)
 
     // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론. 합성카드보다 먼저.
     const stat = checkStatClaim(claim)
@@ -228,8 +275,11 @@ export default function Home() {
           const adv = adviceAnswer(claim)
           const sections = await fetchDiseaseSections(dz.canonical)
           setInfo({ disease: dz.canonical, summary: adv?.text ?? '', sections, hasOfficial: sections.length > 0, citation: adv?.citation, isGuidance: !!adv })
+          // 질병 + 약/음식 → 최상단 AI 종합 판단('먹어도 되는지' + 근거)
+          setTopJudgment(buildTopJudgment(dz.canonical, subs))
+        } else if (subs.length >= 2) {
+          setTopComment(synthComment(null, subs))
         }
-        if (subs.length >= 2) setTopComment(synthComment(dz?.canonical ?? null, subs))
         setLoading(false)
         void logQuery(claim, 'unverified', subs[0].kind)
         return
@@ -366,7 +416,26 @@ export default function Home() {
         ))}
       </div>
 
-      {/* 합성 코멘트 — 2개 이상 식품/성분 질문 시 최상단 정리 */}
+      {/* AI 종합 판단 카드 — 질병 + 약/음식: '먹어도 되는지' 판단 + 근거(최상단) */}
+      {topJudgment && (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className={`flex items-center gap-3 p-4 ${TJ_UI[topJudgment.tone].bg}`}>
+            <div className={`h-11 w-1.5 rounded-full ${TJ_UI[topJudgment.tone].accent}`} />
+            <div>
+              <p className={`text-lg font-semibold ${TJ_UI[topJudgment.tone].text}`}>{topJudgment.label}</p>
+              <p className="text-xs text-slate-500">{TJ_UI[topJudgment.tone].sub}</p>
+            </div>
+            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">AI 종합 판단</span>
+          </div>
+          <div className="p-4">
+            <p className="text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{topJudgment.comment}</p>
+            <p className="mt-2 text-[12px] text-slate-500">🧭 판단 근거: {topJudgment.basis}</p>
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">본 판단은 공식 정보를 종합한 참고용이며 의료 진단·처방이 아닙니다. 정확한 복용·섭취는 의료진과 상담하세요.</p>
+          </div>
+        </div>
+      )}
+
+      {/* 합성 코멘트 — 질병 없이 2개 이상 식품/성분 질문 시 정리 */}
       {topComment && (
         <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-[15px] leading-relaxed text-slate-700 dark:border-slate-800 dark:bg-slate-800/40 dark:text-slate-200">
           <span className="mr-1.5 rounded bg-slate-200 px-1.5 py-0.5 text-[11px] font-medium text-slate-600 dark:bg-slate-700 dark:text-slate-300">AI 정리</span>
