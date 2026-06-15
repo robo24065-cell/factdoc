@@ -1,0 +1,40 @@
+# 감염병 발생현황 데이터 자동 갱신 — 질병관리청 전수신고 발생현황(시도별·발생률·주별)을 주기적으로 다시 받아 캐시.
+# per-request 외부호출 금지(§13.7) → 배치 cron으로 최신화. 진행중인 현재년 데이터가 매주 갱신됨.
+# ⚠ 사전 설정: 저장소 Settings > Secrets and variables > Actions 에 DATA_GO_KR_API_KEY(공공데이터포털 일반 인증키) 추가 필요.
+name: refresh-eid-data
+
+on:
+  schedule:
+    - cron: '10 21 * * *'   # 매일 06:10 KST (전일 21:10 UTC) — 하루 1회 자동 최신화. 질병청 주간 갱신분을 매일 반영
+  workflow_dispatch:          # 수동 실행 버튼
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 감염병 발생현황 재수집(발생수·발생률·주별)
+        env:
+          DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
+        run: |
+          if [ -z "$DATA_GO_KR_API_KEY" ]; then
+            echo "::warning::DATA_GO_KR_API_KEY 시크릿 미설정 — 갱신 건너뜀"; exit 0
+          fi
+          node scripts/fetch-eid-region.mjs
+      - name: 변경분만 커밋
+        run: |
+          if git diff --quiet -- frontend/src/data/eid-region.ts; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add frontend/src/data/eid-region.ts
+            git commit -m "chore: 감염병 발생현황 데이터 자동 갱신 (질병청 전수신고)"
+            git push
+          fi

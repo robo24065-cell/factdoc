@@ -2,7 +2,25 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOutbreak, fetchTopDiseases, fetchTopMisinfo, type OutbreakRow, type TopClaim, type TopDisease } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
-import { outbreakList } from './dashboardData'
+import { EID_YEARS, EID_PARTIAL_YEAR, EID_DISEASES, EID_GROUP, EID_WEEKLY } from '../data/eid-region'
+
+// 질병청 전수신고 주별 데이터에서 '최근 4주' 발생 현황 산출(최신 주차 기준, 신고지연 보정). 정적 2024 대체.
+function latestWeekly() {
+  const year = EID_YEARS[EID_YEARS.length - 1]
+  const wk = EID_WEEKLY[year] || {}
+  let last = -1
+  for (const d of EID_DISEASES) { const a = wk[d]; if (a) for (let i = a.length - 1; i >= 0; i--) { if (a[i] > 0) { if (i > last) last = i; break } } }
+  if (last < 0) return { year, week: 0, rows: [] as { name: string; count: number; trend: string }[] }
+  const sum = (a: number[] | undefined, s: number, e: number) => { let t = 0; if (a) for (let i = Math.max(0, s); i <= e; i++) t += a[i] || 0; return t }
+  const ws = Math.max(0, last - 3) // 최근 4주 윈도
+  const rows = EID_DISEASES.map((d) => {
+    const a = wk[d]
+    const recent = sum(a, ws, last)
+    const prior = sum(a, ws - 4, ws - 1)
+    return { name: d.replace(/^@/, ''), grp: EID_GROUP[d], count: recent, trend: recent > prior * 1.1 ? 'up' : recent < prior * 0.9 ? 'down' : 'flat' }
+  }).filter((r) => r.count > 0).sort((x, y) => y.count - x.count)
+  return { year, week: last + 1, rows }
+}
 
 function trendBadge(trend: string | null) {
   if (trend === 'up') return { t: '▲ 증가', c: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40' }
@@ -25,9 +43,13 @@ export default function Trending() {
   useEffect(() => { fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchTopDiseases().then(setTopDz) }, [])
   const fakeRows = top && top.length ? top.map((t) => ({ label: t.claim, q: t.claim })) : FAKE_TOP
 
-  const rows = outbreak && outbreak.length
-    ? outbreak.map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend }))
-    : outbreakList.map((o) => ({ name: o.name, count: null as number | null, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))
+  // 질병청 전수신고 최신 주차(그날 기준)를 우선 — 자동 갱신되는 최신 데이터. Supabase는 보조 폴백.
+  const eid = latestWeekly()
+  const eidPartial = eid.year === EID_PARTIAL_YEAR
+  const usingEid = eid.rows.length > 0
+  const rows = usingEid
+    ? eid.rows.map((o) => ({ name: o.name, count: o.count as number | null, trend: o.trend }))
+    : (outbreak ?? []).map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend }))
 
   return (
     <div>
@@ -69,7 +91,9 @@ export default function Trending() {
           <>
             <div className="mt-6 flex items-center justify-between">
               <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🦠 유행 중인 감염병 <span className="text-slate-400">({rows.length})</span></h2>
-              <span className="text-[11px] text-slate-400">질병관리청 감염병포털</span>
+              <span className="text-[11px] text-slate-400">
+                {usingEid ? `질병청 전수신고 · ${eid.year}년 ${eid.week}주차 기준(최근 4주)${eidPartial ? ' 잠정' : ''}` : '질병관리청 감염병포털'}
+              </span>
             </div>
             <div className="mt-2 space-y-2">
               {pageRows.map((r) => {
@@ -80,7 +104,7 @@ export default function Trending() {
                       <span className="font-medium text-slate-900 dark:text-white">{r.name}</span>
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${b.c}`}>{b.t}</span>
                     </div>
-                    {r.count != null && <p className="mt-0.5 text-xs text-slate-400">이번 주 {r.count.toLocaleString()}건</p>}
+                    {r.count != null && r.count > 0 && <p className="mt-0.5 text-xs text-slate-400">{usingEid ? '최근 4주' : '이번 주'} {r.count.toLocaleString()}건</p>}
                     {(() => { const h = preventionHint(r.name); return (
                       <p className="mt-2 text-sm text-slate-500">{h ? `예방: ${h}` : '증상·예방수칙은 아래 관련 정보에서 확인하세요.'}</p>
                     ) })()}
