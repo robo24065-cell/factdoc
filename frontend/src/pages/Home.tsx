@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isCureClaim, judge, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isCureClaim, judge, officialFunction, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -378,6 +378,8 @@ export default function Home() {
   }
 
   const vui = result ? VUI[result.verdict] : null
+  // 건기식 원료가 주장에 있으면 식약처 인정 기능성을 반증 근거로 표시(§13.2·§13.11 자동반증 룰)
+  const mfds = result ? officialFunction(result.claimText) : null
   const steps = result ? result.trace.filter((s) => s.outcome && s.kind !== 'normalize') : []
   // 근거 하이라이트(Span Grounding)용 — 주장의 질병·주체 표면형
   const highlightTerms = result
@@ -567,6 +569,15 @@ export default function Home() {
             )}
 
             <p className="mt-3 text-xs text-slate-400">입력한 내용: “{result.claimText}”</p>
+
+            {mfds && (
+              <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50/60 p-3 dark:border-emerald-950 dark:bg-emerald-950/20">
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">💊 {mfds.raw} — 식약처 인정 기능성</p>
+                <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{mfds.func}</p>
+                <p className="mt-1.5 text-[12px] text-slate-500">건강기능식품의 기능성은 ‘질병 위험 감소·생리활성·영양소 기능’ 수준이며, 질병을 직접 <b>치료·예방</b>한다고 표방할 수 없어요(식약처). 위 기능성에 ‘질병 치료’는 포함되지 않아요.</p>
+                <p className="mt-1 text-[11px] text-slate-400">출처: 식품의약품안전처 건강기능식품정보 (전국 {mfds.total.toLocaleString()}개 품목 기준)</p>
+              </div>
+            )}
 
             {grounded.length > 0 && (
               <div className="mt-3 rounded-xl border border-blue-100 bg-blue-50/50 p-3 dark:border-blue-950 dark:bg-blue-950/20">
