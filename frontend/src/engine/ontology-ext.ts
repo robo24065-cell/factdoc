@@ -168,7 +168,7 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '인지기능', variants: ['기억력', '집중력', '두뇌건강', '두뇌 건강', '인지력', '학습능력'], type: 'disease' },
   { canonical: '심혈관질환', variants: ['심근경색', '동맥경화', '심장병', '심혈관', '뇌졸중', '중풍', '혈관 건강', '혈행', '혈행 개선', '협심증'], type: 'disease' },
   { canonical: '갑상선', variants: ['갑상선결절', '갑상선 결절', '갑상샘', '갑상선기능', '갑상선 기능'], type: 'disease' },
-  { canonical: '관절건강', variants: ['관절', '연골', '관절염', '무릎 관절', '퇴행성관절염', '퇴행성 관절염', '뼈마디'], type: 'disease' },
+  { canonical: '관절건강', variants: ['관절', '연골', '관절염', '무릎 관절', '무릎', '무릎 아프', '무릎이 아프', '무릎 통증', '퇴행성관절염', '퇴행성 관절염', '뼈마디'], type: 'disease' },
   { canonical: '체지방', variants: ['복부지방', '복부 지방', '내장지방', '뱃살', '체지방 감소', '체지방감소'], type: 'disease' },
   { canonical: '감기', variants: ['감기', '상기도감염', '코감기', '잔기침'], type: 'disease', tags: ['infectious'] },
   { canonical: '전립선건강', variants: ['전립선', '전립샘', '전립선 건강'], type: 'disease' },

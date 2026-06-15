@@ -13,10 +13,10 @@ export interface OntologyEntry {
 
 const ONTOLOGY_BASE: OntologyEntry[] = [
   // ── 질환 ──
-  { canonical: '제2형당뇨', variants: ['당뇨', '당뇨병', '성인당뇨', '제2형 당뇨병', '혈당병', 't2dm'], type: 'disease', tags: ['chronic_irreversible'] },
-  { canonical: '고혈압', variants: ['고혈압', '고혈압증', 'hypertension', '높은 혈압'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '제2형당뇨', variants: ['당뇨', '당뇨병', '성인당뇨', '제2형 당뇨병', '혈당병', 't2dm', '당뇨약', '당뇨병약', '혈당약'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '고혈압', variants: ['고혈압', '고혈압증', 'hypertension', '높은 혈압', '혈압약'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '기립성저혈압', variants: ['기립성 저혈압', '저혈압', '기립성저혈압', 'orthostatic'], type: 'disease' },
-  { canonical: '이상지질혈증', variants: ['고지혈증', '콜레스테롤', '중성지방', 'ldl', '고콜레스테롤'], type: 'disease', tags: ['chronic_irreversible'] },
+  { canonical: '이상지질혈증', variants: ['고지혈증', '콜레스테롤', '중성지방', 'ldl', '고콜레스테롤', '콜레스테롤약', '고지혈증약'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '골다공증', variants: ['뼈건강', '뼈 건강', '골밀도', 'osteoporosis'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '비만', variants: ['비만', '과체중', '비만증', 'obesity', '살이 찐다', '살찐다'], type: 'disease' },
   { canonical: '혈당조절', variants: ['혈당', '공복혈당', '당화혈색소', 'hba1c', '식후혈당'], type: 'disease' },
