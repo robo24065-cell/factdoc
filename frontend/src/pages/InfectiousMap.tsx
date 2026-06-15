@@ -12,6 +12,13 @@ import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 const ALL = '__ALL__'
 const cleanName = (d: string) => d.replace(/^@/, '')
 const nf = (n: number) => n.toLocaleString('ko-KR')
+// 은/는 조사(마지막 한글 음절 받침 기준; 비한글 종결은 '는')
+function eunNeun(word: string): string {
+  const m = word.replace(/[)\]\s]+$/, '')
+  const c = m.charCodeAt(m.length - 1)
+  if (c >= 0xac00 && c <= 0xd7a3) return (c - 0xac00) % 28 !== 0 ? '은' : '는'
+  return '는'
+}
 const SIDO_NAME: Record<string, string> = Object.fromEntries(EID_SIDO.map((s) => [s.code, s.name]))
 
 // 발생수 조회 ('00'=전국). disease=ALL 이면 전 질병 합산.
@@ -99,6 +106,17 @@ export default function InfectiousMap() {
   const prevTotal = yearIdx > 0 ? valueFor(disease, EID_YEARS[yearIdx - 1], '00') : null
   const yoy = prevTotal && prevTotal > 0 ? Math.round(((nationTotal - prevTotal) / prevTotal) * 100) : null
 
+  // 자동 분석 인사이트(결정론 — 지역 집중도·증감 한 줄 요약)
+  const insight = useMemo(() => {
+    if (nationTotal <= 0) return `${year}년 ${diseaseLabel}의 전수신고 발생 기록이 없습니다.`
+    const top3 = ranking.slice(0, 3).filter((r) => r.value > 0)
+    const top3Share = Math.round((top3.reduce((s, r) => s + r.value, 0) / nationTotal) * 100)
+    const lead = topSido ? `${topSido.name}(${nf(topSido.value)}건, 전국의 ${Math.round((topSido.value / nationTotal) * 100)}%)` : ''
+    const conc = top3Share >= 60 ? '특정 지역에 집중' : top3Share >= 40 ? '일부 지역에 편중' : '전국에 비교적 고르게 분포'
+    const yoyTxt = yoy === null ? '' : yoy > 0 ? ` 전년 대비 ${yoy}% 증가했습니다.` : yoy < 0 ? ` 전년 대비 ${Math.abs(yoy)}% 감소했습니다.` : ' 전년과 비슷한 수준입니다.'
+    return `${year}년 ${diseaseLabel}${eunNeun(diseaseLabel)} 전국 ${nf(nationTotal)}건 발생했고, ${lead}에서 가장 많았습니다. 상위 3개 시·도(${top3.map((t) => t.name).join('·')})가 전체의 ${top3Share}%로 ${conc}되어 있습니다.${yoyTxt}`
+  }, [disease, year, nationTotal, ranking, topSido, yoy])
+
   // 선택 시도의 질병 구성(드릴다운)
   const sidoBreakdown = useMemo(() => {
     if (!selected) return []
@@ -184,6 +202,12 @@ export default function InfectiousMap() {
           </div>
         </div>
 
+        {/* 자동 분석 인사이트 */}
+        <div className="mb-4 flex items-start gap-2 rounded-2xl border border-blue-100 bg-blue-50/60 px-4 py-3 text-sm leading-relaxed text-slate-700 dark:border-blue-900/40 dark:bg-blue-950/30 dark:text-slate-200">
+          <span className="mt-0.5 text-base">📊</span>
+          <p><b className="text-blue-700 dark:text-blue-300">한눈에</b> · {insight}</p>
+        </div>
+
         {/* 본문: 지도(좌) + 분석(우) */}
         <div className="grid gap-4 lg:grid-cols-12">
           {/* 지도 */}
@@ -256,7 +280,7 @@ export default function InfectiousMap() {
             {/* KPI */}
             <div className="grid grid-cols-3 gap-2">
               <Kpi label="전국 발생수" value={nf(nationTotal)} unit="건" tone="slate" />
-              <Kpi label="최다 발생지" value={topSido?.name ?? '-'} unit={`${nf(topSido?.value ?? 0)}건`} tone="rose" />
+              <Kpi label="최다 발생지" value={topSido && topSido.value > 0 ? topSido.name : '—'} unit={topSido && topSido.value > 0 ? `${nf(topSido.value)}건` : '발생 없음'} tone="rose" />
               <Kpi label="전년 대비" value={yoy === null ? '—' : `${yoy > 0 ? '▲' : yoy < 0 ? '▼' : ''}${Math.abs(yoy)}%`} unit={year === EID_YEARS[0] ? '기준' : '증감'} tone={yoy === null ? 'slate' : yoy > 0 ? 'red' : 'blue'} />
             </div>
 

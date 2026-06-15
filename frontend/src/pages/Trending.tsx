@@ -34,6 +34,17 @@ export default function Trending() {
       <h1 className="mt-2 text-[22px] font-semibold text-slate-900 dark:text-white">지금 조심하세요</h1>
       <p className="mt-1.5 text-sm text-slate-500">유행 중인 감염병과 떠도는 가짜정보를 모았어요.</p>
 
+      {/* 감염병 현황판 디스커버리 배너 */}
+      <Link to="/map"
+        className="mt-4 flex items-center gap-3 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 p-4 transition hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-slate-900">
+        <span className="text-2xl">🗺️</span>
+        <span className="flex-1">
+          <span className="block text-sm font-semibold text-slate-900 dark:text-white">감염병 발생 현황판 보기</span>
+          <span className="block text-xs text-slate-500 dark:text-slate-400">전국 시·도별 발생 분포·연도 흐름을 지도로 — 질병관리청 전수신고 데이터</span>
+        </span>
+        <span className="text-blue-500">›</span>
+      </Link>
+
       {topDz.length > 0 && (
         <>
           <h2 className="mt-6 text-sm font-medium text-slate-700 dark:text-slate-200">🔥 많이 찾는 질병</h2>
