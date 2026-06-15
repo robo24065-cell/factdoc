@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, judge, parseClaim, symptomsFor, targetMatchNote, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, explainLocal, findInText, foodAnswer, judge, parseClaim, symptomsFor, targetMatchNote, type FoodResult, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -44,6 +44,7 @@ export default function Home() {
   const [grounded, setGrounded] = useState<GroundedPassage[]>([])
   const [info, setInfo] = useState<InfoAnswer | null>(null)
   const [product, setProduct] = useState<{ a: ProductAnalysis; note: string | null } | null>(null)
+  const [foodRes, setFoodRes] = useState<FoodResult | null>(null)
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -52,13 +53,21 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([])
+    setInfo(null); setInfoSummarizing(false); setResult(null); setProduct(null); setGrounded([]); setFoodRes(null)
 
     // 0a-1) 제품/성분 질문이면 성분 분석(제품 효과 단정 X, 성분 효능만) — 제품명은 항상, 성분은 질환 없을 때
     const prodA = analyzeProduct(claim)
     if (prodA && (prodA.kind === 'product' || !findInText(claim, 'disease'))) {
       setProduct({ a: prodA, note: targetMatchNote(prodA, claim) }); setLoading(false)
       void logQuery(claim, 'unverified', 'product')
+      return
+    }
+
+    // 0a-2) 음식·성분이 인식되면 효과 분석(성분·효과·근거레벨) — 임의 음식도 추론. 완치/특효 주장은 제외(룰엔진行)
+    const foodA = foodAnswer(claim)
+    if (foodA) {
+      setFoodRes(foodA); setLoading(false)
+      void logQuery(claim, 'unverified', 'food')
       return
     }
 
@@ -238,6 +247,51 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* 음식·성분 효과 분석 카드 — 성분·효과·근거레벨(치료 단정 X) */}
+      {foodRes && (() => {
+        const LV: Record<string, { t: string; c: string }> = {
+          mfds: { t: '식약처 인정', c: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
+          research: { t: '연구됨', c: 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' },
+          folk: { t: '민간', c: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
+          caution: { t: '주의', c: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' },
+          none: { t: '효과 미확인', c: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' },
+        }
+        return (
+          <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+            <div className="flex items-center gap-3 bg-teal-50 p-4 dark:bg-teal-950/30">
+              <div className="h-11 w-1.5 rounded-full bg-teal-500" />
+              <div>
+                <p className="text-lg font-semibold text-teal-700 dark:text-teal-300">{foodRes.name}</p>
+                <p className="text-xs text-slate-500">{foodRes.disease ? `${foodRes.disease}와(과)의 관계` : '성분·효과 분석'}</p>
+              </div>
+              <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">음식·성분</span>
+            </div>
+            <div className="p-4">
+              {foodRes.components.length > 0 && (
+                <p className="text-sm text-slate-600 dark:text-slate-300"><span className="font-medium">주요 성분:</span> {foodRes.components.join(' · ')}</p>
+              )}
+              <ul className="mt-2 space-y-2">
+                {foodRes.effects.map((e, i) => (
+                  <li key={i} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                    <p className="flex items-center gap-1.5 text-sm font-medium text-slate-800 dark:text-slate-100">
+                      {e.condition}
+                      <span className={`rounded px-1 text-[10px] ${LV[e.level]?.c ?? LV.none.c}`}>{LV[e.level]?.t ?? '미확인'}</span>
+                    </p>
+                    <p className="mt-0.5 text-sm text-slate-600 dark:text-slate-300">{e.effect}</p>
+                  </li>
+                ))}
+              </ul>
+              {!foodRes.matched && foodRes.disease && (
+                <p className="mt-2 text-sm text-slate-500">‘{foodRes.disease}’에 대한 직접적인 효과 정보는 충분치 않아요. 위는 일반적으로 알려진 효과예요.</p>
+              )}
+              <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+                음식·성분의 일반적 효과 정보예요(치료를 보장하지 않음). 표준 치료를 대체하지 말고, 정확한 건 전문가와 상담하세요.
+              </p>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* 정보질문 응답 카드 (질병청 공식 정보) */}
       {info && (
