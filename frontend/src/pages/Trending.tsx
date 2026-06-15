@@ -21,6 +21,7 @@ export default function Trending() {
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [top, setTop] = useState<TopClaim[] | null>(null)
   const [topDz, setTopDz] = useState<TopDisease[]>([])
+  const [page, setPage] = useState(0)
   useEffect(() => { fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchTopDiseases().then(setTopDz) }, [])
   const fakeRows = top && top.length ? top.map((t) => ({ label: t.claim, q: t.claim })) : FAKE_TOP
 
@@ -48,26 +49,51 @@ export default function Trending() {
         </>
       )}
 
-      <h2 className="mt-6 text-sm font-medium text-slate-700 dark:text-slate-200">🦠 유행 중인 감염병</h2>
-      <div className="mt-2 space-y-2">
-        {rows.map((r) => {
-          const b = trendBadge(r.trend)
-          return (
-            <div key={r.name} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-slate-900 dark:text-white">{r.name}</span>
-                <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${b.c}`}>{b.t}</span>
-              </div>
-              {r.count != null && <p className="mt-0.5 text-xs text-slate-400">이번 주 {r.count.toLocaleString()}건</p>}
-              {(() => { const h = preventionHint(r.name); return (
-                <p className="mt-2 text-sm text-slate-500">{h ? `예방: ${h}` : '증상·예방수칙은 아래 관련 정보에서 확인하세요.'}</p>
-              ) })()}
-              <Link to={`/disease/${encodeURIComponent(r.name)}`}
-                className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">관련 정보 확인하기 →</Link>
+      {(() => {
+        const PER = 5
+        const pageCount = Math.max(1, Math.ceil(rows.length / PER))
+        const p = Math.min(page, pageCount - 1)
+        const pageRows = rows.slice(p * PER, p * PER + PER)
+        return (
+          <>
+            <div className="mt-6 flex items-center justify-between">
+              <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🦠 유행 중인 감염병 <span className="text-slate-400">({rows.length})</span></h2>
+              <span className="text-[11px] text-slate-400">질병관리청 감염병포털</span>
             </div>
-          )
-        })}
-      </div>
+            <div className="mt-2 space-y-2">
+              {pageRows.map((r) => {
+                const b = trendBadge(r.trend)
+                return (
+                  <div key={r.name} className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-slate-900 dark:text-white">{r.name}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${b.c}`}>{b.t}</span>
+                    </div>
+                    {r.count != null && <p className="mt-0.5 text-xs text-slate-400">이번 주 {r.count.toLocaleString()}건</p>}
+                    {(() => { const h = preventionHint(r.name); return (
+                      <p className="mt-2 text-sm text-slate-500">{h ? `예방: ${h}` : '증상·예방수칙은 아래 관련 정보에서 확인하세요.'}</p>
+                    ) })()}
+                    <Link to={`/disease/${encodeURIComponent(r.name)}`}
+                      className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">관련 정보 확인하기 →</Link>
+                  </div>
+                )
+              })}
+            </div>
+            {pageCount > 1 && (
+              <div className="mt-3 flex items-center justify-center gap-1">
+                <button type="button" disabled={p === 0} onClick={() => setPage(p - 1)}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-sm text-slate-500 disabled:opacity-30 dark:border-slate-700">‹</button>
+                {Array.from({ length: pageCount }, (_, i) => (
+                  <button key={i} type="button" onClick={() => setPage(i)}
+                    className={`h-8 w-8 rounded-lg text-sm ${i === p ? 'bg-blue-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}>{i + 1}</button>
+                ))}
+                <button type="button" disabled={p >= pageCount - 1} onClick={() => setPage(p + 1)}
+                  className="rounded-lg border border-slate-200 px-2.5 py-1 text-sm text-slate-500 disabled:opacity-30 dark:border-slate-700">›</button>
+              </div>
+            )}
+          </>
+        )
+      })()}
 
       <h2 className="mt-7 text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
       <div className="mt-2 space-y-2">
