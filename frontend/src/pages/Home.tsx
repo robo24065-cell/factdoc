@@ -53,6 +53,13 @@ function subLabel(s: SubCard): string {
   return s.kind === 'ingredient' ? s.name : s.data.name
 }
 
+// 후속 질문 추천 — 인식된 질병 기반 탐색 유도(어시스턴트 느낌). 기능성 카테고리는 제외.
+const FUNCTION_CATS = new Set(['면역기능', '항산화', '장건강', '눈건강', '관절건강', '인지기능', '체지방', '피로', '혈당조절', '심혈관질환', '뼈건강', '간건강', '피부건강', '전립선건강', '갱년기'])
+function relatedQuestions(canonical: string, display: string): string[] {
+  if (FUNCTION_CATS.has(canonical)) return []
+  return [`${display} 증상이 뭐예요?`, `${display}에 좋은 음식은?`, `${display} 예방법 알려줘`]
+}
+
 // 한국어 조사 — 받침 유무로 이/가·은/는·을/를 선택
 function josa(word: string, pair: '이가' | '은는' | '을를'): string {
   const ch = word.charCodeAt(word.length - 1)
@@ -278,6 +285,7 @@ export default function Home() {
   const [substances, setSubstances] = useState<SubCard[]>([])
   const [topComment, setTopComment] = useState<string | null>(null)
   const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
+  const [related, setRelated] = useState<string[]>([])
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -289,7 +297,9 @@ export default function Home() {
     const claim = text.trim()
     if (!claim) return
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([])
+    // 후속 질문 추천 — 질병 인식 시(어떤 경로로 답하든 표시)
+    { const dzR = findInText(claim, 'disease'); if (dzR) setRelated(relatedQuestions(dzR.canonical, dzR.variants[0] || dzR.canonical).filter((q) => q !== claim)) }
 
     // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론. 합성카드보다 먼저.
     const stat = checkStatClaim(claim)
@@ -799,6 +809,21 @@ export default function Home() {
               {copied ? '✓ 복사됐어요 — 붙여넣어 공유하세요' : '카카오톡으로 공유하기'}
             </button>
             <p className="mt-3 text-[11px] leading-relaxed text-slate-400">{result.disclaimer}</p>
+          </div>
+        </div>
+      )}
+
+      {/* 후속 질문 추천 — 결과가 있을 때 탐색 유도(어시스턴트 느낌) */}
+      {related.length > 0 && (result || info || topJudgment || substances.length > 0) && (
+        <div className="mt-5">
+          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">🔎 이런 것도 확인해보세요</p>
+          <div className="flex flex-wrap gap-2">
+            {related.map((q) => (
+              <button key={q} type="button" onClick={() => { setInput(q); check(q); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
+                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                {q}
+              </button>
+            ))}
           </div>
         </div>
       )}
