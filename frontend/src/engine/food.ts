@@ -61,6 +61,15 @@ function condMatches(condition: string, diseaseCanonical: string): boolean {
   return DOMAINS.some((d) => d.cond.test(condition) && d.dz.test(diseaseCanonical))
 }
 
+// 효능/기능성 텍스트가 해당 질병과 같은 건강 영역인지 — 성분카드 판단의 '무관 질병 효과 단정' 방지에 사용.
+// 예: 프로폴리스(구강 항균) ↔ 암 = false(무관) → "도움" 단정 금지(식약처 부당광고 회피).
+export function sharesDomain(text: string, diseaseCanonical: string): boolean {
+  if (!text || !diseaseCanonical) return false
+  const variants = variantsOf(diseaseCanonical)
+  if (variants.some((v) => v.length >= 2 && text.includes(v))) return true
+  return DOMAINS.some((d) => d.cond.test(text) && d.dz.test(diseaseCanonical))
+}
+
 export interface FoodResult { name: string; components: string[]; effects: FoodEffect[]; disease: string | null; matched: boolean }
 
 // 강한 허위주장(완치·특효·치료단정·약대체)은 음식카드 대상 아님 → 룰엔진(허위) 경로로.

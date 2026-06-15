@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -68,7 +68,7 @@ function synthComment(disease: string | null, subs: SubCard[]): string {
 }
 
 // ── AI 종합 판단 카드(질병 + 약/음식) — "먹어도 되는지" 판단+근거+연결고리(Why-Trace). 결정론 ──
-export type TJTone = 'good' | 'caution' | 'consult' | 'neutral'
+export type TJTone = 'good' | 'caution' | 'consult' | 'neutral' | 'overstated'
 export interface TJChip { subject: string; link: string; object: string }
 export interface TJStep { icon: string; tag: string; label: string; outcome?: string }
 export interface TopJudgment { tone: TJTone; label: string; comment: string; basis: string; chips: TJChip[]; steps: TJStep[]; mfds: { raw: string; func: string; total: number } | null }
@@ -78,8 +78,9 @@ const TJ_UI: Record<TJTone, { sub: string; text: string; bg: string; accent: str
   caution: { sub: '섭취·복용에 주의가 필요해요', text: 'text-amber-700 dark:text-amber-300', bg: 'bg-amber-50 dark:bg-amber-950/30', accent: 'bg-amber-500' },
   consult: { sub: '전문가 확인을 권하는 사안이에요', text: 'text-blue-700 dark:text-blue-300', bg: 'bg-blue-50 dark:bg-blue-950/30', accent: 'bg-blue-500' },
   neutral: { sub: '공식 근거가 제한적이에요', text: 'text-slate-700 dark:text-slate-300', bg: 'bg-slate-100 dark:bg-slate-800/60', accent: 'bg-slate-400' },
+  overstated: { sub: '공식 인정 범위를 벗어난 주장이에요', text: 'text-rose-700 dark:text-rose-300', bg: 'bg-rose-50 dark:bg-rose-950/30', accent: 'bg-rose-500' },
 }
-const TJ_LABEL: Record<TJTone, string> = { good: '도움이 될 수 있어요', caution: '주의가 필요해요', consult: '전문가 상담을 권해요', neutral: '효과 근거는 제한적이에요' }
+const TJ_LABEL: Record<TJTone, string> = { good: '도움이 될 수 있어요', caution: '주의가 필요해요', consult: '전문가 상담을 권해요', neutral: '효과 근거는 제한적이에요', overstated: '공식 효과로 보기 어려워요' }
 
 // 약 효능 문구가 가리키는 증상 — 질병의 '증상 완화'에 쓰는 약인지 판단
 const SYMPTOM_KW = ['발열', '열', '해열', '통증', '진통', '두통', '몸살', '근육통', '신경통', '감기', '콧물', '코막힘', '기침', '가래', '인후', '소화', '속쓰림', '설사', '변비', '메스꺼움', '구역', '가려움', '염증', '부기', '콜레스테롤', '혈압', '혈당', '피로']
@@ -89,7 +90,7 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
   const chips: TJChip[] = []
   const steps: TJStep[] = []
   const mfds = officialFunction(claim)
-  let good = false, caution = false, consult = false
+  let good = false, caution = false, consult = false, overstated = false
   for (const s of subs) {
     if (s.kind === 'drug') {
       const nm = s.data.itemName.split('(')[0]
@@ -117,10 +118,19 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
       else if (best?.level === 'folk') { parts.push(`${josa(f.name, '은는')} 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '민간 사용(공식 효능 아님)' }) }
       else { parts.push(`${josa(f.name, '이가')} ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} ↔ ${disease} 근거`, outcome: '공식 근거 충분치 않음' }) }
     } else if (s.kind === 'ingredient') {
-      if (s.info.mfds) good = true
-      chips.push({ subject: s.name, link: s.info.mfds ? '식약처 인정' : '알려진 효능', object: disease })
-      parts.push(`${josa(s.name, '은는')} ${s.info.efficacy}`)
-      steps.push({ icon: '🔍', tag: '근거', label: `${s.name} 기능성`, outcome: s.info.mfds ? '식약처 인정 기능성' : '일반 효능 정보' })
+      // ★성분의 인정 기능성이 '그 질병'과 같은 영역일 때만 도움. 무관하면(프로폴리스↔암) 식약처 부당광고로 디벙크.
+      const relevant = sharesDomain(s.info.efficacy, disease)
+      if (relevant) {
+        if (s.info.mfds) good = true
+        chips.push({ subject: s.name, link: s.info.mfds ? '식약처 인정' : '효능', object: disease })
+        parts.push(`${josa(s.name, '은는')} ${s.info.efficacy}`)
+        steps.push({ icon: '🔍', tag: '근거', label: `${s.name} 기능성`, outcome: s.info.mfds ? '식약처 인정 기능성' : '일반 효능 정보' })
+      } else {
+        overstated = true
+        chips.push({ subject: s.name, link: '인정 기능성 ≠', object: disease })
+        parts.push(`${josa(s.name, '은는')} ${s.info.efficacy} 다만 ${disease}에 효과가 있다는 공식 근거는 아니에요. 건강기능식품은 질병을 직접 치료·예방한다고 표방할 수 없어요(식약처).`)
+        steps.push({ icon: '⚖️', tag: '룰', label: `${s.name} 인정 기능성 ↔ ${disease}`, outcome: '무관 — 질병 효과 표방 불가' })
+      }
       if (s.info.caution) { caution = true; parts.push(`${s.name}은(는) ${s.info.caution}.`) }
     } else {
       chips.push({ subject: s.data.name, link: '성분', object: disease })
@@ -128,12 +138,13 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
       steps.push({ icon: '🔍', tag: '근거', label: `${s.data.name} 성분`, outcome: '성분별 효능(아래 카드)' })
     }
   }
-  // 건기식 원료가 질병을 예방·치료한다는 뉘앙스면 식약처 룰을 명시(인정 기능성 박스는 카드에서 표시)
-  if (mfds) {
-    parts.push(`참고로 ${josa(mfds.raw, '은는')} 건강기능식품 원료로, 인정 기능성은 ‘${mfds.func.slice(0, 40)}…’ 수준이며 질병을 직접 치료·예방한다고 표방할 수 없어요(식약처).`)
-    steps.push({ icon: '⚖️', tag: '룰', label: `${mfds.raw} 식약처 인정 기능성`, outcome: '질병 치료·예방은 표방 불가' })
+  // 건기식 원료가 질병을 예방·치료한다는 뉘앙스면 식약처 룰을 명시(이미 overstated로 설명했으면 중복 생략)
+  if (mfds && !overstated && !sharesDomain(mfds.func, disease)) {
+    overstated = true
+    parts.push(`참고로 ${josa(mfds.raw, '은는')} 건강기능식품 원료로, 인정 기능성은 ‘${mfds.func.slice(0, 40)}…’ 수준이에요. ${disease}에 효과가 있다는 근거는 아니며, 건강기능식품은 질병을 직접 치료·예방한다고 표방할 수 없어요(식약처).`)
+    steps.push({ icon: '⚖️', tag: '룰', label: `${mfds.raw} 인정 기능성 ↔ ${disease}`, outcome: '무관 — 질병 효과 표방 불가' })
   }
-  const tone: TJTone = caution ? 'caution' : good ? 'good' : consult ? 'consult' : 'neutral'
+  const tone: TJTone = overstated ? 'overstated' : caution ? 'caution' : good ? 'good' : consult ? 'consult' : 'neutral'
   steps.push({ icon: '✅', tag: '판단', label: '종합 판단', outcome: TJ_LABEL[tone] })
   const comment = parts.join(' ') + ' 증상이 심하거나 지속되면 의료기관에서 진료받으세요.'
   const basis = `${subs.map((s) => (s.kind === 'drug' ? s.data.itemName.split('(')[0] : subLabel(s))).join('·')} · ${disease} 공식 정보를 종합했어요.`

@@ -26,7 +26,7 @@ export { analyzeProduct, targetMatchNote, ingredientsInText } from './ingredient
 export type { ProductAnalysis, IngredientInfo } from './ingredients'
 export { findInText } from './ontology'
 export { symptomsFor } from './symptoms'
-export { foodAnswer, foodAnswerAll } from './food'
+export { foodAnswer, foodAnswerAll, sharesDomain } from './food'
 export type { FoodResult } from './food'
 export { isCureClaim, isBeneficialClaim, isHarmfulClaim, relationHits } from './relationLex'
 export { officialFunction } from './mfds-functions'
