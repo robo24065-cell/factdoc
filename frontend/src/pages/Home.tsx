@@ -288,16 +288,38 @@ export default function Home() {
   const [related, setRelated] = useState<string[]>([])
   const [focused, setFocused] = useState(false)
   const suggestions = focused && input.trim().length >= 1 ? suggest(input, 6) : []
+  const [listening, setListening] = useState(false)
+  // 음성 입력(Web Speech API) — 고령층·TV 시청 중 "들은 대로 말하면 검증". 무료·키 불필요.
+  const SR = typeof window !== 'undefined' ? (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ?? (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition : undefined
+  function startVoice() {
+    if (!SR || listening) return
+    try {
+      const rec = new (SR as new () => { lang: string; interimResults: boolean; onresult: (e: { results: ArrayLike<ArrayLike<{ transcript: string }>> }) => void; onend: () => void; onerror: () => void; start: () => void; stop: () => void })()
+      rec.lang = 'ko-KR'; rec.interimResults = false
+      rec.onresult = (e) => { const txt = e.results[0]?.[0]?.transcript ?? ''; if (txt) { setInput(txt); setFocused(false); check(txt) } }
+      rec.onend = () => setListening(false)
+      rec.onerror = () => setListening(false)
+      setListening(true); rec.start()
+    } catch { setListening(false) }
+  }
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [topMisinfo, setTopMisinfo] = useState<TopClaim[] | null>(null)
-  useEffect(() => { fetchOutbreak().then(setOutbreak).catch(() => {}); fetchTopMisinfo().then(setTopMisinfo).catch(() => {}) }, [])
+  const [recent, setRecent] = useState<string[]>([])
+  useEffect(() => {
+    fetchOutbreak().then(setOutbreak).catch(() => {}); fetchTopMisinfo().then(setTopMisinfo).catch(() => {})
+    try { setRecent(JSON.parse(localStorage.getItem('factdoc_recent') || '[]')) } catch { /* ignore */ }
+  }, [])
+  function pushRecent(q: string) {
+    setRecent((prev) => { const next = [q, ...prev.filter((x) => x !== q)].slice(0, 8); try { localStorage.setItem('factdoc_recent', JSON.stringify(next)) } catch { /* ignore */ } return next })
+  }
 
   async function check(text: string) {
     const claim = text.trim()
     if (!claim) return
+    pushRecent(claim)
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
     setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([])
     // 후속 질문 추천 — 질병 인식 시(어떤 경로로 답하든 표시)
@@ -490,14 +512,23 @@ export default function Home() {
             ))}
           </div>
         )}
-        <button
-          type="button"
-          onClick={() => { setFocused(false); check(input) }}
-          disabled={!input.trim() || loading}
-          className="mt-1 w-full rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white transition active:scale-[0.99] disabled:opacity-40"
-        >
-          {loading ? '확인 중…' : '확인하기'}
-        </button>
+        <div className="mt-1 flex gap-2">
+          {Boolean(SR) && (
+            <button type="button" onClick={startVoice} aria-label="음성으로 물어보기" title="음성으로 물어보기"
+              className={`flex shrink-0 items-center justify-center rounded-xl border px-4 transition active:scale-95 ${listening ? 'animate-pulse border-rose-300 bg-rose-50 text-rose-600 dark:border-rose-800 dark:bg-rose-950/40' : 'border-slate-200 text-slate-500 dark:border-slate-700 dark:text-slate-300'}`}>
+              <span className="text-xl">🎙️</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => { setFocused(false); check(input) }}
+            disabled={!input.trim() || loading}
+            className="flex-1 rounded-xl bg-blue-600 py-3.5 text-base font-semibold text-white transition active:scale-[0.99] disabled:opacity-40"
+          >
+            {loading ? '확인 중…' : '확인하기'}
+          </button>
+        </div>
+        {listening && <p className="mt-1.5 text-center text-xs text-rose-500">🔴 듣고 있어요… 말씀하세요</p>}
       </div>
 
       <div className="mt-3 flex flex-wrap gap-2">
@@ -519,6 +550,17 @@ export default function Home() {
         ]).slice(0, 3)
         return (
           <div className="mt-5 space-y-5">
+            {recent.length > 0 && (
+              <div>
+                <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">🕘 최근 검색</p>
+                <div className="flex flex-wrap gap-2">
+                  {recent.slice(0, 6).map((q) => (
+                    <button key={q} type="button" onClick={() => { setInput(q); check(q) }}
+                      className="max-w-[16rem] truncate rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{q}</button>
+                  ))}
+                </div>
+              </div>
+            )}
             <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
               <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">💡 <b className="text-slate-700 dark:text-slate-200">국가 공식데이터</b>(질병관리청·식약처)의 룰로 판정해요. AI가 진실을 임의로 판단하지 않고, 근거 출처를 함께 보여드려요.</p>
             </div>
