@@ -3,12 +3,13 @@
 // 데이터: 배치 정적 캐시(eid-region.ts), 지도경계: kr-geo.ts. per-request 외부호출 없음(§13.7).
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
-  ResponsiveContainer, BarChart, Bar, LineChart, Line, AreaChart, Area, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, Cell, LabelList, ReferenceLine,
+  ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
+  Tooltip as RTooltip, Cell, LabelList, ReferenceLine, PieChart, Pie,
 } from 'recharts'
 import {
   EID_YEARS, EID_PARTIAL_YEAR, EID_CUR_YEAR, EID_CUR_WEEK, EID_SIDO, EID_DISEASES, EID_GROUP,
   EID_WEEKLY_DISEASES, EID_COUNT, EID_RATE, EID_WK_SIDO, EID_WK_NAT,
+  EID_NAT_DAILY, EID_NAT_MONTH, EID_NAT_YEAR, EID_SEXAGE, EID_PTNT, EID_AREA,
 } from '../data/eid-region'
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 
@@ -146,16 +147,6 @@ export default function InfectiousMap() {
   const yoyBadge = yoy === null ? '—' : bigJump ? `▲${Math.round(yoyMult!)}배` : `${yoy > 0 ? '▲' : yoy < 0 ? '▼' : ''}${Math.abs(yoy)}%`
   const yoyPhrase = yoy === null ? '' : bigJump ? ` ${inWeek ? '전주' : '전년'} 대비 약 ${Math.round(yoyMult!)}배 급증했습니다.` : yoy > 0 ? ` ${inWeek ? '전주' : '전년'} 대비 ${yoy}% 증가했습니다.` : yoy < 0 ? ` ${inWeek ? '전주' : '전년'} 대비 ${Math.abs(yoy)}% 감소했습니다.` : ` ${inWeek ? '전주' : '전년'}와 비슷합니다.`
 
-  // 현재년 주별 전국 에피데믹 커브
-  const curve = useMemo(() => {
-    const len = EID_CUR_WEEK; const arr = new Array(len).fill(0)
-    const add = (a?: number[]) => { if (a) for (let i = 0; i < len; i++) arr[i] += a[i] || 0 }
-    if (disease === ALL) EID_WEEKLY_DISEASES.forEach((d) => add(EID_WK_NAT[d])); else add(EID_WK_NAT[disease])
-    let last = -1; for (let i = len - 1; i >= 0; i--) if (arr[i] > 0) { last = i; break }
-    const series = (last >= 0 ? arr.slice(0, last + 1) : arr).map((v, i) => ({ week: i + 1, value: v }))
-    const peak = series.reduce((m, r) => (r.value > m.value ? r : m), { week: 0, value: 0 })
-    return { series, total: arr.reduce((a, b) => a + b, 0), peak, has: last >= 0 }
-  }, [disease])
 
   // 인사이트
   const insight = useMemo(() => {
@@ -476,27 +467,14 @@ export default function InfectiousMap() {
           </div>
         </div>
 
-        {/* 주별 전국 에피데믹 커브 */}
-        <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
-          <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-            <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 {EID_CUR_YEAR}년 주별 전국 발생 추이 — {diseaseLabel}</h3>
-            <span className="text-[11px] text-slate-400">{curve.has ? `누적 ${nf(curve.total)}건 · 최다 ${curve.peak.week}주차 ${nf(curve.peak.value)}건` : '주별 데이터 없음'} · 주(週) 단위{inWeek ? ' · 슬라이더와 연동' : ''}</span>
-          </div>
-          {curve.has ? (
-            <ResponsiveContainer width="100%" height={210}>
-              <AreaChart data={curve.series} margin={{ top: 6, right: 16, left: -12, bottom: 0 }}>
-                <defs><linearGradient id="wkfill" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#f43f5e" stopOpacity={0.55} /><stop offset="100%" stopColor="#f43f5e" stopOpacity={0.04} /></linearGradient></defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
-                <XAxis dataKey="week" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} tickFormatter={(w) => `${w}주`} />
-                <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-                <RTooltip formatter={(v) => [nf(Number(v)) + '건', '발생 수']} labelFormatter={(w) => `${EID_CUR_YEAR}년 ${w}주차`} />
-                {curve.peak.week > 0 && <ReferenceLine x={curve.peak.week} stroke="#fb7185" strokeDasharray="4 3" label={{ value: '최다', fontSize: 10, fill: '#fb7185', position: 'top' }} />}
-                {inWeek && <ReferenceLine x={week} stroke="#2563eb" strokeWidth={1.8} label={{ value: `${week}주`, fontSize: 10, fill: '#2563eb', position: 'insideTopRight' }} />}
-                <Area type="monotone" dataKey="value" stroke="#e11d48" strokeWidth={2} fill="url(#wkfill)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {EID_CUR_YEAR}년 주별 데이터가 없습니다.</p>}
-          <p className="mt-1 px-1 text-[11px] text-slate-400">※ 질병관리청 감염병포털 기준. 주(週) 단위 집계이며 최근 주차는 신고 지연으로 잠정치일 수 있습니다.</p>
+        {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
+        <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
+
+        {/* 인구학·역학 심층 분석(질병청 대시보드급) */}
+        <div className="mt-4 grid gap-4 lg:grid-cols-3">
+          <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} />
+          <DonutPanel title="환자분류" data={aggRecord(disease, EID_PTNT)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현" />
+          <DonutPanel title="추정 감염지역" data={aggRecord(disease, EID_AREA)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정" />
         </div>
 
         <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-400">
@@ -525,5 +503,185 @@ function Panel({ title, children }: { title: string; children: React.ReactNode }
       <h3 className="mb-2 px-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{title}</h3>
       {children}
     </div>
+  )
+}
+
+// ════════ 심층 분석(전국 시계열·인구학) ════════
+const MONTH_YEARS = (() => { const s = new Set<string>(); for (const d of EID_DISEASES) for (const y of Object.keys(EID_NAT_MONTH[d] || {})) s.add(y); return [...s].sort() })()
+function aggArr(disease: string, store: Record<string, number[]>): number[] {
+  if (disease !== ALL) return store[disease] ? [...store[disease]] : []
+  const out: number[] = []
+  for (const d of EID_DISEASES) { const a = store[d]; if (a) a.forEach((v, i) => { out[i] = (out[i] || 0) + (v || 0) }) }
+  return out
+}
+function aggMonth(disease: string, year: string): number[] {
+  if (disease !== ALL) return EID_NAT_MONTH[disease]?.[year] ? [...EID_NAT_MONTH[disease][year]] : new Array(12).fill(0)
+  const out = new Array(12).fill(0)
+  for (const d of EID_DISEASES) { const a = EID_NAT_MONTH[d]?.[year]; if (a) a.forEach((v, i) => { out[i] += v || 0 }) }
+  return out
+}
+function aggYearVal(disease: string, year: string): number {
+  if (disease !== ALL) return EID_NAT_YEAR[disease]?.[year] || 0
+  let s = 0; for (const d of EID_DISEASES) s += EID_NAT_YEAR[d]?.[year] || 0; return s
+}
+function aggRecord(disease: string, store: Record<string, Record<string, number>>): { name: string; value: number }[] {
+  const acc: Record<string, number> = {}
+  const add = (o?: Record<string, number>) => { if (o) for (const [k, v] of Object.entries(o)) acc[k] = (acc[k] || 0) + v }
+  if (disease !== ALL) add(store[disease]); else for (const d of EID_DISEASES) add(store[d])
+  return Object.entries(acc).map(([name, value]) => ({ name, value })).filter((x) => x.value > 0)
+}
+function trimZeros(a: number[]): number[] { let last = -1; for (let i = a.length - 1; i >= 0; i--) if (a[i] > 0) { last = i; break } return last < 0 ? [] : a.slice(0, last + 1) }
+function seasonalShare(disease: string): { share: number[]; hasPrior: boolean } {
+  const share = new Array(12).fill(0); let cnt = 0
+  for (const y of MONTH_YEARS) { if (+y >= +EID_CUR_YEAR) continue; const a = aggMonth(disease, y); const tot = a.reduce((s, v) => s + v, 0); if (tot > 0) { for (let m = 0; m < 12; m++) share[m] += a[m] / tot; cnt++ } }
+  if (cnt) for (let m = 0; m < 12; m++) share[m] /= cnt
+  return { share, hasPrior: cnt > 0 }
+}
+function estimateAnnual(disease: string): { est: number; hasPrior: boolean; kMonth: number } {
+  const curM = aggMonth(disease, EID_CUR_YEAR)
+  let k = -1; for (let m = 11; m >= 0; m--) if (curM[m] > 0) { k = m; break }
+  if (k < 0) return { est: 0, hasPrior: false, kMonth: -1 }
+  const { share, hasPrior } = seasonalShare(disease)
+  if (!hasPrior) return { est: 0, hasPrior: false, kMonth: k }
+  const kc = k > 0 ? k - 1 : k
+  const ytd = curM.slice(0, kc + 1).reduce((s, v) => s + v, 0)
+  const cum = share.slice(0, kc + 1).reduce((s, v) => s + v, 0) || 1
+  return { est: ytd / cum, hasPrior: true, kMonth: k }
+}
+
+type TPt = { x: number | string; label: string; actual: number | null; pred: number | null }
+function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number }) {
+  const [tg, setTg] = useState<'day' | 'week' | 'month' | 'year'>('week')
+  useEffect(() => { if (inWeek) setTg('week') }, [inWeek])
+  const cur = EID_CUR_YEAR
+
+  const built = useMemo(() => {
+    if (tg === 'day') {
+      const arr = trimZeros(aggArr(disease, EID_NAT_DAILY))
+      const data: TPt[] = arr.map((v, i) => { const dt = new Date(+cur, 0, 1 + i); return { x: i, label: `${dt.getMonth() + 1}/${dt.getDate()}`, actual: v, pred: null } })
+      return { data, predicted: false, sel: 0, tip: (i: number) => `${cur}년 ${data[i]?.label || ''}`, note: '일(日) 단위 · 평일/주말 신고 편차 있음', minGap: 30 }
+    }
+    if (tg === 'week') {
+      const arr = trimZeros(aggArr(disease, EID_WK_NAT)); const k = arr.length - 1
+      const { est, hasPrior } = estimateAnnual(disease); const { share } = seasonalShare(disease)
+      const ytd = arr.reduce((s, v) => s + v, 0); const remaining = Math.max(0, est - ytd)
+      const wkMonth = (w: number) => Math.min(11, Math.floor((w - 1) / (52 / 12)))
+      let futSum = 0; for (let w = k + 2; w <= 52; w++) futSum += share[wkMonth(w)]
+      const data: TPt[] = []
+      for (let w = 1; w <= 52; w++) {
+        const actual = w <= k + 1 ? (arr[w - 1] ?? 0) : null
+        let pred: number | null = null
+        if (hasPrior && remaining > 0) { if (w === k + 1) pred = arr[k] ?? 0; else if (w > k + 1 && futSum > 0) pred = remaining * share[wkMonth(w)] / futSum }
+        data.push({ x: w, label: `${w}주`, actual, pred })
+      }
+      return { data, predicted: hasPrior && remaining > 0, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위${inWeek ? ' · 지도 슬라이더와 연동' : ''}`, minGap: 8 }
+    }
+    if (tg === 'month') {
+      const curM = aggMonth(disease, cur); let k = -1; for (let m = 11; m >= 0; m--) if (curM[m] > 0) { k = m; break }
+      const { est, hasPrior } = estimateAnnual(disease); const { share } = seasonalShare(disease)
+      const data: TPt[] = []
+      for (let m = 0; m < 12; m++) {
+        const actual = m <= k ? curM[m] : null
+        let pred: number | null = null
+        if (hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = est * share[m] }
+        data.push({ x: m + 1, label: `${m + 1}월`, actual, pred })
+      }
+      return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 올해 잔여기간 예측', minGap: 6 }
+    }
+    const years = MONTH_YEARS.length ? MONTH_YEARS : (EID_YEARS as readonly string[]).slice()
+    const { est, hasPrior } = estimateAnnual(disease)
+    const data: TPt[] = years.map((y) => ({ x: y, label: y, actual: aggYearVal(disease, y), pred: (+y === +cur && hasPrior) ? est : null }))
+    for (let i = 0; i < data.length; i++) if (data[i].pred != null && i > 0) data[i - 1].pred = data[i - 1].actual
+    return { data, predicted: hasPrior, sel: 0, tip: (y: string) => `${y}년`, note: '연(年) 단위 · 올해는 예측 연간총계', minGap: 6 }
+  }, [disease, tg, inWeek, selWeek, cur])
+
+  const totalActual = built.data.reduce((s, r) => s + (r.actual || 0), 0)
+  const peak = built.data.reduce<TPt>((m, r) => ((r.actual || 0) > (m.actual || 0) ? r : m), { x: 0, label: '', actual: 0, pred: null })
+  const hasData = built.data.some((r) => r.actual != null)
+  const TG = [{ k: 'day', t: '일' }, { k: 'week', t: '주' }, { k: 'month', t: '월' }, { k: 'year', t: '년' }] as const
+
+  return (
+    <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 전국 발생 추이 — {diseaseLabel}</h3>
+        <div className="flex items-center gap-3">
+          <span className="hidden text-[11px] text-slate-400 sm:inline">{built.note} · 누적 {nf(totalActual)}건{peak.label ? ` · 최다 ${peak.label}` : ''}</span>
+          <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+            {TG.map((g) => (<button key={g.k} onClick={() => setTg(g.k)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${tg === g.k ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>{g.t}</button>))}
+          </div>
+        </div>
+      </div>
+      {hasData ? (
+        <ResponsiveContainer width="100%" height={235}>
+          <LineChart data={built.data} margin={{ top: 8, right: 18, left: -8, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+            <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} minTickGap={built.minGap} />
+            <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+            <RTooltip formatter={(v, n) => [nf(Number(v)) + '건', n === 'pred' ? '예측치' : '실제']} />
+            {built.predicted && <Line type="monotone" dataKey="pred" stroke="#f43f5e" strokeWidth={2} strokeDasharray="5 4" strokeOpacity={0.65} dot={false} connectNulls name="pred" isAnimationActive={false} />}
+            <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={2.4} dot={tg === 'year' ? { r: 3 } : false} activeDot={{ r: 4 }} connectNulls name="actual" />
+            {built.sel ? <ReferenceLine x={`${built.sel}주`} stroke="#2563eb" strokeOpacity={0.5} strokeWidth={1.5} label={{ value: `${built.sel}주`, fontSize: 10, fill: '#2563eb', position: 'top' }} /> : null}
+          </LineChart>
+        </ResponsiveContainer>
+      ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {cur}년 데이터가 없습니다.</p>}
+      <p className="mt-1 px-1 text-[11px] leading-relaxed text-slate-400">
+        {built.predicted ? <><b className="text-rose-500">─ ─ 점선 = 예측치</b>(과거 연도의 같은 시기 패턴으로 추정한 값으로 실제와 다를 수 있어요). </> : null}
+        실선은 실제 발생수입니다. 일/주/월/년을 눌러 기간 단위를 바꿔보세요. 출처: 질병관리청 감염병포털.
+      </p>
+    </div>
+  )
+}
+
+const AGE_ORDER = ['00~09', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100~109', '미입력']
+function SexAgePyramid({ disease, diseaseLabel }: { disease: string; diseaseLabel: string }) {
+  const { data, totM, totF } = useMemo(() => {
+    const acc: Record<string, { m: number; f: number }> = {}
+    const add = (o?: Record<string, { m: number; f: number }>) => { if (o) for (const [age, mf] of Object.entries(o)) { (acc[age] ??= { m: 0, f: 0 }); acc[age].m += mf.m; acc[age].f += mf.f } }
+    if (disease !== ALL) add(EID_SEXAGE[disease]); else for (const d of EID_DISEASES) add(EID_SEXAGE[d])
+    const rows = Object.keys(acc).sort((a, b) => { const ia = AGE_ORDER.indexOf(a), ib = AGE_ORDER.indexOf(b); return (ib < 0 ? 99 : ib) - (ia < 0 ? 99 : ia) })
+      .map((age) => ({ age, 남: -acc[age].m, 여: acc[age].f })).filter((r) => r.남 !== 0 || r.여 !== 0)
+    return { data: rows, totM: rows.reduce((s, r) => s - r.남, 0), totF: rows.reduce((s, r) => s + r.여, 0) }
+  }, [disease])
+  return (
+    <Panel title={`성별·연령 분포 — ${diseaseLabel} (${EID_CUR_YEAR})`}>
+      {data.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
+        <>
+          <div className="mb-1 flex justify-center gap-4 text-[11px]"><span className="font-medium text-cyan-600">■ 남 {nf(totM)}</span><span className="font-medium text-pink-500">■ 여 {nf(totF)}</span></div>
+          <ResponsiveContainer width="100%" height={Math.max(190, data.length * 20 + 24)}>
+            <BarChart data={data} layout="vertical" stackOffset="sign" margin={{ top: 0, right: 6, left: 4, bottom: 0 }}>
+              <XAxis type="number" tickFormatter={(v) => nf(Math.abs(Number(v)))} tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+              <YAxis type="category" dataKey="age" tick={{ fontSize: 10, fill: '#64748b' }} width={42} axisLine={false} tickLine={false} />
+              <RTooltip formatter={(v, n) => [nf(Math.abs(Number(v))) + '명', String(n)]} />
+              <Bar dataKey="남" stackId="a" fill="#06b6d4" radius={[3, 0, 0, 3]} />
+              <Bar dataKey="여" stackId="a" fill="#ec4899" radius={[0, 3, 3, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </>
+      )}
+    </Panel>
+  )
+}
+
+function DonutPanel({ title, data, colors, note }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string }) {
+  const total = data.reduce((s, d) => s + d.value, 0)
+  return (
+    <Panel title={`${title} (${EID_CUR_YEAR})`}>
+      {total === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
+        <div className="flex items-center gap-2">
+          <ResponsiveContainer width="48%" height={150}>
+            <PieChart>
+              <Pie data={data} dataKey="value" nameKey="name" innerRadius={38} outerRadius={62} paddingAngle={2}>
+                {data.map((_, i) => <Cell key={i} fill={colors[i % colors.length]} />)}
+              </Pie>
+              <RTooltip formatter={(v, n) => [nf(Number(v)) + '건', String(n)]} />
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex-1 space-y-1.5">
+            {data.map((d, i) => (<div key={d.name} className="flex items-center gap-2 text-xs"><span className="inline-block h-2.5 w-2.5 shrink-0 rounded-sm" style={{ background: colors[i % colors.length] }} /><span className="flex-1 truncate text-slate-600 dark:text-slate-300">{d.name}</span><b className="tabular-nums text-slate-800 dark:text-slate-100">{Math.round(d.value / total * 100)}%</b></div>))}
+          </div>
+        </div>
+      )}
+      <p className="mt-1 px-1 text-[11px] leading-relaxed text-slate-400">{note}</p>
+    </Panel>
   )
 }

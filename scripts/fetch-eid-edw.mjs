@@ -53,6 +53,14 @@ async function region({ code, start, end, week }, tries = 0) {
 async function currentWeek() {
   try { const r = await fetch(`${BASE}/dashboardCurrentWeek.do`, { headers: { Referer: REF } }); const j = await r.json(); return { yr: +j.value.YR, wk: +j.value.WEEK } } catch { return null }
 }
+// 범용 GET(배열 JSON) — 기간/성별연령/환자분류/감염지역 엔드포인트
+function qs(o) { const p = new URLSearchParams(); for (const [k, v] of Object.entries(o)) { if (v === undefined) continue; if (Array.isArray(v)) v.forEach((x) => p.append(k, x)); else p.set(k, v) } return p.toString() }
+async function getArr(endpoint, o, tries = 0) {
+  try { const r = await fetch(`${BASE}/${endpoint}?${qs(o)}`, { headers: { Referer: REF, 'X-Requested-With': 'XMLHttpRequest' } }); const j = await r.json(); return Array.isArray(j) ? j : null }
+  catch { if (tries < 2) { await sleep(1500); return getArr(endpoint, o, tries + 1) } return null }
+}
+const P = (code, start, end, week) => ({ ymd: String(start).slice(0, 4), yearStartDt: start, yearEndDt: week ? undefined : end, diseaseCls: code, occurGbn: 'CNT', population: 'CNT', infectedArea: '', weekFlag: week ? 'Y' : '', grp: ['01', '02', '03'], area: ['01', '02'] })
+const dayOfYear = (y, m, d) => { let n = d - 1; for (let mm = 1; mm < m; mm++) n += new Date(y, mm, 0).getDate(); return n }
 
 // ── 현재 연/주 ──
 const cw = await currentWeek()
@@ -98,6 +106,28 @@ for (const code of weeklyCodes) {
     if (d) { const per = {}; for (const s of SIDO) if (d[s.code]?.c) per[s.code] = d[s.code].c; if (Object.keys(per).length) weeklySido[code][w] = per }
   }
   process.stdout.write(`\r  주별 시도 수집 ${++wc}/${weeklyCodes.length} (${CODES[code].name})        `)
+}
+console.log('')
+
+// ── 4) 심층 분석: 전국 일/월/년 시계열 + 성별연령·환자분류·감염지역(현재년) ──
+const daily = {}, monthly = {}, yearly = {}, sexage = {}, ptnt = {}, area = {}
+const yStart = `${YEARS[0]}0101`, yEnd = `${CUR_YEAR}1231`, curStart = `${CUR_YEAR}0101`, curEnd = `${CUR_YEAR}1231`
+let dc = 0
+for (const code of diseases) {
+  const nm = CODES[code].name
+  const dd = await getArr('dashboardDateWeek.do', P(code, curStart, curEnd, false)); await sleep(85) // 일별(현재년)
+  if (dd && dd.length) { const arr = []; for (const r of dd) { const doy = dayOfYear(CUR_YEAR, +r.MM, +r.DD); if (doy >= 0) arr[doy] = num(r['건수']) } daily[nm] = Array.from({ length: arr.length }, (_, i) => arr[i] || 0) }
+  const mm = await getArr('dashboardDateHalf.do', P(code, yStart, yEnd, false)); await sleep(85) // 월별(다년)
+  if (mm && mm.length) { const o = {}; for (const r of mm) { const y = r.YYYY, m = +String(r['MM월']).replace(/\D/g, ''); if (y && m) (o[y] ??= new Array(12).fill(0))[m - 1] = num(r['건수']) } monthly[nm] = o }
+  const yy = await getArr('dashboardDateYear.do', P(code, yStart, yEnd, false)); await sleep(85) // 년별
+  if (yy && yy.length) { const o = {}; for (const r of yy) if (r.YYYY) o[r.YYYY] = num(r['건수']); yearly[nm] = o }
+  const sa = await getArr('dashboardSexAndAge.do', P(code, curStart, curEnd, false)); await sleep(85) // 성별연령(현재년)
+  if (sa && sa.length) { const o = {}; for (const r of sa) { const a = r.AGE_RANGE; if (!a) continue; (o[a] ??= { m: 0, f: 0 }); if (r.PTNT_GNDR_NM === '남성') o[a].m = num(r.CNT); else o[a].f = num(r.CNT) } sexage[nm] = o }
+  const pc = await getArr('dashboardPatientClassification.do', P(code, curStart, curEnd, false)); await sleep(85) // 환자분류
+  if (pc && pc.length) { const o = {}; for (const r of pc) if (r['환자분류']) o[r['환자분류']] = num(r['총건수']); ptnt[nm] = o }
+  const ea = await getArr('dashboardEstimatedArea.do', P(code, curStart, curEnd, false)); await sleep(85) // 감염지역
+  if (ea && ea.length) { const o = {}; for (const r of ea) if (r['추정감염지역']) o[r['추정감염지역']] = num(r['총건수']); area[nm] = o }
+  process.stdout.write(`\r  심층 분석 수집 ${++dc}/${diseases.length} (${nm})            `)
 }
 console.log('')
 
@@ -156,6 +186,19 @@ const header = `// 질병관리청 감염병포털 EDW 대시보드 — 시도×
   `// 현재년 주별 시도 [disease][week][sido] = 발생수. (지도 주별 슬라이더용)\n` +
   `export const EID_WK_SIDO: Record<string, Record<string, Record<string, number>>> = {\n${wkSidoOut}}\n` +
   `// 현재년 주별 전국 [disease] = [1주..${CUR_WEEK}주] 발생수(시도합).\n` +
-  `export const EID_WK_NAT: Record<string, number[]> = {\n${wkNatOut}}\n`
+  `export const EID_WK_NAT: Record<string, number[]> = {\n${wkNatOut}}\n` +
+  `// ── 심층 분석 시계열(전국, 주식차트식 일/월/년) ──\n` +
+  `// 일별(현재년): [disease] = [1/1부터 일별 발생수]. 날짜 = ${CUR_YEAR}-01-01 + index일.\n` +
+  `export const EID_NAT_DAILY: Record<string, number[]> = ${JSON.stringify(daily)}\n` +
+  `// 월별(다년): [disease][year] = [1월..12월].\n` +
+  `export const EID_NAT_MONTH: Record<string, Record<string, number[]>> = ${JSON.stringify(monthly)}\n` +
+  `// 년별: [disease][year] = 발생수.\n` +
+  `export const EID_NAT_YEAR: Record<string, Record<string, number>> = ${JSON.stringify(yearly)}\n` +
+  `// 성별·연령(현재년): [disease][ageRange] = { m: 남, f: 여 }.\n` +
+  `export const EID_SEXAGE: Record<string, Record<string, { m: number; f: number }>> = ${JSON.stringify(sexage)}\n` +
+  `// 환자분류(현재년): [disease] = { 병원체보유자, 환자 }.\n` +
+  `export const EID_PTNT: Record<string, Record<string, number>> = ${JSON.stringify(ptnt)}\n` +
+  `// 추정감염지역(현재년): [disease] = { 국내, 국외 }.\n` +
+  `export const EID_AREA: Record<string, Record<string, number>> = ${JSON.stringify(area)}\n`
 fs.writeFileSync('frontend/src/data/eid-region.ts', header, 'utf8')
-console.log(`완료 → frontend/src/data/eid-region.ts (질병 ${diseases.length} · 연 ${YEARS.length} · 주별질병 ${weeklyCodes.length} · ${CUR_WEEK}주)`)
+console.log(`완료 → frontend/src/data/eid-region.ts (질병 ${diseases.length} · 연 ${YEARS.length} · 주별 ${weeklyCodes.length} · 일/월/년+성별연령+환자분류+감염지역)`)
