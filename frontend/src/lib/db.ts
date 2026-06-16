@@ -9,6 +9,13 @@ const KDCA_URL = 'https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInf
 const docUrl = (cntntsSn?: string) => (cntntsSn ? `${KDCA_URL}?cntnts_sn=${cntntsSn}` : KDCA_URL)
 const TX_RE = /(치료|약물|연고|도포|바르|복용|관리|요법|예방|권고|표준|개선|조절)/
 const nospace = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+// 코퍼스 제목이 질의 질병명과 다른 경우 별칭 검색어 추가(예: CRE→다제내성균감염증 글, 수막구균→뇌수막염).
+const CORPUS_ALIAS: { re: RegExp; terms: string[] }[] = [
+  { re: /CRE|카바페넴내성장내세균|다제내성|VRE|MRSA|내성균/i, terms: ['다제내성균'] },
+  { re: /수막구균|뇌수막/, terms: ['뇌수막염'] },
+  { re: /비브리오/, terms: ['비브리오'] },
+]
+function aliasTerms(name: string): string[] { const hit = CORPUS_ALIAS.find((a) => a.re.test(name)); return hit ? hit.terms : [] }
 // 여러 질병이 섞이지 않게 좁히기 — 구체적(긴) 용어부터, '한 질병'만 잡힐 때만 채택.
 // 예: "E형간염" 검색 시 광범위어 "간염"이 A형·C형간염을 함께 끌어오는 혼입 방지.
 function narrowToOneDisease<T extends { title: string }>(docs: T[], terms: string[]): T[] {
@@ -246,7 +253,8 @@ export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] |
   const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
     .filter((s) => s && s.length >= 2 && !s.includes(','))
     .filter((s) => { const sn = nospace(s); return sn.includes(nn) || nn.includes(sn) })
-    .slice(0, 5)
+    .concat(aliasTerms(name)) // CRE→다제내성균 등 별칭(가족필터 우회)
+    .slice(0, 6)
   if (!supabase) return staticDiseaseInfo(terms)
   try {
     const orFilter = terms.map((s) => `title.ilike.%${s}%`).join(',')
