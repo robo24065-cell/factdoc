@@ -120,8 +120,10 @@ function buildTopJudgment(disease: string, subs: SubCard[], claim: string): TopJ
       const f = s.data
       const best = f.matched ? f.effects[0] : null
       chips.push({ subject: f.name, link: best ? '효과' : '효과(근거?)', object: disease })
-      if (best?.level === 'caution') { caution = true; parts.push(`${josa(f.name, '은는')} ${josa(disease, '이가')} 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '⚠ 섭취 주의' }) }
-      else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${josa(f.components[0] ?? '성분', '이가')} ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님).`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: best.level === 'mfds' ? '식약처 인정 기능성' : '연구됨(공식 효능 인정은 아님)' }) }
+      // 악화·위험 방향 감지 — research/folk에도 '악화 연관'(흰쌀밥→여드름, 라면→부종 등)이 많아 텍스트로 방향 판별
+      const adverseFood = best && best.level !== 'mfds' && /악화|악영향|저류|붓|방해|떨어뜨|저하|부담|유발|위험|나빠|가중|억제|흡수를 (줄|떨어)|체중\s?증가|비만|살이|줄일 수|주의가 (필요|권)/.test(best.effect)
+      if (best?.level === 'caution' || adverseFood) { caution = true; parts.push(`${josa(f.name, '은는')} ${josa(disease, '이가')} 있다면 섭취에 주의가 필요할 수 있어요. ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '⚠ 섭취 주의' }) }
+      else if (best && (best.level === 'mfds' || best.level === 'research')) { good = true; parts.push(`${f.name}의 ${josa(f.components[0] ?? '성분', '이가')} ${disease} 관련해 도움이 될 수 있다고 알려져 있어요(치료 보장은 아님). ${best.effect}`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: best.level === 'mfds' ? '식약처 인정 기능성' : '연구됨(공식 효능 인정은 아님)' }) }
       else if (best?.level === 'folk') { parts.push(`${josa(f.name, '은는')} 민간에서 ${disease}에 쓰이지만 공식 효능은 인정되지 않았어요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} 근거 수준`, outcome: '민간 사용(공식 효능 아님)' }) }
       else { parts.push(`${josa(f.name, '이가')} ${disease}에 직접 효과가 있다는 공식 근거는 충분치 않아요. 균형 잡힌 식사의 일부로 참고하세요.`); steps.push({ icon: '🔍', tag: '근거', label: `${f.name} ↔ ${disease} 근거`, outcome: '공식 근거 충분치 않음' }) }
     } else if (s.kind === 'ingredient') {

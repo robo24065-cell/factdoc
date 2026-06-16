@@ -473,11 +473,11 @@ export default function InfectiousMap() {
             <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
           </div>
 
-          {/* 인구학·역학 심층 분석(질병청 대시보드급) */}
+          {/* 인구학·역학 심층 분석(질병청 대시보드급) — 지도 연도와 연동, 전국 기준 */}
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-12 2xl:col-span-4 2xl:grid-cols-1">
-            <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} />
-            <DonutPanel title="환자분류" data={aggRecord(disease, EID_PTNT)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현" />
-            <DonutPanel title="추정 감염지역" data={aggRecord(disease, EID_AREA)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정" />
+            <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
+            <DonutPanel title="환자분류" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
+            <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
           </div>
         </div>
 
@@ -528,10 +528,10 @@ function aggYearVal(disease: string, year: string): number {
   if (disease !== ALL) return EID_NAT_YEAR[disease]?.[year] || 0
   let s = 0; for (const d of EID_DISEASES) s += EID_NAT_YEAR[d]?.[year] || 0; return s
 }
-function aggRecord(disease: string, store: Record<string, Record<string, number>>): { name: string; value: number }[] {
+function aggRecord(disease: string, store: Record<string, Record<string, Record<string, number>>>, year: string): { name: string; value: number }[] {
   const acc: Record<string, number> = {}
   const add = (o?: Record<string, number>) => { if (o) for (const [k, v] of Object.entries(o)) acc[k] = (acc[k] || 0) + v }
-  if (disease !== ALL) add(store[disease]); else for (const d of EID_DISEASES) add(store[d])
+  if (disease !== ALL) add(store[disease]?.[year]); else for (const d of EID_DISEASES) add(store[d]?.[year])
   return Object.entries(acc).map(([name, value]) => ({ name, value })).filter((x) => x.value > 0)
 }
 function trimZeros(a: number[]): number[] { let last = -1; for (let i = a.length - 1; i >= 0; i--) if (a[i] > 0) { last = i; break } return last < 0 ? [] : a.slice(0, last + 1) }
@@ -637,17 +637,17 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string;
 }
 
 const AGE_ORDER = ['00~09', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100~109', '미입력']
-function SexAgePyramid({ disease, diseaseLabel }: { disease: string; diseaseLabel: string }) {
+function SexAgePyramid({ disease, diseaseLabel, year }: { disease: string; diseaseLabel: string; year: string }) {
   const { data, totM, totF } = useMemo(() => {
     const acc: Record<string, { m: number; f: number }> = {}
     const add = (o?: Record<string, { m: number; f: number }>) => { if (o) for (const [age, mf] of Object.entries(o)) { (acc[age] ??= { m: 0, f: 0 }); acc[age].m += mf.m; acc[age].f += mf.f } }
-    if (disease !== ALL) add(EID_SEXAGE[disease]); else for (const d of EID_DISEASES) add(EID_SEXAGE[d])
+    if (disease !== ALL) add(EID_SEXAGE[disease]?.[year]); else for (const d of EID_DISEASES) add(EID_SEXAGE[d]?.[year])
     const rows = Object.keys(acc).sort((a, b) => { const ia = AGE_ORDER.indexOf(a), ib = AGE_ORDER.indexOf(b); return (ib < 0 ? 99 : ib) - (ia < 0 ? 99 : ia) })
       .map((age) => ({ age, 남: -acc[age].m, 여: acc[age].f })).filter((r) => r.남 !== 0 || r.여 !== 0)
     return { data: rows, totM: rows.reduce((s, r) => s - r.남, 0), totF: rows.reduce((s, r) => s + r.여, 0) }
-  }, [disease])
+  }, [disease, year])
   return (
-    <Panel title={`성별·연령 분포 — ${diseaseLabel} (${EID_CUR_YEAR})`}>
+    <Panel title={`성별·연령 분포 — ${diseaseLabel} · 전국 (${year})`}>
       {data.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
         <>
           <div className="mb-1 flex justify-center gap-4 text-[11px]"><span className="font-medium text-cyan-600">■ 남 {nf(totM)}</span><span className="font-medium text-pink-500">■ 여 {nf(totF)}</span></div>
@@ -666,10 +666,10 @@ function SexAgePyramid({ disease, diseaseLabel }: { disease: string; diseaseLabe
   )
 }
 
-function DonutPanel({ title, data, colors, note }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string }) {
+function DonutPanel({ title, data, colors, note, year }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string; year: string }) {
   const total = data.reduce((s, d) => s + d.value, 0)
   return (
-    <Panel title={`${title} (${EID_CUR_YEAR})`}>
+    <Panel title={`${title} (${year})`}>
       {total === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
         <div className="flex items-center gap-2">
           <ResponsiveContainer width="48%" height={150}>

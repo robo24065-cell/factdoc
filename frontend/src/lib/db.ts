@@ -6,9 +6,22 @@ import { KDCA_CORPUS } from '../engine/kdca-corpus'
 // 질병청 국가건강정보포털 정적 코퍼스(건강정보검색 API 배치 수집) — Supabase 없이도 그라운딩 동작.
 const KDCA_URL = 'https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do'
 const TX_RE = /(치료|약물|연고|도포|바르|복용|관리|요법|예방|권고|표준|개선|조절)/
+const nospace = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+// 여러 질병이 섞이지 않게 좁히기 — 구체적(긴) 용어부터, '한 질병'만 잡힐 때만 채택.
+// 예: "E형간염" 검색 시 광범위어 "간염"이 A형·C형간염을 함께 끌어오는 혼입 방지.
+function narrowToOneDisease<T extends { title: string }>(docs: T[], terms: string[]): T[] {
+  if (docs.length <= 1) return docs
+  for (const term of [...terms].sort((a, b) => b.length - a.length)) {
+    const hit = docs.filter((d) => d.title.includes(term))
+    if (hit.length && new Set(hit.map((d) => d.title)).size === 1) return hit
+  }
+  const exact = docs.filter((d) => terms.some((term) => nospace(d.title) === nospace(term)))
+  return exact
+}
 function staticDocs(terms: string[]) {
   const t = [...new Set(terms)].filter((s) => s && s.length >= 2 && !s.includes(','))
-  return KDCA_CORPUS.filter((d) => t.some((term) => d.title.includes(term)))
+  const cand = KDCA_CORPUS.filter((d) => t.some((term) => d.title.includes(term)))
+  return narrowToOneDisease(cand, t)
 }
 
 // 검증 1건을 query_log에 적재(비차단). ※ 캐시 히트(중복 질문)에는 호출하지 않음 → 분포 인플레 방지.
@@ -199,19 +212,23 @@ export interface DiseaseSection { section: string; text: string; url: string | n
 
 // 질병명으로 코퍼스(질병청 콘텐츠) 섹션 조회. 동의어(온톨로지) 확장 검색 — 예: 제2형당뇨↔당뇨병.
 export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] | null> {
-  // 검색어 = 입력 + 정규화 동의어(중복·짧은 토큰 제거, 최대 5개)
+  // 검색어 = 입력 + 정규화 동의어. 단 '같은 질병 계열'만(입력명을 포함하거나 입력명에 포함되는 것).
+  // 간염 같은 umbrella는 변형에 형제질병명(a형/c형간염)이 섞여 있어, 그대로 쓰면 다른 질병이 혼입됨.
   const entry = normalizeTerm(name)
+  const nn = nospace(name)
   const terms = [...new Set([name, ...(entry ? [entry.canonical, ...entry.variants] : [])])]
     .filter((s) => s && s.length >= 2 && !s.includes(','))
+    .filter((s) => { const sn = nospace(s); return sn.includes(nn) || nn.includes(sn) })
     .slice(0, 5)
   if (!supabase) return staticDiseaseInfo(terms)
   try {
     const orFilter = terms.map((s) => `title.ilike.%${s}%`).join(',')
-    const { data: docs } = await supabase.from('source_doc').select('id,title,url,portal').or(orFilter).limit(4)
-    if (!docs || docs.length === 0) return staticDiseaseInfo(terms)
-    const ids = (docs as { id: number }[]).map((d) => d.id)
+    const { data: docsRaw } = await supabase.from('source_doc').select('id,title,url,portal').or(orFilter).limit(6)
+    const docs = narrowToOneDisease((docsRaw ?? []) as { id: number; title: string; url: string | null; portal: string }[], terms)
+    if (!docs.length) return staticDiseaseInfo(terms)
+    const ids = docs.map((d) => d.id)
     const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).limit(12)
-    const docMap = new Map((docs as { id: number; url: string | null; portal: string }[]).map((d) => [d.id, d]))
+    const docMap = new Map(docs.map((d) => [d.id, d]))
     const sup = (chunks ?? []).map((c) => {
       const span = c.source_span as { section?: string } | null
       const d = docMap.get(c.source_doc_id as number)

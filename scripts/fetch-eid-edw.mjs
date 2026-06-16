@@ -121,12 +121,16 @@ for (const code of diseases) {
   if (mm && mm.length) { const o = {}; for (const r of mm) { const y = r.YYYY, m = +String(r['MM월']).replace(/\D/g, ''); if (y && m) (o[y] ??= new Array(12).fill(0))[m - 1] = num(r['건수']) } monthly[nm] = o }
   const yy = await getArr('dashboardDateYear.do', P(code, yStart, yEnd, false)); await sleep(85) // 년별
   if (yy && yy.length) { const o = {}; for (const r of yy) if (r.YYYY) o[r.YYYY] = num(r['건수']); yearly[nm] = o }
-  const sa = await getArr('dashboardSexAndAge.do', P(code, curStart, curEnd, false)); await sleep(85) // 성별연령(현재년)
-  if (sa && sa.length) { const o = {}; for (const r of sa) { const a = r.AGE_RANGE; if (!a) continue; (o[a] ??= { m: 0, f: 0 }); if (r.PTNT_GNDR_NM === '남성') o[a].m = num(r.CNT); else o[a].f = num(r.CNT) } sexage[nm] = o }
-  const pc = await getArr('dashboardPatientClassification.do', P(code, curStart, curEnd, false)); await sleep(85) // 환자분류
-  if (pc && pc.length) { const o = {}; for (const r of pc) if (r['환자분류']) o[r['환자분류']] = num(r['총건수']); ptnt[nm] = o }
-  const ea = await getArr('dashboardEstimatedArea.do', P(code, curStart, curEnd, false)); await sleep(85) // 감염지역
-  if (ea && ea.length) { const o = {}; for (const r of ea) if (r['추정감염지역']) o[r['추정감염지역']] = num(r['총건수']); area[nm] = o }
+  // 성별연령·환자분류·감염지역 — 연도별(지도 연도 슬라이더와 연동)
+  for (const y of YEARS) {
+    const ys = `${y}0101`, ye = `${y}1231`
+    const sa = await getArr('dashboardSexAndAge.do', P(code, ys, ye, false)); await sleep(78)
+    if (sa && sa.length) { const o = {}; for (const r of sa) { const a = r.AGE_RANGE; if (!a) continue; (o[a] ??= { m: 0, f: 0 }); if (r.PTNT_GNDR_NM === '남성') o[a].m = num(r.CNT); else o[a].f = num(r.CNT) } if (Object.keys(o).length) (sexage[nm] ??= {})[y] = o }
+    const pc = await getArr('dashboardPatientClassification.do', P(code, ys, ye, false)); await sleep(78)
+    if (pc && pc.length) { const o = {}; for (const r of pc) if (r['환자분류']) o[r['환자분류']] = num(r['총건수']); if (Object.keys(o).length) (ptnt[nm] ??= {})[y] = o }
+    const ea = await getArr('dashboardEstimatedArea.do', P(code, ys, ye, false)); await sleep(78)
+    if (ea && ea.length) { const o = {}; for (const r of ea) if (r['추정감염지역']) o[r['추정감염지역']] = num(r['총건수']); if (Object.keys(o).length) (area[nm] ??= {})[y] = o }
+  }
   process.stdout.write(`\r  심층 분석 수집 ${++dc}/${diseases.length} (${nm})            `)
 }
 console.log('')
@@ -194,11 +198,11 @@ const header = `// 질병관리청 감염병포털 EDW 대시보드 — 시도×
   `export const EID_NAT_MONTH: Record<string, Record<string, number[]>> = ${JSON.stringify(monthly)}\n` +
   `// 년별: [disease][year] = 발생수.\n` +
   `export const EID_NAT_YEAR: Record<string, Record<string, number>> = ${JSON.stringify(yearly)}\n` +
-  `// 성별·연령(현재년): [disease][ageRange] = { m: 남, f: 여 }.\n` +
-  `export const EID_SEXAGE: Record<string, Record<string, { m: number; f: number }>> = ${JSON.stringify(sexage)}\n` +
-  `// 환자분류(현재년): [disease] = { 병원체보유자, 환자 }.\n` +
-  `export const EID_PTNT: Record<string, Record<string, number>> = ${JSON.stringify(ptnt)}\n` +
-  `// 추정감염지역(현재년): [disease] = { 국내, 국외 }.\n` +
-  `export const EID_AREA: Record<string, Record<string, number>> = ${JSON.stringify(area)}\n`
+  `// 성별·연령(연도별): [disease][year][ageRange] = { m: 남, f: 여 }.\n` +
+  `export const EID_SEXAGE: Record<string, Record<string, Record<string, { m: number; f: number }>>> = ${JSON.stringify(sexage)}\n` +
+  `// 환자분류(연도별): [disease][year] = { 병원체보유자, 환자 }.\n` +
+  `export const EID_PTNT: Record<string, Record<string, Record<string, number>>> = ${JSON.stringify(ptnt)}\n` +
+  `// 추정감염지역(연도별): [disease][year] = { 국내, 국외 }.\n` +
+  `export const EID_AREA: Record<string, Record<string, Record<string, number>>> = ${JSON.stringify(area)}\n`
 fs.writeFileSync('frontend/src/data/eid-region.ts', header, 'utf8')
 console.log(`완료 → frontend/src/data/eid-region.ts (질병 ${diseases.length} · 연 ${YEARS.length} · 주별 ${weeklyCodes.length} · 일/월/년+성별연령+환자분류+감염지역)`)

@@ -3,11 +3,15 @@
 import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry } from './food-kb'
 import { FOOD_KB_EXT } from './food-kb-ext'
 import { FOOD_KB_COMMON } from './food-kb-common'
+import { FOOD_KB_GEN, FOOD_GEN_NEW } from './food-kb-gen'
 import { findInText, variantsOf } from './ontology'
 import { isCureClaim } from './relationLex'
 
-// 본체 139 + 확장(일상) + 흔한 정크/일상푸드 — §13.1 폭
-const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT, ...FOOD_KB_COMMON]
+// 본체 139 + 확장(일상) + 흔한 정크/일상푸드 + 생성·검증 신규 — §13.1 폭
+const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT, ...FOOD_KB_COMMON, ...FOOD_GEN_NEW].map((f) => {
+  const extra = FOOD_KB_GEN[f.name] // 워크플로 검증 연관(여드름·탈모·부종 등) 병합
+  return extra ? { ...f, effects: [...f.effects, ...extra] } : f
+})
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
@@ -48,9 +52,14 @@ const DOMAINS: { cond: RegExp; dz: RegExp }[] = [
   { cond: /신장|콩팥/, dz: /신장|콩팥|신증|사구체|요로|방광|결석/ },
   { cond: /갱년|여성|월경/, dz: /갱년|여성|월경|생리|난소|자궁/ },
   { cond: /수면|불면|스트레스|긴장/, dz: /불면|수면|공황|불안|우울|스트레스/ },
-  { cond: /피부/, dz: /피부|아토피|여드름|건선|습진|두드러기|무좀/ },
+  { cond: /피부|여드름/, dz: /피부|아토피|여드름|건선|습진|두드러기|무좀/ },
   { cond: /전립선/, dz: /전립선/ },
-  { cond: /빈혈|조혈/, dz: /빈혈/ },
+  { cond: /빈혈|조혈|철분/, dz: /빈혈/ },
+  { cond: /탈모|모발|두피|머리카락/, dz: /탈모|모발|두피/ },
+  { cond: /부종|붓기|이뇨|수분배출/, dz: /부종|붓기|림프부종/ },
+  { cond: /피로|기력|피곤|활력/, dz: /피로|만성피로|기력/ },
+  { cond: /구취|입냄새/, dz: /구취|입냄새/ },
+  { cond: /수면|불면|숙면/, dz: /불면|수면/ },
 ]
 
 function condMatches(condition: string, diseaseCanonical: string): boolean {
