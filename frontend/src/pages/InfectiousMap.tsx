@@ -4,7 +4,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
-  Tooltip as RTooltip, Cell, LabelList, ReferenceLine, PieChart, Pie,
+  Tooltip as RTooltip, Cell, LabelList, ReferenceLine, PieChart, Pie, Brush,
 } from 'recharts'
 import {
   EID_YEARS, EID_PARTIAL_YEAR, EID_CUR_YEAR, EID_CUR_WEEK, EID_SIDO, EID_DISEASES, EID_GROUP,
@@ -52,6 +52,14 @@ function nationalPop(year: string): number {
   }
   return pop || 51000000
 }
+// 인구추정 안정화 — 진행중 잠정연도(2026) 제외 최신 전체연도. 주별 발생률은 이 인구로 환산(주별엔 rate 필드가 없어 발생수÷인구로 산출).
+const POP_YEAR = [...EID_YEARS].reverse().find((y) => y !== EID_PARTIAL_YEAR) || EID_YEARS[EID_YEARS.length - 1]
+// 시도 인구(=발생수/발생률×10만, 전 질병 합산으로 역산). 주별 발생률 환산용.
+function sidoPop(sido: string): number {
+  let c = 0, r = 0
+  for (const d of EID_DISEASES) { c += EID_COUNT[POP_YEAR]?.[d]?.[sido] ?? 0; r += EID_RATE[POP_YEAR]?.[d]?.[sido] ?? 0 }
+  return r > 0 ? (c / r) * 100000 : 1
+}
 // 전국 값 — 발생률은 EID_RATE에 '00'(전국) 행이 없어 0이 됨 → 전국발생수÷전국인구×10만으로 산출.
 function natVal(metric: Metric, disease: string, year: string): number {
   if (metric === 'rate') return (annualVal('count', disease, year, '00') / nationalPop(year)) * 100000
@@ -95,7 +103,7 @@ export default function InfectiousMap() {
   const mapRef = useRef<HTMLDivElement>(null)
 
   const inWeek = gran === 'week'
-  const effMetric: Metric = inWeek ? 'count' : metric
+  const effMetric: Metric = metric // 주별에서도 발생률 허용(해당 주 인구10만명당 = 주발생수÷시도인구)
   const year = inWeek ? EID_CUR_YEAR : EID_YEARS[yearIdx]
   const week = weekIdx + 1
   const isPartial = !inWeek && year === EID_PARTIAL_YEAR
@@ -116,14 +124,16 @@ export default function InfectiousMap() {
 
   // 시도별 값
   const { perSido, maxV, nationTotal } = useMemo(() => {
-    const per: Record<string, number> = {}; let mx = 0
+    const per: Record<string, number> = {}; let mx = 0; let wkCountSum = 0
     for (const s of EID_SIDO) {
-      const v = inWeek ? weekVal(disease, week, s.code) : annualVal(effMetric, disease, year, s.code)
+      let v: number
+      if (inWeek) { const c = weekVal(disease, week, s.code); wkCountSum += c; v = effMetric === 'rate' ? (c / sidoPop(s.code)) * 100000 : c }
+      else v = annualVal(effMetric, disease, year, s.code)
       per[s.code] = v; if (v > mx) mx = v
     }
     const sum = EID_SIDO.reduce((t, s) => t + (per[s.code] || 0), 0)
     let nat: number
-    if (inWeek) nat = sum
+    if (inWeek) nat = effMetric === 'rate' ? (wkCountSum / nationalPop(POP_YEAR)) * 100000 : wkCountSum
     else if (effMetric === 'rate') { const cnt = annualVal('count', disease, year, '00'); nat = cnt / nationalPop(year) * 100000 }
     else nat = annualVal('count', disease, year, '00') || sum
     return { perSido: per, maxV: mx || 1, nationTotal: nat }
@@ -259,14 +269,14 @@ export default function InfectiousMap() {
               <label className="text-xs font-semibold text-slate-500">지표</label>
               <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
                 {(['count', 'rate'] as Metric[]).map((mk) => (
-                  <button key={mk} disabled={inWeek && mk === 'rate'} onClick={() => !inWeek && setMetric(mk)}
-                    className={`rounded-md px-3 py-1 text-xs font-semibold transition ${(inWeek ? 'count' : metric) === mk ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'} ${inWeek && mk === 'rate' ? 'cursor-not-allowed opacity-40' : ''}`}>
+                  <button key={mk} onClick={() => setMetric(mk)}
+                    className={`rounded-md px-3 py-1 text-xs font-semibold transition ${metric === mk ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>
                     {mk === 'count' ? '발생 수' : '인구 10만 명당 발생률'}
                   </button>
                 ))}
               </div>
             </div>
-            <span className="text-[11px] text-slate-400">{inWeek ? '주별은 시도×주 발생수 — 주차 슬라이더가 지도를 바꿉니다' : effMetric === 'count' ? '신고된 환자 수' : '인구 대비 발생률 — 인구 적은 지역 유행강도까지 공정비교'}</span>
+            <span className="text-[11px] text-slate-400">{effMetric === 'count' ? (inWeek ? '시도×주 발생수 — 주차 슬라이더가 지도를 바꿉니다' : '신고된 환자 수') : (inWeek ? `해당 주 인구10만명당 발생률(인구는 ${POP_YEAR}년 기준) — 인구 적은 지역 유행강도까지 공정비교` : '인구 대비 발생률 — 인구 적은 지역 유행강도까지 공정비교')}</span>
           </div>
         </div>
 
@@ -599,7 +609,8 @@ function yearSidoVal(disease: string, year: string, sido: string): number {
   return EID_COUNT[year]?.[disease]?.[sido] || 0
 }
 
-type TPt = { x: number | string; label: string; actual: number | null; pred: number | null }
+type TPt = { x: number | string; label: string; actual: number | null; pred: number | null; dow?: string }
+const DOW = ['일', '월', '화', '수', '목', '금', '토']
 function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number; selSido: string | null }) {
   const [tg, setTg] = useState<'day' | 'week' | 'month' | 'year'>('week')
   useEffect(() => { if (inWeek) setTg('week') }, [inWeek])
@@ -610,7 +621,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
     const natNote = selSido ? ' · 전국(이 단위 시도별 미제공)' : ''
     if (tg === 'day') {
       const arr = trimZeros(aggArr(disease, EID_NAT_DAILY))
-      const data: TPt[] = arr.map((v, i) => { const dt = new Date(+cur, 0, 1 + i); return { x: i, label: `${dt.getMonth() + 1}/${dt.getDate()}`, actual: v, pred: null } })
+      const data: TPt[] = arr.map((v, i) => { const dt = new Date(+cur, 0, 1 + i); return { x: i, label: `${dt.getMonth() + 1}/${dt.getDate()}`, dow: DOW[dt.getDay()], actual: v, pred: null } })
       return { data, predicted: false, sel: 0, tip: (i: number) => `${cur}년 ${data[i]?.label || ''}`, note: '일(日) 단위 · 평일/주말 신고 편차' + natNote, minGap: 30 }
     }
     if (tg === 'week') {
@@ -661,12 +672,25 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
   const hasData = built.data.some((r) => r.actual != null)
   const TG = [{ k: 'day', t: '일' }, { k: 'week', t: '주' }, { k: 'month', t: '월' }, { k: 'year', t: '년' }] as const
 
+  // 주식차트식 기간 패닝(드래그) + '현재' 칩 — 점이 많은 일·주에서만. '현재'=마지막 실제+예측 약간까지.
+  const n = built.data.length
+  const showPan = n > 16
+  const winSize = tg === 'day' ? 30 : 16
+  const latestEnd = useMemo(() => {
+    let la = n - 1; for (let i = n - 1; i >= 0; i--) if (built.data[i].actual != null) { la = i; break }
+    return built.predicted ? Math.min(n - 1, la + 4) : la
+  }, [built, n])
+  const [win, setWin] = useState<{ s: number; e: number } | null>(null)
+  const toLatest = () => setWin({ s: Math.max(0, latestEnd - winSize + 1), e: latestEnd })
+  useEffect(() => { setWin(showPan ? { s: Math.max(0, latestEnd - winSize + 1), e: latestEnd } : null) }, [showPan, latestEnd, winSize, n])
+
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 {scope} 발생 추이 — {diseaseLabel}</h3>
-        <div className="flex items-center gap-3">
-          <span className="hidden text-[11px] text-slate-400 sm:inline">{built.note} · 누적 {nf(totalActual)}건{peak.label ? ` · 최다 ${peak.label}` : ''}</span>
+        <div className="flex items-center gap-2">
+          <span className="hidden text-[11px] text-slate-400 lg:inline">{built.note} · 누적 {nf(totalActual)}건{peak.label ? ` · 최다 ${peak.label}` : ''}</span>
+          {showPan && <button onClick={toLatest} title="가장 최근으로" className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition active:scale-95 dark:bg-blue-950/40 dark:text-blue-300">현재</button>}
           <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
             {TG.map((g) => (<button key={g.k} onClick={() => setTg(g.k)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${tg === g.k ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>{g.t}</button>))}
           </div>
@@ -678,10 +702,12 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} minTickGap={built.minGap} />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
-            <RTooltip formatter={(v, n) => [nf(Number(v)) + '건', n === 'pred' ? '예측치' : '실제']} />
+            <RTooltip formatter={(v, nm) => [nf(Number(v)) + '건', nm === 'pred' ? '예측치' : '실제']}
+              labelFormatter={(label, payload) => { const p = payload && payload[0] && (payload[0].payload as TPt); return p?.dow ? `${label} (${p.dow})` : String(label) }} />
             {built.predicted && <Line type="monotone" dataKey="pred" stroke="#f43f5e" strokeWidth={2} strokeDasharray="5 4" strokeOpacity={0.65} dot={false} connectNulls name="pred" isAnimationActive={false} />}
             <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={2.4} dot={tg === 'year' ? { r: 3 } : false} activeDot={{ r: 4 }} connectNulls name="actual" />
             {built.sel ? <ReferenceLine x={`${built.sel}주`} stroke="#2563eb" strokeOpacity={0.5} strokeWidth={1.5} label={{ value: `${built.sel}주`, fontSize: 10, fill: '#2563eb', position: 'top' }} /> : null}
+            {showPan && win && <Brush dataKey="label" height={18} stroke="#93c5fd" travellerWidth={8} startIndex={win.s} endIndex={win.e} tickFormatter={() => ''} onChange={(r) => { if (r && typeof r.startIndex === 'number' && typeof r.endIndex === 'number') setWin({ s: r.startIndex, e: r.endIndex }) }} />}
           </LineChart>
         </ResponsiveContainer>
       ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {cur}년 데이터가 없습니다.</p>}

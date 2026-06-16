@@ -24,6 +24,15 @@ export function eidLatestOutbreak(): { year: string; week: number; rows: Outbrea
   return { year: EID_CUR_YEAR, week: last + 1, rows }
 }
 
+// 특정 질병의 최신 발생현황(최근 4주, 2026 현재주차) — Disease 상세 '발생 현황' 패널용(옛 Supabase 2024 대체).
+export function eidDiseaseLatest(name: string): { year: string; week: number; count: number; pct: number; trend: OutbreakItem['trend'] } | null {
+  const { year, week, rows } = eidLatestOutbreak()
+  if (!week) return null
+  const nn = name.replace(/\s+/g, '')
+  const row = rows.find((r) => { const rn = r.name.replace(/\s+/g, ''); return rn.includes(nn) || nn.includes(rn) })
+  return row ? { year, week, count: row.count, pct: row.pct, trend: row.trend } : null
+}
+
 export interface GrowthItem { name: string; grp: string; recent: number; prior: number; growthPct: number }
 // ★급증 신호(조기경보) — 최근 4주 합 vs 직전 4주 합 증가율. 노이즈 방지로 최소 발생수 필터.
 export function eidGrowthSignal(minRecent = 20): { week: number; rows: GrowthItem[] } {

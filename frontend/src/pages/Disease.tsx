@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { fetchDiseaseFakeClaims, fetchDiseaseInfo, fetchOutbreak, type DiseaseFakeClaim, type DiseaseSection, type OutbreakRow } from '../lib/db'
+import { fetchDiseaseFakeClaims, fetchDiseaseInfo, type DiseaseFakeClaim, type DiseaseSection } from '../lib/db'
+import { eidDiseaseLatest } from '../lib/eidStats'
 import { preventionHint } from '../lib/prevention'
 import { variantsOf } from '../engine/ontology'
 import { findInText, symptomsFor } from '../engine'
@@ -9,17 +10,15 @@ import Highlight from '../components/Highlight'
 export default function Disease() {
   const { name = '' } = useParams()
   const [sections, setSections] = useState<DiseaseSection[] | null>(null)
-  const [outbreak, setOutbreak] = useState<OutbreakRow | null>(null)
   const [fakes, setFakes] = useState<DiseaseFakeClaim[]>([])
 
   useEffect(() => {
     fetchDiseaseInfo(name).then(setSections)
     fetchDiseaseFakeClaims(name).then(setFakes)
-    fetchOutbreak().then((rows) =>
-      setOutbreak(rows?.find((r) => r.disease.includes(name) || name.includes(r.disease)) ?? null),
-    )
   }, [name])
 
+  // 발생 현황 — 질병청 감염병포털 EDW 최신 주차(2026 현재) 기준 최근 4주(옛 Supabase 2024 테이블 대체)
+  const latest = eidDiseaseLatest(name)
   const cards = (sections ?? []).filter((s) => s.text && s.text.length > 40).slice(0, 6)
 
   return (
@@ -27,14 +26,19 @@ export default function Disease() {
       <Link to="/trending" className="text-sm text-slate-400">← 유행</Link>
       <h1 className="mt-2 text-[22px] font-semibold text-slate-900 dark:text-white">{name}</h1>
 
-      {outbreak && (
+      {latest && (
         <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 text-sm dark:border-slate-800 dark:bg-slate-900">
-          <p className="font-medium text-slate-800 dark:text-slate-100">발생 현황</p>
+          <div className="flex items-center justify-between">
+            <p className="font-medium text-slate-800 dark:text-slate-100">발생 현황</p>
+            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{latest.year}년 {latest.week}주차</span>
+          </div>
           <p className="mt-1 text-slate-500">
-            {outbreak.period} 기준 {(outbreak.case_count ?? 0).toLocaleString()}건 (
-            {outbreak.trend === 'up' ? '증가' : outbreak.trend === 'down' ? '감소' : '유지'})
+            최근 4주 <b className="text-slate-700 dark:text-slate-200">{latest.count.toLocaleString()}건</b> · 직전 4주 대비{' '}
+            <span className={latest.trend === 'up' ? 'text-rose-500' : latest.trend === 'down' ? 'text-blue-500' : 'text-slate-400'}>
+              {latest.pct > 0 ? `▲ ${latest.pct}%` : latest.pct < 0 ? `▼ ${Math.abs(latest.pct)}%` : '유지'}
+            </span>
           </p>
-          <p className="mt-1 text-[11px] text-slate-400">출처: 질병관리청 감염병포털</p>
+          <p className="mt-1 text-[11px] text-slate-400">출처: 질병관리청 감염병포털(전수신고 발생현황)</p>
         </div>
       )}
 
