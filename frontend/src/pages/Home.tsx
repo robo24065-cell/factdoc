@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
-import { variantsOf } from '../engine/ontology'
+import { variantsOf, isInfectious, isCancer } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
 import { fetchGroundedAnswer, fetchTopMisinfo, logQuery, type GroundedPassage, type TopClaim } from '../lib/db'
@@ -136,9 +136,15 @@ function subLabel(s: SubCard): string {
 
 // 후속 질문 추천 — 인식된 질병 기반 탐색 유도(어시스턴트 느낌). 기능성 카테고리는 제외.
 const FUNCTION_CATS = new Set(['면역기능', '항산화', '장건강', '눈건강', '관절건강', '인지기능', '체지방', '피로', '혈당조절', '심혈관질환', '뼈건강', '간건강', '피부건강', '전립선건강', '갱년기'])
+// 질병 유형별 추천질문 — 답할 수 있는 종류만(감염병에 '좋은 음식' 같은 부적절·무답 추천 방지)
 function relatedQuestions(canonical: string, display: string): string[] {
   if (FUNCTION_CATS.has(canonical)) return []
-  return [`${display} 증상이 뭐예요?`, `${display}에 좋은 음식은?`, `${display} 예방법 알려줘`]
+  const q = [`${display} 증상이 뭐예요?`]
+  if (isInfectious(canonical)) q.push(`${display}은 어떻게 전염되나요?`, `${display} 예방법 알려줘`)
+  else if (isCancer(canonical)) q.push(`${display} 위험요인이 뭔가요?`, `${display} 예방법 알려줘`)
+  else if (/당뇨|혈당|고혈압|혈압|지질|콜레스테롤|비만|체중|통풍|요산|장건강|변비|위염|역류|지방간|간건강|빈혈|골다공|심혈관/.test(canonical)) q.push(`${display}에 좋은 음식은?`, `${display} 관리법 알려줘`)
+  else q.push(`${display} 예방법 알려줘`, `${display} 원인이 뭔가요?`)
+  return q
 }
 
 // 한국어 조사 — 받침 유무로 이/가·은/는·을/를 선택
