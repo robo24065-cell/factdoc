@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEven
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, Cell, LabelList, ReferenceLine, PieChart, Pie,
+  ScatterChart, Scatter, ZAxis,
 } from 'recharts'
 import {
   EID_YEARS, EID_PARTIAL_YEAR, EID_CUR_YEAR, EID_CUR_WEEK, EID_SIDO, EID_DISEASES, EID_GROUP,
@@ -21,6 +22,12 @@ const ALL = '__ALL__'
 const cleanName = (d: string) => d.replace(/^@/, '')
 const nf = (n: number) => n.toLocaleString('ko-KR')
 const SIDO_NAME: Record<string, string> = Object.fromEntries(EID_SIDO.map((s) => [s.code, s.name]))
+// 시도 면적(㎢, 공개 행정구역 면적 근사 — 인구밀도 산출용 고정값). 이름 부분일치로 매칭(강원특별자치도 등).
+const SIDO_AREA_KM2: Record<string, number> = {
+  서울: 605, 부산: 770, 대구: 1499, 인천: 1067, 광주: 501, 대전: 539, 울산: 1062, 세종: 465,
+  경기: 10195, 강원: 16826, 충북: 7407, 충남: 8247, 전북: 8073, 전남: 12361, 경북: 19036, 경남: 10540, 제주: 1850,
+}
+const areaOf = (name: string): number => { const k = Object.keys(SIDO_AREA_KM2).find((x) => name.includes(x)); return k ? SIDO_AREA_KM2[k] : 0 }
 const fmt = (v: number, m: Metric) => m === 'count' ? nf(Math.round(v)) : (v >= 10 ? v.toFixed(1) : v.toFixed(2))
 const unitSuffix = (m: Metric) => m === 'count' ? '건' : '명/10만'
 
@@ -997,6 +1004,27 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
     }).filter((c) => c.members.length)
   }, [year])
 
+  // E. 인구밀도 × 발생률(확산위험) — 시도 면적(고정값)+인구추정으로 밀도 산출, 발생률과의 상관(참고).
+  const density = useMemo(() => {
+    const rows = EID_SIDO.map((s) => {
+      const area = areaOf(s.name); const pop = sidoPop(s.code)
+      const count = annualVal('count', disease, year, s.code)
+      const rate = pop > 0 ? (count / pop) * 100000 : 0
+      const dens = area > 0 ? pop / area : 0
+      return { name: s.name, density: Math.round(dens), rate: Math.round(rate * 10) / 10 }
+    }).filter((r) => r.density > 0 && r.rate > 0)
+    // 피어슨 상관(밀도 vs 발생률)
+    const n = rows.length
+    let r = 0
+    if (n >= 3) {
+      const mx = rows.reduce((s, v) => s + v.density, 0) / n, my = rows.reduce((s, v) => s + v.rate, 0) / n
+      let sxy = 0, sxx = 0, syy = 0
+      for (const v of rows) { const dx = v.density - mx, dy = v.rate - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy }
+      r = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : 0
+    }
+    return { rows, r: Math.round(r * 100) / 100, n }
+  }, [year, disease])
+
   return (
     <div className="mt-4">
       <h3 className="mb-2 px-1 text-sm font-bold text-slate-700 dark:text-slate-200">🔬 고급 분석</h3>
@@ -1068,6 +1096,34 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
             </div>
           ) : <p className="py-8 text-center text-sm text-slate-400">데이터 부족</p>}
           <p className="mt-1.5 px-1 text-[11px] text-slate-400">상위 6개 감염병의 시도별 발생률 프로파일을 k-means(k=3)로 군집화. 비슷한 감염병 양상의 지역끼리 묶임.</p>
+        </Panel>
+
+        {/* E. 인구밀도 × 확산 위험 */}
+        <Panel title={<>인구밀도 × 발생률 — {diseaseLabel} (연간 {year})<InfoTip label="인구밀도 × 발생률" >시도별 인구밀도(인구/면적)와 인구 10만 명당 발생률의 관계. 밀도가 높을수록 접촉이 잦아 전파가 빠를 수 있다는 가설을 데이터로 살펴봅니다. 상관(association)이며 인과(causation)는 아닙니다.</InfoTip></>}>
+          {density.rows.length >= 3 ? (
+            <>
+              <ResponsiveContainer width="100%" height={210}>
+                <ScatterChart margin={{ top: 8, right: 14, left: 0, bottom: 14 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" dataKey="density" name="인구밀도" unit="" tick={{ fontSize: 9, fill: '#94a3b8' }} tickFormatter={(v) => nf(Number(v))} axisLine={false} tickLine={false}
+                    label={{ value: '인구밀도(명/㎢)', position: 'insideBottom', offset: -6, fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis type="number" dataKey="rate" name="발생률" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false}
+                    label={{ value: '10만명당', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }} />
+                  <ZAxis range={[60, 60]} />
+                  <RTooltip cursor={{ strokeDasharray: '3 3' }} formatter={(v, n) => [n === '인구밀도' ? `${nf(Number(v))} 명/㎢` : `${v} 명/10만`, String(n)]}
+                    labelFormatter={() => ''} content={({ payload }) => { const p = payload && payload[0] && payload[0].payload as { name: string; density: number; rate: number }; return p ? <div className="rounded-lg bg-slate-900/95 px-2.5 py-1.5 text-xs text-white shadow-lg"><b>{p.name}</b><br />밀도 {nf(p.density)}명/㎢<br />발생률 {p.rate}/10만</div> : null }} />
+                  <Scatter data={density.rows} fill="#6366f1">
+                    {density.rows.map((r) => <Cell key={r.name} fill={rampColor(Math.sqrt(r.rate / (density.rows.reduce((m, v) => Math.max(m, v.rate), 1))))} />)}
+                  </Scatter>
+                </ScatterChart>
+              </ResponsiveContainer>
+              <p className="mt-1.5 px-1 text-[11px] leading-relaxed text-slate-400">
+                밀도↔발생률 상관계수 <b className={density.r >= 0.3 ? 'text-rose-600' : density.r <= -0.3 ? 'text-blue-600' : 'text-slate-500'}>r = {density.r.toFixed(2)}</b>
+                {density.r >= 0.3 ? ' — 밀도 높은 지역일수록 발생률이 높은 경향(양의 상관).' : density.r <= -0.3 ? ' — 밀도와 발생률이 반대 경향.' : ' — 뚜렷한 선형 관계는 약함.'}
+                {' '}⚠ <b>상관</b>이지 인과가 아니며, 면적은 행정구역 근사·인구는 통계 추정값입니다.
+              </p>
+            </>
+          ) : <p className="py-8 text-center text-sm text-slate-400">이 감염병·연도는 밀도-발생률 산출 데이터가 부족합니다.</p>}
         </Panel>
       </div>
     </div>
