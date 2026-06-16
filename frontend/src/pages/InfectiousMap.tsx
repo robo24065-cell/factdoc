@@ -52,6 +52,11 @@ function nationalPop(year: string): number {
   }
   return pop || 51000000
 }
+// 전국 값 — 발생률은 EID_RATE에 '00'(전국) 행이 없어 0이 됨 → 전국발생수÷전국인구×10만으로 산출.
+function natVal(metric: Metric, disease: string, year: string): number {
+  if (metric === 'rate') return (annualVal('count', disease, year, '00') / nationalPop(year)) * 100000
+  return annualVal('count', disease, year, '00')
+}
 
 const RAMP: [number, [number, number, number]][] = [
   [0, [238, 242, 247]], [0.16, [254, 240, 199]], [0.36, [253, 211, 90]],
@@ -133,7 +138,7 @@ export default function InfectiousMap() {
 
   // 연도별 추이(다년, 전국+선택시도)
   const trend = useMemo(() => EID_YEARS.map((y) => {
-    const row: Record<string, number | string> = { year: y, 전국: annualVal(effMetric, disease, y, '00') }
+    const row: Record<string, number | string> = { year: y, 전국: natVal(effMetric, disease, y) }
     if (selected) row[SIDO_NAME[selected]] = annualVal(effMetric, disease, y, selected)
     return row
   }), [effMetric, disease, selected])
@@ -141,7 +146,7 @@ export default function InfectiousMap() {
   // 전기간 대비(연간=전년, 주별=전주)
   const prevTotal = inWeek
     ? (weekIdx > 0 ? EID_SIDO.reduce((t, s) => t + weekVal(disease, week - 1, s.code), 0) : null)
-    : (yearIdx > 0 ? annualVal(effMetric, disease, EID_YEARS[yearIdx - 1], '00') : null)
+    : (yearIdx > 0 ? natVal(effMetric, disease, EID_YEARS[yearIdx - 1]) : null)
   const yoy = prevTotal && prevTotal > 0 ? Math.round(((nationTotal - prevTotal) / prevTotal) * 100) : null
   const yoyMult = prevTotal && prevTotal > 0 ? nationTotal / prevTotal : null
   const bigJump = yoyMult !== null && yoyMult >= 6
