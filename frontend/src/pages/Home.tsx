@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -376,6 +376,12 @@ export default function Home() {
     if (!isCureClaim(claim)) {
       const dzF = findInText(claim, 'disease')
       if (dzF) {
+        // 약물 오사용 — 바이러스 질환에 항생제: 음식 분기로 새기 전에 직답(질병청 항생제 오남용 주의)
+        if (/항생제|항생물질/.test(claim) && /감기|독감|인플루엔자|코로나|바이러스|몸살/.test(claim + dzF.canonical)) {
+          const sections = await fetchDiseaseSections(dzF.canonical)
+          setInfo({ disease: dzF.canonical, summary: `감기·독감 같은 바이러스 질환에는 항생제가 듣지 않아요. 항생제는 세균 감염에만 효과가 있고, 필요 없이 쓰면 내성균을 키우고 부작용 위험만 커집니다(질병관리청은 항생제 오남용 주의를 당부합니다). 증상이 심하거나 오래가면 의료기관에서 진료받으세요.`, sections, hasOfficial: sections.length > 0, citation: undefined, isGuidance: true })
+          setLoading(false); void logQuery(claim, 'unverified', 'info'); return
+        }
         if (/좋은\s*음식|추천\s*음식|뭐\s*먹|먹으면\s*좋|도움.*음식|음식.*추천|뭐를?\s*먹/.test(claim)) {
           const foods = foodsFor(dzF.canonical)
           if (foods.length) {
@@ -391,8 +397,8 @@ export default function Home() {
             setInfo({ disease: dzF.canonical, summary: dc.msg, sections, hasOfficial: sections.length > 0, citation: undefined, isGuidance: true })
             setLoading(false); void logQuery(claim, 'unverified', 'info'); return
           }
-          // 위험 속성이 없는(중립) 음식 — 명시적 섭취 표현일 때만 스마트 중립 답변(운동·효과 등 오탐 회피)
-          if (/먹|드시|드셔|드세요|섭취|식단|식이/.test(claim)) {
+          // 위험 속성이 없는(중립) 음식 — 명시적 섭취 표현 + 비음식(약·물 등) 아닐 때만(위험 오답 방지)
+          if (!isNonFood(claim) && /먹|드시|드셔|드세요|섭취|식단|식이/.test(claim)) {
             const g = guidanceFor(dzF.canonical)
             const core = g?.text ? g.text.split(/(?<=[.。])\s/)[0].slice(0, 90) : ''
             const sections = await fetchDiseaseSections(dzF.canonical)
@@ -410,6 +416,17 @@ export default function Home() {
     //     (완치·약대체·위해·효과 주장 모두 포함). 순수 정의/증상/조언 질문만 info 카드.
     const isRelationalClaim = !!findInText(claim, 'subject') && (isCureClaim(claim) || isHarmfulClaim(claim) || isBeneficialClaim(claim))
     if (intent.intent === 'info' && intent.disease && !isRelationalClaim) {
+      // 복합 질문 — 두 질환이 함께 언급되면 한쪽만 답하지 않고 양쪽 관리를 병합(예: "당뇨랑 고혈압 같이 있으면")
+      const multi = findAllInText(claim, 'disease', 2)
+      if (multi.length >= 2) {
+        const cut = (s: string) => { const f = s.split(/(?<=[.。])\s/)[0]; return f.length > 90 ? f.slice(0, 90) + '…' : f }
+        const lines = multi.slice(0, 2).map((d) => { const g = guidanceFor(d.canonical); return g ? `${d.canonical} — ${cut(g.text)}` : '' }).filter(Boolean)
+        if (lines.length >= 2) {
+          const names = multi.slice(0, 2).map((d) => d.canonical).join(' · ')
+          setInfo({ disease: names, summary: `${names} — 두 질환이 함께 있을 때는 어느 한쪽만이 아니라 양쪽을 같이 관리하는 게 중요해요. ${lines.join(' / ')} 공통적으로 체중 관리·규칙적인 운동·금연·절주·싱겁고 균형 잡힌 식사가 핵심입니다. 두 질환이 함께 있으면 위험이 더해질 수 있으니 정기 검진과 의료진 상담을 권합니다.`, sections: [], hasOfficial: false, citation: undefined, isGuidance: true })
+          setLoading(false); void logQuery(claim, 'unverified', 'info'); return
+        }
+      }
       const disease = intent.disease
       const sections = await fetchDiseaseSections(disease)
       // ★측면 질문(합병증/증상/원인…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.

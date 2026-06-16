@@ -183,3 +183,16 @@ export function dishCaution(text: string, diseaseCanonical: string): { attrs: st
   const labels = present.map((a) => ATTR_LABEL[a]).join('·')
   return { attrs: present, msg: `${labels} 함량이 높은 편이에요. ${diseaseCanonical} 관리 중이라면 ${sens.advice} 부담을 줄일 수 있어요. (음식 이름으로 추정한 일반 정보예요. 개인차가 있고 진단·치료를 대체하지 않아요.)` }
 }
+
+// ── 비음식 가드 ──────────────────────────────────────────────
+// 약물·의료·비음식 일반명사 — "감기에 항생제 먹어도 돼?"가 중립 음식 폴백('적당량 괜찮다')으로 새면 위험 오답.
+const NON_FOOD_RE = /항생제|항생물질|진통제|해열제|소염제|항히스타민|스테로이드|항바이러스제|주사|예방접종|백신|수술|시술|영양제|보충제|건강기능식품|건기식|약\s*(을|를|먹|드|복용)|먹는?\s*약|물(?!회|냉면|김치)|생수|수돗물|정수|수분/
+export function isNonFood(text: string): boolean { return NON_FOOD_RE.test(text) }
+
+// 텍스트에 '실제 음식'으로 볼 신호가 있는가 — KB 음식 매칭 또는 식이속성(나트륨·당 등) 키워드.
+// 중립 음식 폴백이 비음식(약·물 등)에 잘못 걸리지 않도록 양성 신호를 요구하는 가드.
+export function mentionsFood(text: string): boolean {
+  if (isNonFood(text)) return false
+  if (foodAnswerAll(text).length > 0) return true
+  return DISH_ATTRS.some((a) => a.re.test(text))
+}
