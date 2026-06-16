@@ -15,9 +15,9 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 // 수집 질병 키워드(흔한 질환 위주). 키워드별 상위 N개 콘텐츠.
 const KEYWORDS = [
   '당뇨', '고혈압', '고지혈증', '비만', '통풍', '골다공증', '갑상선', '위염', '역류성식도염', '변비',
-  '빈혈', '천식', '아토피', '비염', '불면증', '편두통', '탈모', '우울증', '치매', '간염',
+  '빈혈', '천식', '아토피', '비염', '불면증', '편두통', '탈모', '우울증', '치매', '간염', 'B형간염',
   '폐렴', '협심증', '심근경색', '뇌졸중', '골관절염', '디스크', '대상포진', '백내장', '녹내장', '전립선비대',
-  '과민성대장', '지방간', '만성콩팥병', '코로나19', '독감', '대사증후군', '심부전', '부정맥', '위궤양', '담석',
+  '과민성대장', '지방간', '만성콩팥병', '코로나', '인플루엔자', '감기', '대사증후군', '심부전', '부정맥', '위궤양', '담석',
   // EID 법정감염병(감염병 현황판 연동) — 국가건강정보포털에 있는 것만 수집됨
   '수두', '말라리아', '백일해', '성홍열', '유행성이하선염', 'A형간염', '뎅기열', '쯔쯔가무시증', '신증후군출혈열', '레지오넬라증',
   '장출혈성대장균감염증', '매독', '홍역', '일본뇌염', '세균성이질', '장티푸스', '비브리오패혈증', '결핵', '수족구병', '파상풍',
@@ -66,11 +66,14 @@ async function viewFor(sn, tries = 0) {
 }
 
 const corpus = []
+const seenSn = new Set() // 전역 중복제거 — 여러 키워드가 같은 문서를 가리켜도 1번만(A형간염 중복 등 방지)
 let calls = 0
 for (const kw of KEYWORDS) {
   try {
     const items = await listFor(kw); await sleep(700); calls++
     for (const it of items) {
+      if (seenSn.has(it.sn)) { console.log(`  ↩ [${kw}] ${it.title} (중복 skip)`); continue }
+      seenSn.add(it.sn)
       const chunks = await viewFor(it.sn); await sleep(700); calls++
       if (chunks.length) { corpus.push({ title: it.title, cntntsSn: it.sn, portal: '질병관리청 국가건강정보포털', chunks }); console.log(`  ✓ [${kw}] ${it.title} (${chunks.length}섹션)`) }
       else console.log(`  · [${kw}] ${it.title} (본문 파싱 실패)`)
