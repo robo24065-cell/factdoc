@@ -391,6 +391,14 @@ export default function Home() {
             setInfo({ disease: dzF.canonical, summary: dc.msg, sections, hasOfficial: sections.length > 0, citation: undefined, isGuidance: true })
             setLoading(false); void logQuery(claim, 'unverified', 'info'); return
           }
+          // 위험 속성이 없는(중립) 음식 — 명시적 섭취 표현일 때만 스마트 중립 답변(운동·효과 등 오탐 회피)
+          if (/먹|드시|드셔|드세요|섭취|식단|식이/.test(claim)) {
+            const g = guidanceFor(dzF.canonical)
+            const core = g?.text ? g.text.split(/(?<=[.。])\s/)[0].slice(0, 90) : ''
+            const sections = await fetchDiseaseSections(dzF.canonical)
+            setInfo({ disease: dzF.canonical, summary: `해당 음식에서 ${dzF.canonical} 관리에 특별히 주의할 성분은 확인되지 않았어요. 균형 잡힌 식사의 일부로 적당량 드시면 괜찮습니다.${core ? ` 다만 핵심은 — ${core}` : ''} (음식 이름으로 추정한 일반 정보예요. 개인차가 있고 진단·치료를 대체하지 않아요.)`, sections, hasOfficial: sections.length > 0, citation: g?.citation, isGuidance: true })
+            setLoading(false); void logQuery(claim, 'unverified', 'info'); return
+          }
         }
       }
     }
