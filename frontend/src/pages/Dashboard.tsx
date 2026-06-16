@@ -10,6 +10,7 @@ import {
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
+import { loadPoorQueue, deletePoorItem, feedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 
@@ -19,6 +20,59 @@ const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 
 // 연령대별 분포 — 당뇨(KNHANES 유병률) 기본 + 드롭다운으로 실시간 다발 감염병(EID 연령분포)으로 전환.
 const AGE_BANDS = ['00~09', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~']
 function ageTotal(o?: Record<string, { m: number; f: number }>): number { let t = 0; if (o) for (const b of AGE_BANDS) { const c = o[b]; if (c) t += c.m + c.f } return t }
+// 부실응답 큐 — 사용자 불만족 신고를 AI/규칙이 1차 검토한 게시판. 제목 클릭 → 그때 답변 그대로. 관리/삭제.
+function PoorQueuePanel() {
+  const [items, setItems] = useState<PoorItem[]>([])
+  const [open, setOpen] = useState<string | null>(null)
+  const [filt, setFilt] = useState<'all' | 'poor'>('all')
+  const reload = () => loadPoorQueue().then(setItems)
+  useEffect(() => { reload() }, [])
+  const del = async (it: PoorItem) => { if (typeof confirm !== 'undefined' && !confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); reload() }
+  const st = feedbackStats()
+  const shown = filt === 'poor' ? items.filter((i) => i.aiVerdict === 'poor') : items
+  const VB: Record<string, { t: string; c: string }> = {
+    poor: { t: '부실 의심', c: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' },
+    'looks-ok': { t: '양호(오클릭?)', c: 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400' },
+    pending: { t: '검토대기', c: 'bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-300' },
+  }
+  return (
+    <Panel title="🗂 부실응답 큐 (불만족 신고)" desc="사용자 불만족 → AI/규칙 1차 검토 후 적재. 제목을 누르면 그때 사용자가 본 답변 전체를 그대로 봅니다." badge="실데이터" span="lg:col-span-2">
+      <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
+        <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">👍 만족 {st.up}</span>
+        <span className="rounded-full bg-rose-50 px-2 py-0.5 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">👎 불만족 {st.down}</span>
+        <span className="ml-auto inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
+          {(['all', 'poor'] as const).map((f) => (
+            <button key={f} onClick={() => setFilt(f)} className={`rounded-md px-2 py-0.5 font-medium transition ${filt === f ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500'}`}>{f === 'all' ? '전체' : '부실 의심만'}</button>
+          ))}
+        </span>
+      </div>
+      {shown.length === 0 ? (
+        <p className="py-6 text-center text-sm text-slate-400">아직 신고된 응답이 없어요. (홈에서 답변 하단 👎 불만족 시 여기 쌓여요)</p>
+      ) : (
+        <ul className="max-h-[420px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+          {shown.map((it) => (
+            <li key={it.id} className="py-2">
+              <div className="flex items-center gap-2">
+                <span className={`shrink-0 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${(VB[it.aiVerdict] || VB.pending).c}`}>{(VB[it.aiVerdict] || VB.pending).t}</span>
+                <button onClick={() => setOpen(open === it.id ? null : it.id)} className="flex-1 truncate text-left text-sm text-slate-800 hover:text-blue-600 dark:text-slate-100">{it.claim || '(제목 없음)'}</button>
+                <span className="shrink-0 text-[10px] text-slate-400">{it.ts ? new Date(it.ts).toLocaleDateString() : ''}</span>
+                <button onClick={() => del(it)} className="shrink-0 text-[11px] text-rose-400 hover:text-rose-600">삭제</button>
+              </div>
+              {open === it.id && (
+                <div className="mt-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
+                  <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300">🤖 AI 검토: {it.aiReason || '—'}</p>
+                  <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">{it.snapshot || '(스냅샷 없음)'}</pre>
+                  <Link to={`/?q=${encodeURIComponent(it.claim)}`} className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</Link>
+                </div>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </Panel>
+  )
+}
+
 function AgeDistPanel({ diabetes }: { diabetes: { age: string; rate: number }[] }) {
   const eidOpts = Object.keys(EID_SEXAGE)
     .map((k) => ({ key: k, name: k.replace(/^@/, ''), total: ageTotal(EID_SEXAGE[k]?.[EID_CUR_YEAR]) }))
@@ -194,6 +248,8 @@ export default function Dashboard() {
             </Panel>
           )
         })()}
+
+        <PoorQueuePanel />
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">

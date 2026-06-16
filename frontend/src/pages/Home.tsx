@@ -12,6 +12,7 @@ import { type EvidenceChunk } from '../lib/search'
 import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { eidPeerTop, eidLatestOutbreak } from '../lib/eidStats'
+import { feedbackUp, feedbackDown } from '../lib/feedback'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
 import Highlight from '../components/Highlight'
@@ -289,6 +290,7 @@ export default function Home() {
   const [topComment, setTopComment] = useState<string | null>(null)
   const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
   const [related, setRelated] = useState<string[]>([])
+  const [fb, setFb] = useState<'up' | 'down' | null>(null)
   const [focused, setFocused] = useState(false)
   // 내 또래 감염병 — 마이페이지 프로필(연령·성별)로 1회 산출(제미나이가 못 내는 개인화 답)
   const [peer] = useState(() => {
@@ -329,7 +331,7 @@ export default function Home() {
     if (!claim) return
     pushRecent(claim)
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([])
+    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([]); setFb(null)
     // 후속 질문 추천 — 질병 인식 시(어떤 경로로 답하든 표시)
     { const dzR = findInText(claim, 'disease'); if (dzR) setRelated(relatedQuestions(dzR.canonical, dzR.variants[0] || dzR.canonical).filter((q) => q !== claim)) }
 
@@ -528,6 +530,22 @@ export default function Home() {
     const flash = () => { setCopied(true); setTimeout(() => setCopied(false), 1800) }
     if (typeof navigator !== 'undefined' && navigator.share) navigator.share({ text }).then(flash).catch(() => {})
     else navigator.clipboard?.writeText(text).then(flash).catch(() => {})
+  }
+
+  // 답변 품질 피드백 — 불만족이면 사용자가 본 답변 전체(모든 카드·근거 펼쳐) 스냅샷 → AI/규칙 검토 → 부실응답 큐.
+  function collectSnapshot(): string {
+    const main = typeof document !== 'undefined' ? document.querySelector('main') : null
+    if (!main) return ''
+    main.querySelectorAll('details').forEach((d) => { (d as HTMLDetailsElement).open = true })
+    return (main as HTMLElement).innerText.replace(/[ \t]+/g, ' ').slice(0, 6000)
+  }
+  async function onFeedback(rating: 'up' | 'down') {
+    if (fb) return
+    setFb(rating)
+    const claim = result?.claimText || info?.disease || input.trim()
+    const verdict = result?.verdict || (info ? 'info' : topJudgment ? 'judgment' : 'unverified')
+    if (rating === 'up') feedbackUp(claim, verdict)
+    else { const snap = `[질문] ${claim}\n` + collectSnapshot(); void feedbackDown(claim, verdict, snap) }
   }
 
   const vui = result ? VUI[result.verdict] : null
@@ -965,14 +983,29 @@ export default function Home() {
         </div>
       )}
 
-      {/* 후속 질문 추천 — 결과가 있을 때 탐색 유도(어시스턴트 느낌) */}
+      {/* 답변 품질 피드백 — 작게, 답변 하단. 불만족 시 관리자 부실응답 큐로(AI/규칙 1차 검토 후) */}
+      {(result || info || topJudgment || substances.length > 0) && (
+        <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-400">
+          {fb ? (
+            <span>{fb === 'up' ? '🙏 의견 고마워요!' : '🙏 알려주셔서 고마워요 — 관리자 검토 큐로 전달했어요.'}</span>
+          ) : (
+            <>
+              <span>이 답변이 도움이 됐나요?</span>
+              <button type="button" onClick={() => onFeedback('up')} className="rounded-full border border-slate-200 px-2 py-0.5 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:hover:bg-slate-800">👍 만족</button>
+              <button type="button" onClick={() => onFeedback('down')} className="rounded-full border border-slate-200 px-2 py-0.5 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:hover:bg-slate-800">👎 불만족</button>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* 후속 질문 추천 — 맨 아래, 작게(탐색 유도) */}
       {related.length > 0 && (result || info || topJudgment || substances.length > 0) && (
-        <div className="mt-5">
-          <p className="mb-2 text-xs font-medium text-slate-500 dark:text-slate-400">🔎 이런 것도 확인해보세요</p>
-          <div className="flex flex-wrap gap-2">
+        <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <p className="mb-1.5 text-[11px] text-slate-400">🔎 이런 것도 확인해보세요</p>
+          <div className="flex flex-wrap gap-1.5">
             {related.map((q) => (
               <button key={q} type="button" onClick={() => { setInput(q); check(q); window.scrollTo({ top: 0, behavior: 'smooth' }) }}
-                className="rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">
+                className="rounded-full border border-slate-200 bg-white px-2.5 py-1 text-[11px] text-slate-500 active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-400">
                 {q}
               </button>
             ))}
