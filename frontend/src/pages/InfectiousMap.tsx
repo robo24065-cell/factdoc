@@ -1,7 +1,7 @@
 // 감염병 발생 현황판 — 질병관리청 감염병포털 EDW(시도×연 + 시도×주).
 // 연간/주별 토글: 연간=연도 슬라이더 다년 지도, 주별=주차 슬라이더가 지도를 직접 변경(시도×주). 발생수/발생률 칩, 에피데믹 커브, 분석 패널.
 // 데이터: 배치 정적 캐시(eid-region.ts), 지도경계: kr-geo.ts. per-request 외부호출 없음(§13.7).
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, type PointerEvent as RPointerEvent } from 'react'
 import {
   ResponsiveContainer, BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip as RTooltip, Cell, LabelList, ReferenceLine, PieChart, Pie, Brush,
@@ -609,7 +609,7 @@ function yearSidoVal(disease: string, year: string, sido: string): number {
   return EID_COUNT[year]?.[disease]?.[sido] || 0
 }
 
-type TPt = { x: number | string; label: string; actual: number | null; pred: number | null; dow?: string }
+type TPt = { x: number | string; label: string; actual: number | null; pred: number | null; dow?: string; full?: string }
 const DOW = ['일', '월', '화', '수', '목', '금', '토']
 function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number; selSido: string | null }) {
   const [tg, setTg] = useState<'day' | 'week' | 'month' | 'year'>('week')
@@ -645,16 +645,21 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
       return { data, predicted: hasPrior && remaining > 0, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위${inWeek ? ' · 지도 슬라이더 연동' : ''}`, minGap: 8 }
     }
     if (tg === 'month') {
+      // 다년 월별(작년·재작년 포함) — 길게 이어 붙여 주식차트식 패닝.
+      const yrs = (MONTH_YEARS.length ? MONTH_YEARS : [cur]).filter((y) => +y <= +cur)
       const curM = aggMonth(disease, cur); let k = -1; for (let m = 11; m >= 0; m--) if (curM[m] > 0) { k = m; break }
       const { est, hasPrior } = estimateAnnual(disease); const { share } = seasonalShare(disease)
       const data: TPt[] = []
-      for (let m = 0; m < 12; m++) {
-        const actual = m <= k ? curM[m] : null
-        let pred: number | null = null
-        if (hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = Math.round(est * share[m]) }
-        data.push({ x: m + 1, label: `${m + 1}월`, actual, pred })
+      for (const y of yrs) {
+        const mArr = aggMonth(disease, y); const isCur = +y === +cur
+        for (let m = 0; m < 12; m++) {
+          const actual = !isCur ? (mArr[m] ?? 0) : (m <= k ? curM[m] : null)
+          let pred: number | null = null
+          if (isCur && hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = Math.round(est * share[m]) }
+          data.push({ x: `${y}-${m + 1}`, label: `${String(y).slice(2)}.${m + 1}`, full: `${y}년 ${m + 1}월`, actual, pred })
+        }
       }
-      return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 올해 잔여기간 예측' + natNote, minGap: 6 }
+      return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 다년(작년·재작년 포함)' + natNote, minGap: 14 }
     }
     const years = MONTH_YEARS.length ? MONTH_YEARS : (EID_YEARS as readonly string[]).slice()
     if (selSido) { // 시도 연도별(예측 없음)
@@ -672,10 +677,10 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
   const hasData = built.data.some((r) => r.actual != null)
   const TG = [{ k: 'day', t: '일' }, { k: 'week', t: '주' }, { k: 'month', t: '월' }, { k: 'year', t: '년' }] as const
 
-  // 주식차트식 기간 패닝(드래그) + '현재' 칩 — 점이 많은 일·주에서만. '현재'=마지막 실제+예측 약간까지.
+  // 주식차트식 기간 패닝 — 차트 본체를 잡아끌면(드래그) 기간이 옆으로 이동. '현재' 칩=가장 최근으로.
   const n = built.data.length
-  const showPan = n > 16
-  const winSize = tg === 'day' ? 30 : 16
+  const winSize = tg === 'day' ? 30 : tg === 'month' ? 18 : 16
+  const showPan = n > winSize + 1 // 표시 가능 구간보다 데이터가 길 때만 패닝(작년·재작년 등 더 있을 때)
   const latestEnd = useMemo(() => {
     let la = n - 1; for (let i = n - 1; i >= 0; i--) if (built.data[i].actual != null) { la = i; break }
     return built.predicted ? Math.min(n - 1, la + 4) : la
@@ -683,6 +688,27 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
   const [win, setWin] = useState<{ s: number; e: number } | null>(null)
   const toLatest = () => setWin({ s: Math.max(0, latestEnd - winSize + 1), e: latestEnd })
   useEffect(() => { setWin(showPan ? { s: Math.max(0, latestEnd - winSize + 1), e: latestEnd } : null) }, [showPan, latestEnd, winSize, n])
+  // 본체 드래그 → win 이동(잡아끄는 느낌). Brush는 표시 기간 인디케이터로 유지.
+  const wrapRef = useRef<HTMLDivElement>(null)
+  const drag = useRef<{ x: number; s: number; e: number } | null>(null)
+  const onDown = (e: RPointerEvent) => {
+    if (!win || !showPan) return
+    if ((e.target as Element)?.closest?.('.recharts-brush')) return // Brush는 자체 드래그
+    drag.current = { x: e.clientX, s: win.s, e: win.e }
+    try { (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId) } catch { /* noop */ }
+  }
+  const onMove = (e: RPointerEvent) => {
+    if (!drag.current || !wrapRef.current) return
+    const w = wrapRef.current.clientWidth || 1
+    const ws = drag.current.e - drag.current.s + 1
+    const d = Math.round(-((e.clientX - drag.current.x) / w) * ws)
+    let s = drag.current.s + d, en = drag.current.e + d
+    if (s < 0) { en -= s; s = 0 }
+    if (en > n - 1) { s -= en - (n - 1); en = n - 1 }
+    setWin({ s: Math.max(0, s), e: en })
+  }
+  const onUp = () => { drag.current = null }
+  const rangeLabel = win && built.data[win.s] && built.data[win.e] ? `${built.data[win.s].full || built.data[win.s].label} ~ ${built.data[win.e].full || built.data[win.e].label}` : ''
 
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
@@ -690,30 +716,34 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
         <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 {scope} 발생 추이 — {diseaseLabel}</h3>
         <div className="flex items-center gap-2">
           <span className="hidden text-[11px] text-slate-400 lg:inline">{built.note} · 누적 {nf(totalActual)}건{peak.label ? ` · 최다 ${peak.label}` : ''}</span>
-          {showPan && <button onClick={toLatest} title="가장 최근으로" className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition active:scale-95 dark:bg-blue-950/40 dark:text-blue-300">현재</button>}
+          {showPan && rangeLabel && <span className="rounded-md bg-slate-100 px-2 py-1 text-[11px] font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-300">📅 {rangeLabel}</span>}
+          {showPan && <button onClick={toLatest} title="가장 최근 기간으로" className="rounded-md bg-blue-50 px-2.5 py-1 text-[11px] font-semibold text-blue-600 transition active:scale-95 dark:bg-blue-950/40 dark:text-blue-300">현재</button>}
           <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
             {TG.map((g) => (<button key={g.k} onClick={() => setTg(g.k)} className={`rounded-md px-3 py-1 text-xs font-semibold transition ${tg === g.k ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500 hover:text-slate-700'}`}>{g.t}</button>))}
           </div>
         </div>
       </div>
       {hasData ? (
+        <div ref={wrapRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
+          className={showPan ? 'cursor-grab touch-pan-y select-none active:cursor-grabbing' : ''}>
         <ResponsiveContainer width="100%" height={235}>
           <LineChart data={built.data} margin={{ top: 8, right: 18, left: -8, bottom: 0 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} minTickGap={built.minGap} />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
             <RTooltip formatter={(v, nm) => [nf(Number(v)) + '건', nm === 'pred' ? '예측치' : '실제']}
-              labelFormatter={(label, payload) => { const p = payload && payload[0] && (payload[0].payload as TPt); return p?.dow ? `${label} (${p.dow})` : String(label) }} />
+              labelFormatter={(label, payload) => { const p = payload && payload[0] && (payload[0].payload as TPt); const base = p?.full || String(label); return p?.dow ? `${base} (${p.dow})` : base }} />
             {built.predicted && <Line type="monotone" dataKey="pred" stroke="#f43f5e" strokeWidth={2} strokeDasharray="5 4" strokeOpacity={0.65} dot={false} connectNulls name="pred" isAnimationActive={false} />}
             <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={2.4} dot={tg === 'year' ? { r: 3 } : false} activeDot={{ r: 4 }} connectNulls name="actual" />
             {built.sel ? <ReferenceLine x={`${built.sel}주`} stroke="#2563eb" strokeOpacity={0.5} strokeWidth={1.5} label={{ value: `${built.sel}주`, fontSize: 10, fill: '#2563eb', position: 'top' }} /> : null}
             {showPan && win && <Brush dataKey="label" height={18} stroke="#93c5fd" travellerWidth={8} startIndex={win.s} endIndex={win.e} tickFormatter={() => ''} onChange={(r) => { if (r && typeof r.startIndex === 'number' && typeof r.endIndex === 'number') setWin({ s: r.startIndex, e: r.endIndex }) }} />}
           </LineChart>
         </ResponsiveContainer>
+        </div>
       ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {cur}년 데이터가 없습니다.</p>}
       <p className="mt-1 px-1 text-[11px] leading-relaxed text-slate-400">
         {built.predicted ? <><b className="text-rose-500">─ ─ 점선 = 예측치</b>(과거 연도의 같은 시기 패턴으로 추정한 값으로 실제와 다를 수 있어요). </> : null}
-        실선은 실제 발생수입니다. 일/주/월/년을 눌러 기간 단위를 바꿔보세요. 출처: 질병관리청 감염병포털.
+        실선은 실제 발생수예요. {showPan ? '차트를 좌우로 끌어 기간을 옮기고(또는 아래 띠), ‘현재’로 최근으로 돌아와요. ' : ''}일/주/월/년 단위를 바꿀 수 있어요. 출처: 질병관리청 감염병포털.
       </p>
     </div>
   )
