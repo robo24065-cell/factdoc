@@ -148,11 +148,21 @@ function josa(word: string, pair: '이가' | '은는' | '을를'): string {
   return word + (hasFinal ? pair[0] : pair[1])
 }
 
-// 합성 코멘트(질병 없이 2개 이상일 때) — Gemini 불필요 결정론
+// 각 성분/식품의 핵심 효과 한 줄(요약용)
+function subEffect(s: SubCard): string {
+  let e = ''
+  if (s.kind === 'food') e = s.data.effects?.[0]?.effect ?? ''
+  else if (s.kind === 'ingredient') e = s.info.efficacy ?? ''
+  else if (s.kind === 'product') e = s.data.ingredients?.[0]?.info.efficacy ?? ''
+  else if (s.kind === 'drug') e = (s.data as { summary?: string }).summary ?? ''
+  return e.split(/(?<=[.。])\s/)[0].replace(/\([^)]*\)/g, '').replace(/[.。]\s*$/, '').trim().slice(0, 60)
+}
+// 합성 코멘트 — '아래에서 확인하세요'식 회피 대신 각 성분의 핵심을 실제로 요약(결정론, Gemini 불필요)
 function synthComment(disease: string | null, subs: SubCard[]): string {
-  const list = subs.map(subLabel).join(' · ')
-  if (disease) return `‘${disease}’와 관련해 ${list}을(를) 살펴봤어요. 아래에서 각각의 성분·효과를 확인하세요. 식품·성분이 질병을 ‘치료’한다고 단정하진 않아요.`
-  return `${list}을(를) 살펴봤어요. 아래에서 각각 확인하세요.`
+  const parts = subs.slice(0, 3).map((s) => { const e = subEffect(s); return e ? `${subLabel(s)}은(는) ${e}` : '' }).filter(Boolean)
+  const body = parts.length ? parts.join(', ') + '.' : subs.map(subLabel).join(' · ') + ' 정보를 정리했어요.'
+  const head = disease ? `‘${disease}’ 관점에서 정리하면 — ` : '요약하면 — '
+  return `${head}${body} 다만 식품·성분은 건강을 돕는 보조적 역할이고 질병을 ‘치료’한다고 보장하지 않아요(자세한 근거 수준은 아래 카드 참고).`
 }
 
 // ── AI 종합 판단 카드(질병 + 약/음식) — "먹어도 되는지" 판단+근거+연결고리(Why-Trace). 결정론 ──
