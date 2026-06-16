@@ -9,8 +9,8 @@ function lastWeekIdx(): number {
 }
 const sum = (a: number[] | undefined, s: number, e: number) => { let t = 0; if (a) for (let i = Math.max(0, s); i <= e; i++) t += a[i] || 0; return t }
 
-export interface OutbreakItem { name: string; grp: string; count: number; trend: 'up' | 'down' | 'flat' }
-// 최신 주차 기준 '최근 4주' 발생 현황(신고지연 보정). 어드민·유행 공용.
+export interface OutbreakItem { name: string; grp: string; count: number; prior: number; pct: number; trend: 'up' | 'down' | 'flat' }
+// 최신 주차 기준 '최근 4주' 발생 현황(신고지연 보정). 어드민·유행 공용. pct=직전4주 대비 증감%.
 export function eidLatestOutbreak(): { year: string; week: number; rows: OutbreakItem[] } {
   const last = lastWeekIdx()
   if (last < 0) return { year: EID_CUR_YEAR, week: 0, rows: [] }
@@ -18,7 +18,8 @@ export function eidLatestOutbreak(): { year: string; week: number; rows: Outbrea
   const rows = EID_WEEKLY_DISEASES.map((d) => {
     const a = EID_WK_NAT[d]
     const recent = sum(a, ws, last), prior = sum(a, ws - 4, ws - 1)
-    return { name: cleanName(d), grp: EID_GROUP[d], count: recent, trend: (recent > prior * 1.1 ? 'up' : recent < prior * 0.9 ? 'down' : 'flat') as OutbreakItem['trend'] }
+    const pct = prior > 0 ? Math.round(((recent - prior) / prior) * 100) : (recent > 0 ? 100 : 0)
+    return { name: cleanName(d), grp: EID_GROUP[d], count: recent, prior, pct, trend: (recent > prior * 1.1 ? 'up' : recent < prior * 0.9 ? 'down' : 'flat') as OutbreakItem['trend'] }
   }).filter((r) => r.count > 0).sort((x, y) => y.count - x.count)
   return { year: EID_CUR_YEAR, week: last + 1, rows }
 }

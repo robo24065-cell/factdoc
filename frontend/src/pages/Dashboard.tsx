@@ -125,8 +125,8 @@ export default function Dashboard() {
           const eid = eidLatestOutbreak()
           // EID 최신 주차(자동갱신)를 우선 — Supabase outbreak_trend는 보조 폴백(정적/구버전일 수 있음)
           const obRows = eid.rows.length
-            ? eid.rows.map((o) => ({ name: o.name, count: o.count, trend: o.trend }))
-            : (outbreak ?? []).map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend ?? 'flat' }))
+            ? eid.rows.map((o) => ({ name: o.name, count: o.count, trend: o.trend, pct: o.pct as number | null }))
+            : (outbreak ?? []).map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend ?? 'flat', pct: null as number | null }))
           const max = Math.max(...obRows.map((x) => x.count), 1)
           const live = obRows.length > 0
           return (
@@ -138,7 +138,7 @@ export default function Dashboard() {
                     <li key={r.name}>
                       <div className="flex items-center justify-between gap-2">
                         <span className="truncate text-slate-700 dark:text-slate-200">{r.name}</span>
-                        <span className={`shrink-0 text-xs font-medium ${t.color}`}>{t.arrow} {r.count.toLocaleString()}건</span>
+                        <span className={`shrink-0 text-xs font-medium ${t.color}`}>{t.arrow} {r.count.toLocaleString()}건{r.pct != null ? <span className="ml-1 font-normal text-slate-400">({r.pct > 0 ? '+' : ''}{r.pct}%)</span> : null}</span>
                       </div>
                       <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
                         <div className="h-1.5 rounded-full" style={{ width: `${(r.count / max) * 100}%`, background: t.bar }} />
