@@ -1,11 +1,13 @@
-// Supabase Edge Function (Deno): 주장 텍스트 → 트리플(JSON) — Gemini Flash-Lite
+// Supabase Edge Function (Deno): 주장 텍스트 → 트리플(JSON) — Gemini Flash-Lite(폴백 Flash)
 // 진실 판단은 하지 않는다(룰·그래프 엔진 담당). 파싱만. CLAUDE.md §13.4
 //
 // 배포:  supabase functions deploy parse-claim
-// 시크릿: supabase secrets set GEMINI_API_KEY=AIza...   ← 표준 API 키 필요(AQ. 임시토큰 아님)
+// 시크릿: supabase secrets set GEMINI_API_KEYS="키1,키2,키3,키4"  (콤마구분 키 풀 → 쿼터 합산·로테이션)
 // 호출:  supabase.functions.invoke('parse-claim', { body: { text } })
+import { geminiGenerate } from '../_shared/gemini.ts'
 
-const MODEL = 'gemini-2.5-flash-lite'
+// 질문파악(클레임 파싱): 빠르고 저렴한 flash-lite 우선, 과부하·쿼터 시 flash 폴백.
+const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
 
 const SYSTEM = `너는 건강정보 팩트체커의 '주장 추출기'다. 입력 문장에서 검증 대상이 되는 주장을 구조화된 트리플(JSON)로만 변환한다.
 - 너는 주장의 진실 여부를 절대 판정하지 않는다(판정은 별도 룰·그래프 엔진이 한다).
@@ -33,29 +35,16 @@ function json(obj: unknown, status = 200): Response {
 Deno.serve(async (req: Request) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: cors })
   try {
-    const key = Deno.env.get('GEMINI_API_KEY')
-    if (!key) return json({ error: 'GEMINI_API_KEY 미설정 (supabase secrets set)' }, 500)
-
     const { text } = await req.json()
     if (!text || typeof text !== 'string') return json({ error: 'text(string) 필요' }, 400)
 
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${key}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          systemInstruction: { parts: [{ text: SYSTEM }] },
-          contents: [{ parts: [{ text }] }],
-          generationConfig: { responseMimeType: 'application/json', temperature: 0 },
-        }),
-      },
-    )
-
-    if (!res.ok) return json({ error: `Gemini ${res.status}`, detail: await res.text() }, 502)
-    const data = await res.json()
-    const out = data?.candidates?.[0]?.content?.parts?.[0]?.text ?? '{"claims":[]}'
-    return new Response(out, { headers: { ...cors, 'Content-Type': 'application/json' } })
+    const { text: out } = await geminiGenerate({
+      system: SYSTEM,
+      prompt: text,
+      models: MODELS,
+      generationConfig: { responseMimeType: 'application/json', temperature: 0 },
+    })
+    return new Response(out || '{"claims":[]}', { headers: { ...cors, 'Content-Type': 'application/json' } })
   } catch (e) {
     return json({ error: String(e) }, 500)
   }
