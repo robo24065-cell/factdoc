@@ -25,6 +25,9 @@ export function feedbackStats(): { up: number; down: number } {
   try { return JSON.parse(localStorage.getItem(LS_STATS) || '{"up":0,"down":0}') } catch { return { up: 0, down: 0 } }
 }
 function bumpStat(k: 'up' | 'down') { const s = feedbackStats(); s[k]++; try { localStorage.setItem(LS_STATS, JSON.stringify(s)) } catch { /* */ } }
+function dropStat(k: 'up' | 'down') { const s = feedbackStats(); s[k] = Math.max(0, s[k] - 1); try { localStorage.setItem(LS_STATS, JSON.stringify(s)) } catch { /* */ } }
+// 만족/불만족 누계 초기화(관리자) — 카운트만 0으로(큐 항목은 유지).
+export function resetFeedbackStats(): void { try { localStorage.setItem(LS_STATS, JSON.stringify({ up: 0, down: 0 })) } catch { /* */ } }
 
 // 규칙 기반 1차 검토 — AI Edge Function 미배포 시 대체(보류·무출처·과단문이면 부실 후보).
 function heuristicReview(verdict: string, snapshot: string): { poor: boolean; reason: string } {
@@ -85,7 +88,7 @@ export async function loadPoorQueue(): Promise<PoorItem[]> {
 
 export async function deletePoorItem(item: PoorItem): Promise<void> {
   saveLocal(loadLocal().filter((i) => i.id !== item.id))
-  if (supabase && /^\d/.test(item.id) === false) { /* 로컬 id는 Supabase에 없을 수 있음 */ }
+  dropStat('down') // 삭제하면 불만족 누계도 함께 감소(버그 수정: 삭제 후에도 카운트 유지되던 문제)
   if (supabase) { try { void supabase.from('answer_feedback').delete().eq('claim', item.claim).eq('rating', 'down') } catch { /* */ } }
 }
 

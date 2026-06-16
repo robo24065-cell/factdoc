@@ -10,7 +10,7 @@ import {
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
-import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, type PoorItem } from '../lib/feedback'
+import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 import InfoTip from '../components/InfoTip'
@@ -28,15 +28,16 @@ function PoorQueuePanel() {
   const [open, setOpen] = useState<string | null>(null)
   const [filt, setFilt] = useState<'all' | 'poor'>('all')
   const [full, setFull] = useState(false)
-  const reload = () => loadPoorQueue().then(setItems)
+  const [st, setSt] = useState(feedbackStats())
+  const reload = () => { loadPoorQueue().then(setItems); setSt(feedbackStats()) }
   useEffect(() => { reload() }, [])
+  const resetCounts = () => { if (typeof confirm !== 'undefined' && !confirm('만족·불만족 누계 카운트를 0으로 초기화할까요? (큐 항목은 유지)')) return; resetFeedbackStats(); setSt(feedbackStats()) }
   const del = async (it: PoorItem) => { if (typeof confirm !== 'undefined' && !confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); reload() }
   const download = () => {
     const blob = new Blob([poorQueueCSV(items)], { type: 'text/csv;charset=utf-8' })
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
     a.download = `factdoc_불만족로그_${items.length}건.csv`; a.click(); URL.revokeObjectURL(a.href)
   }
-  const st = feedbackStats()
   const shown = filt === 'poor' ? items.filter((i) => i.aiVerdict === 'poor') : items
   const VB: Record<string, { t: string; c: string }> = {
     poor: { t: '부실 의심', c: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300' },
@@ -48,6 +49,7 @@ function PoorQueuePanel() {
       <div className="mb-2 flex flex-wrap items-center gap-2 text-[11px] text-slate-500">
         <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300">👍 만족 {st.up}</span>
         <span className="rounded-full bg-rose-50 px-2 py-0.5 text-rose-600 dark:bg-rose-950/40 dark:text-rose-300">👎 불만족 {st.down}</span>
+        <button onClick={resetCounts} title="만족·불만족 누계 초기화" className="rounded-md border border-slate-200 px-1.5 py-0.5 text-slate-400 hover:bg-slate-50 hover:text-slate-600 dark:border-slate-700 dark:hover:bg-slate-800">↺ 초기화</button>
         <span className="ml-auto inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
           {(['all', 'poor'] as const).map((f) => (
             <button key={f} onClick={() => setFilt(f)} className={`rounded-md px-2 py-0.5 font-medium transition ${filt === f ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500'}`}>{f === 'all' ? '전체' : '부실 의심만'}</button>

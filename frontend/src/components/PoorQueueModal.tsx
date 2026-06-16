@@ -1,7 +1,7 @@
 // 부실응답 큐 — 전체화면 검토 창. 필터·검색·정렬·체크박스 일괄(삭제/다운로드)·아코디언·페이지네이션.
 // 대시보드 패널의 '전체화면' 버튼에서 염. 데이터는 부모가 주입(loadPoorQueue 결과).
 import { useEffect, useMemo, useState } from 'react'
-import { deletePoorItem, poorQueueCSV, poorQueueTXT, feedbackStats, type PoorItem } from '../lib/feedback'
+import { deletePoorItem, poorQueueCSV, poorQueueTXT, feedbackStats, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 
 type Filt = 'all' | 'poor' | 'looks-ok' | 'pending'
 const VB: Record<string, { t: string; c: string }> = {
@@ -23,11 +23,13 @@ export default function PoorQueueModal({ items, onClose, onChanged }: { items: P
   const [page, setPage] = useState(0)
   const [open, setOpen] = useState<string | null>(null)
   const [sel, setSel] = useState<Set<string>>(new Set())
+  const [stVer, setStVer] = useState(0)
 
   useEffect(() => { const h = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }; document.addEventListener('keydown', h); return () => document.removeEventListener('keydown', h) }, [onClose])
   useEffect(() => { setPage(0) }, [filt, q, sort])
 
-  const st = feedbackStats()
+  const st = useMemo(() => feedbackStats(), [items, stVer])
+  function resetCounts() { if (!confirm('만족·불만족 누계 카운트를 0으로 초기화할까요? (큐 항목은 유지)')) return; resetFeedbackStats(); setStVer((v) => v + 1) }
   const counts = useMemo(() => ({
     all: items.length,
     poor: items.filter((i) => i.aiVerdict === 'poor').length,
@@ -57,9 +59,9 @@ export default function PoorQueueModal({ items, onClose, onChanged }: { items: P
     if (!selItems.length) return
     if (!confirm(`선택한 ${selItems.length}건을 삭제할까요?`)) return
     for (const it of selItems) await deletePoorItem(it)
-    setSel(new Set()); onChanged()
+    setSel(new Set()); setStVer((v) => v + 1); onChanged()
   }
-  async function delOne(it: PoorItem) { if (!confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); onChanged() }
+  async function delOne(it: PoorItem) { if (!confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); setStVer((v) => v + 1); onChanged() }
 
   const dlBase = selItems.length ? selItems : filtered
   const dlLabel = selItems.length ? `선택 ${selItems.length}건` : `${filtered.length}건`
@@ -71,7 +73,10 @@ export default function PoorQueueModal({ items, onClose, onChanged }: { items: P
         <div className="flex items-center justify-between gap-3 border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
           <div>
             <h2 className="text-lg font-semibold text-slate-900 dark:text-white">🗂 부실응답 큐 — 전체 검토</h2>
-            <p className="mt-0.5 text-xs text-slate-500">사용자 불만족 → AI/규칙 1차 검토 적재 · 👍 {st.up} · 👎 {st.down} · 총 {items.length}건</p>
+            <p className="mt-0.5 flex flex-wrap items-center gap-1.5 text-xs text-slate-500">
+              <span>사용자 불만족 → AI/규칙 1차 검토 적재 · 👍 {st.up} · 👎 {st.down} · 총 {items.length}건</span>
+              <button onClick={resetCounts} title="만족·불만족 누계 0으로 초기화" className="rounded border border-slate-200 px-1.5 py-0.5 text-[11px] text-slate-400 hover:bg-slate-50 hover:text-slate-600 dark:border-slate-700 dark:hover:bg-slate-800">↺ 카운트 초기화</button>
+            </p>
           </div>
           <button onClick={onClose} className="rounded-lg px-3 py-1.5 text-sm text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800">닫기 ✕</button>
         </div>
