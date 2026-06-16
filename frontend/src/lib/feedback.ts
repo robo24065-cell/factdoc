@@ -99,6 +99,20 @@ export function setPoorReason(id: string, userReason: string): void {
   if (supabase) { try { void supabase.from('answer_feedback').update({ user_reason: userReason }).eq('id', id) } catch { /* */ } }
 }
 
+// TXT 내보내기 — 사람이 읽기 좋은 줄글(검토 보고용).
+export function poorQueueTXT(items: PoorItem[]): string {
+  const VL: Record<string, string> = { poor: '부실 의심', 'looks-ok': '양호(오클릭?)', pending: '검토대기' }
+  const blocks = items.map((i, n) => [
+    `[${n + 1}] ${i.claim || '(제목 없음)'}`,
+    `  일시: ${i.ts ? new Date(i.ts).toLocaleString('ko-KR') : '—'}`,
+    `  판정: ${i.verdict || '—'}  ·  AI 검토: ${VL[i.aiVerdict] || i.aiVerdict}`,
+    i.userReason ? `  사용자 불만 사유: ${i.userReason}` : null,
+    `  AI 사유: ${i.aiReason || '—'}`,
+    `  답변 스냅샷:\n${(i.snapshot || '(없음)').split('\n').map((l) => '    ' + l).join('\n')}`,
+  ].filter(Boolean).join('\n'))
+  return `FactDoc 부실응답 큐 (${items.length}건)\n생성: ${new Date().toLocaleString('ko-KR')}\n${'═'.repeat(48)}\n\n` + blocks.join(`\n\n${'─'.repeat(48)}\n\n`)
+}
+
 // CSV 내보내기 — 관리자 부실응답 큐 다운로드(엑셀에서 열림).
 export function poorQueueCSV(items: PoorItem[]): string {
   const esc = (v: string) => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`

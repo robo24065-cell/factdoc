@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { fetchReviewQueue, setTier, setVerdict, deleteCached, flagForReview, type ReviewItem } from '../lib/cache'
 import type { Verdict } from '../engine'
+import InfoTip from '../components/InfoTip'
+
+const PER_PAGE = 12
 
 const VLABEL: Record<Verdict, { label: string; badge: string; chip: string }> = {
   true: { label: '사실', badge: 'bg-emerald-100 text-emerald-800', chip: 'bg-emerald-600 text-white' },
@@ -30,8 +33,10 @@ export default function Review() {
   const [busy, setBusy] = useState<number | null>(null)
   const [filter, setFilter] = useState<Filter>('all')
   const [q, setQ] = useState('')
+  const [page, setPage] = useState(0)
 
   useEffect(() => { fetchReviewQueue().then(setItems) }, [])
+  useEffect(() => { setPage(0) }, [filter, q])
   async function refresh() { setItems(await fetchReviewQueue()) }
   async function run(id: number, fn: () => Promise<unknown>) { setBusy(id); await fn(); await refresh(); setBusy(null) }
 
@@ -59,10 +64,14 @@ export default function Review() {
     { k: 'verified', label: '검증완료', c: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' },
   ]
 
+  const pageCount = Math.max(1, Math.ceil(shown.length / PER_PAGE))
+  const p = Math.min(page, pageCount - 1)
+  const pageItems = shown.slice(p * PER_PAGE, p * PER_PAGE + PER_PAGE)
+
   return (
     <div className="mx-auto max-w-3xl">
       <h1 className="text-2xl font-medium text-slate-900 dark:text-white">사람 검토 큐</h1>
-      <p className="mt-1 text-sm text-slate-500">판정 교정·검증완료 승격·재검토·삭제. 빠른 판정은 아래 색 버튼을 누르세요.</p>
+      <p className="mt-1 text-sm text-slate-500">판정 교정·검증완료<InfoTip term="검증완료" /> 승격·재검토·삭제. 보류<InfoTip term="보류" /> 항목은 코퍼스 보강 후보입니다. 빠른 판정은 아래 색 버튼을 누르세요.</p>
 
       {items === null ? (
         <div className="mt-8 rounded-xl border border-slate-200 bg-slate-50 p-5 text-sm text-slate-500 dark:border-slate-800 dark:bg-slate-900">
@@ -90,7 +99,7 @@ export default function Review() {
             <p className="mt-8 text-center text-sm text-slate-400">해당하는 항목이 없습니다.</p>
           ) : (
             <ul className="mt-3 space-y-2.5">
-              {shown.map((it) => {
+              {pageItems.map((it) => {
                 const stale = it.tier === 'verified' && isStale(it.created_at)
                 const hint = aiHint(it)
                 return (
@@ -135,6 +144,19 @@ export default function Review() {
                 )
               })}
             </ul>
+          )}
+          {pageCount > 1 && (
+            <div className="mt-4 flex items-center justify-center gap-1">
+              <button disabled={p === 0} onClick={() => setPage(p - 1)} className="rounded-lg border border-slate-200 px-2.5 py-1 text-sm text-slate-500 disabled:opacity-30 dark:border-slate-700">‹</button>
+              {Array.from({ length: pageCount }, (_, i) => i).filter((i) => Math.abs(i - p) <= 2 || i === 0 || i === pageCount - 1).map((i, idx, arr) => (
+                <span key={i} className="flex items-center">
+                  {idx > 0 && arr[idx - 1] !== i - 1 && <span className="px-1 text-slate-300">…</span>}
+                  <button onClick={() => setPage(i)} className={`h-8 min-w-8 rounded-lg px-2 text-sm ${i === p ? 'bg-blue-600 text-white' : 'border border-slate-200 text-slate-600 dark:border-slate-700 dark:text-slate-300'}`}>{i + 1}</button>
+                </span>
+              ))}
+              <button disabled={p >= pageCount - 1} onClick={() => setPage(p + 1)} className="rounded-lg border border-slate-200 px-2.5 py-1 text-sm text-slate-500 disabled:opacity-30 dark:border-slate-700">›</button>
+              <span className="ml-2 text-[11px] text-slate-400">{shown.length}건 · {p + 1}/{pageCount}p</span>
+            </div>
           )}
           <p className="mt-3 text-[11px] text-slate-400">색 판정 버튼 = 즉시 교정+검증완료 처리. 탭/검색으로 필요한 항목만 골라 관리하세요.</p>
         </>

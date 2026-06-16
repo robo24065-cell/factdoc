@@ -13,6 +13,8 @@ import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
 import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
+import InfoTip from '../components/InfoTip'
+import PoorQueueModal from '../components/PoorQueueModal'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
 const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }
@@ -25,6 +27,7 @@ function PoorQueuePanel() {
   const [items, setItems] = useState<PoorItem[]>([])
   const [open, setOpen] = useState<string | null>(null)
   const [filt, setFilt] = useState<'all' | 'poor'>('all')
+  const [full, setFull] = useState(false)
   const reload = () => loadPoorQueue().then(setItems)
   useEffect(() => { reload() }, [])
   const del = async (it: PoorItem) => { if (typeof confirm !== 'undefined' && !confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); reload() }
@@ -51,7 +54,9 @@ function PoorQueuePanel() {
           ))}
         </span>
         {items.length > 0 && <button onClick={download} className="rounded-md border border-slate-200 px-2 py-0.5 font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">⬇ CSV</button>}
+        <button onClick={() => setFull(true)} className="rounded-md bg-blue-600 px-2 py-0.5 font-medium text-white hover:bg-blue-700">⛶ 전체화면 검토</button>
       </div>
+      {full && <PoorQueueModal items={items} onClose={() => setFull(false)} onChanged={reload} />}
       {shown.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-400">아직 신고된 응답이 없어요. (홈에서 답변 하단 👎 불만족 시 여기 쌓여요)</p>
       ) : (
@@ -150,8 +155,8 @@ export default function Dashboard() {
       <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-4">
         <Kpi label="검증한 주장" value={db ? db.checks.toLocaleString() : '1,284'} hint={db ? '고유 주장(verdict_cache)' : '이번 주 +312'} accent="text-indigo-600" demo={!db} />
         <Kpi label="판정 정확도" value={`${(evalReport.byTier.verified.acc * 100).toFixed(0)}%`} hint={`검증코어 ${evalReport.byTier.verified.n}건 · 광역 ${(evalReport.accuracy * 100).toFixed(0)}%(복문=Gemini)`} accent="text-emerald-600" />
-        <Kpi label="인용 정확도" value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
-        <Kpi label="근거 트리플" value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
+        <Kpi label={<>인용 정확도 <InfoTip term="인용정확도" /></>} value={`${(evalReport.citationCoverage * 100).toFixed(0)}%`} hint="출처 보유율" accent="text-emerald-600" />
+        <Kpi label={<>근거 트리플 <InfoTip term="트리플" /></>} value={`${triples}`} hint={db ? '실시간(claim_triple)' : '시드'} accent="text-blue-600" demo={!db} />
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -203,11 +208,11 @@ export default function Dashboard() {
 
         <Panel title="AI 성능 검증" desc="시드 라벨셋 자동 채점 결과" badge="실데이터">
           <div className="space-y-3 pt-1">
-            <Metric label="판정 정확도(검증코어)" value={evalReport.byTier.verified.acc} />
-            <Metric label="인용 정확도" value={evalReport.citationCoverage} />
+            <Metric label={<>판정 정확도(<span className="align-middle">검증코어</span> <InfoTip term="검증완료" />)</>} value={evalReport.byTier.verified.acc} />
+            <Metric label={<>인용 정확도 <InfoTip term="인용정확도" /></>} value={evalReport.citationCoverage} />
             <Metric label="평균 F1" value={f1Avg} />
             <p className="pt-1 text-xs text-slate-400">
-              광역 듀얼라벨 {evalReport.byTier.dual.n}건(κ {evalReport.meta.kappa?.toFixed(2) ?? '—'}) {(evalReport.byTier.dual.acc * 100).toFixed(0)}% · 복문은 Gemini 파서 영역. 진실판단은 룰·그래프(LLM 아님).
+              광역 듀얼라벨 {evalReport.byTier.dual.n}건(κ<InfoTip term="카파" /> {evalReport.meta.kappa?.toFixed(2) ?? '—'}) {(evalReport.byTier.dual.acc * 100).toFixed(0)}% · 복문은 Gemini 파서 영역. 진실판단은 룰·그래프(LLM 아님).
             </p>
           </div>
         </Panel>
@@ -326,7 +331,7 @@ function Panel({ title, desc, badge, span, children }: { title: string; desc: st
   )
 }
 
-function Kpi({ label, value, hint, accent, demo }: { label: string; value: string; hint: string; accent: string; demo?: boolean }) {
+function Kpi({ label, value, hint, accent, demo }: { label: ReactNode; value: string; hint: string; accent: string; demo?: boolean }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
       <div className="flex items-center justify-between">
@@ -339,7 +344,7 @@ function Kpi({ label, value, hint, accent, demo }: { label: string; value: strin
   )
 }
 
-function Metric({ label, value }: { label: string; value: number }) {
+function Metric({ label, value }: { label: ReactNode; value: number }) {
   return (
     <div>
       <div className="flex justify-between text-xs">

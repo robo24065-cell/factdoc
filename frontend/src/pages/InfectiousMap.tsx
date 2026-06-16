@@ -14,6 +14,7 @@ import {
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 import { eidGrowthSignal } from '../lib/eidStats'
 import { openInfectionReport, type InfectionReportData } from '../lib/infectionReport'
+import InfoTip, { GLOSSARY } from '../components/InfoTip'
 
 type Metric = 'count' | 'rate'
 const ALL = '__ALL__'
@@ -254,7 +255,7 @@ export default function InfectiousMap() {
               <span className="text-rose-500">🦠</span> 감염병 발생 현황판
             </h1>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-              질병관리청 <b>감염병포털 발생현황</b> · 전국 17개 시·도 · 시도별 <b>주(週) 단위</b>까지
+              질병관리청 <b>감염병포털 발생현황</b><InfoTip term="전수신고" /> · 전국 17개 시·도 · 시도별 <b>주(週) 단위</b>까지
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -310,6 +311,7 @@ export default function InfectiousMap() {
                   </button>
                 ))}
               </div>
+              <InfoTip term="발생률" />
             </div>
             <span className="text-[11px] text-slate-400">{effMetric === 'count' ? (inWeek ? '시도×주 발생수 — 주차 슬라이더가 지도를 바꿉니다' : '신고된 환자 수') : (inWeek ? `해당 주 인구10만명당 발생률(인구는 ${POP_YEAR}년 기준) — 인구 적은 지역 유행강도까지 공정비교` : '인구 대비 발생률 — 인구 적은 지역 유행강도까지 공정비교')}</span>
           </div>
@@ -330,7 +332,7 @@ export default function InfectiousMap() {
             <div ref={mapRef} className="relative rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-white p-3 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
               <div className="mb-1 flex items-center justify-between px-1">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
-                  {diseaseLabel} · {periodLabel} 시·도 {effMetric === 'count' ? '발생 분포' : '발생률(10만명당) 분포'}
+                  {diseaseLabel}{/CRE|카바페넴/.test(diseaseLabel) && <InfoTip term="CRE" />} · {periodLabel} 시·도 {effMetric === 'count' ? '발생 분포' : '발생률(10만명당) 분포'}
                 </h2>
                 {selected && (<button onClick={() => setSelected(null)} className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-500 hover:bg-slate-200 dark:bg-slate-800">전국 보기 ✕</button>)}
               </div>
@@ -555,7 +557,7 @@ export default function InfectiousMap() {
           })()}
           {selected && <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-700 sm:col-span-3 2xl:col-span-1 dark:bg-amber-950/30 dark:text-amber-300">ℹ️ 성별·연령·환자분류·감염지역은 질병관리청이 <b>전국 단위로만</b> 제공해, {SIDO_NAME[selected]} 선택과 무관하게 전국 기준으로 표시됩니다. (시도별 분포는 위 지도·순위·추이를 참고)</p>}
           <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
-          <DonutPanel title="환자분류" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
+          <DonutPanel title="환자분류" tip="병원체보유자" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
           <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
         </div>
         </div>
@@ -583,7 +585,7 @@ function Kpi({ label, value, unit, tone }: { label: string; value: string; unit:
   )
 }
 
-function Panel({ title, children }: { title: string; children: React.ReactNode }) {
+function Panel({ title, children }: { title: React.ReactNode; children: React.ReactNode }) {
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <h3 className="mb-2 px-1 text-sm font-semibold text-slate-700 dark:text-slate-200">{title}</h3>
@@ -865,10 +867,10 @@ function SexAgePyramid({ disease, diseaseLabel, year }: { disease: string; disea
   )
 }
 
-function DonutPanel({ title, data, colors, note, year }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string; year: string }) {
+function DonutPanel({ title, data, colors, note, year, tip }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string; year: string; tip?: keyof typeof GLOSSARY }) {
   const total = data.reduce((s, d) => s + d.value, 0)
   return (
-    <Panel title={`${title} (연간 ${year})`}>
+    <Panel title={<>{title} (연간 {year}){tip && <InfoTip term={tip} />}</>}>
       {total === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
         <div className="flex items-center gap-2">
           <ResponsiveContainer width="48%" height={150}>
