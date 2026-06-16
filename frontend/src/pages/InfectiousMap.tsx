@@ -13,6 +13,7 @@ import {
 } from '../data/eid-region'
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 import { eidGrowthSignal } from '../lib/eidStats'
+import { openInfectionReport, type InfectionReportData } from '../lib/infectionReport'
 
 type Metric = 'count' | 'rate'
 const ALL = '__ALL__'
@@ -216,6 +217,33 @@ export default function InfectiousMap() {
     if (r) setTip({ x: e.clientX - r.left, y: e.clientY - r.top, code })
   }
 
+  // 📄 PDF 리포트 — 현재 선택(감염병·기간·지표)을 A4 양식으로 새 창에 렌더 + 인쇄
+  function generateReport() {
+    const svg = mapRef.current?.querySelector('svg')
+    const g = eidGrowthSignal()
+    const data: InfectionReportData = {
+      diseaseLabel,
+      periodLabel,
+      metricLabel: effMetric === 'count' ? '발생 수' : '인구 10만 명당 발생률',
+      unit: u,
+      nationTotal: fmt(nationTotal, effMetric),
+      topName: topSido && topSido.value > 0 ? topSido.name : '—',
+      topValue: topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음',
+      yoyLabel: inWeek ? '전주 대비' : '전년 대비',
+      yoyBadge,
+      yoyIsUp: yoy === null ? null : yoy > 0 ? true : yoy < 0 ? false : null,
+      insight,
+      ranking: rankPos.map((r) => ({ name: r.name, value: r.value, valueFmt: `${fmt(r.value, effMetric)}${u}` })),
+      trend: trend.map((t) => ({ year: String(t.year), value: fmt(Number(t.전국), effMetric) })),
+      growth: g.rows.slice(0, 6).map((r) => ({ grp: r.grp, name: r.name, growthPct: r.growthPct, prior: r.prior, recent: r.recent })),
+      growthWeek: g.rows.length ? g.week : null,
+      mapSvg: svg ? svg.outerHTML : null,
+      isPartial,
+    }
+    const ok = openInfectionReport(data)
+    if (!ok) alert('팝업이 차단되었어요. 브라우저 주소창의 팝업 허용을 켜고 다시 시도해 주세요.')
+  }
+
   return (
     <div className="lg:w-screen lg:max-w-none lg:relative lg:left-1/2 lg:right-1/2 lg:-ml-[50vw] lg:-mr-[50vw] lg:px-6">
       <div className="mx-auto max-w-7xl 2xl:max-w-[1760px]">
@@ -229,7 +257,14 @@ export default function InfectiousMap() {
               질병관리청 <b>감염병포털 발생현황</b> · 전국 17개 시·도 · 시도별 <b>주(週) 단위</b>까지
             </p>
           </div>
-          <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">출처: 질병관리청 감염병포털</span>
+          <div className="flex items-center gap-2">
+            <button onClick={generateReport}
+              className="flex items-center gap-1.5 rounded-full bg-blue-600 px-3.5 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-blue-700 active:scale-95"
+              title="현재 선택(감염병·기간·지표)을 A4 분석 리포트로 저장">
+              <span>📄</span> 리포트(PDF) 저장
+            </button>
+            <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-500 dark:bg-slate-800 dark:text-slate-400">출처: 질병관리청 감염병포털</span>
+          </div>
         </div>
 
         {/* 컨트롤 */}
