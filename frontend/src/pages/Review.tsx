@@ -12,6 +12,17 @@ const VERDICTS: Verdict[] = ['true', 'partial', 'false', 'unverified']
 const STALE_DAYS = 30
 const isStale = (createdAt: string) => { const d = Date.parse(createdAt); return Number.isFinite(d) && Date.now() - d > STALE_DAYS * 86400000 }
 
+// AI 1차 검토 후기 — 항목 상태로 권장 액션 산출(배포 시 review-answer AI로 업그레이드, 현재는 규칙).
+function aiHint(it: ReviewItem): { note: string; tone: 'warn' | 'ok' | 'info' } {
+  if (it.needs_review) return { note: `재검토 플래그 — ${it.review_reason || '재확인 필요'}`, tone: 'warn' }
+  if (it.tier === 'verified' && isStale(it.created_at)) return { note: '검증완료 후 30일 경과 — 정기 재검증 권장', tone: 'warn' }
+  if (it.verdict === 'unverified' && it.query_count >= 3) return { note: `수요 높은 보류(조회 ${it.query_count}) — 코퍼스 보강 후 검증 승격 1순위`, tone: 'warn' }
+  if (it.verdict === 'unverified') return { note: '근거 없는 보류 — 코퍼스 커버리지 확인 대상', tone: 'info' }
+  if (it.tier === 'verified') return { note: '사람 검증완료 — 조치 불필요', tone: 'ok' }
+  return { note: '자동 판정 — 스팟체크 후 ✓승격 가능해 보임', tone: 'ok' }
+}
+const HINT_C: Record<string, string> = { warn: 'text-amber-700 dark:text-amber-300', ok: 'text-emerald-700 dark:text-emerald-300', info: 'text-slate-500 dark:text-slate-400' }
+
 type Filter = 'all' | 'flagged' | 'pending' | 'verified'
 
 export default function Review() {
@@ -78,34 +89,34 @@ export default function Review() {
           {shown.length === 0 ? (
             <p className="mt-8 text-center text-sm text-slate-400">해당하는 항목이 없습니다.</p>
           ) : (
-            <ul className="mt-3 space-y-2">
+            <ul className="mt-3 space-y-2.5">
               {shown.map((it) => {
                 const stale = it.tier === 'verified' && isStale(it.created_at)
+                const hint = aiHint(it)
                 return (
-                  <li key={it.id} className={`rounded-xl border p-3 ${it.needs_review ? 'border-rose-300 bg-rose-50/40 dark:border-rose-900 dark:bg-rose-950/20' : 'border-slate-200 dark:border-slate-800'}`}>
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm text-slate-800 dark:text-slate-100">{it.canonical_claim}</p>
-                      <span className="shrink-0 text-xs text-slate-400">조회 {it.query_count}</span>
-                    </div>
-                    {it.needs_review && it.review_reason && <p className="mt-1 text-xs text-rose-700 dark:text-rose-300">⟳ {it.review_reason}</p>}
-
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className={`rounded px-1.5 py-0.5 text-xs ${it.tier === 'verified' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
-                        {it.tier === 'verified' ? '✓ 검증완료' : '자동·미검증'}
-                      </span>
-                      {stale && <span className="rounded bg-amber-100 px-1.5 py-0.5 text-xs text-amber-700">오래됨</span>}
+                  <li key={it.id} className={`rounded-2xl border bg-white p-3.5 shadow-sm dark:bg-slate-900 ${it.needs_review ? 'border-rose-200 dark:border-rose-900/60' : 'border-slate-200 dark:border-slate-800'}`}>
+                    {/* 줄1: 현재 판정 배지 + 클레임 + 메타 */}
+                    <div className="flex items-start gap-2.5">
+                      <span className={`mt-0.5 shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${VLABEL[it.verdict].badge}`}>{VLABEL[it.verdict].label}</span>
+                      <p className="flex-1 text-sm leading-snug text-slate-800 dark:text-slate-100">{it.canonical_claim}</p>
+                      <div className="flex shrink-0 flex-col items-end gap-1">
+                        <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-medium ${it.tier === 'verified' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>{it.tier === 'verified' ? '✓ 검증완료' : '자동·미검증'}</span>
+                        <span className="text-[10px] text-slate-400">조회 {it.query_count}{stale ? ' · 오래됨' : ''}</span>
+                      </div>
                     </div>
 
-                    {/* 빠른 판정 칩 — 누르면 그 판정으로 교정+검증완료 */}
-                    <div className="mt-2 flex flex-wrap items-center gap-1.5">
-                      <span className="text-[11px] text-slate-400">판정:</span>
+                    {/* 줄2: AI 1차 검토 후기 */}
+                    <p className={`mt-2 text-[11px] ${HINT_C[hint.tone]}`}>🤖 AI 검토: {hint.note}</p>
+
+                    {/* 줄3: 판정 교정 + 액션(구분선으로 그룹) */}
+                    <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-slate-100 pt-2.5 dark:border-slate-800">
                       {VERDICTS.map((v) => (
                         <button key={v} type="button" disabled={busy === it.id} onClick={() => run(it.id, () => setVerdict(it.id, v))}
                           className={`rounded-md px-2 py-1 text-xs font-medium transition disabled:opacity-40 ${it.verdict === v ? VLABEL[v].chip : 'bg-slate-100 text-slate-500 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-400'}`}>
                           {VLABEL[v].label}
                         </button>
                       ))}
-                      <span className="mx-1 h-4 w-px bg-slate-200 dark:bg-slate-700" />
+                      <span className="mx-0.5 h-4 w-px bg-slate-200 dark:bg-slate-700" />
                       {it.tier === 'verified' ? (
                         <button type="button" disabled={busy === it.id} onClick={() => run(it.id, () => setTier(it.id, 'auto_unverified'))}
                           className="rounded-md border border-slate-300 px-2 py-1 text-xs text-slate-600 hover:bg-slate-100 disabled:opacity-40 dark:border-slate-700 dark:text-slate-300">되돌리기</button>
@@ -118,7 +129,7 @@ export default function Review() {
                         className="rounded-md border border-amber-300 px-2 py-1 text-xs text-amber-700 hover:bg-amber-50 disabled:opacity-40 dark:border-amber-900 dark:text-amber-300">재검토</button>
                       <button type="button" disabled={busy === it.id}
                         onClick={() => { if (window.confirm('삭제할까요?')) run(it.id, () => deleteCached(it.id)) }}
-                        className="rounded-md border border-rose-300 px-2 py-1 text-xs text-rose-600 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900 dark:text-rose-300">삭제</button>
+                        className="ml-auto rounded-md border border-rose-200 px-2 py-1 text-xs text-rose-500 hover:bg-rose-50 disabled:opacity-40 dark:border-rose-900/60 dark:text-rose-300">삭제</button>
                     </div>
                   </li>
                 )
