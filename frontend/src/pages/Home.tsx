@@ -301,6 +301,7 @@ function SubstanceCard({ sub, collapsed }: { sub: SubCard; collapsed: boolean })
               ))}
             </ul>
             {!f.matched && f.disease && (<p className="mt-2 text-sm text-slate-500">‘{f.disease}’에 대한 직접적인 효과 정보는 충분치 않아요. 위는 일반적으로 알려진 효과예요.</p>)}
+            {f.note && (<p className="mt-2 rounded-xl bg-amber-50 p-2.5 text-[12px] leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">⚠ {f.note}</p>)}
             <p className="mt-3 text-[11px] leading-relaxed text-slate-400">음식·성분의 일반적 효과 정보예요(치료를 보장하지 않음). 표준 치료를 대체하지 말고, 정확한 건 전문가와 상담하세요.</p>
           </>
         ),

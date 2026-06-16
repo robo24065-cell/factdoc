@@ -532,7 +532,7 @@ export const FOOD_KB: FoodEntry[] = [
     { condition: "당뇨약 병용", effect: "혈당강하제와 함께 먹으면 저혈당 위험이 있어 주의가 필요해요.", level: "caution" },
   ] },
   { name: "바나바잎", aka: ["바나바", "바나바차", "banaba"], components: ["코로솔산(corosolic acid)", "엘라그산", "타닌류"], effects: [
-    { condition: "혈당·당뇨", effect: "바나바잎의 코로솔산이 혈당과 관련해 연구된 바 있어요(공식 효능 인정은 아님).", level: "research" },
+    { condition: "혈당·당뇨", effect: "바나바주정추출물(코로솔산)은 ‘식후 혈당 상승 억제에 도움을 줄 수 있음’으로 인정된 건강기능식품 기능성 원료예요(식약처). 다만 당뇨 등 질병의 치료·예방을 표방할 수는 없어요.", level: "mfds" },
     { condition: "당뇨약 병용", effect: "혈당강하제와 같이 먹으면 혈당이 과도하게 떨어질 수 있어 주의가 필요해요.", level: "caution" },
   ] },
   { name: "헛개나무(지구자)", aka: ["헛개", "헛개나무", "지구자", "헛개차", "헛개수"], components: ["암펠롭신(디하이드로미리세틴)", "호베니틴스", "플라보노이드"], effects: [

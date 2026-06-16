@@ -54,6 +54,8 @@ export function checkStatClaim(text: string): Judgement | null {
 
   // 치명률 공포조장 — 계절성 호흡기(독감·코로나·감기)는 공식 치명률 < ~1%. 신종/기타는 천차만별 → 보류.
   if (/치명률/.test(text)) {
+    // 신종·변종·대유행·조류/신종플루는 계절성 1% 룰을 적용할 수 없음(CFR 천차만별·공식근거 미수록) → 일반 파이프라인=보류.
+    if (/(신종|변종|신변종|대유행|팬데믹|조류|신종플루|미지|정체불명|새로운\s*바이러스)/.test(text)) return null
     if (!/(독감|인플루엔자|코로나|감기|계절성|호흡기)/.test(text)) return null
     const cite: Citation = { portal: '질병관리청', title: '계절성 호흡기 감염병 치명률(통상 1% 미만)', url: 'https://health.kdca.go.kr' }
     const trace: TraceStep[] = [{ kind: 'normalize', label: '치명률 주장 인식', detail: `계절성 호흡기 감염병 치명률 ${pct.toFixed(0)}% 주장` }]

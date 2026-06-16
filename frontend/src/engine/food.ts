@@ -87,7 +87,15 @@ export function sharesDomain(text: string, diseaseCanonical: string): boolean {
   return DOMAINS.some((d) => d.cond.test(text) && d.dz.test(diseaseCanonical))
 }
 
-export interface FoodResult { name: string; components: string[]; effects: FoodEffect[]; disease: string | null; matched: boolean }
+export interface FoodResult { name: string; components: string[]; effects: FoodEffect[]; disease: string | null; matched: boolean; note?: string }
+
+// '즙·농축액·진액·엑기스' 형태 주의 — 농축으로 당분·칼륨 등이 진해지고 가열·여과로 식이섬유 등은 줄 수 있음.
+// 효과가 더 강해진다는 뜻이 아니며, 시판 제품은 당·첨가물이 더해질 수 있음. (즙=원재료보다 안전·강력하다는 오해 차단)
+const CONCENTRATE_RE = /(즙|농축액|농축|진액|엑기스|원액|발효액|효소액|진하게 달|달인 물)/
+export function concentrateNote(claim: string): string | null {
+  if (!CONCENTRATE_RE.test(claim)) return null
+  return '‘즙·농축액’ 형태예요 — 농축 과정에서 당분·칼륨 등이 진해질 수 있고, 가열·여과로 식이섬유 등 일부 성분은 줄 수 있어요. 원재료보다 효과가 더 강하거나 안전하다는 뜻은 아니며, 시판 제품엔 당·첨가물이 들어가기도 해요(당뇨·신장질환은 특히 주의).'
+}
 
 // 강한 허위주장(완치·특효·치료단정·약대체)은 음식카드 대상 아님 → 룰엔진(허위) 경로로.
 // isCureClaim은 relationLex(1,100+ 어간) 기반 — '치료/완치/약끊/대체' 등 무한한 표현 일반화.
@@ -112,7 +120,7 @@ export function foodAnswer(claim: string): FoodResult | null {
   }
   // 매칭 안 되면(그 질병 효과 정보 없음) 대표 효과 일부만
   if (!matched) effects = f.effects.slice(0, 3)
-  return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
+  return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched, note: concentrateNote(claim) ?? undefined }
 }
 
 // 텍스트의 음식 × 지정 질환의 '최적 효과'를 반환 — effects 전체에서 도메인 매칭(slice 잘림 없음).
@@ -158,7 +166,8 @@ export function foodAnswerAll(claim: string, max = 4): FoodResult[] {
     kept.push(h)
     if (kept.length >= max) break
   }
-  return kept.map(({ f }) => {
+  const note = concentrateNote(claim) ?? undefined
+  return kept.map(({ f, token }) => {
     let effects = f.effects
     let matched = false
     if (dz) {
@@ -166,7 +175,10 @@ export function foodAnswerAll(claim: string, max = 4): FoodResult[] {
       if (rel.length) { effects = rel; matched = true }
     }
     if (!matched) effects = f.effects.slice(0, 3)
-    return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
+    // 즙·농축 주의는 그 음식이 즙/농축 형태로 언급됐을 때만(예: '양파즙').
+    // 매칭 토큰 자체가 '즙'을 포함('양파즙')하거나, 음식명 뒤에 즙/농축 등이 붙은 경우.
+    const itemNote = note && (CONCENTRATE_RE.test(token) || new RegExp(token + '\\s*(즙|농축|진액|엑기스|원액)').test(t)) ? note : undefined
+    return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched, note: itemNote }
   })
 }
 
