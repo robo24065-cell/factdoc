@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswer, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -35,9 +35,15 @@ const VBADGE: Record<Verdict, { label: string; cls: string }> = {
 }
 // 긴 글/여러 주장 → 주장 후보 문장 분리(문장부호·줄바꿈·불릿). 짧은 조각 제외.
 function splitClaims(text: string): string[] {
-  return text.split(/(?<=[.!?。…])\s+|[\n;·•]+/).map((s) => s.replace(/^[\s\-*\d.)]+/, '').trim()).filter((s) => s.length >= 6)
+  // 문장부호·줄바꿈·불릿으로 분리. "통곡물: 현미…도움" 같은 라벨형은 콜론 뒤 본문도 분리.
+  return text.split(/(?<=[.!?。…])\s+|[\n;·•]+/).flatMap((s) => s.split(/(?<=다\.)\s*/))
+    .map((s) => s.replace(/^[\s\-*▶•·]+/, '').replace(/^\d+[.)]\s*/, '').trim()).filter((s) => s.length >= 6)
 }
-const claimLike = (s: string) => !!findInText(s, 'disease') || !!findInText(s, 'subject')
+// 실제 '주장'만(표제어·라벨 제외): 엔티티 + (효익/위험/관계 신호 또는 수치)
+const CLAIM_SIGNAL = /좋|도움|효과|낮추|낮아|줄이|줄여|늘리|피하|풍부|예방|관리|배출|확장|이완|억제|쌓이|올리|상승|감소|위험|탁월|권장|제한|보충|공급|선택|드세요|마세요|됩니다|줍니다|좋습니다|좋은|풀어|풍미/
+// 술어(서술형 종결)가 있어야 '주장' — 표제어/라벨('…관리법.', '…음식')은 제외
+const hasPredicate = (s: string) => /(다|요|음|함|됨|죠|네|까)[.!?)\]]*$/.test(s) || /니다|세요|어요|아요|\d/.test(s)
+const claimLike = (s: string) => s.length >= 10 && !!(findInText(s, 'disease') || findInText(s, 'subject')) && (CLAIM_SIGNAL.test(s) || /\d/.test(s)) && hasPredicate(s)
 
 // 멀티 주장 1건 — 주장 옆 [검증결과] + 클릭 시 판단근거·설명 펼침(단일 카드와 같은 양식)
 type MultiClaim = { text: string; j: Judgement; exp: string }
@@ -381,7 +387,36 @@ export default function Home() {
       const parts = splitClaims(claim)
       const claimParts = parts.filter(claimLike)
       if (claim.length >= 60 && parts.length >= 2 && claimParts.length >= 2) {
-        const items: MultiClaim[] = claimParts.slice(0, 20).map((s) => { const j = runPipeline(s); return { text: s, j, exp: explainLocal(j) } })
+        const docDz = findInText(claim, 'disease')?.canonical || '' // 글 전체의 주제 질환(문장에 질환명 없을 때 폴백)
+        const rank = { mfds: 3, research: 2, folk: 1, caution: 0, none: -1 } as Record<string, number>
+        const verifyOne = (s: string): MultiClaim => {
+          let j = runPipeline(s)
+          let exp = explainLocal(j)
+          if (j.verdict === 'unverified') {
+            const dz = j.triples[0]?.objectDisease || findInText(s, 'disease')?.canonical || docDz
+            // (a) 해로운 음식 경고가 맞는지 — 고염·고지방 등 dishCaution 매칭이면 '경고가 맞음'=사실
+            if ((isHarmfulClaim(s) || /피하|줄이|폭탄|주의|멀리|제한/.test(s)) && dz) {
+              const dc = dishCaution(s, dz)
+              if (dc) { j = { ...j, verdict: 'true', confidence: 0.55 }; exp = `맞는 주의예요. ${dc.msg}` }
+            }
+            // (b) 음식이 질환에 도움 주장 — 음식 KB에서 '그 질환(docDz)' 도메인 효과가 있을 때만 보강(도움=사실, 민간/과장=근거 제한)
+            if (j.verdict === 'unverified' && dz && (isBeneficialClaim(s) || /좋|도움|풍부|낮추|배출|확장|공급|보충/.test(s))) {
+              const food = foodAnswer(s) // 문장에 질환명 없어도 음식은 잡힘(matched 무관)
+              if (food && food.effects.length) {
+                const rel = food.effects.filter((e) => e.condition.includes(dz) || sharesDomain(e.condition, dz))
+                const eff = rel.slice().sort((a, b) => rank[b.level] - rank[a.level])[0]
+                if (eff && eff.level !== 'none') {
+                  const over = /탁월|특효|완치|즉시|무조건|최고|100%|단번|확실/.test(s)
+                  const v: Verdict = (eff.level === 'caution' || eff.level === 'folk' || over) ? 'partial' : 'true'
+                  j = { ...j, verdict: v, confidence: eff.level === 'mfds' ? 0.7 : 0.5 }
+                  exp = `${food.name} — ${eff.effect}${over ? ' 다만 ‘탁월·특효’ 같은 표현은 과장일 수 있어요(식품은 보조적).' : ' 식품은 보조적이며 약·표준치료를 대체하지 않아요.'}`
+                }
+              }
+            }
+          }
+          return { text: s, j, exp }
+        }
+        const items: MultiClaim[] = claimParts.slice(0, 24).map(verifyOne)
         setMulti(items); setLoading(false)
         void logQuery(claim, 'unverified', 'multi')
         return
