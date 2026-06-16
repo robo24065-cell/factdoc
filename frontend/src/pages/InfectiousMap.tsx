@@ -12,6 +12,7 @@ import {
   EID_NAT_DAILY, EID_NAT_MONTH, EID_NAT_YEAR, EID_SEXAGE, EID_PTNT, EID_AREA,
 } from '../data/eid-region'
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
+import { eidGrowthSignal } from '../lib/eidStats'
 
 type Metric = 'count' | 'rate'
 const ALL = '__ALL__'
@@ -418,6 +419,26 @@ export default function InfectiousMap() {
 
           {/* 보조 분석 */}
           <div className="space-y-4 lg:col-span-12">
+            {(() => {
+              const g = eidGrowthSignal()
+              if (!g.rows.length) return null
+              return (
+                <Panel title={`🔔 급증 주의 신호 — 최근 4주 vs 직전 4주 (${EID_CUR_YEAR}년 ${g.week}주차)`}>
+                  <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
+                    {g.rows.slice(0, 6).map((r) => (
+                      <button key={r.name} onClick={() => { const code = EID_DISEASES.find((d) => cleanName(d) === r.name); if (code) setDisease(code) }}
+                        className="flex items-center justify-between gap-2 rounded-lg px-1.5 py-1 text-left hover:bg-slate-50 dark:hover:bg-slate-800">
+                        <span className="flex items-center gap-1.5 truncate text-sm text-slate-700 dark:text-slate-200">
+                          <span className="rounded px-1 text-[10px] font-semibold text-white" style={{ background: GRP_COLOR[r.grp] || '#94a3b8' }}>{r.grp}</span>{r.name}
+                        </span>
+                        <span className="shrink-0 text-xs font-bold text-rose-600">▲{r.growthPct >= 999 ? '신규' : `${r.growthPct}%`}<span className="ml-1 font-normal text-slate-400">{r.prior}→{r.recent}</span></span>
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-2 px-1 text-[11px] text-slate-400">최근 4주 발생이 직전 4주보다 늘어난 감염병(증가율 순). 조기경보 참고용 · 신고지연으로 잠정.</p>
+                </Panel>
+              )
+            })()}
             {disease === ALL && groupMix.length > 0 && (
               <Panel title={`법정 감염병 급(군)별 구성 — ${selected ? SIDO_NAME[selected] : '전국'} (${periodLabel})`}>
                 {(() => {

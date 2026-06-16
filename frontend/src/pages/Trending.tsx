@@ -2,24 +2,8 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { fetchOutbreak, fetchTopDiseases, fetchTopMisinfo, type OutbreakRow, type TopClaim, type TopDisease } from '../lib/db'
 import { preventionHint } from '../lib/prevention'
-import { EID_CUR_YEAR, EID_PARTIAL_YEAR, EID_GROUP, EID_WEEKLY_DISEASES, EID_WK_NAT } from '../data/eid-region'
-
-// 질병청 감염병포털 주별 데이터에서 '최근 4주' 발생 현황 산출(최신 주차 기준, 신고지연 보정). 정적 2024 대체.
-function latestWeekly() {
-  const year = EID_CUR_YEAR
-  let last = -1
-  for (const d of EID_WEEKLY_DISEASES) { const a = EID_WK_NAT[d]; if (a) for (let i = a.length - 1; i >= 0; i--) { if (a[i] > 0) { if (i > last) last = i; break } } }
-  if (last < 0) return { year, week: 0, rows: [] as { name: string; count: number; trend: string }[] }
-  const sum = (a: number[] | undefined, s: number, e: number) => { let t = 0; if (a) for (let i = Math.max(0, s); i <= e; i++) t += a[i] || 0; return t }
-  const ws = Math.max(0, last - 3) // 최근 4주 윈도
-  const rows = EID_WEEKLY_DISEASES.map((d) => {
-    const a = EID_WK_NAT[d]
-    const recent = sum(a, ws, last)
-    const prior = sum(a, ws - 4, ws - 1)
-    return { name: d.replace(/^@/, ''), grp: EID_GROUP[d], count: recent, trend: recent > prior * 1.1 ? 'up' : recent < prior * 0.9 ? 'down' : 'flat' }
-  }).filter((r) => r.count > 0).sort((x, y) => y.count - x.count)
-  return { year, week: last + 1, rows }
-}
+import { EID_PARTIAL_YEAR } from '../data/eid-region'
+import { eidLatestOutbreak } from '../lib/eidStats'
 
 function trendBadge(trend: string | null) {
   if (trend === 'up') return { t: '▲ 증가', c: 'bg-rose-50 text-rose-600 dark:bg-rose-950/40' }
@@ -43,7 +27,7 @@ export default function Trending() {
   const fakeRows = top && top.length ? top.map((t) => ({ label: t.claim, q: t.claim })) : FAKE_TOP
 
   // 질병청 전수신고 최신 주차(그날 기준)를 우선 — 자동 갱신되는 최신 데이터. Supabase는 보조 폴백.
-  const eid = latestWeekly()
+  const eid = eidLatestOutbreak()
   const eidPartial = eid.year === EID_PARTIAL_YEAR
   const usingEid = eid.rows.length > 0
   const rows = usingEid

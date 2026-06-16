@@ -5,9 +5,11 @@ import {
 } from 'recharts'
 import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
-  diabetesPrevalence, topMisinfo, outbreakList,
+  diabetesPrevalence, topMisinfo,
 } from './dashboardData'
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
+import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
+import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
@@ -118,37 +120,54 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="🚨 실시간 유행 감염병" desc="감염병포털 발생현황 — 클릭 시 팩트체크 + 공식 수칙" badge={outbreak ? '실데이터' : '데모'} span="order-first md:order-none">
-          {outbreak && outbreak.length ? (
-            <ul className="space-y-2.5 text-sm">
-              {outbreak.map((r) => {
-                const t = trendInfo(r.trend)
-                const max = Math.max(...outbreak.map((x) => x.case_count ?? 0), 1)
-                return (
-                  <li key={r.disease}>
-                    <div className="flex items-center justify-between">
-                      <span className="text-slate-700 dark:text-slate-200">{r.disease}</span>
-                      <span className={`text-xs font-medium ${t.color}`}>{t.arrow} {(r.case_count ?? 0).toLocaleString()}건</span>
-                    </div>
-                    <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
-                      <div className="h-1.5 rounded-full" style={{ width: `${((r.case_count ?? 0) / max) * 100}%`, background: t.bar }} />
-                    </div>
+        {(() => {
+          const eid = eidLatestOutbreak()
+          // EID 최신 주차(자동갱신)를 우선 — Supabase outbreak_trend는 보조 폴백(정적/구버전일 수 있음)
+          const obRows = eid.rows.length
+            ? eid.rows.map((o) => ({ name: o.name, count: o.count, trend: o.trend }))
+            : (outbreak ?? []).map((o) => ({ name: o.disease, count: o.case_count ?? 0, trend: o.trend ?? 'flat' }))
+          const max = Math.max(...obRows.map((x) => x.count), 1)
+          const live = obRows.length > 0
+          return (
+            <Panel title="🚨 실시간 유행 감염병" desc={`질병청 감염병포털 · ${eid.year}년 ${eid.week}주차 최근4주`} badge={live ? '실데이터' : '데모'} span="order-first md:order-none">
+              <ul className="space-y-2.5 text-sm">
+                {obRows.slice(0, 8).map((r) => {
+                  const t = trendInfo(r.trend)
+                  return (
+                    <li key={r.name}>
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="truncate text-slate-700 dark:text-slate-200">{r.name}</span>
+                        <span className={`shrink-0 text-xs font-medium ${t.color}`}>{t.arrow} {r.count.toLocaleString()}건</span>
+                      </div>
+                      <div className="mt-1 h-1.5 rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div className="h-1.5 rounded-full" style={{ width: `${(r.count / max) * 100}%`, background: t.bar }} />
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+              <Link to="/map" className="mt-3 inline-block text-xs font-medium text-blue-600 dark:text-blue-400">감염병 현황판에서 지도·추이 보기 →</Link>
+            </Panel>
+          )
+        })()}
+
+        {(() => {
+          const g = eidGrowthSignal()
+          if (!g.rows.length) return null
+          return (
+            <Panel title="🔔 급증 주의 신호" desc={`최근 4주 vs 직전 4주 증가율 (${g.week}주차 기준) — 조기경보`} badge="실데이터">
+              <ul className="space-y-2 text-sm">
+                {g.rows.slice(0, 6).map((r) => (
+                  <li key={r.name} className="flex items-center justify-between gap-2">
+                    <span className="truncate text-slate-700 dark:text-slate-200">{r.name}</span>
+                    <span className="shrink-0 text-xs font-semibold text-rose-600">▲{r.growthPct >= 999 ? '신규' : `${r.growthPct}%`} <span className="font-normal text-slate-400">({r.prior}→{r.recent}건)</span></span>
                   </li>
-                )
-              })}
-            </ul>
-          ) : (
-            <ul className="space-y-1.5 text-sm">
-              {outbreakList.map((o) => (
-                <li key={o.name} className="flex items-center justify-between">
-                  <span className="text-slate-700 dark:text-slate-200">{o.name}</span>
-                  <span className={`text-xs font-medium ${o.color}`}>{o.level} · {o.trend}</span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-3 text-xs text-slate-400">{outbreak ? 'outbreak_trend 라이브 · 최신 주차' : '데모 데이터'}</p>
-        </Panel>
+                ))}
+              </ul>
+              <p className="mt-3 text-xs text-slate-400">증가율 높은 순 · 방역 우선순위 참고(B2G)</p>
+            </Panel>
+          )
+        })()}
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
