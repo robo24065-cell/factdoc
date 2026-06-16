@@ -525,7 +525,7 @@ export default function InfectiousMap() {
           </div>
           {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
           <div className="lg:col-span-12">
-            <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} selSido={selected} />
+            <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} selSido={selected} onPickDisease={setDisease} />
           </div>
         </div>
         </div>
@@ -654,15 +654,41 @@ const DOW = ['일', '월', '화', '수', '목', '금', '토']
 // 주식차트식 표시기한 프리셋 — 전국=일(≤6개월)·월(≥1년), 지역=주(≤1년)·년(3년).
 type RangeK = '1w' | '1m' | '6m' | '1y' | '3y'
 const RANGES: { k: RangeK; t: string }[] = [{ k: '1w', t: '1주' }, { k: '1m', t: '1개월' }, { k: '6m', t: '6개월' }, { k: '1y', t: '1년' }, { k: '3y', t: '3년' }]
-const WIN_NAT: Record<RangeK, number> = { '1w': 7, '1m': 31, '6m': 184, '1y': 12, '3y': 36 }
+const WIN_NAT: Record<RangeK, number> = { '1w': 7, '1m': 31, '6m': 26, '1y': 12, '3y': 36 }
 const WIN_SIDO: Record<RangeK, number> = { '1w': 8, '1m': 13, '6m': 26, '1y': 52, '3y': 4 }
-function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number; selSido: string | null }) {
+function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido, onPickDisease }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number; selSido: string | null; onPickDisease?: (code: string) => void }) {
   const [range, setRange] = useState<RangeK>('6m')
-  // 표시기한 → 단위(전국=일/월, 지역=주/년) + 기본 표시개수
-  const tg: 'day' | 'week' | 'month' | 'year' = selSido ? (range === '3y' ? 'year' : 'week') : (range === '1y' || range === '3y' ? 'month' : 'day')
+  // 표시기한 → 단위. 전국: 1주·1개월=일 / 6개월=주(과밀 방지) / 1년·3년=월. 지역: ≤1년=주 / 3년=년.
+  const tg: 'day' | 'week' | 'month' | 'year' = selSido
+    ? (range === '3y' ? 'year' : 'week')
+    : (range === '1y' || range === '3y' ? 'month' : range === '6m' ? 'week' : 'day')
   const baseWin = (selSido ? WIN_SIDO : WIN_NAT)[range]
   const cur = EID_CUR_YEAR
   const scope = selSido ? SIDO_NAME[selSido] : '전국'
+
+  // 포인트 클릭 → 그 시점 상위 발생 감염병 Top5 (전체 감염병 그래프에서만 의미)
+  const [picked, setPicked] = useState<{ label: string; rows: { name: string; value: number }[] } | null>(null)
+  useEffect(() => { setPicked(null) }, [range, disease, selSido])
+  function top5At(pt: TPt): { name: string; value: number }[] {
+    const list = (val: (d: string) => number) => EID_DISEASES.map((d) => ({ name: cleanName(d), value: val(d) })).filter((x) => x.value > 0).sort((a, b) => b.value - a.value).slice(0, 5)
+    if (tg === 'day') { const i = Number(pt.x); return list((d) => EID_NAT_DAILY[d]?.[i] || 0) }
+    if (tg === 'week') { const w = Number(pt.x); return list((d) => EID_WK_NAT[d]?.[w - 1] || 0) }
+    if (tg === 'month') { const [y, mm] = String(pt.x).split('-'); const m = Number(mm) - 1; return list((d) => EID_NAT_MONTH[d]?.[y]?.[m] || 0) }
+    const y = String(pt.x); return list((d) => EID_NAT_YEAR[d]?.[y] || 0)
+  }
+  function pickFrom(pt?: TPt) {
+    if (disease !== ALL || !pt) return
+    const rows = top5At(pt)
+    setPicked(rows.length ? { label: pt.full || pt.label, rows } : null)
+  }
+  function onPointClick(state: { activePayload?: { payload?: TPt }[] } | null) { pickFrom(state?.activePayload?.[0]?.payload) }
+  // 클릭 가능한 점(전체 감염병일 때) — 어포던스 + 클릭으로 그 시점 Top5
+  const ClickDot = (p: { cx?: number; cy?: number; payload?: TPt; index?: number }) => {
+    const { cx, cy, payload, index } = p
+    if (cx == null || cy == null || payload?.actual == null) return <g key={index} />
+    return <circle key={index} cx={cx} cy={cy} r={3.2} fill="#2563eb" stroke="#fff" strokeWidth={1}
+      style={{ cursor: 'pointer' }} className="epi-dot" onClick={() => pickFrom(payload)} />
+  }
 
   const built = useMemo(() => {
     const natNote = selSido ? ' · 전국(이 단위 시도별 미제공)' : ''
@@ -805,14 +831,15 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
         <div ref={wrapRef} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp}
           className={showPan ? 'cursor-grab touch-pan-y select-none active:cursor-grabbing' : ''}>
         <ResponsiveContainer width="100%" height={228}>
-          <LineChart data={view} margin={{ top: 8, right: 18, left: -8, bottom: 0 }}>
+          <LineChart data={view} margin={{ top: 8, right: 18, left: -8, bottom: 0 }} onClick={(s) => onPointClick(s as { activePayload?: { payload?: TPt }[] })}
+            style={disease === ALL ? { cursor: 'pointer' } : undefined}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
             <XAxis dataKey="label" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} minTickGap={built.minGap} />
             <YAxis tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
             <RTooltip formatter={(v, nm) => [nf(Number(v)) + '건', nm === 'pred' ? '예측치' : '실제']}
               labelFormatter={(label, payload) => { const p = payload && payload[0] && (payload[0].payload as TPt); const base = p?.full || String(label); return p?.dow ? `${base} (${p.dow})` : base }} />
             {built.predicted && <Line type="monotone" dataKey="pred" stroke="#f43f5e" strokeWidth={2} strokeDasharray="5 4" strokeOpacity={0.65} dot={false} connectNulls name="pred" isAnimationActive={false} />}
-            <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={2.4} dot={tg === 'year' ? { r: 3 } : false} activeDot={{ r: 4 }} connectNulls name="actual" />
+            <Line type="monotone" dataKey="actual" stroke="#2563eb" strokeWidth={2.4} dot={disease === ALL ? ClickDot : (tg === 'year' ? { r: 3 } : false)} activeDot={{ r: 4, onClick: (_e: unknown, pl: unknown) => pickFrom((pl as { payload?: TPt })?.payload) }} connectNulls name="actual" />
             {built.sel ? <ReferenceLine x={`${built.sel}주`} stroke="#2563eb" strokeOpacity={0.5} strokeWidth={1.5} label={{ value: `${built.sel}주`, fontSize: 10, fill: '#2563eb', position: 'top' }} /> : null}
           </LineChart>
         </ResponsiveContainer>
@@ -829,9 +856,35 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
         )}
         </>
       ) : <p className="py-8 text-center text-sm text-slate-400">{diseaseLabel}의 {cur}년 데이터가 없습니다.</p>}
+
+      {/* 포인트 클릭 → 그 시점 상위 발생 감염병 Top5 (전체 감염병일 때) */}
+      {disease === ALL && picked && (
+        <div className="mt-2 rounded-xl border border-blue-100 bg-blue-50/60 p-3 dark:border-blue-950 dark:bg-blue-950/20">
+          <div className="mb-1.5 flex items-center justify-between">
+            <p className="text-xs font-semibold text-blue-800 dark:text-blue-200">🔎 {picked.label} 상위 발생 감염병 Top{picked.rows.length}</p>
+            <button onClick={() => setPicked(null)} className="text-[11px] text-slate-400 hover:text-slate-600">닫기 ✕</button>
+          </div>
+          <div className="space-y-1">
+            {picked.rows.map((r, i) => {
+              const max = picked.rows[0].value || 1
+              return (
+                <button key={r.name} onClick={() => { const code = EID_DISEASES.find((d) => cleanName(d) === r.name); if (code) { setPicked(null); onPickDisease?.(code) } }}
+                  className="flex w-full items-center gap-2 rounded-lg px-1 py-0.5 text-left hover:bg-white/60 dark:hover:bg-slate-800/60">
+                  <span className="w-3 shrink-0 text-[11px] font-bold text-slate-400">{i + 1}</span>
+                  <span className="w-28 shrink-0 truncate text-xs text-slate-700 dark:text-slate-200">{r.name}</span>
+                  <span className="h-2 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-600" style={{ width: `${(r.value / max) * 100}%` }} /></span>
+                  <span className="w-12 shrink-0 text-right text-xs font-semibold tabular-nums text-slate-600 dark:text-slate-300">{nf(r.value)}</span>
+                </button>
+              )
+            })}
+          </div>
+          <p className="mt-1 text-[10px] text-slate-400">행을 누르면 해당 감염병 추이로 전환됩니다.</p>
+        </div>
+      )}
+
       <p className="mt-1.5 px-1 text-[11px] leading-relaxed text-slate-400">
         {built.predicted ? <><b className="text-rose-500">─ ─ 점선 = 예측치</b>(과거 같은 시기 패턴 추정값, 실제와 다를 수 있어요). </> : null}
-        실선=실제 발생수. <b className="text-slate-500 dark:text-slate-300">기간 칩</b>으로 1주~3년 전환, 차트를 <b className="text-slate-500 dark:text-slate-300">끌거나 휠</b>로 이동·확대, 아래 막대로 위치 이동. 출처: 질병관리청 감염병포털.
+        실선=실제 발생수. <b className="text-slate-500 dark:text-slate-300">기간 칩</b>으로 1주~3년 전환(6개월=주 단위·1년↑=월 단위), 차트를 <b className="text-slate-500 dark:text-slate-300">끌거나 휠</b>로 이동·확대, 아래 막대로 위치 이동.{disease === ALL ? <> <b className="text-blue-500">점을 클릭</b>하면 그 시점 상위 감염병 Top5가 나와요.</> : null} 출처: 질병관리청 감염병포털.
       </p>
     </div>
   )
