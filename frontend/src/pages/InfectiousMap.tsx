@@ -220,9 +220,9 @@ export default function InfectiousMap() {
         {/* 컨트롤 */}
         <div className="mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
           <div className="flex flex-wrap items-center gap-2">
-            <label className="text-xs font-semibold text-slate-500">감염병</label>
+            <label className="shrink-0 text-xs font-semibold text-slate-500">감염병</label>
             <select value={disease} onChange={(e) => setDisease(e.target.value)}
-              className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
+              className="min-w-0 max-w-full flex-1 truncate rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-800 focus:border-blue-500 focus:outline-none sm:flex-none dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100">
               <option value={ALL}>전체 감염병 (합계)</option>
               {EID_DISEASES.map((d) => (<option key={d} value={d}>{cleanName(d)} · {EID_GROUP[d]}</option>))}
             </select>
@@ -423,7 +423,7 @@ export default function InfectiousMap() {
               const g = eidGrowthSignal()
               if (!g.rows.length) return null
               return (
-                <Panel title={`🔔 급증 주의 신호 — 최근 4주 vs 직전 4주 (${EID_CUR_YEAR}년 ${g.week}주차)`}>
+                <Panel title={`🔔 급증 주의 신호(전국) — 최근 4주 vs 직전 4주 (${EID_CUR_YEAR}년 ${g.week}주차)`}>
                   <div className="grid gap-x-4 gap-y-1.5 sm:grid-cols-2">
                     {g.rows.slice(0, 6).map((r) => (
                       <button key={r.name} onClick={() => { const code = EID_DISEASES.find((d) => cleanName(d) === r.name); if (code) setDisease(code) }}
@@ -493,18 +493,22 @@ export default function InfectiousMap() {
           </div>
           {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
           <div className="lg:col-span-12">
-            <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
+            <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} selSido={selected} />
           </div>
         </div>
         </div>
 
         {/* 인구학·역학 심층 분석 — 우측 레일(와이드)·하단 3열(그 외). 지도 연도와 연동, 전국 기준 */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:col-span-3 2xl:grid-cols-1 2xl:content-start">
+          {selected && <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11px] leading-relaxed text-amber-700 sm:col-span-3 2xl:col-span-1 dark:bg-amber-950/30 dark:text-amber-300">ℹ️ 성별·연령·환자분류·감염지역은 질병관리청이 <b>전국 단위로만</b> 제공해, {SIDO_NAME[selected]} 선택과 무관하게 전국 기준으로 표시됩니다. (시도별 분포는 위 지도·순위·추이를 참고)</p>}
           <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
           <DonutPanel title="환자분류" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
           <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
         </div>
         </div>
+
+        {/* 고급 분석(발생률 히트맵·위험지수·계절성·지역 클러스터링) */}
+        <AdvancedAnalytics year={inWeek ? EID_CUR_YEAR : year} disease={disease} diseaseLabel={diseaseLabel} />
 
         <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-400">
           본 현황판은 질병관리청 감염병포털 발생현황 데이터를 시각화한 참고 정보입니다(공공누리 제4유형, 출처표시·요약).
@@ -578,19 +582,38 @@ function estimateAnnual(disease: string): { est: number; hasPrior: boolean; kMon
   return { est: ytd / cum, hasPrior: true, kMonth: k }
 }
 
+// 시도별 — 주별(EID_WK_SIDO 보유)·연도별(EID_COUNT 보유). 월/일별 시도는 미수집(전국만).
+function weeklySidoArr(disease: string, sido: string): number[] {
+  const len = EID_CUR_WEEK; const arr = new Array(len).fill(0)
+  const add = (d: string) => { const w = EID_WK_SIDO[d]; if (w) for (let wk = 1; wk <= len; wk++) arr[wk - 1] += w[wk]?.[sido] || 0 }
+  if (disease === ALL) EID_WEEKLY_DISEASES.forEach(add); else add(disease)
+  return arr
+}
+function yearSidoVal(disease: string, year: string, sido: string): number {
+  if (disease === ALL) { let s = 0; for (const d of EID_DISEASES) s += EID_COUNT[year]?.[d]?.[sido] || 0; return s }
+  return EID_COUNT[year]?.[disease]?.[sido] || 0
+}
+
 type TPt = { x: number | string; label: string; actual: number | null; pred: number | null }
-function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number }) {
+function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease: string; diseaseLabel: string; inWeek: boolean; selWeek: number; selSido: string | null }) {
   const [tg, setTg] = useState<'day' | 'week' | 'month' | 'year'>('week')
   useEffect(() => { if (inWeek) setTg('week') }, [inWeek])
   const cur = EID_CUR_YEAR
+  const scope = selSido ? SIDO_NAME[selSido] : '전국'
 
   const built = useMemo(() => {
+    const natNote = selSido ? ' · 전국(이 단위 시도별 미제공)' : ''
     if (tg === 'day') {
       const arr = trimZeros(aggArr(disease, EID_NAT_DAILY))
       const data: TPt[] = arr.map((v, i) => { const dt = new Date(+cur, 0, 1 + i); return { x: i, label: `${dt.getMonth() + 1}/${dt.getDate()}`, actual: v, pred: null } })
-      return { data, predicted: false, sel: 0, tip: (i: number) => `${cur}년 ${data[i]?.label || ''}`, note: '일(日) 단위 · 평일/주말 신고 편차 있음', minGap: 30 }
+      return { data, predicted: false, sel: 0, tip: (i: number) => `${cur}년 ${data[i]?.label || ''}`, note: '일(日) 단위 · 평일/주말 신고 편차' + natNote, minGap: 30 }
     }
     if (tg === 'week') {
+      if (selSido) { // 시도 주별(예측 없음 — 시도별 과거 주간 미보유)
+        const arr = trimZeros(weeklySidoArr(disease, selSido))
+        const data: TPt[] = arr.map((v, i) => ({ x: i + 1, label: `${i + 1}주`, actual: v, pred: null }))
+        return { data, predicted: false, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위 · ${scope}`, minGap: 8 }
+      }
       const arr = trimZeros(aggArr(disease, EID_WK_NAT)); const k = arr.length - 1
       const { est, hasPrior } = estimateAnnual(disease); const { share } = seasonalShare(disease)
       const ytd = arr.reduce((s, v) => s + v, 0); const remaining = Math.max(0, est - ytd)
@@ -603,7 +626,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string;
         if (hasPrior && remaining > 0) { if (w === k + 1) pred = arr[k] ?? 0; else if (w > k + 1 && futSum > 0) pred = remaining * share[wkMonth(w)] / futSum }
         data.push({ x: w, label: `${w}주`, actual, pred })
       }
-      return { data, predicted: hasPrior && remaining > 0, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위${inWeek ? ' · 지도 슬라이더와 연동' : ''}`, minGap: 8 }
+      return { data, predicted: hasPrior && remaining > 0, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위${inWeek ? ' · 지도 슬라이더 연동' : ''}`, minGap: 8 }
     }
     if (tg === 'month') {
       const curM = aggMonth(disease, cur); let k = -1; for (let m = 11; m >= 0; m--) if (curM[m] > 0) { k = m; break }
@@ -615,14 +638,18 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string;
         if (hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = est * share[m] }
         data.push({ x: m + 1, label: `${m + 1}월`, actual, pred })
       }
-      return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 올해 잔여기간 예측', minGap: 6 }
+      return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 올해 잔여기간 예측' + natNote, minGap: 6 }
     }
     const years = MONTH_YEARS.length ? MONTH_YEARS : (EID_YEARS as readonly string[]).slice()
+    if (selSido) { // 시도 연도별(예측 없음)
+      const data: TPt[] = years.map((y) => ({ x: y, label: y, actual: yearSidoVal(disease, y, selSido), pred: null }))
+      return { data, predicted: false, sel: 0, tip: (y: string) => `${y}년`, note: `연(年) 단위 · ${scope}`, minGap: 6 }
+    }
     const { est, hasPrior } = estimateAnnual(disease)
     const data: TPt[] = years.map((y) => ({ x: y, label: y, actual: aggYearVal(disease, y), pred: (+y === +cur && hasPrior) ? est : null }))
     for (let i = 0; i < data.length; i++) if (data[i].pred != null && i > 0) data[i - 1].pred = data[i - 1].actual
     return { data, predicted: hasPrior, sel: 0, tip: (y: string) => `${y}년`, note: '연(年) 단위 · 올해는 예측 연간총계', minGap: 6 }
-  }, [disease, tg, inWeek, selWeek, cur])
+  }, [disease, tg, inWeek, selWeek, cur, selSido, scope])
 
   const totalActual = built.data.reduce((s, r) => s + (r.actual || 0), 0)
   const peak = built.data.reduce<TPt>((m, r) => ((r.actual || 0) > (m.actual || 0) ? r : m), { x: 0, label: '', actual: 0, pred: null })
@@ -632,7 +659,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek }: { disease: string;
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
       <div className="mb-2 flex flex-wrap items-center justify-between gap-2 px-1">
-        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 전국 발생 추이 — {diseaseLabel}</h3>
+        <h3 className="text-sm font-semibold text-slate-700 dark:text-slate-200">📈 {scope} 발생 추이 — {diseaseLabel}</h3>
         <div className="flex items-center gap-3">
           <span className="hidden text-[11px] text-slate-400 sm:inline">{built.note} · 누적 {nf(totalActual)}건{peak.label ? ` · 최다 ${peak.label}` : ''}</span>
           <div className="inline-flex rounded-lg bg-slate-100 p-0.5 dark:bg-slate-800">
@@ -712,5 +739,132 @@ function DonutPanel({ title, data, colors, note, year }: { title: string; data: 
       )}
       <p className="mt-1 px-1 text-[11px] leading-relaxed text-slate-400">{note}</p>
     </Panel>
+  )
+}
+
+// ════════ 고급 분석 ════════
+const GRADE_W: Record<string, number> = { '1급': 1, '2급': 0.7, '3급': 0.5, '4급': 0.3 }
+function topDzByCount(year: string, n: number): string[] {
+  return EID_DISEASES.map((d) => ({ d, c: annualVal('count', d, year, '00') })).filter((x) => x.c > 0).sort((a, b) => b.c - a.c).slice(0, n).map((x) => x.d)
+}
+function kmeans(pts: number[][], k: number, iters = 14): number[] {
+  const n = pts.length; if (n < k) return pts.map((_, i) => i % k)
+  const dim = pts[0].length
+  const cent = Array.from({ length: k }, (_, i) => pts[Math.round((i * (n - 1)) / (k - 1))].slice())
+  const asg = new Array(n).fill(0)
+  for (let it = 0; it < iters; it++) {
+    for (let i = 0; i < n; i++) { let b = 0, bd = Infinity; for (let c = 0; c < k; c++) { let s = 0; for (let j = 0; j < dim; j++) { const e = pts[i][j] - cent[c][j]; s += e * e } if (s < bd) { bd = s; b = c } } asg[i] = b }
+    const sum = Array.from({ length: k }, () => new Array(dim).fill(0)); const cnt = new Array(k).fill(0)
+    for (let i = 0; i < n; i++) { cnt[asg[i]]++; for (let j = 0; j < dim; j++) sum[asg[i]][j] += pts[i][j] }
+    for (let c = 0; c < k; c++) if (cnt[c]) for (let j = 0; j < dim; j++) cent[c][j] = sum[c][j] / cnt[c]
+  }
+  return asg
+}
+
+function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; disease: string; diseaseLabel: string }) {
+  const heat = useMemo(() => {
+    const dz = topDzByCount(year, 8)
+    const colMax = dz.map((d) => Math.max(...EID_SIDO.map((s) => EID_RATE[year]?.[d]?.[s.code] || 0), 0.0001))
+    return { dz, colMax }
+  }, [year])
+
+  const risk = useMemo(() => {
+    const g = eidGrowthSignal(0); const gmap = new Map(g.rows.map((r) => [r.name, r.growthPct]))
+    const items = EID_DISEASES.map((d) => ({ name: cleanName(d), grp: EID_GROUP[d], cnt: annualVal('count', d, year, '00'), gr: gmap.get(cleanName(d)) ?? 0 })).filter((x) => x.cnt > 0)
+    const maxC = Math.max(...items.map((x) => x.cnt), 1), maxG = Math.max(...items.map((x) => x.gr), 1)
+    return items.map((x) => ({ ...x, score: Math.round((0.45 * (x.cnt / maxC) + 0.35 * Math.max(0, x.gr) / maxG + 0.2 * (GRADE_W[x.grp] || 0.3)) * 100) })).sort((a, b) => b.score - a.score).slice(0, 8)
+  }, [year])
+
+  const season = useMemo(() => {
+    const { share, hasPrior } = seasonalShare(disease)
+    const idx = share.map((s) => Math.round(s * 12 * 100))
+    let peak = 0; idx.forEach((v, i) => { if (v > idx[peak]) peak = i })
+    return { idx, peak, hasPrior, max: Math.max(...idx, 1) }
+  }, [disease])
+
+  const cluster = useMemo(() => {
+    const dz = topDzByCount(year, 6); if (dz.length < 3) return null
+    const colMax = dz.map((d) => Math.max(...EID_SIDO.map((s) => EID_RATE[year]?.[d]?.[s.code] || 0), 0.0001))
+    const pts = EID_SIDO.map((s) => dz.map((d, j) => (EID_RATE[year]?.[d]?.[s.code] || 0) / colMax[j]))
+    const asg = kmeans(pts, 3)
+    return [0, 1, 2].map((c) => {
+      const idxs = EID_SIDO.map((_, i) => i).filter((i) => asg[i] === c)
+      let best = 0, bv = -1
+      dz.forEach((_, j) => { const m = idxs.reduce((t, i) => t + pts[i][j], 0) / (idxs.length || 1); if (m > bv) { bv = m; best = j } })
+      return { members: idxs.map((i) => EID_SIDO[i].name), feature: cleanName(dz[best]) }
+    }).filter((c) => c.members.length)
+  }, [year])
+
+  return (
+    <div className="mt-4">
+      <h3 className="mb-2 px-1 text-sm font-bold text-slate-700 dark:text-slate-200">🔬 고급 분석</h3>
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* A. 발생률 히트맵 */}
+        <Panel title={`발생률 히트맵 — 시도 × 주요 감염병 (${year}, 10만명당)`}>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse text-[10px]">
+              <thead><tr><th className="p-1" /><th className="p-0.5 font-normal text-slate-300" />{EID_SIDO.map((s) => <th key={s.code} className="p-0.5 font-normal text-slate-400">{s.name}</th>)}</tr></thead>
+              <tbody>
+                {heat.dz.map((d, ri) => (
+                  <tr key={d}>
+                    <td className="whitespace-nowrap py-0.5 pr-2 text-right text-slate-600 dark:text-slate-300" colSpan={2}>{cleanName(d).length > 7 ? cleanName(d).slice(0, 7) : cleanName(d)}</td>
+                    {EID_SIDO.map((s) => { const v = EID_RATE[year]?.[d]?.[s.code] || 0; const t = v / heat.colMax[ri]; return <td key={s.code} title={`${s.name} · ${cleanName(d)} · ${v.toFixed(1)}/10만`} style={{ background: v ? rampColor(Math.sqrt(t)) : undefined }} className="h-5 border border-white/60 dark:border-slate-800/60" /> })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <p className="mt-1.5 px-1 text-[11px] text-slate-400">행(질병)별 정규화 — 색이 진할수록 그 감염병이 해당 시도에서 상대적으로 높음. 칸 위에 마우스를 올리면 수치.</p>
+        </Panel>
+
+        {/* B. 위험도 종합지수 */}
+        <Panel title={`위험도 종합지수 (${year})`}>
+          <div className="space-y-1.5">
+            {risk.map((r, i) => (
+              <div key={r.name} className="flex items-center gap-2">
+                <span className="w-4 text-xs font-bold text-slate-400">{i + 1}</span>
+                <span className="w-7 shrink-0 rounded px-1 text-center text-[10px] font-semibold text-white" style={{ background: GRP_COLOR[r.grp] || '#94a3b8' }}>{r.grp}</span>
+                <span className="w-24 shrink-0 truncate text-xs text-slate-700 dark:text-slate-200">{r.name}</span>
+                <span className="h-2.5 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-full rounded-full bg-gradient-to-r from-amber-400 to-rose-600" style={{ width: `${r.score}%` }} /></span>
+                <span className="w-7 text-right text-xs font-bold tabular-nums text-rose-600">{r.score}</span>
+              </div>
+            ))}
+          </div>
+          <p className="mt-1.5 px-1 text-[11px] text-slate-400">발생수(0.45)+최근 증가율(0.35)+심각도(급, 0.20) 가중 합성. 방역 우선순위 참고.</p>
+        </Panel>
+
+        {/* C. 계절성 패턴 */}
+        <Panel title={`계절성 패턴 — ${diseaseLabel}`}>
+          {season.hasPrior ? (
+            <>
+              <div className="flex h-28 items-end gap-1 px-1">
+                {season.idx.map((v, m) => (
+                  <div key={m} className="flex flex-1 flex-col items-center justify-end gap-0.5">
+                    <div className="w-full rounded-t" style={{ height: `${Math.max(2, (v / season.max) * 100)}%`, background: m === season.peak ? '#e11d48' : '#93c5fd' }} title={`${m + 1}월 계절지수 ${v} (평균월=100)`} />
+                    <span className="text-[9px] text-slate-400">{m + 1}</span>
+                  </div>
+                ))}
+              </div>
+              <p className="mt-1.5 px-1 text-[11px] text-slate-400">{diseaseLabel}은(는) 보통 <b className="text-rose-600">{season.peak + 1}월</b>경 가장 많아요. 과거 연도 평균 월별 패턴(평균월=100 지수).</p>
+            </>
+          ) : <p className="py-8 text-center text-sm text-slate-400">계절성 산출에 필요한 과거 연도 데이터가 부족합니다.</p>}
+        </Panel>
+
+        {/* D. 지역 클러스터링 */}
+        <Panel title={`지역 클러스터링 — 감염병 프로파일 (${year})`}>
+          {cluster ? (
+            <div className="space-y-2">
+              {cluster.map((c, i) => (
+                <div key={i} className="rounded-lg border border-slate-200 p-2 dark:border-slate-800">
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-200">유형 {i + 1} <span className="font-normal text-slate-400">· 특징: {c.feature} 상대적 높음</span></div>
+                  <div className="mt-1 flex flex-wrap gap-1">{c.members.map((m) => <span key={m} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-600 dark:bg-slate-800 dark:text-slate-300">{m}</span>)}</div>
+                </div>
+              ))}
+            </div>
+          ) : <p className="py-8 text-center text-sm text-slate-400">데이터 부족</p>}
+          <p className="mt-1.5 px-1 text-[11px] text-slate-400">상위 6개 감염병의 시도별 발생률 프로파일을 k-means(k=3)로 군집화. 비슷한 감염병 양상의 지역끼리 묶임.</p>
+        </Panel>
+      </div>
+    </div>
   )
 }

@@ -65,6 +65,22 @@ export async function fetchDbStats(): Promise<DbStats | null> {
 export interface TopClaim { claim: string; verdict: Verdict; count: number }
 
 // 실제 빈출 가짜정보(허위·과장). 토씨가 달라도 **의미가 같으면(핵심 트리플=관계+질환) 묶어 카운트 합산** → 순위.
+// 최근 7일 의심 주장(허위·과장) 일별 추이 — query_log 실데이터(트렌드 레이더).
+export async function fetchWeeklyMisinfo(): Promise<{ day: string; count: number }[] | null> {
+  if (!supabase) return null
+  try {
+    const since = new Date(Date.now() - 7 * 86400000).toISOString()
+    const { data } = await supabase.from('query_log').select('created_at,verdict').gte('created_at', since)
+    if (!data || data.length < 3) return null // 데이터 희소 시 데모 폴백
+    const wd = ['일', '월', '화', '수', '목', '금', '토']
+    const b: Record<string, number> = {}
+    for (const r of data as { created_at: string; verdict: string }[]) {
+      if (r.verdict === 'false' || r.verdict === 'partial') { const d = wd[new Date(r.created_at).getDay()]; b[d] = (b[d] || 0) + 1 }
+    }
+    return ['월', '화', '수', '목', '금', '토', '일'].map((d) => ({ day: d, count: b[d] || 0 }))
+  } catch { return null }
+}
+
 export async function fetchTopMisinfo(limit = 5): Promise<TopClaim[] | null> {
   if (!supabase) return null
   try {

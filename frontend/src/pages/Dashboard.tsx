@@ -7,7 +7,7 @@ import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
   diabetesPrevalence, topMisinfo,
 } from './dashboardData'
-import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
+import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
@@ -19,7 +19,8 @@ export default function Dashboard() {
   const [db, setDb] = useState<DbStats | null>(null)
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [top, setTop] = useState<TopClaim[] | null>(null)
-  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop) }, [])
+  const [wmis, setWmis] = useState<{ day: string; count: number }[] | null>(null)
+  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchWeeklyMisinfo().then(setWmis) }, [])
 
   const useDbDist = !!db && db.checks > 0
   const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
@@ -75,10 +76,10 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="주간 가짜정보 추세" desc="질문 로그에서 검출된 의심 주장 (트렌드 레이더)" badge="데모" span="lg:col-span-2 order-last md:order-none">
+        <Panel title="주간 가짜정보 추세" desc={wmis ? '최근 7일 query_log 의심주장(허위·과장) 일별' : '질문 로그에서 검출된 의심 주장 (트렌드 레이더)'} badge={wmis ? '실데이터' : '데모'} span="lg:col-span-2 order-last md:order-none">
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={weeklyMisinfo} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+              <AreaChart data={wmis ?? weeklyMisinfo} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
                 <defs>
                   <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#6366f1" stopOpacity={0.25} />
@@ -106,7 +107,7 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="연령대별 당뇨 유병률" desc="질병청 KNHANES 통계 (제2형당뇨, %)" badge="데모">
+        <Panel title="연령대별 당뇨 유병률" desc="질병청 KNHANES 공식 통계 (제2형당뇨, %)" badge="실데이터">
           <div className="h-44">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={diabetesPrevalence} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
