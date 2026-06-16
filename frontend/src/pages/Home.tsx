@@ -4,14 +4,14 @@ import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCauti
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
-import { fetchGroundedAnswer, fetchOutbreak, fetchTopMisinfo, logQuery, type GroundedPassage, type OutbreakRow, type TopClaim } from '../lib/db'
+import { fetchGroundedAnswer, fetchTopMisinfo, logQuery, type GroundedPassage, type TopClaim } from '../lib/db'
 import { outbreakList } from './dashboardData'
 import { getCachedVerdict, getSemanticCachedVerdict, cacheVerdict } from '../lib/cache'
 import { embedText } from '../lib/embed'
 import { type EvidenceChunk } from '../lib/search'
 import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
-import { eidPeerTop } from '../lib/eidStats'
+import { eidPeerTop, eidLatestOutbreak } from '../lib/eidStats'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
 import Highlight from '../components/Highlight'
@@ -312,11 +312,12 @@ export default function Home() {
   const [infoSummarizing, setInfoSummarizing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [topMisinfo, setTopMisinfo] = useState<TopClaim[] | null>(null)
   const [recent, setRecent] = useState<string[]>([])
+  // 지금 유행 감염병 — EID 최신주차(2026 현재)에서 직접 산출(옛 Supabase 2024 테이블 대체)
+  const outbreak = eidLatestOutbreak().rows
   useEffect(() => {
-    fetchOutbreak().then(setOutbreak).catch(() => {}); fetchTopMisinfo().then(setTopMisinfo).catch(() => {})
+    fetchTopMisinfo().then(setTopMisinfo).catch(() => {})
     try { setRecent(JSON.parse(localStorage.getItem('factdoc_recent') || '[]')) } catch { /* ignore */ }
   }, [])
   function pushRecent(q: string) {
@@ -598,7 +599,7 @@ export default function Home() {
 
       {/* 디스커버리 — 초기 화면 빈 공간에 신뢰 신호 + 유행/가짜정보 발견 퍼널 */}
       {!loading && !result && !info && !topJudgment && !topComment && substances.length === 0 && (() => {
-        const out = (outbreak && outbreak.length ? outbreak.map((o) => ({ name: o.disease, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
+        const out = (outbreak.length ? outbreak.map((o) => ({ name: o.name, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
         const fakes = (topMisinfo && topMisinfo.length ? topMisinfo.map((t) => ({ label: t.claim, q: t.claim })) : [
           { label: '당뇨가 특정 즙으로 완치된다', q: '당뇨는 △△즙으로 완치된대요' },
           { label: '건강기능식품이 병을 치료한다', q: '이 영양제가 당뇨를 치료한대요' },
