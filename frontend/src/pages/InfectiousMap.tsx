@@ -699,7 +699,7 @@ function SexAgePyramid({ disease, diseaseLabel, year }: { disease: string; disea
     return { data: rows, totM: rows.reduce((s, r) => s - r.남, 0), totF: rows.reduce((s, r) => s + r.여, 0) }
   }, [disease, year])
   return (
-    <Panel title={`성별·연령 분포 — ${diseaseLabel} · 전국 (${year})`}>
+    <Panel title={`성별·연령 분포 — ${diseaseLabel} · 전국 (연간 ${year})`}>
       {data.length === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
         <>
           <div className="mb-1 flex justify-center gap-4 text-[11px]"><span className="font-medium text-cyan-600">■ 남 {nf(totM)}</span><span className="font-medium text-pink-500">■ 여 {nf(totF)}</span></div>
@@ -721,7 +721,7 @@ function SexAgePyramid({ disease, diseaseLabel, year }: { disease: string; disea
 function DonutPanel({ title, data, colors, note, year }: { title: string; data: { name: string; value: number }[]; colors: string[]; note: string; year: string }) {
   const total = data.reduce((s, d) => s + d.value, 0)
   return (
-    <Panel title={`${title} (${year})`}>
+    <Panel title={`${title} (연간 ${year})`}>
       {total === 0 ? <p className="py-10 text-center text-sm text-slate-400">데이터 없음</p> : (
         <div className="flex items-center gap-2">
           <ResponsiveContainer width="48%" height={150}>
@@ -800,7 +800,7 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
       <h3 className="mb-2 px-1 text-sm font-bold text-slate-700 dark:text-slate-200">🔬 고급 분석</h3>
       <div className="grid gap-4 lg:grid-cols-2">
         {/* A. 발생률 히트맵 */}
-        <Panel title={`발생률 히트맵 — 시도 × 주요 감염병 (${year}, 10만명당)`}>
+        <Panel title={`발생률 히트맵 — 시도 × 주요 감염병 (연간 ${year}, 10만명당)`}>
           <div className="overflow-x-auto">
             <table className="w-full border-collapse text-[10px]">
               <thead><tr><th className="p-1" /><th className="p-0.5 font-normal text-slate-300" />{EID_SIDO.map((s) => <th key={s.code} className="p-0.5 font-normal text-slate-400">{s.name}</th>)}</tr></thead>
@@ -818,7 +818,7 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
         </Panel>
 
         {/* B. 위험도 종합지수 */}
-        <Panel title={`위험도 종합지수 (${year})`}>
+        <Panel title={`위험도 종합지수 (연간 ${year})`}>
           <div className="space-y-1.5">
             {risk.map((r, i) => (
               <div key={r.name} className="flex items-center gap-2">
@@ -851,7 +851,7 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
         </Panel>
 
         {/* D. 지역 클러스터링 */}
-        <Panel title={`지역 클러스터링 — 감염병 프로파일 (${year})`}>
+        <Panel title={`지역 클러스터링 — 감염병 프로파일 (연간 ${year})`}>
           {cluster ? (
             <div className="space-y-2">
               {cluster.map((c, i) => (

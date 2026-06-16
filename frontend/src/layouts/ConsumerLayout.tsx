@@ -12,7 +12,7 @@ const TABS = [
 
 export default function ConsumerLayout() {
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+    <div className="min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-950">
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
           <span className="text-lg font-medium text-slate-900 dark:text-white">FactDoc</span>
