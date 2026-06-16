@@ -11,6 +11,7 @@ import { embedText } from '../lib/embed'
 import { type EvidenceChunk } from '../lib/search'
 import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
+import { eidPeerTop } from '../lib/eidStats'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
 import Highlight from '../components/Highlight'
@@ -289,6 +290,10 @@ export default function Home() {
   const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
   const [related, setRelated] = useState<string[]>([])
   const [focused, setFocused] = useState(false)
+  // 내 또래 감염병 — 마이페이지 프로필(연령·성별)로 1회 산출(제미나이가 못 내는 개인화 답)
+  const [peer] = useState(() => {
+    try { const p = JSON.parse(localStorage.getItem('factdoc_profile') || '{}'); return p.age ? eidPeerTop(p.age, p.sex || '') : null } catch { return null }
+  })
   const suggestions = focused && input.trim().length >= 1 ? suggest(input, 6) : []
   const [listening, setListening] = useState(false)
   // 음성 입력(Web Speech API) — 고령층·TV 시청 중 "들은 대로 말하면 검증". 무료·키 불필요.
@@ -599,8 +604,33 @@ export default function Home() {
           { label: '건강기능식품이 병을 치료한다', q: '이 영양제가 당뇨를 치료한대요' },
           { label: '약 끊고 자연요법만 하면 된다', q: '당뇨에 좋다고 약 끊고 걷기만 하면 된대요' },
         ]).slice(0, 3)
+        const decade = peer ? peer.band.split('~')[0] + '대' : ''
         return (
           <div className="mt-5 space-y-5">
+            {/* ★내 또래 감염병 — 제미나이/검색엔진이 구조적으로 못 내는 '당신 또래에서 지금 이게 많다' (질병청 연령별 실데이터) */}
+            {peer && peer.rows.length > 0 ? (
+              <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/60 dark:bg-blue-950/20">
+                <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-100">🧑‍🤝‍🧑 {decade} 또래에게 많은 감염병</h2>
+                <p className="mt-0.5 text-[11px] leading-relaxed text-blue-700/70 dark:text-blue-300/70">질병관리청 연령별 신고 통계 기준 · 검색·챗봇엔 없는 ‘내 또래’ 실데이터</p>
+                <div className="mt-2.5 space-y-1.5">
+                  {peer.rows.map((r, i) => (
+                    <Link key={r.name} to={`/disease/${encodeURIComponent(r.name)}`}
+                      className="flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 dark:bg-slate-900">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-200">{i + 1}</span>
+                      <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">{r.name}</span>
+                      {r.surging && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">지금 ▲{r.growthPct}%</span>}
+                      <span className="text-slate-300">›</span>
+                    </Link>
+                  ))}
+                </div>
+                <p className="mt-2 text-center text-[11px] text-blue-700/60 dark:text-blue-300/50">탭하면 관련 가짜정보 검증 + 질병청 공식 증상·예방을 볼 수 있어요</p>
+              </div>
+            ) : (
+              <Link to="/me" className="block rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-3.5 text-center dark:border-blue-900/60 dark:bg-blue-950/10">
+                <p className="text-[13px] text-blue-800 dark:text-blue-200">🧑‍🤝‍🧑 마이페이지에서 <b>연령대</b>를 설정하면 ‘내 또래에게 많은 감염병’을 보여드려요</p>
+                <p className="mt-0.5 text-[11px] text-blue-600/70 dark:text-blue-300/60">검색·챗봇엔 없는, 질병청 연령별 실데이터 기반</p>
+              </Link>
+            )}
             {recent.length > 0 && (
               <div>
                 <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">🕘 최근 검색</p>
