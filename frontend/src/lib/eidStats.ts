@@ -1,5 +1,5 @@
 // 감염병 현황판 데이터(EDW 주별)에서 파생 통계 — 어드민·유행·현황판 공용.
-import { EID_CUR_YEAR, EID_WEEKLY_DISEASES, EID_GROUP, EID_WK_NAT, EID_SEXAGE } from '../data/eid-region'
+import { EID_CUR_YEAR, EID_YEARS, EID_WEEKLY_DISEASES, EID_GROUP, EID_WK_NAT, EID_SEXAGE } from '../data/eid-region'
 
 const cleanName = (d: string) => d.replace(/^@/, '')
 function lastWeekIdx(): number {
@@ -65,7 +65,7 @@ export function eidPeerTop(age: string, sex: 'male' | 'female' | '', max = 3): {
   const band = ageLabelToBand(age)
   if (!band) return null
   const growth = new Map(eidGrowthSignal(0).rows.map((r) => [r.name, r.growthPct]))
-  const years = ['2025', '2024'] // 안정적 랭킹: 최근 2개 전체연도(2026은 진행중·잠정)
+  const years = EID_YEARS.slice(-2) // 최근 2개 연도(현재+직전) — 동적(내년이면 자동 전진). 진행중 연도+직전 전체연도로 최신성·안정성 균형
   const rows: PeerItem[] = []
   for (const d of Object.keys(EID_SEXAGE)) {
     let count = 0

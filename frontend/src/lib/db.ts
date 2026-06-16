@@ -5,6 +5,8 @@ import { KDCA_CORPUS } from '../engine/kdca-corpus'
 
 // 질병청 국가건강정보포털 정적 코퍼스(건강정보검색 API 배치 수집) — Supabase 없이도 그라운딩 동작.
 const KDCA_URL = 'https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do'
+// 출처 링크를 해당 질병 콘텐츠로 딥링크(cntnts_sn 검증됨 — 메인 대신 그 글로 바로 이동)
+const docUrl = (cntntsSn?: string) => (cntntsSn ? `${KDCA_URL}?cntnts_sn=${cntntsSn}` : KDCA_URL)
 const TX_RE = /(치료|약물|연고|도포|바르|복용|관리|요법|예방|권고|표준|개선|조절)/
 const nospace = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 // 여러 질병이 섞이지 않게 좁히기 — 구체적(긴) 용어부터, '한 질병'만 잡힐 때만 채택.
@@ -221,7 +223,7 @@ function staticGrounded(diseaseTerms: string[], subjectTerms: string[]): Grounde
   const sNorm = [...new Set(subjectTerms)].filter((s) => s && s.length >= 2).map((s) => s.toLowerCase().replace(/\s+/g, ''))
   const out = docs.flatMap((d) => d.chunks.map((c) => {
     const hasSubj = sNorm.some((s) => c.text.toLowerCase().replace(/\s+/g, '').includes(s))
-    return { text: c.text, section: c.section, url: KDCA_URL, portal: d.portal, treatment: TX_RE.test(c.text) || TX_RE.test(c.section), _subj: hasSubj }
+    return { text: c.text, section: c.section, url: docUrl(d.cntntsSn), portal: d.portal, treatment: TX_RE.test(c.text) || TX_RE.test(c.section), _subj: hasSubj }
   }))
   out.sort((a, b) => (Number(b._subj) - Number(a._subj)) || (Number(b.treatment) - Number(a.treatment)))
   return out.slice(0, 4).map(({ _subj, ...g }) => g)
@@ -261,5 +263,5 @@ export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] |
 
 // 정적 코퍼스(KDCA) 질병정보 — Supabase 미스/오프라인 폴백.
 function staticDiseaseInfo(terms: string[]): DiseaseSection[] {
-  return staticDocs(terms).flatMap((d) => d.chunks.map((c) => ({ section: c.section, text: c.text, url: KDCA_URL, portal: d.portal })))
+  return staticDocs(terms).flatMap((d) => d.chunks.map((c) => ({ section: c.section, text: c.text, url: docUrl(d.cntntsSn), portal: d.portal })))
 }
