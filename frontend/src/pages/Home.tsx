@@ -12,7 +12,7 @@ import { type EvidenceChunk } from '../lib/search'
 import { preventionHint } from '../lib/prevention'
 import { fetchDiseaseSections, explainDiseaseInfo, type InfoAnswer } from '../lib/info'
 import { eidPeerTop, eidLatestOutbreak } from '../lib/eidStats'
-import { feedbackUp, feedbackDown } from '../lib/feedback'
+import { feedbackUp, feedbackDown, setPoorReason } from '../lib/feedback'
 import { explainVerdict } from '../lib/explain'
 import WhyTrace from '../components/WhyTrace'
 import Highlight from '../components/Highlight'
@@ -371,6 +371,13 @@ export default function Home() {
   const [related, setRelated] = useState<string[]>([])
   const [fb, setFb] = useState<'up' | 'down' | null>(null)
   const [multi, setMulti] = useState<MultiClaim[] | null>(null)
+  // 불만 사유 슬라이드업 모달
+  const [fbModal, setFbModal] = useState(false)
+  const [fbShown, setFbShown] = useState(false)
+  const [fbItemId, setFbItemId] = useState<string | null>(null)
+  const [fbEtc, setFbEtc] = useState('')
+  const closeFbModal = () => { setFbShown(false); setTimeout(() => { setFbModal(false); setFbEtc('') }, 240) }
+  const pickReason = (r: string) => { if (fbItemId) setPoorReason(fbItemId, r); closeFbModal() }
   const [focused, setFocused] = useState(false)
   // 내 또래 감염병 — 마이페이지 프로필(연령·성별)로 1회 산출(제미나이가 못 내는 개인화 답)
   const [peer] = useState(() => {
@@ -665,7 +672,11 @@ export default function Home() {
     const claim = result?.claimText || info?.disease || input.trim()
     const verdict = result?.verdict || (info ? 'info' : topJudgment ? 'judgment' : 'unverified')
     if (rating === 'up') feedbackUp(claim, verdict)
-    else { const snap = `[질문] ${claim}\n` + collectSnapshot(); void feedbackDown(claim, verdict, snap) }
+    else {
+      const snap = `[질문] ${claim}\n` + collectSnapshot()
+      const item = await feedbackDown(claim, verdict, snap) // 불만족 자체는 즉시 기록
+      setFbItemId(item.id); setFbModal(true); setTimeout(() => setFbShown(true), 10) // 사유는 모달에서(선택)
+    }
   }
 
   const vui = result ? VUI[result.verdict] : null
@@ -1143,6 +1154,32 @@ export default function Home() {
                 {q}
               </button>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 불만 사유 — 아래에서 슬라이드업(선택, 강요 X). 바깥 누르거나 닫기로 내려감 */}
+      {fbModal && (
+        <div className={`fixed inset-0 z-50 flex items-end justify-center transition-colors duration-200 ${fbShown ? 'bg-black/30' : 'bg-black/0'}`} onClick={closeFbModal}>
+          <div onClick={(e) => e.stopPropagation()}
+            className={`w-full max-w-md rounded-t-2xl border-t border-slate-200 bg-white p-4 pb-7 shadow-2xl transition-transform duration-300 dark:border-slate-700 dark:bg-slate-900 ${fbShown ? 'translate-y-0' : 'translate-y-full'}`}>
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-slate-300 dark:bg-slate-600" />
+            <p className="text-sm font-semibold text-slate-800 dark:text-slate-100">어떤 점이 아쉬웠나요?</p>
+            <p className="mt-0.5 text-[11px] text-slate-400">선택 안 해도 괜찮아요 — 알려주시면 더 똑똑해지는 데 큰 도움이 돼요.</p>
+            <div className="mt-3 space-y-2">
+              {['질문 의도와 다른 정보를 줬어요', '잘못된 내용이 매핑되었어요', '답이 부실하거나 없어요'].map((r) => (
+                <button key={r} type="button" onClick={() => pickReason(r)}
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-left text-sm text-slate-700 transition hover:border-blue-300 hover:bg-blue-50/50 active:scale-[0.99] dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">{r}</button>
+              ))}
+              <div className="flex gap-2">
+                <input value={fbEtc} onChange={(e) => setFbEtc(e.target.value)} placeholder="기타 (직접 입력)"
+                  onKeyDown={(e) => { if (e.key === 'Enter' && fbEtc.trim()) pickReason(fbEtc.trim()) }}
+                  className="flex-1 rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-blue-400 dark:border-slate-700 dark:bg-slate-800 dark:text-white" />
+                <button type="button" onClick={() => fbEtc.trim() && pickReason(fbEtc.trim())} disabled={!fbEtc.trim()}
+                  className="shrink-0 rounded-xl bg-blue-600 px-4 text-sm font-semibold text-white disabled:opacity-40">등록</button>
+              </div>
+            </div>
+            <button type="button" onClick={closeFbModal} className="mt-3 w-full py-1 text-center text-xs text-slate-400">그냥 닫기</button>
           </div>
         </div>
       )}

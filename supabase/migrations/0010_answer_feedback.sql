@@ -10,6 +10,7 @@ create table if not exists public.answer_feedback (
   snapshot    text,                       -- 사용자가 본 답변 전체(불만족만)
   ai_verdict  text check (ai_verdict in ('poor','looks-ok','pending')),
   ai_reason   text,
+  user_reason text,                       -- 사용자가 고른 불만 사유(설문)
   resolved    boolean not null default false,
   created_at  timestamptz not null default now()
 );

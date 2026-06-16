@@ -10,6 +10,7 @@ export interface PoorItem {
   ts: number
   aiVerdict: 'poor' | 'looks-ok' | 'pending'
   aiReason: string
+  userReason?: string     // 사용자가 고른 불만 사유(설문)
   resolved?: boolean      // 관리자가 처리함
 }
 
@@ -90,4 +91,22 @@ export async function deletePoorItem(item: PoorItem): Promise<void> {
 
 export function resolvePoorItemLocal(id: string): void {
   saveLocal(loadLocal().map((i) => (i.id === id ? { ...i, resolved: true } : i)))
+}
+
+// 사용자 불만 사유(설문) 기록 — 모달에서 선택 시.
+export function setPoorReason(id: string, userReason: string): void {
+  saveLocal(loadLocal().map((i) => (i.id === id ? { ...i, userReason } : i)))
+  if (supabase) { try { void supabase.from('answer_feedback').update({ user_reason: userReason }).eq('id', id) } catch { /* */ } }
+}
+
+// CSV 내보내기 — 관리자 부실응답 큐 다운로드(엑셀에서 열림).
+export function poorQueueCSV(items: PoorItem[]): string {
+  const esc = (v: string) => `"${String(v ?? '').replace(/"/g, '""').replace(/\r?\n/g, ' ')}"`
+  const head = ['일시', '질문', '판정', 'AI검토', 'AI사유', '사용자불만사유', '답변스냅샷']
+  const rows = items.map((i) => [
+    i.ts ? new Date(i.ts).toISOString() : '', i.claim, i.verdict,
+    i.aiVerdict === 'poor' ? '부실의심' : i.aiVerdict === 'looks-ok' ? '양호(오클릭?)' : '대기',
+    i.aiReason, i.userReason ?? '', i.snapshot,
+  ].map(esc).join(','))
+  return '﻿' + [head.map(esc).join(','), ...rows].join('\r\n') // BOM(엑셀 한글)
 }

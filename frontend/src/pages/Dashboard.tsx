@@ -10,7 +10,7 @@ import {
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
-import { loadPoorQueue, deletePoorItem, feedbackStats, type PoorItem } from '../lib/feedback'
+import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 
@@ -28,6 +28,11 @@ function PoorQueuePanel() {
   const reload = () => loadPoorQueue().then(setItems)
   useEffect(() => { reload() }, [])
   const del = async (it: PoorItem) => { if (typeof confirm !== 'undefined' && !confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); reload() }
+  const download = () => {
+    const blob = new Blob([poorQueueCSV(items)], { type: 'text/csv;charset=utf-8' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob)
+    a.download = `factdoc_불만족로그_${items.length}건.csv`; a.click(); URL.revokeObjectURL(a.href)
+  }
   const st = feedbackStats()
   const shown = filt === 'poor' ? items.filter((i) => i.aiVerdict === 'poor') : items
   const VB: Record<string, { t: string; c: string }> = {
@@ -45,6 +50,7 @@ function PoorQueuePanel() {
             <button key={f} onClick={() => setFilt(f)} className={`rounded-md px-2 py-0.5 font-medium transition ${filt === f ? 'bg-white text-blue-600 shadow-sm dark:bg-slate-700 dark:text-blue-300' : 'text-slate-500'}`}>{f === 'all' ? '전체' : '부실 의심만'}</button>
           ))}
         </span>
+        {items.length > 0 && <button onClick={download} className="rounded-md border border-slate-200 px-2 py-0.5 font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">⬇ CSV</button>}
       </div>
       {shown.length === 0 ? (
         <p className="py-6 text-center text-sm text-slate-400">아직 신고된 응답이 없어요. (홈에서 답변 하단 👎 불만족 시 여기 쌓여요)</p>
@@ -60,7 +66,8 @@ function PoorQueuePanel() {
               </div>
               {open === it.id && (
                 <div className="mt-2 rounded-lg bg-slate-50 p-3 dark:bg-slate-800/50">
-                  <p className="text-[11px] font-medium text-amber-700 dark:text-amber-300">🤖 AI 검토: {it.aiReason || '—'}</p>
+                  {it.userReason && <p className="text-[11px] font-medium text-rose-600 dark:text-rose-300">🙋 사용자 불만 사유: {it.userReason}</p>}
+                  <p className="mt-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">🤖 AI 검토: {it.aiReason || '—'}</p>
                   <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">{it.snapshot || '(스냅샷 없음)'}</pre>
                   <Link to={`/?q=${encodeURIComponent(it.claim)}`} className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</Link>
                 </div>
