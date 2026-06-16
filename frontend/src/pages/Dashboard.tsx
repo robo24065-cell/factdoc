@@ -9,6 +9,8 @@ import {
 } from './dashboardData'
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
+import { preventionHint } from '../lib/prevention'
+import { findInText, symptomsFor } from '../engine'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
 import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
@@ -116,6 +118,69 @@ function AgeDistPanel({ diabetes }: { diabetes: { age: string; rate: number }[] 
           </BarChart>
         </ResponsiveContainer>
       </div>
+    </Panel>
+  )
+}
+
+// 🛰 프리벙킹 조기경보 레이더 — 급증 감염병을 '곧 퍼질 가짜정보' 선행지표로 삼아, 담당자 배포용 카드 초안 자동생성.
+// 사후검증(fact-check) → 사전예방(pre-bunking). 외부데이터 불필요: 급증신호 + 질병청 공식 증상·예방수칙.
+function prebunkDraft(name: string): string {
+  const sx = symptomsFor(findInText(name, 'disease')?.canonical ?? name)
+  const prev = preventionHint(name)
+  return [
+    `🚨 ${name} 주의 — 최근 4주 발생이 급증하고 있습니다`,
+    '',
+    `⚠ 이런 가짜정보를 조심하세요`,
+    `· "${name}에 ○○(특정 즙·민간요법·건강식품)가 특효/완치" 류의 미검증 주장이 퍼질 수 있어요.`,
+    `· 식품·민간요법은 ${name}을(를) 치료·예방한다고 단정할 수 없습니다(식약처 기준).`,
+    '',
+    `✅ 질병관리청 공식 정보`,
+    `· 주요 증상: ${sx && sx.length ? sx.slice(0, 4).join(', ') : '국가건강정보포털 참고'}`,
+    `· 예방·행동수칙: ${prev || '손위생·기침예절 등 기본 수칙을 지켜주세요'}`,
+    '',
+    `📞 의심 증상은 의료기관 또는 질병관리청 콜센터(1339)로 문의하세요.`,
+    `출처: 질병관리청 국가건강정보포털·감염병포털 (참고용이며 의료 진단이 아닙니다)`,
+  ].join('\n')
+}
+function PrebunkingRadar() {
+  const g = eidGrowthSignal()
+  const [open, setOpen] = useState<string | null>(null)
+  const [copied, setCopied] = useState<string | null>(null)
+  if (!g.rows.length) return null
+  const rows = g.rows.slice(0, 5)
+  const copy = async (name: string) => { try { await navigator.clipboard.writeText(prebunkDraft(name)); setCopied(name); setTimeout(() => setCopied(null), 2000) } catch { /* */ } }
+  const download = (name: string) => {
+    const blob = new Blob([prebunkDraft(name)], { type: 'text/plain;charset=utf-8' })
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `프리벙킹_${name}_카드초안.txt`; a.click(); URL.revokeObjectURL(a.href)
+  }
+  return (
+    <Panel title="🛰 프리벙킹 조기경보 레이더" desc={`급증 감염병 → 곧 퍼질 가짜정보 선제 차단(사후검증→사전예방). ${g.week}주차 기준 · 담당자 배포용 카드 초안 자동생성`} badge="실데이터" span="lg:col-span-2">
+      <p className="mb-2 rounded-lg bg-amber-50 px-3 py-2 text-[12px] leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        💡 감염병이 급증하면 곧 관련 가짜정보(특효·완치설)가 따라 퍼집니다. 아래 급증 질환의 <b>예방 카드 초안</b>을 미리 배포해 선제 차단하세요.
+      </p>
+      <ul className="space-y-1.5">
+        {rows.map((r) => (
+          <li key={r.name} className="rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-2 px-3 py-2">
+              <span className="rounded px-1 text-[10px] font-semibold text-white" style={{ background: '#dc2626' }}>급증</span>
+              <span className="flex-1 truncate text-sm font-medium text-slate-800 dark:text-slate-100">{r.name}</span>
+              <span className="shrink-0 text-xs font-bold text-rose-600">▲{r.growthPct >= 999 ? '신규' : `${r.growthPct}%`}</span>
+              <button onClick={() => setOpen(open === r.name ? null : r.name)} className="shrink-0 rounded-md bg-blue-50 px-2 py-1 text-[11px] font-semibold text-blue-600 dark:bg-blue-950/40 dark:text-blue-300">카드 초안</button>
+            </div>
+            {open === r.name && (
+              <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-800">
+                <pre className="max-h-60 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-700 dark:bg-slate-800/50 dark:text-slate-200">{prebunkDraft(r.name)}</pre>
+                <div className="mt-2 flex gap-2">
+                  <button onClick={() => copy(r.name)} className="rounded-md bg-blue-600 px-2.5 py-1 text-[11px] font-semibold text-white hover:bg-blue-700">{copied === r.name ? '✓ 복사됨' : '📋 복사'}</button>
+                  <button onClick={() => download(r.name)} className="rounded-md border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">⬇ TXT</button>
+                  <Link to={`/disease/${encodeURIComponent(r.name)}`} className="rounded-md border border-slate-200 px-2.5 py-1 text-[11px] font-medium text-slate-600 hover:bg-slate-50 dark:border-slate-700 dark:text-slate-300">관련 페이지 →</Link>
+                </div>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-[11px] text-slate-400">선행지표: 질병청 전수신고 급증신호(+ 향후 조달 방역물자·검색트렌드 연계). 카드 초안은 질병청 공식 증상·예방수칙 인용 — 배포 전 담당자 검토 권장.</p>
     </Panel>
   )
 }
@@ -269,6 +334,8 @@ export default function Dashboard() {
             </Panel>
           )
         })()}
+
+        <PrebunkingRadar />
 
         <PoorQueuePanel />
 
