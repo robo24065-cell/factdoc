@@ -9,11 +9,48 @@ import {
 } from './dashboardData'
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
+import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
 const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }
+
+// 연령대별 분포 — 당뇨(KNHANES 유병률) 기본 + 드롭다운으로 실시간 다발 감염병(EID 연령분포)으로 전환.
+const AGE_BANDS = ['00~09', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~']
+function ageTotal(o?: Record<string, { m: number; f: number }>): number { let t = 0; if (o) for (const b of AGE_BANDS) { const c = o[b]; if (c) t += c.m + c.f } return t }
+function AgeDistPanel({ diabetes }: { diabetes: { age: string; rate: number }[] }) {
+  const eidOpts = Object.keys(EID_SEXAGE)
+    .map((k) => ({ key: k, name: k.replace(/^@/, ''), total: ageTotal(EID_SEXAGE[k]?.[EID_CUR_YEAR]) }))
+    .filter((d) => d.total > 0).sort((a, b) => b.total - a.total).slice(0, 12)
+  const [sel, setSel] = useState('__dm')
+  const isDm = sel === '__dm'
+  const data = isDm
+    ? diabetes.map((d) => ({ age: d.age, v: d.rate }))
+    : (() => { const o = EID_SEXAGE[sel]?.[EID_CUR_YEAR]; return AGE_BANDS.map((b) => ({ age: b.replace('~', '-'), v: (o?.[b]?.m || 0) + (o?.[b]?.f || 0) })) })()
+  const unit = isDm ? '%' : '명'
+  return (
+    <Panel title="연령대별 분포" desc={isDm ? '질병청 KNHANES 제2형당뇨 유병률(%)' : `질병청 감염병포털 · ${EID_CUR_YEAR}년 신고 발생수(명)`} badge="실데이터">
+      <select value={sel} onChange={(e) => setSel(e.target.value)} className="mb-2 w-full rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200">
+        <option value="__dm">제2형당뇨 (KNHANES 유병률)</option>
+        <optgroup label="실시간 다발 감염병 (연령별 발생)">
+          {eidOpts.map((d) => <option key={d.key} value={d.key}>{d.name} · {d.total.toLocaleString()}명</option>)}
+        </optgroup>
+      </select>
+      <div className="h-40">
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={data} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.4} vertical={false} />
+            <XAxis dataKey="age" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} interval={0} angle={isDm ? 0 : -35} textAnchor={isDm ? 'middle' : 'end'} height={isDm ? 20 : 36} />
+            <YAxis tick={axis} axisLine={false} tickLine={false} width={28} />
+            <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#94a3b820' }} formatter={(v) => [`${Number(v).toLocaleString()}${unit}`, isDm ? '유병률' : '발생수']} />
+            <Bar dataKey="v" fill="#3b82f6" radius={[6, 6, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+    </Panel>
+  )
+}
 
 export default function Dashboard() {
   const [db, setDb] = useState<DbStats | null>(null)
@@ -107,19 +144,7 @@ export default function Dashboard() {
           </div>
         </Panel>
 
-        <Panel title="연령대별 당뇨 유병률" desc="질병청 KNHANES 공식 통계 (제2형당뇨, %)" badge="실데이터">
-          <div className="h-44">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={diabetesPrevalence} margin={{ top: 6, right: 6, left: -18, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" strokeOpacity={0.4} vertical={false} />
-                <XAxis dataKey="age" tick={axis} axisLine={false} tickLine={false} />
-                <YAxis tick={axis} axisLine={false} tickLine={false} width={28} />
-                <Tooltip contentStyle={tooltipStyle} cursor={{ fill: '#94a3b820' }} />
-                <Bar dataKey="rate" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </Panel>
+        <AgeDistPanel diabetes={diabetesPrevalence} />
 
         {(() => {
           const eid = eidLatestOutbreak()
