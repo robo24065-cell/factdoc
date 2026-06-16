@@ -202,7 +202,7 @@ export default function InfectiousMap() {
 
   return (
     <div className="lg:w-screen lg:max-w-none lg:relative lg:left-1/2 lg:right-1/2 lg:-ml-[50vw] lg:-mr-[50vw] lg:px-6">
-      <div className="mx-auto max-w-7xl">
+      <div className="mx-auto max-w-7xl 2xl:max-w-[1760px]">
         {/* 헤더 */}
         <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
           <div>
@@ -270,10 +270,12 @@ export default function InfectiousMap() {
           <p><b className="text-blue-700 dark:text-blue-300">한눈에</b> · {insight}</p>
         </div>
 
-        {/* 본문 */}
+        {/* 본문: 좌측 메인(지도·분석·추이) + 우측 인구학 레일 — 와이드에서 좌우 분산 */}
+        <div className="grid gap-4 2xl:grid-cols-12">
+        <div className="2xl:col-span-9">
         <div className="grid gap-4 lg:grid-cols-12">
           {/* 지도 */}
-          <div className="lg:col-span-7 2xl:col-span-5">
+          <div className="lg:col-span-7">
             <div ref={mapRef} className="relative rounded-2xl border border-slate-200 bg-gradient-to-b from-sky-50 to-white p-3 shadow-sm dark:border-slate-800 dark:from-slate-900 dark:to-slate-900">
               <div className="mb-1 flex items-center justify-between px-1">
                 <h2 className="text-sm font-semibold text-slate-700 dark:text-slate-200">
@@ -373,7 +375,7 @@ export default function InfectiousMap() {
           </div>
 
           {/* 핵심 분석 */}
-          <div className="space-y-4 lg:col-span-5 2xl:col-span-4">
+          <div className="space-y-4 lg:col-span-5">
             <div className="grid grid-cols-3 gap-2">
               <Kpi label={effMetric === 'count' ? '전국 발생수' : '전국 발생률'} value={fmt(nationTotal, effMetric)} unit={effMetric === 'count' ? '건' : '명/10만'} tone="slate" />
               <Kpi label={effMetric === 'count' ? '최다 발생지' : '최고 발생률'} value={topSido && topSido.value > 0 ? topSido.name : '—'} unit={topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음'} tone="rose" />
@@ -414,8 +416,8 @@ export default function InfectiousMap() {
             </Panel>
           </div>
 
-          {/* 보조 분석 (와이드 화면에서 별도 열로 분산) */}
-          <div className="space-y-4 lg:col-span-12 2xl:col-span-3">
+          {/* 보조 분석 */}
+          <div className="space-y-4 lg:col-span-12">
             {disease === ALL && groupMix.length > 0 && (
               <Panel title={`법정 감염병 급(군)별 구성 — ${selected ? SIDO_NAME[selected] : '전국'} (${periodLabel})`}>
                 {(() => {
@@ -468,17 +470,19 @@ export default function InfectiousMap() {
               </Panel>
             )}
           </div>
-        {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
-          <div className="lg:col-span-12 2xl:col-span-8">
+          {/* 주식차트식 시계열(일/주/월/년) + 예측 */}
+          <div className="lg:col-span-12">
             <EpiTrend disease={disease} diseaseLabel={diseaseLabel} inWeek={inWeek} selWeek={week} />
           </div>
+        </div>
+        </div>
 
-          {/* 인구학·역학 심층 분석(질병청 대시보드급) — 지도 연도와 연동, 전국 기준 */}
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 lg:col-span-12 2xl:col-span-4 2xl:grid-cols-1">
-            <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
-            <DonutPanel title="환자분류" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
-            <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
-          </div>
+        {/* 인구학·역학 심층 분석 — 우측 레일(와이드)·하단 3열(그 외). 지도 연도와 연동, 전국 기준 */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 2xl:col-span-3 2xl:grid-cols-1 2xl:content-start">
+          <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
+          <DonutPanel title="환자분류" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
+          <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
+        </div>
         </div>
 
         <p className="mx-auto mt-5 max-w-3xl text-center text-[11px] leading-relaxed text-slate-400">
