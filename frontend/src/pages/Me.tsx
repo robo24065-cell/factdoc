@@ -51,7 +51,10 @@ export default function Me() {
       <h1 className="mt-2 text-[22px] font-semibold text-slate-900 dark:text-white">내 정보</h1>
       <p className="mt-1.5 text-sm text-slate-500">입력하면 검증 결과에 ‘나에게 맞는 위험 정보’를 더해드려요. (선택 · 이 기기에만 저장)</p>
 
-      <div className="mt-5 space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+      <div className="mt-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+      {/* 좌측 — 입력 + 기록 관리 */}
+      <div className="min-w-0 space-y-3">
+      <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
         <label className="block text-sm">
           <span className="text-slate-600 dark:text-slate-300">연령대</span>
           <select value={age} onChange={(e) => setAge(e.target.value)} className={field}>
@@ -79,7 +82,21 @@ export default function Me() {
         </div>
       </div>
 
-      <div className="mt-3 rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm dark:border-blue-950 dark:bg-blue-950/30">
+      {/* 기록 관리 */}
+      <div className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">기록 관리</p>
+        <p className="mt-0.5 text-[12px] text-slate-500">이 기기에 저장된 기록을 지웁니다.</p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          <button type="button" onClick={clearRecent} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">🕘 최근 검색 기록 초기화</button>
+          <button type="button" onClick={clearProfile} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">내 정보 초기화</button>
+        </div>
+        {cleared && <p className="mt-2 text-[12px] text-emerald-600 dark:text-emerald-400">✓ {cleared}</p>}
+      </div>
+      </div>{/* /좌측 컬럼 */}
+
+      {/* 우측 — 위험 정보 + 병무청 또래 비교 */}
+      <div className="mt-3 min-w-0 space-y-3 lg:mt-0">
+      <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4 text-sm dark:border-blue-950 dark:bg-blue-950/30">
         <p className="font-medium text-blue-900 dark:text-blue-200">나에게 맞는 위험 정보</p>
         {bmi != null && cat ? (
           <>
@@ -131,17 +148,8 @@ export default function Me() {
           </div>
         )
       })()}
-
-      {/* 기록 관리 */}
-      <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">기록 관리</p>
-        <p className="mt-0.5 text-[12px] text-slate-500">이 기기에 저장된 기록을 지웁니다.</p>
-        <div className="mt-2.5 flex flex-wrap gap-2">
-          <button type="button" onClick={clearRecent} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">🕘 최근 검색 기록 초기화</button>
-          <button type="button" onClick={clearProfile} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">내 정보 초기화</button>
-        </div>
-        {cleared && <p className="mt-2 text-[12px] text-emerald-600 dark:text-emerald-400">✓ {cleared}</p>}
-      </div>
+      </div>{/* /우측 컬럼 */}
+      </div>{/* /그리드 */}
 
       <p className="mt-5 text-center text-[11px] text-slate-400">
         본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처 · 병무청

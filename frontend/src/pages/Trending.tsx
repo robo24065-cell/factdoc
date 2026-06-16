@@ -50,21 +50,8 @@ export default function Trending() {
         <span className="text-blue-500">›</span>
       </Link>
 
-      {topDz.length > 0 && (
-        <>
-          <h2 className="mt-6 text-sm font-medium text-slate-700 dark:text-slate-200">🔥 많이 찾는 질병</h2>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {topDz.map((d, i) => (
-              <Link key={d.disease} to={`/disease/${encodeURIComponent(d.disease)}`}
-                className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                <span className="text-xs font-semibold text-blue-500">{i + 1}</span>{d.disease}
-                <span className="text-[11px] text-slate-400">{d.count}</span>
-              </Link>
-            ))}
-          </div>
-        </>
-      )}
-
+      <div className="lg:mt-6 lg:grid lg:grid-cols-2 lg:items-start lg:gap-8">
+      <div className="min-w-0">
       {(() => {
         const PER = 5
         const pageCount = Math.max(1, Math.ceil(rows.length / PER))
@@ -112,19 +99,38 @@ export default function Trending() {
           </>
         )
       })()}
+      </div>{/* /좌측 컬럼 */}
 
-      <h2 className="mt-7 text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
-      <div className="mt-2 space-y-2">
-        {fakeRows.map((f, i) => (
-          <Link key={f.q} to={`/?q=${encodeURIComponent(f.q)}`}
-            className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
-            <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>
-            <span className="text-slate-300">›</span>
-          </Link>
-        ))}
-      </div>
-      <p className="mt-4 text-center text-[11px] text-slate-400">탭하면 바로 검증할 수 있어요</p>
+      <div className="mt-7 min-w-0 lg:mt-0">
+        {topDz.length > 0 && (
+          <>
+            <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🔥 많이 찾는 질병</h2>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {topDz.map((d, i) => (
+                <Link key={d.disease} to={`/disease/${encodeURIComponent(d.disease)}`}
+                  className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+                  <span className="text-xs font-semibold text-blue-500">{i + 1}</span>{d.disease}
+                  <span className="text-[11px] text-slate-400">{d.count}</span>
+                </Link>
+              ))}
+            </div>
+          </>
+        )}
+
+        <h2 className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${topDz.length > 0 ? 'mt-7' : ''}`}>⚠️ 이런 가짜정보 조심하세요</h2>
+        <div className="mt-2 space-y-2">
+          {fakeRows.map((f, i) => (
+            <Link key={f.q} to={`/?q=${encodeURIComponent(f.q)}`}
+              className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
+              <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>
+              <span className="text-slate-300">›</span>
+            </Link>
+          ))}
+        </div>
+        <p className="mt-4 text-center text-[11px] text-slate-400">탭하면 바로 검증할 수 있어요</p>
+      </div>{/* /우측 컬럼 */}
+      </div>{/* /그리드 */}
     </div>
   )
 }

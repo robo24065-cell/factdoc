@@ -704,10 +704,100 @@ export default function Home() {
     ? [...new Set(result.triples.flatMap((t) => [...variantsOf(t.objectDisease), ...variantsOf(t.subject)]).filter((x) => x && x !== '(미상)'))]
     : []
 
+  // 디스커버리(초기화면) — 와이드 화면에선 우측 레일, 모바일에선 빈 화면 하단. 데이터·JSX를 추출해 두 곳에서 재사용.
+  const empty = !loading && !result && !info && !topJudgment && !topComment && !multi && substances.length === 0
+  const discOut = (outbreak.length ? outbreak.map((o) => ({ name: o.name, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
+  const discFakes = (topMisinfo && topMisinfo.length ? topMisinfo.map((t) => ({ label: t.claim, q: t.claim })) : [
+    { label: '당뇨가 특정 즙으로 완치된다', q: '당뇨는 △△즙으로 완치된대요' },
+    { label: '건강기능식품이 병을 치료한다', q: '이 영양제가 당뇨를 치료한대요' },
+    { label: '약 끊고 자연요법만 하면 된다', q: '당뇨에 좋다고 약 끊고 걷기만 하면 된대요' },
+  ]).slice(0, 3)
+  const discDecade = peer ? peer.band.split('~')[0] + '대' : ''
+
+  // 우측 레일(항상 표시 — 답변 옆 맥락): 유행 감염병 · 최근검색 · 신뢰 신호
+  const railContent = (
+    <>
+      <div>
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🦠 지금 유행·주의 감염병</h2>
+          <Link to="/trending" className="text-xs text-blue-500 dark:text-blue-400">전체 보기 →</Link>
+        </div>
+        <div className="mt-2 flex flex-wrap gap-2">
+          {discOut.map((o) => (
+            <Link key={o.name} to={`/disease/${encodeURIComponent(o.name)}`}
+              className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
+              {o.name}
+              {o.trend === 'up' && <span className="text-[11px] font-medium text-rose-500">▲</span>}
+            </Link>
+          ))}
+        </div>
+      </div>
+      {recent.length > 0 && (
+        <div>
+          <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">🕘 최근 검색</p>
+          <div className="flex flex-wrap gap-2">
+            {recent.slice(0, 6).map((q) => (
+              <button key={q} type="button" onClick={() => { setInput(q); check(q) }}
+                className="max-w-[16rem] truncate rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{q}</button>
+            ))}
+          </div>
+        </div>
+      )}
+      <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
+        <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">💡 <b className="text-slate-700 dark:text-slate-200">국가 공식데이터</b>(질병관리청·식약처)의 룰로 판정해요. AI가 진실을 임의로 판단하지 않고, 근거 출처를 함께 보여드려요.</p>
+      </div>
+    </>
+  )
+
+  // 메인 컬럼 빈 화면 디스커버리(액션 유도): 내 또래 감염병 · 가짜정보 TOP
+  const mainDisc = (
+    <div className="space-y-5">
+      {peer && peer.rows.length > 0 ? (
+        <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/60 dark:bg-blue-950/20">
+          <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-100">🧑‍🤝‍🧑 {discDecade} 또래에게 많은 감염병</h2>
+          <p className="mt-0.5 text-[11px] leading-relaxed text-blue-700/70 dark:text-blue-300/70">질병관리청 연령별 신고 통계 기준 · 검색·챗봇엔 없는 ‘내 또래’ 실데이터</p>
+          <div className="mt-2.5 space-y-1.5">
+            {peer.rows.map((r, i) => (
+              <Link key={r.name} to={`/disease/${encodeURIComponent(r.name)}`}
+                className="flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 dark:bg-slate-900">
+                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-200">{i + 1}</span>
+                <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">{r.name}</span>
+                {r.surging && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">지금 ▲{r.growthPct}%</span>}
+                <span className="text-slate-300">›</span>
+              </Link>
+            ))}
+          </div>
+          <p className="mt-2 text-center text-[11px] text-blue-700/60 dark:text-blue-300/50">탭하면 관련 가짜정보 검증 + 질병청 공식 증상·예방을 볼 수 있어요</p>
+        </div>
+      ) : (
+        <Link to="/me" className="block rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-3.5 text-center dark:border-blue-900/60 dark:bg-blue-950/10">
+          <p className="text-[13px] text-blue-800 dark:text-blue-200">🧑‍🤝‍🧑 마이페이지에서 <b>연령대</b>를 설정하면 ‘내 또래에게 많은 감염병’을 보여드려요</p>
+          <p className="mt-0.5 text-[11px] text-blue-600/70 dark:text-blue-300/60">검색·챗봇엔 없는, 질병청 연령별 실데이터 기반</p>
+        </Link>
+      )}
+      <div>
+        <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
+        <div className="mt-2 space-y-2">
+          {discFakes.map((f, i) => (
+            <button key={f.q} type="button" onClick={() => { setInput(f.q); check(f.q) }}
+              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-left dark:border-slate-800 dark:bg-slate-900">
+              <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
+              <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>
+              <span className="text-slate-300">›</span>
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-center text-[11px] text-slate-400">탭하면 바로 검증할 수 있어요</p>
+      </div>
+    </div>
+  )
+
   return (
     <div>
-      <h1 className="mt-2 text-[22px] font-semibold leading-snug text-slate-900 dark:text-white">건강 정보,<br />진짜일까요?</h1>
+      <h1 className="mt-2 text-[22px] font-semibold leading-snug text-slate-900 dark:text-white">건강 정보,<br className="lg:hidden" /> 진짜일까요?</h1>
       <p className="mt-1.5 text-sm text-slate-500">TV·유튜브·단톡방에서 본 건강 주장을 검증하거나, 궁금한 질병·증상 정보를 물어보세요. 국가 공식 데이터로 답해드려요.</p>
+      <div className="lg:mt-2 lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        <div className="min-w-0">
 
       <div className="relative mt-5 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
         <textarea
@@ -762,89 +852,14 @@ export default function Home() {
         ))}
       </div>
 
-      {/* 디스커버리 — 초기 화면 빈 공간에 신뢰 신호 + 유행/가짜정보 발견 퍼널 */}
-      {!loading && !result && !info && !topJudgment && !topComment && !multi && substances.length === 0 && (() => {
-        const out = (outbreak.length ? outbreak.map((o) => ({ name: o.name, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
-        const fakes = (topMisinfo && topMisinfo.length ? topMisinfo.map((t) => ({ label: t.claim, q: t.claim })) : [
-          { label: '당뇨가 특정 즙으로 완치된다', q: '당뇨는 △△즙으로 완치된대요' },
-          { label: '건강기능식품이 병을 치료한다', q: '이 영양제가 당뇨를 치료한대요' },
-          { label: '약 끊고 자연요법만 하면 된다', q: '당뇨에 좋다고 약 끊고 걷기만 하면 된대요' },
-        ]).slice(0, 3)
-        const decade = peer ? peer.band.split('~')[0] + '대' : ''
-        return (
-          <div className="mt-5 space-y-5">
-            {/* ★내 또래 감염병 — 제미나이/검색엔진이 구조적으로 못 내는 '당신 또래에서 지금 이게 많다' (질병청 연령별 실데이터) */}
-            {peer && peer.rows.length > 0 ? (
-              <div className="rounded-2xl border border-blue-200 bg-blue-50/70 p-4 dark:border-blue-900/60 dark:bg-blue-950/20">
-                <h2 className="text-sm font-semibold text-blue-900 dark:text-blue-100">🧑‍🤝‍🧑 {decade} 또래에게 많은 감염병</h2>
-                <p className="mt-0.5 text-[11px] leading-relaxed text-blue-700/70 dark:text-blue-300/70">질병관리청 연령별 신고 통계 기준 · 검색·챗봇엔 없는 ‘내 또래’ 실데이터</p>
-                <div className="mt-2.5 space-y-1.5">
-                  {peer.rows.map((r, i) => (
-                    <Link key={r.name} to={`/disease/${encodeURIComponent(r.name)}`}
-                      className="flex items-center gap-2.5 rounded-xl bg-white px-3 py-2.5 dark:bg-slate-900">
-                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-100 text-xs font-semibold text-blue-700 dark:bg-blue-900/50 dark:text-blue-200">{i + 1}</span>
-                      <span className="flex-1 text-sm font-medium text-slate-800 dark:text-slate-100">{r.name}</span>
-                      {r.surging && <span className="rounded-full bg-rose-100 px-1.5 py-0.5 text-[10px] font-medium text-rose-600 dark:bg-rose-950/50 dark:text-rose-300">지금 ▲{r.growthPct}%</span>}
-                      <span className="text-slate-300">›</span>
-                    </Link>
-                  ))}
-                </div>
-                <p className="mt-2 text-center text-[11px] text-blue-700/60 dark:text-blue-300/50">탭하면 관련 가짜정보 검증 + 질병청 공식 증상·예방을 볼 수 있어요</p>
-              </div>
-            ) : (
-              <Link to="/me" className="block rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-3.5 text-center dark:border-blue-900/60 dark:bg-blue-950/10">
-                <p className="text-[13px] text-blue-800 dark:text-blue-200">🧑‍🤝‍🧑 마이페이지에서 <b>연령대</b>를 설정하면 ‘내 또래에게 많은 감염병’을 보여드려요</p>
-                <p className="mt-0.5 text-[11px] text-blue-600/70 dark:text-blue-300/60">검색·챗봇엔 없는, 질병청 연령별 실데이터 기반</p>
-              </Link>
-            )}
-            {recent.length > 0 && (
-              <div>
-                <p className="mb-2 text-sm font-medium text-slate-700 dark:text-slate-200">🕘 최근 검색</p>
-                <div className="flex flex-wrap gap-2">
-                  {recent.slice(0, 6).map((q) => (
-                    <button key={q} type="button" onClick={() => { setInput(q); check(q) }}
-                      className="max-w-[16rem] truncate rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300">{q}</button>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 dark:border-slate-800 dark:bg-slate-800/30">
-              <p className="text-[13px] leading-relaxed text-slate-500 dark:text-slate-400">💡 <b className="text-slate-700 dark:text-slate-200">국가 공식데이터</b>(질병관리청·식약처)의 룰로 판정해요. AI가 진실을 임의로 판단하지 않고, 근거 출처를 함께 보여드려요.</p>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">🦠 지금 유행·주의 감염병</h2>
-                <Link to="/trending" className="text-xs text-blue-500 dark:text-blue-400">전체 보기 →</Link>
-              </div>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {out.map((o) => (
-                  <Link key={o.name} to={`/disease/${encodeURIComponent(o.name)}`}
-                    className="flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200">
-                    {o.name}
-                    {o.trend === 'up' && <span className="text-[11px] font-medium text-rose-500">▲</span>}
-                  </Link>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이런 가짜정보 조심하세요</h2>
-              <div className="mt-2 space-y-2">
-                {fakes.map((f, i) => (
-                  <button key={f.q} type="button" onClick={() => { setInput(f.q); check(f.q) }}
-                    className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3.5 text-left dark:border-slate-800 dark:bg-slate-900">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
-                    <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>
-                    <span className="text-slate-300">›</span>
-                  </button>
-                ))}
-              </div>
-              <p className="mt-3 text-center text-[11px] text-slate-400">탭하면 바로 검증할 수 있어요</p>
-            </div>
-          </div>
-        )
-      })()}
+      {/* 디스커버리(초기 화면) — 모바일: 빈 화면 하단 / 와이드: 우측 레일(아래 aside). 메인 컬럼엔 액션형(또래·가짜정보 TOP). */}
+      {empty && (
+        <>
+          <div className="mt-5">{mainDisc}</div>
+          {/* 모바일·태블릿: 레일 내용을 메인 컬럼 하단에 이어붙임(와이드에선 우측 aside로 이동) */}
+          <div className="mt-5 space-y-5 lg:hidden">{railContent}</div>
+        </>
+      )}
 
       {/* 여러 주장 검증 — 긴 글을 주장별로 나눠 각 주장 옆 [검증결과] + 클릭 시 판단근거 펼침 */}
       {multi && multi.length > 0 && (
@@ -1173,6 +1188,14 @@ export default function Home() {
           </div>
         </div>
       )}
+
+        </div>{/* /메인 컬럼 */}
+
+        {/* 우측 레일 — 와이드(lg+) 전용. 답변 옆에 항상 맥락(유행 감염병·최근검색·신뢰신호) 표시 */}
+        <aside className="mt-8 hidden space-y-5 lg:sticky lg:top-20 lg:mt-1 lg:block">
+          {railContent}
+        </aside>
+      </div>{/* /그리드 */}
 
       {/* 불만 사유 — 아래에서 슬라이드업(선택, 강요 X). 바깥 누르거나 닫기로 내려감 */}
       {fbModal && (

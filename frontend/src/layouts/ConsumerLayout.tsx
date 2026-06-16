@@ -14,7 +14,7 @@ export default function ConsumerLayout() {
   return (
     <div className="min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-950">
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-        <div className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
           <span className="text-lg font-medium text-slate-900 dark:text-white">FactDoc</span>
           <div className="flex items-center gap-2">
             {/* 데스크톱: 상단 네비 */}
@@ -37,7 +37,7 @@ export default function ConsumerLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-4 lg:pb-12">
+      <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-4 lg:max-w-6xl lg:px-6 lg:pb-12 xl:max-w-7xl">
         <Suspense fallback={<div className="py-20 text-center text-sm text-slate-400">불러오는 중…</div>}>
           <Outlet />
         </Suspense>
