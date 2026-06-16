@@ -157,6 +157,12 @@ export async function fetchOutbreak(): Promise<OutbreakRow[] | null> {
   }
 }
 
+// 관리자 — 특정 주장(부적절·오류)을 verdict_cache에서 삭제. 주간 가짜정보 패널 관리용.
+export async function deleteCachedByClaim(claim: string): Promise<void> {
+  if (!supabase) return
+  try { await supabase.from('verdict_cache').delete().eq('canonical_claim', claim) } catch { /* */ }
+}
+
 export interface DiseaseFakeClaim { claim: string; verdict: Verdict }
 
 // 질병 관련 흔한 가짜정보(허위·과장 캐시) — §13.10a 디스커버리 퍼널. 동의어 확장 + 조회수 내림차순.

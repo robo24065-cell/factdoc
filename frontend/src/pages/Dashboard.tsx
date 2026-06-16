@@ -7,7 +7,7 @@ import {
   assetCounts, evalReport, f1Avg, verdictDist, weeklyMisinfo,
   diabetesPrevalence, topMisinfo,
 } from './dashboardData'
-import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
+import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
 import { loadPoorQueue, deletePoorItem, feedbackStats, type PoorItem } from '../lib/feedback'
@@ -111,7 +111,14 @@ export default function Dashboard() {
   const [outbreak, setOutbreak] = useState<OutbreakRow[] | null>(null)
   const [top, setTop] = useState<TopClaim[] | null>(null)
   const [wmis, setWmis] = useState<{ day: string; count: number }[] | null>(null)
+  const [hiddenMis, setHiddenMis] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('factdoc_misinfo_hidden') || '[]') } catch { return [] } })
   useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchWeeklyMisinfo().then(setWmis) }, [])
+  function hideMisinfo(claim: string) {
+    if (typeof confirm !== 'undefined' && !confirm('이 주장을 목록에서 삭제할까요? (verdict_cache에서도 제거)')) return
+    const next = [...new Set([...hiddenMis, claim])]; setHiddenMis(next)
+    try { localStorage.setItem('factdoc_misinfo_hidden', JSON.stringify(next)) } catch { /* */ }
+    void deleteCachedByClaim(claim)
+  }
 
   const useDbDist = !!db && db.checks > 0
   const distData = useDbDist ? verdictDist.map((d) => ({ ...d, value: db!.verdictDist[d.key as Verdict] })) : verdictDist
@@ -264,16 +271,24 @@ export default function Dashboard() {
           </p>
         </Panel>
 
-        <Panel title="주간 가짜정보 TOP 5" desc="실제 빈출 허위·과장 주장" badge={top && top.length ? '실데이터' : '데모'}>
-          <ol className="space-y-2 text-sm">
-            {(top && top.length ? top.map((t) => ({ claim: t.claim, count: t.count })) : topMisinfo.map((t) => ({ claim: t.claim, count: 0 }))).map((t, i) => (
-              <li key={i} className="flex items-center gap-3">
-                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{i + 1}</span>
-                <span className="flex-1 truncate text-slate-700 dark:text-slate-200">{t.claim}</span>
-                {t.count ? <span className="text-xs text-slate-400">{t.count}회</span> : null}
-              </li>
-            ))}
-          </ol>
+        <Panel title="주간 가짜정보 TOP 5" desc="실제 빈출 허위·과장 주장 · 부적절·오류 항목은 삭제(관리)" badge={top && top.length ? '실데이터' : '데모'}>
+          {(() => {
+            const list = (top && top.length ? top.map((t) => ({ claim: t.claim, count: t.count })) : topMisinfo.map((t) => ({ claim: t.claim, count: 0 }))).filter((t) => !hiddenMis.includes(t.claim))
+            if (!list.length) return <p className="py-4 text-center text-sm text-slate-400">표시할 항목이 없어요.</p>
+            return (
+              <ol className="space-y-2 text-sm">
+                {list.slice(0, 5).map((t, i) => (
+                  <li key={t.claim} className="group flex items-center gap-2.5">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-medium text-slate-600 dark:bg-slate-800 dark:text-slate-300">{i + 1}</span>
+                    <span className="flex-1 truncate text-slate-700 dark:text-slate-200">{t.claim}</span>
+                    {t.count ? <span className="shrink-0 text-xs text-slate-400">{t.count}회</span> : null}
+                    <button type="button" onClick={() => hideMisinfo(t.claim)} title="삭제(부적절·오류 관리)"
+                      className="shrink-0 rounded-md px-1.5 py-0.5 text-xs text-slate-300 transition hover:bg-rose-50 hover:text-rose-500 dark:hover:bg-rose-950/40">✕</button>
+                  </li>
+                ))}
+              </ol>
+            )
+          })()}
         </Panel>
       </div>
     </div>

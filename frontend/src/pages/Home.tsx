@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -25,6 +25,48 @@ const VUI: Record<Verdict, { label: string; sub: string; text: string; bg: strin
 }
 
 const EXAMPLES = ['당뇨는 △△즙으로 완치된대요', '설탕 많이 먹으면 당뇨 걸리나요', '뎅기열이 뭔가요?', 'E형 간염이 뭔가요?']
+
+// 여러 주장 검증 — 인라인 결과 배지(주장 옆 [검증결과])
+const VBADGE: Record<Verdict, { label: string; cls: string }> = {
+  true: { label: '사실', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' },
+  partial: { label: '근거 제한적', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
+  false: { label: '거짓', cls: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' },
+  unverified: { label: '공식근거 없음', cls: 'bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300' },
+}
+// 긴 글/여러 주장 → 주장 후보 문장 분리(문장부호·줄바꿈·불릿). 짧은 조각 제외.
+function splitClaims(text: string): string[] {
+  return text.split(/(?<=[.!?。…])\s+|[\n;·•]+/).map((s) => s.replace(/^[\s\-*\d.)]+/, '').trim()).filter((s) => s.length >= 6)
+}
+const claimLike = (s: string) => !!findInText(s, 'disease') || !!findInText(s, 'subject')
+
+// 멀티 주장 1건 — 주장 옆 [검증결과] + 클릭 시 판단근거·설명 펼침(단일 카드와 같은 양식)
+type MultiClaim = { text: string; j: Judgement; exp: string }
+function MultiItem({ m }: { m: MultiClaim }) {
+  const b = VBADGE[m.j.verdict]
+  const dz = m.j.triples[0]?.objectDisease
+  return (
+    <details className="group rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+      <summary className="flex cursor-pointer list-none items-center gap-2 p-3 [&::-webkit-details-marker]:hidden">
+        <span className={`shrink-0 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${b.cls}`}>{b.label}</span>
+        <span className="flex-1 text-sm leading-snug text-slate-800 dark:text-slate-100">{m.text}</span>
+        <span className="shrink-0 text-slate-400 transition group-open:rotate-180">▾</span>
+      </summary>
+      <div className="border-t border-slate-100 p-3 dark:border-slate-800">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">{m.exp}</p>
+        {dz && dz !== '(미상)' && <p className="mt-1.5 text-[11px] text-slate-400">관련 질환: {dz}</p>}
+        {m.j.warning && <div className="mt-2 rounded-lg bg-rose-50 p-2 text-xs text-rose-700 dark:bg-rose-950/40 dark:text-rose-200">⚠ {m.j.warning}</div>}
+        <div className="mt-2"><WhyTrace j={m.j} /></div>
+        {m.j.citations.length > 0 && (
+          <ul className="mt-2 space-y-1 text-xs">
+            {m.j.citations.map((c, i) => (
+              <li key={i}><a href={c.url} target="_blank" rel="noreferrer" className="text-blue-600 hover:underline dark:text-blue-400">{c.portal} — {c.title}</a></li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </details>
+  )
+}
 
 // 스니펫 정리: 선행 "[섹션]" 라벨 제거 + 문장경계로 자연스럽게 절단
 function cleanSnippet(text: string, max = 180): string {
@@ -291,6 +333,7 @@ export default function Home() {
   const [topJudgment, setTopJudgment] = useState<TopJudgment | null>(null)
   const [related, setRelated] = useState<string[]>([])
   const [fb, setFb] = useState<'up' | 'down' | null>(null)
+  const [multi, setMulti] = useState<MultiClaim[] | null>(null)
   const [focused, setFocused] = useState(false)
   // 내 또래 감염병 — 마이페이지 프로필(연령·성별)로 1회 산출(제미나이가 못 내는 개인화 답)
   const [peer] = useState(() => {
@@ -331,7 +374,19 @@ export default function Home() {
     if (!claim) return
     pushRecent(claim)
     setLoading(true); setExplanation(null); setExplaining(false); setEvidence([]); setHitKind(null)
-    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([]); setFb(null)
+    setInfo(null); setInfoSummarizing(false); setResult(null); setGrounded([]); setSubstances([]); setTopComment(null); setTopJudgment(null); setRelated([]); setFb(null); setMulti(null)
+
+    // 0·) 여러 주장이 섞인 긴 글(챗봇 답변·블로그 복붙) → 주장별로 나눠 각각 판정(인라인 [검증결과] + 펼침)
+    {
+      const parts = splitClaims(claim)
+      const claimParts = parts.filter(claimLike)
+      if (claim.length >= 60 && parts.length >= 2 && claimParts.length >= 2) {
+        const items: MultiClaim[] = claimParts.slice(0, 20).map((s) => { const j = runPipeline(s); return { text: s, j, exp: explainLocal(j) } })
+        setMulti(items); setLoading(false)
+        void logQuery(claim, 'unverified', 'multi')
+        return
+      }
+    }
     // 후속 질문 추천 — 질병 인식 시(어떤 경로로 답하든 표시)
     { const dzR = findInText(claim, 'disease'); if (dzR) setRelated(relatedQuestions(dzR.canonical, dzR.variants[0] || dzR.canonical).filter((q) => q !== claim)) }
 
@@ -616,7 +671,7 @@ export default function Home() {
       </div>
 
       {/* 디스커버리 — 초기 화면 빈 공간에 신뢰 신호 + 유행/가짜정보 발견 퍼널 */}
-      {!loading && !result && !info && !topJudgment && !topComment && substances.length === 0 && (() => {
+      {!loading && !result && !info && !topJudgment && !topComment && !multi && substances.length === 0 && (() => {
         const out = (outbreak.length ? outbreak.map((o) => ({ name: o.name, trend: o.trend })) : outbreakList.map((o) => ({ name: o.name, trend: o.trend.includes('급증') || o.trend.includes('증가') ? 'up' : 'flat' }))).slice(0, 4)
         const fakes = (topMisinfo && topMisinfo.length ? topMisinfo.map((t) => ({ label: t.claim, q: t.claim })) : [
           { label: '당뇨가 특정 즙으로 완치된다', q: '당뇨는 △△즙으로 완치된대요' },
@@ -698,6 +753,20 @@ export default function Home() {
           </div>
         )
       })()}
+
+      {/* 여러 주장 검증 — 긴 글을 주장별로 나눠 각 주장 옆 [검증결과] + 클릭 시 판단근거 펼침 */}
+      {multi && multi.length > 0 && (
+        <div className="mt-6">
+          <div className="mb-2 flex flex-wrap items-center justify-between gap-1">
+            <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">📋 여러 주장 검증 · {multi.length}건</h2>
+            <span className="text-[11px] text-slate-400">긴 글을 주장별로 나눠 각각 판정했어요</span>
+          </div>
+          <ul className="space-y-2">
+            {multi.map((m, i) => <MultiItem key={i} m={m} />)}
+          </ul>
+          <p className="mt-2 text-[11px] leading-relaxed text-slate-400">각 주장을 누르면 판단 근거가 펼쳐져요. 룰·클레임그래프 기반 판정(LLM이 진실을 판단하지 않아요). 공식 근거가 없는 주장은 ‘공식근거 없음’으로 표시돼요.</p>
+        </div>
+      )}
 
       {/* AI 종합 판단 카드 — 질병 + 약/음식: '먹어도 되는지' 판단 + 근거(최상단) */}
       {topJudgment && (
@@ -984,7 +1053,7 @@ export default function Home() {
       )}
 
       {/* 답변 품질 피드백 — 작게, 답변 하단. 불만족 시 관리자 부실응답 큐로(AI/규칙 1차 검토 후) */}
-      {(result || info || topJudgment || substances.length > 0) && (
+      {(result || info || topJudgment || substances.length > 0 || (multi && multi.length > 0)) && (
         <div className="mt-5 flex flex-wrap items-center justify-center gap-2 text-[11px] text-slate-400">
           {fb ? (
             <span>{fb === 'up' ? '🙏 의견 고마워요!' : '🙏 알려주셔서 고마워요 — 관리자 검토 큐로 전달했어요.'}</span>
@@ -999,7 +1068,7 @@ export default function Home() {
       )}
 
       {/* 후속 질문 추천 — 맨 아래, 작게(탐색 유도) */}
-      {related.length > 0 && (result || info || topJudgment || substances.length > 0) && (
+      {related.length > 0 && (result || info || topJudgment || substances.length > 0 || (multi && multi.length > 0)) && (
         <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
           <p className="mb-1.5 text-[11px] text-slate-400">🔎 이런 것도 확인해보세요</p>
           <div className="flex flex-wrap gap-1.5">

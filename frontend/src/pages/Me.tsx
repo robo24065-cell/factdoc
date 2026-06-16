@@ -18,6 +18,9 @@ export default function Me() {
   const [sex, setSex] = useState('')
   const [height, setHeight] = useState('')
   const [weight, setWeight] = useState('')
+  const [cleared, setCleared] = useState('')
+  function clearRecent() { try { localStorage.removeItem('factdoc_recent') } catch { /* */ } setCleared('최근 검색 기록을 지웠어요.'); setTimeout(() => setCleared(''), 2500) }
+  function clearProfile() { try { localStorage.removeItem(KEY) } catch { /* */ } setAge(''); setSex(''); setHeight(''); setWeight(''); setCleared('내 정보를 초기화했어요.'); setTimeout(() => setCleared(''), 2500) }
 
   // 로컬 저장(기기에만) 로드/세이브
   useEffect(() => {
@@ -128,6 +131,17 @@ export default function Me() {
           </div>
         )
       })()}
+
+      {/* 기록 관리 */}
+      <div className="mt-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
+        <p className="text-sm font-medium text-slate-700 dark:text-slate-200">기록 관리</p>
+        <p className="mt-0.5 text-[12px] text-slate-500">이 기기에 저장된 기록을 지웁니다.</p>
+        <div className="mt-2.5 flex flex-wrap gap-2">
+          <button type="button" onClick={clearRecent} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">🕘 최근 검색 기록 초기화</button>
+          <button type="button" onClick={clearProfile} className="rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-600 transition hover:bg-slate-50 active:scale-95 dark:border-slate-700 dark:text-slate-300 dark:hover:bg-slate-800">내 정보 초기화</button>
+        </div>
+        {cleared && <p className="mt-2 text-[12px] text-emerald-600 dark:text-emerald-400">✓ {cleared}</p>}
+      </div>
 
       <p className="mt-5 text-center text-[11px] text-slate-400">
         본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처 · 병무청
