@@ -47,6 +47,32 @@ function parseAgeKey(text: string): number | null {
   return null // 30세이상 등 전체는 overall 사용
 }
 
+// 담금주·보양주 등 민간 약술 효능 주장 — 공식 근거 없음(보류) + 알코올 안전경고.
+// 예: "말벌주가 관절염에 좋나요", "뱀술 효능", "산수유주 보양". 코퍼스 미수록이라 백과로 새지 않게 선검출.
+const FOLK_LIQUOR_RE = /(말벌|땅벌|뱀|살모사|독사|지네|굼벵이|불개미|왕지네|전갈|해마|녹용|산수유|더덕|마가목|오가피|하수오|구기자|복분자|머루|다래|개구리|두꺼비|지렁이|불나방|사슴|고삼|인삼|홍삼|도라지|당귀|천마|영지|상황|동충하초|벌집|봉독)\s*(주|술)|(담금주|보양주|약술|약주|뱀술|불로주|산삼주)/
+// 효능·건강 맥락 표지(이게 있어야 '검증 대상')
+const FOLK_HEALTH_RE = /(효능|효과|좋|낫|치료|예방|보양|기력|정력|관절|면역|혈액순환|피로|몸에)/
+export function checkFolkRemedyClaim(text: string): Judgement | null {
+  if (!FOLK_LIQUOR_RE.test(text)) return null
+  if (!FOLK_HEALTH_RE.test(text)) return null
+  // 알코올 주류 여부(대부분 술) — 경고 강도 결정
+  const isLiquor = /(주|술)/.test(text)
+  const cite: Citation = { portal: '질병관리청 국가건강정보포털', title: '민간요법·약술의 효능은 공식 의학근거로 확립되지 않음', url: 'https://health.kdca.go.kr' }
+  const trace: TraceStep[] = [
+    { kind: 'normalize', label: '민간 약술·보양주 주장 인식', detail: '담금주/보양주류의 건강 효능 주장' },
+    { kind: 'graph_match', label: '공식 근거 대조', detail: '국가 공식데이터(질병청·식약처)에 해당 효능 근거 없음', outcome: '공식근거 없음 → 보류' },
+  ]
+  const warning = isLiquor
+    ? '술(담금주)입니다. 알코올은 과음 시 간·혈압·통풍 등에 해롭고, 약 복용 중이면 상호작용 위험이 있어요. 효능을 기대해 음용량을 늘리지 마세요.'
+    : '민간요법은 공식 효능이 확립되지 않았어요. 표준 치료를 대체하지 마세요.'
+  return {
+    claimText: text, triples: [], verdict: 'unverified', confidence: 0.55,
+    citations: [cite], trace, tier: 'auto_unverified',
+    warning,
+    disclaimer: '이 효능은 국가 공식데이터로 확인되지 않아 보류합니다(효과를 보장하지도, 부정하지도 않음). ' + DISCLAIMER,
+  }
+}
+
 // 통계 주장 여부 + 판정. 통계 주장 아니면 null(일반 파이프라인으로).
 export function checkStatClaim(text: string): Judgement | null {
   const pct = parsePercent(text)

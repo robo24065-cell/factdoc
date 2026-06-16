@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, checkFolkRemedyClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf, isInfectious, isCancer } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -483,6 +483,16 @@ export default function Home() {
       setResult(stat); setHitKind(null); setLoading(false); setExplanation(local)
       void logQuery(claim, stat.verdict)
       void cacheVerdict(claim, stat, local)
+      return
+    }
+
+    // 0a') 민간 약술·보양주(말벌주 등) 효능 주장 — 공식근거 없음(보류)+알코올 경고. 질병명만 보고 백과로 새지 않게 선검출.
+    const folk = checkFolkRemedyClaim(claim)
+    if (folk) {
+      const local = explainLocal(folk)
+      setResult(folk); setHitKind(null); setLoading(false); setExplanation(local)
+      void logQuery(claim, folk.verdict)
+      void cacheVerdict(claim, folk, local)
       return
     }
 
