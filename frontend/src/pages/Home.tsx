@@ -385,8 +385,9 @@ export default function Home() {
       const aspectKw = (claim.match(/합병증|증상|원인|진단|검사|치료|예방|관리|종류|단계|경과|예후|위험요인|전조/) || [])[0]
       let summary = '', isGuid = false
       let cite: { portal: string; title: string; url?: string } | undefined
-      if (aspectKw && sections.length) {
-        const best = sections.find((s) => (s.section + s.text).includes(aspectKw)) || sections[0]
+      // 코퍼스(질병청 공식 본문)가 있으면 우선 — 측면질문은 해당 섹션, 아니면 개요. 없을 때만 일반 관리 안내.
+      if (sections.length) {
+        const best = (aspectKw && sections.find((s) => (s.section + s.text).includes(aspectKw))) || sections[0]
         summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || '공식 정보'}`, url: best.url ?? undefined }
       }
       if (!summary) { const adv = adviceAnswer(claim); if (adv) { summary = adv.text; isGuid = true; cite = adv.citation } }

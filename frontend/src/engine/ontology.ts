@@ -1,6 +1,7 @@
 // 한국어 건강-클레임 온톨로지 (동의어층) + 분류 헬퍼 — CLAUDE.md §13.5
 import { ONTOLOGY_EXT } from './ontology-ext'
 import { ONTOLOGY_FOODS } from './ontology-foods'
+import { ONTOLOGY_EID } from './ontology-eid'
 
 export type TermType = 'subject' | 'disease'
 
@@ -50,7 +51,7 @@ const ONTOLOGY_BASE: OntologyEntry[] = [
 ]
 
 // 본체 + 확장(폭) + 음식KB 주체 결합 — §13.1. 음식은 마지막(큐레이션 주체/태그가 동률시 우선).
-export const ONTOLOGY: OntologyEntry[] = [...ONTOLOGY_BASE, ...ONTOLOGY_EXT, ...ONTOLOGY_FOODS]
+export const ONTOLOGY: OntologyEntry[] = [...ONTOLOGY_BASE, ...ONTOLOGY_EXT, ...ONTOLOGY_FOODS, ...ONTOLOGY_EID]
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 

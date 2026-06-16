@@ -842,14 +842,17 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
         <Panel title={`계절성 패턴 — ${diseaseLabel}`}>
           {season.hasPrior ? (
             <>
-              <div className="flex h-28 items-end gap-1 px-1">
-                {season.idx.map((v, m) => (
-                  <div key={m} className="flex flex-1 flex-col items-center justify-end gap-0.5">
-                    <div className="w-full rounded-t" style={{ height: `${Math.max(2, (v / season.max) * 100)}%`, background: m === season.peak ? '#e11d48' : '#93c5fd' }} title={`${m + 1}월 계절지수 ${v} (평균월=100)`} />
-                    <span className="text-[9px] text-slate-400">{m + 1}</span>
-                  </div>
-                ))}
-              </div>
+              <ResponsiveContainer width="100%" height={150}>
+                <BarChart data={season.idx.map((v, m) => ({ m: `${m + 1}`, v, peak: m === season.peak }))} margin={{ top: 8, right: 6, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="m" tick={{ fontSize: 10, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} />
+                  <RTooltip cursor={{ fill: 'rgba(148,163,184,.12)' }} formatter={(v) => [`${v} (평균월=100)`, '계절지수']} labelFormatter={(m) => `${m}월`} />
+                  <Bar dataKey="v" radius={[3, 3, 0, 0]}>
+                    {season.idx.map((_, m) => <Cell key={m} fill={m === season.peak ? '#e11d48' : '#93c5fd'} />)}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
               <p className="mt-1.5 px-1 text-[11px] text-slate-400">{diseaseLabel}은(는) 보통 <b className="text-rose-600">{season.peak + 1}월</b>경 가장 많아요. 과거 연도 평균 월별 패턴(평균월=100 지수).</p>
             </>
           ) : <p className="py-8 text-center text-sm text-slate-400">계절성 산출에 필요한 과거 연도 데이터가 부족합니다.</p>}

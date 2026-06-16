@@ -13,7 +13,10 @@ function narrowToOneDisease<T extends { title: string }>(docs: T[], terms: strin
   if (docs.length <= 1) return docs
   for (const term of [...terms].sort((a, b) => b.length - a.length)) {
     const hit = docs.filter((d) => d.title.includes(term))
-    if (hit.length && new Set(hit.map((d) => d.title)).size === 1) return hit
+    if (!hit.length) continue
+    // 단일 제목이거나, 여러 제목이어도 모두 그 용어로 시작하면 같은 질병 계열(예: 수두→"수두와 대상포진","수두증") → 채택.
+    // "간염"처럼 다른 질병의 접미어(A형간염·C형간염)는 startsWith 불일치라 거름.
+    if (new Set(hit.map((d) => d.title)).size === 1 || hit.every((d) => nospace(d.title).startsWith(nospace(term)))) return hit
   }
   const exact = docs.filter((d) => terms.some((term) => nospace(d.title) === nospace(term)))
   return exact
