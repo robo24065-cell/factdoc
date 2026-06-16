@@ -4,14 +4,22 @@ import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry, type FoodLeve
 import { FOOD_KB_EXT } from './food-kb-ext'
 import { FOOD_KB_COMMON } from './food-kb-common'
 import { FOOD_KB_GEN, FOOD_GEN_NEW } from './food-kb-gen'
+import { FOOD_CARDIO } from './food-kb-cardio'
 import { findInText, variantsOf } from './ontology'
 import { isCureClaim } from './relationLex'
 
-// 본체 139 + 확장(일상) + 흔한 정크/일상푸드 + 생성·검증 신규 — §13.1 폭
-const FOOD_KB: FoodEntry[] = [...FOOD_KB_BASE, ...FOOD_KB_EXT, ...FOOD_KB_COMMON, ...FOOD_GEN_NEW].map((f) => {
-  const extra = FOOD_KB_GEN[f.name] // 워크플로 검증 연관(여드름·탈모·부종 등) 병합
-  return extra ? { ...f, effects: [...f.effects, ...extra] } : f
-})
+// 본체 139 + 확장(일상) + 흔한 정크 + 생성·검증 신규 + DASH·심혈관(질환 도메인 효과) — §13.1 폭
+const FOOD_KB: FoodEntry[] = (() => {
+  const cardio = new Map(FOOD_CARDIO.map((f) => [f.name, f]))
+  const base = [...FOOD_KB_BASE, ...FOOD_KB_EXT, ...FOOD_KB_COMMON, ...FOOD_GEN_NEW].map((f) => {
+    const extra = FOOD_KB_GEN[f.name] // 워크플로 검증 연관(여드름·탈모·부종 등) 병합
+    let m = extra ? { ...f, effects: [...f.effects, ...extra] } : f
+    const c = cardio.get(f.name) // 기존 식품엔 심혈관 효과 병합
+    if (c) { m = { ...m, aka: [...new Set([...m.aka, ...c.aka])], effects: [...m.effects, ...c.effects] }; cardio.delete(f.name) }
+    return m
+  })
+  return [...base, ...cardio.values()] // 기존에 없던 심혈관 식품은 신규 추가
+})()
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
@@ -105,6 +113,26 @@ export function foodAnswer(claim: string): FoodResult | null {
   // 매칭 안 되면(그 질병 효과 정보 없음) 대표 효과 일부만
   if (!matched) effects = f.effects.slice(0, 3)
   return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
+}
+
+// 텍스트의 음식 × 지정 질환의 '최적 효과'를 반환 — effects 전체에서 도메인 매칭(slice 잘림 없음).
+// 멀티주장 검증에서 글 전체 주제질환(docDz)으로 음식 효과를 찾을 때 사용.
+export function foodEffectFor(text: string, diseaseCanonical: string): { name: string; condition: string; effect: string; level: FoodLevel } | null {
+  if (isCureClaim(text) || !diseaseCanonical) return null
+  const t = norm(text)
+  let best: { f: FoodEntry; len: number } | undefined
+  for (const f of FOOD_KB) for (const n of [f.name, ...(f.aka ?? [])]) {
+    const nn = norm(n); if (nn.length >= 2 && t.includes(nn) && (!best || nn.length > best.len)) best = { f, len: nn.length }
+  }
+  if (!best) return null
+  // 심혈관 도메인군 — 고혈압/이상지질혈증/심혈관/뇌졸중은 한 묶음이라 서로 교차 인정(연어 심혈관 효과 ↔ 고혈압 맥락 등).
+  const cvDisease = /고혈압|이상지질|콜레스테롤|심혈관|뇌졸중|혈압/.test(diseaseCanonical)
+  const rel = best.f.effects.filter((e) => e.condition.includes(diseaseCanonical) || condMatches(e.condition, diseaseCanonical)
+    || (cvDisease && /고혈압|이상지질|콜레스테롤|심혈관|뇌졸중|혈압/.test(e.condition)))
+  if (!rel.length) return null
+  const rank: Record<string, number> = { mfds: 3, research: 2, folk: 1, caution: 0, none: -1 }
+  const e = rel.slice().sort((a, b) => rank[b.level] - rank[a.level])[0]
+  return { name: best.f.name, condition: e.condition, effect: e.effect, level: e.level }
 }
 
 // 한 문장에 음식이 여러 개일 때 전부 추출(질병 인식 시 해당 효과만 필터). 완치 주장이면 [].

@@ -2,6 +2,7 @@
 import { ONTOLOGY_EXT } from './ontology-ext'
 import { ONTOLOGY_FOODS } from './ontology-foods'
 import { ONTOLOGY_EID } from './ontology-eid'
+import { FOOD_CARDIO } from './food-kb-cardio'
 
 export type TermType = 'subject' | 'disease'
 
@@ -50,8 +51,15 @@ const ONTOLOGY_BASE: OntologyEntry[] = [
   { canonical: '운동요법', variants: ['걷기운동', '걷기', '유산소운동', '운동', '신체활동'], type: 'subject', tags: ['behavior'] },
 ]
 
+// DASH·심혈관 식품을 주체로 등록(다중주어 분해·인식용). 기존 온톨로지에 없는 이름만(중복 방지).
+const _nrm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
+const _existing = new Set([...ONTOLOGY_BASE, ...ONTOLOGY_EXT, ...ONTOLOGY_FOODS, ...ONTOLOGY_EID].map((e) => _nrm(e.canonical)))
+const ONTOLOGY_CARDIO: OntologyEntry[] = FOOD_CARDIO
+  .filter((f) => !_existing.has(_nrm(f.name)))
+  .map((f) => ({ canonical: f.name, variants: f.aka.filter(Boolean), type: 'subject' as const, tags: ['food'] }))
+
 // 본체 + 확장(폭) + 음식KB 주체 결합 — §13.1. 음식은 마지막(큐레이션 주체/태그가 동률시 우선).
-export const ONTOLOGY: OntologyEntry[] = [...ONTOLOGY_BASE, ...ONTOLOGY_EXT, ...ONTOLOGY_FOODS, ...ONTOLOGY_EID]
+export const ONTOLOGY: OntologyEntry[] = [...ONTOLOGY_BASE, ...ONTOLOGY_EXT, ...ONTOLOGY_FOODS, ...ONTOLOGY_EID, ...ONTOLOGY_CARDIO]
 
 const norm = (s: string) => s.toLowerCase().replace(/\s+/g, '')
 
