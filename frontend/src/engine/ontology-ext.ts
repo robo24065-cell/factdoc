@@ -161,23 +161,25 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: "부종", variants: ["부종", "붓기", "다리 붓", "얼굴 붓", "몸이 붓"], type: "disease" },
   { canonical: "냉방병", variants: ["냉방병", "에어컨병", "여름 감기"], type: "disease" },
   // ── 질환/기능 (건기식·만성질환 타깃) ──
-  { canonical: '간건강', variants: ['간 건강', '간건강', '지방간', '간기능', '간 기능', '간수치', '알코올성 간', '숙취'], type: 'disease' },
+  { canonical: '간건강', variants: ['간 건강', '간건강', '간기능', '간 기능', '간수치', '알코올성 간', '숙취'], type: 'disease' },
   // 아형(A/B/C/E형)은 ontology-eid에서 개별 질병으로 인식 — umbrella엔 일반 '간염'만 둠(아형 혼동 방지).
   { canonical: '간염', variants: ['간염', '바이러스간염', '바이러스성 간염'], type: 'disease', tags: ['infectious'] },
-  { canonical: '암', variants: ['대장암', '위암', '간암', '유방암', '췌장암', '전립선암', '종양', '암 예방', '항암'], type: 'disease', tags: ['cancer'] },
+  // 세부 암(위암·간암·대장암·유방암·갑상선암·전립선암·췌장암·폐암)은 전용 엔트리로 인식 — umbrella엔 일반어만(아형 흡수 방지).
+  { canonical: '암', variants: ['종양', '암 예방', '항암'], type: 'disease', tags: ['cancer'] },
   { canonical: '치매', variants: ['알츠하이머', '치매 예방', '인지기능 저하', '기억력 감퇴'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '인지기능', variants: ['기억력', '집중력', '두뇌건강', '두뇌 건강', '인지력', '학습능력'], type: 'disease' },
   { canonical: '심혈관질환', variants: ['심근경색', '동맥경화', '심장병', '심혈관', '혈관 건강', '혈행', '혈행 개선', '협심증'], type: 'disease' },
   { canonical: '뇌졸중', variants: ['뇌졸중', '중풍', '뇌경색', '뇌출혈', '뇌혈관질환', 'stroke'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '갑상선', variants: ['갑상선결절', '갑상선 결절', '갑상샘', '갑상선기능', '갑상선 기능'], type: 'disease' },
-  { canonical: '관절건강', variants: ['관절', '연골', '관절염', '무릎 관절', '무릎', '무릎 아프', '무릎이 아프', '무릎 통증', '퇴행성관절염', '퇴행성 관절염', '뼈마디'], type: 'disease' },
+  // 관절염·류마티스·퇴행성(골)관절염은 전용 엔트리 — umbrella엔 일반 관절/부위 표현만.
+  { canonical: '관절건강', variants: ['관절', '연골', '무릎 관절', '무릎', '무릎 아프', '무릎이 아프', '무릎 통증', '뼈마디'], type: 'disease' },
   { canonical: '체지방', variants: ['복부지방', '복부 지방', '내장지방', '뱃살', '체지방 감소', '체지방감소'], type: 'disease' },
   { canonical: '감기', variants: ['감기', '상기도감염', '코감기', '잔기침'], type: 'disease', tags: ['infectious'] },
   { canonical: '전립선건강', variants: ['전립선', '전립샘', '전립선 건강'], type: 'disease' },
   { canonical: '피부건강', variants: ['피부 건강', '피부건강', '피부 보습', '주름', '피부 탄력'], type: 'disease' },
   { canonical: '갱년기', variants: ['갱년기', '폐경', '갱년기 증상'], type: 'disease' },
   { canonical: '홍역', variants: ['홍역', 'measles'], type: 'disease', tags: ['infectious'] },
-  { canonical: '폐렴', variants: ['폐렴', 'pneumonia', '폐렴구균'], type: 'disease', tags: ['infectious'] },
+  { canonical: '폐렴', variants: ['폐렴', 'pneumonia'], type: 'disease', tags: ['infectious'] },
   { canonical: '피로', variants: ['피로 개선', '피로회복', '만성피로', '활력'], type: 'disease' },
 
   // ── 정보질문 커버리지: 흔히 묻는 감염병/질환 (오타 변형 포함) ──
@@ -186,7 +188,8 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '결핵', variants: ['폐결핵', 'tb', 'tuberculosis'], type: 'disease', tags: ['infectious'] },
   { canonical: '수족구병', variants: ['수족구', '수족구 병', 'hfmd'], type: 'disease', tags: ['infectious'] },
   { canonical: '노로바이러스감염증', variants: ['노로바이러스', '노로', 'norovirus'], type: 'disease', tags: ['infectious'] },
-  { canonical: '식중독', variants: ['식중독', '장염', '급성장염', '세균성 장염', '장관감염'], type: 'disease', tags: ['infectious'] },
+  { canonical: '식중독', variants: ['식중독', '음식 탈', '상한 음식', '상한음식', '식중독균'], type: 'disease', tags: ['infectious'] },
+  { canonical: '장염', variants: ['장염', '급성장염', '세균성장염', '위장염', '장관감염', '바이러스성 장염'], type: 'disease', tags: ['infectious'] },
   { canonical: '백일해', variants: ['백일해', 'pertussis'], type: 'disease', tags: ['infectious'] },
   { canonical: '성홍열', variants: ['성홍열', 'scarlet fever'], type: 'disease', tags: ['infectious'] },
   { canonical: '엠폭스', variants: ['엠폭스', '원숭이두창', 'mpox', 'monkeypox'], type: 'disease', tags: ['infectious'] },
@@ -197,7 +200,7 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '쯔쯔가무시증', variants: ['쯔쯔가무시', '쓰쓰가무시', 'scrub typhus'], type: 'disease', tags: ['infectious'] },
 
   // ── 정보질문·검증 커버리지: 흔히 묻는 비감염 질환(인식만으로 식약처/완치 룰 발동 → 보류 감소) ──
-  { canonical: '위염', variants: ['위장병', '위궤양', '속쓰림', '위산과다', '위장질환', '소화불량', '위장장애'], type: 'disease' },
+  { canonical: '위염', variants: ['위염', '위장병', '속쓰림', '위산과다', '위장질환', '위장장애', '만성위염', '급성위염'], type: 'disease' },
   { canonical: '역류성식도염', variants: ['역류성 식도염', '위식도역류', '식도염'], type: 'disease' },
   { canonical: '변비', variants: ['변비', '쾌변', '배변장애'], type: 'disease' },
   { canonical: '빈혈', variants: ['빈혈', '철결핍', '철분부족'], type: 'disease' },
@@ -205,13 +208,13 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '아토피피부염', variants: ['아토피', '습진', '피부염'], type: 'disease' },
   { canonical: '알레르기비염', variants: ['비염', '알레르기 비염', '코막힘', '콧물 알레르기'], type: 'disease' },
   { canonical: '불면증', variants: ['불면', '불면증', '수면장애', '수면 장애'], type: 'disease' },
-  { canonical: '편두통', variants: ['두통', '편두통', '긴장성두통'], type: 'disease' },
+  { canonical: '편두통', variants: ['편두통', '마이그레인', 'migraine', '편측두통', '편측 두통'], type: 'disease' },
   { canonical: '통풍', variants: ['통풍', '요산', '고요산혈증'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '탈모', variants: ['탈모', '모발건강', '머리카락'], type: 'disease' },
   { canonical: '치주질환', variants: ['치주염', '잇몸병', '풍치', '잇몸질환', '치은염'], type: 'disease' },
-  { canonical: '방광염', variants: ['방광염', '요로감염', '요로감염증', '오줌소태'], type: 'disease', tags: ['infectious'] },
-  { canonical: '백내장', variants: ['백내장', '녹내장'], type: 'disease' },
-  { canonical: '우울증', variants: ['우울증', '우울감', '불안장애', '불안증'], type: 'disease' },
+  { canonical: '방광염', variants: ['방광염', '급성방광염', '오줌소태'], type: 'disease', tags: ['infectious'] },
+  { canonical: '백내장', variants: ['백내장', '수정체 혼탁'], type: 'disease' }, // 녹내장은 별개 질환(전용 엔트리)
+  { canonical: '우울증', variants: ['우울증', '우울감', '우울'], type: 'disease' }, // 불안장애는 별개 질환(전용 엔트리)
   { canonical: '치질', variants: ['치질', '치핵', '항문질환'], type: 'disease' },
   { canonical: '담석', variants: ['담석', '담석증', '쓸개돌'], type: 'disease' },
   // ── 코퍼스 보유 질환(국가건강정보포털 콘텐츠) + 흔한 피부/기타 ──
@@ -225,7 +228,7 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: '무좀', variants: ['무좀', '발톱무좀', '족부백선'], type: 'disease', tags: ['infectious'] },
   { canonical: '두드러기', variants: ['두드러기', '담마진'], type: 'disease' },
   { canonical: '습진', variants: ['습진', '피부염', '접촉성피부염'], type: 'disease' },
-  { canonical: '관절염', variants: ['관절염', '류마티스', '류마티스관절염', '퇴행성관절염'], type: 'disease' },
+  { canonical: '관절염', variants: ['관절염', '관절의 염증'], type: 'disease' },
 
   // ── 주체: 건강기능식품 성분 (supplement) — '식품' 취급 → 식약처 룰 발동 ──
   { canonical: '오메가3', variants: ['오메가쓰리', 'omega3', 'omega-3', '어유', '오메가삼', 'epa', 'dha', '오메가3지방산'], type: 'subject', tags: ['supplement'] },
