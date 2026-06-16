@@ -6,8 +6,8 @@
 // 호출:  supabase.functions.invoke('parse-claim', { body: { text } })
 import { geminiGenerate } from '../_shared/gemini.ts'
 
-// 질문파악(클레임 파싱): 빠르고 저렴한 flash-lite 우선, 과부하·쿼터 시 flash 폴백.
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-2.5-flash']
+// 질문파악(클레임 파싱): 빠르고 저렴한 flash-lite 우선, 과부하·쿼터 시 상위 flash → 안정 GA 순 폴백.
+const MODELS = ['gemini-3.1-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash-lite']
 
 const SYSTEM = `너는 건강정보 팩트체커의 '주장 추출기'다. 입력 문장에서 검증 대상이 되는 주장을 구조화된 트리플(JSON)로만 변환한다.
 - 너는 주장의 진실 여부를 절대 판정하지 않는다(판정은 별도 룰·그래프 엔진이 한다).
