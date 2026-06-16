@@ -628,7 +628,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
       for (let w = 1; w <= 52; w++) {
         const actual = w <= k + 1 ? (arr[w - 1] ?? 0) : null
         let pred: number | null = null
-        if (hasPrior && remaining > 0) { if (w === k + 1) pred = arr[k] ?? 0; else if (w > k + 1 && futSum > 0) pred = remaining * share[wkMonth(w)] / futSum }
+        if (hasPrior && remaining > 0) { if (w === k + 1) pred = arr[k] ?? 0; else if (w > k + 1 && futSum > 0) pred = Math.round(remaining * share[wkMonth(w)] / futSum) }
         data.push({ x: w, label: `${w}주`, actual, pred })
       }
       return { data, predicted: hasPrior && remaining > 0, sel: inWeek ? selWeek : 0, tip: (w: number) => `${cur}년 ${w}주차`, note: `주(週) 단위${inWeek ? ' · 지도 슬라이더 연동' : ''}`, minGap: 8 }
@@ -640,7 +640,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
       for (let m = 0; m < 12; m++) {
         const actual = m <= k ? curM[m] : null
         let pred: number | null = null
-        if (hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = est * share[m] }
+        if (hasPrior && k >= 0 && k < 11) { if (m === k) pred = curM[k]; else if (m > k) pred = Math.round(est * share[m]) }
         data.push({ x: m + 1, label: `${m + 1}월`, actual, pred })
       }
       return { data, predicted: hasPrior && k >= 0 && k < 11, sel: 0, tip: (m: number) => `${cur}년 ${m}월`, note: '월(月) 단위 · 올해 잔여기간 예측' + natNote, minGap: 6 }
@@ -651,7 +651,7 @@ function EpiTrend({ disease, diseaseLabel, inWeek, selWeek, selSido }: { disease
       return { data, predicted: false, sel: 0, tip: (y: string) => `${y}년`, note: `연(年) 단위 · ${scope}`, minGap: 6 }
     }
     const { est, hasPrior } = estimateAnnual(disease)
-    const data: TPt[] = years.map((y) => ({ x: y, label: y, actual: aggYearVal(disease, y), pred: (+y === +cur && hasPrior) ? est : null }))
+    const data: TPt[] = years.map((y) => ({ x: y, label: y, actual: aggYearVal(disease, y), pred: (+y === +cur && hasPrior) ? Math.round(est) : null }))
     for (let i = 0; i < data.length; i++) if (data[i].pred != null && i > 0) data[i - 1].pred = data[i - 1].actual
     return { data, predicted: hasPrior, sel: 0, tip: (y: string) => `${y}년`, note: '연(年) 단위 · 올해는 예측 연간총계', minGap: 6 }
   }, [disease, tg, inWeek, selWeek, cur, selSido, scope])

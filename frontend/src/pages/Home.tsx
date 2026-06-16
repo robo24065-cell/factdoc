@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, drugAnswer, explainLocal, findInText, foodAnswerAll, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findInText, foodAnswerAll, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, judge, officialFunction, parseClaim, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -369,6 +369,29 @@ export default function Home() {
         setLoading(false)
         void logQuery(claim, 'unverified', subs[0].kind)
         return
+      }
+    }
+
+    // 0c) 음식 스마트 응답 — KB 미수록 음식(짬뽕·짜장면 등)도 이름의 영양속성으로, "○○에 좋은 음식은" 추천.
+    if (!isCureClaim(claim)) {
+      const dzF = findInText(claim, 'disease')
+      if (dzF) {
+        if (/좋은\s*음식|추천\s*음식|뭐\s*먹|먹으면\s*좋|도움.*음식|음식.*추천|뭐를?\s*먹/.test(claim)) {
+          const foods = foodsFor(dzF.canonical)
+          if (foods.length) {
+            const sections = await fetchDiseaseSections(dzF.canonical)
+            setInfo({ disease: dzF.canonical, summary: `${dzF.canonical} 관리에 도움이 된다고 알려지거나 연구된 음식: ${foods.map((f) => f.name).join(', ')}. (식품별 근거 수준은 다르고 공식 효능 인정은 일부에 한해요. 균형 잡힌 식사의 일부로 참고하세요.)`, sections, hasOfficial: sections.length > 0, citation: undefined, isGuidance: true })
+            setLoading(false); void logQuery(claim, 'unverified', 'info'); return
+          }
+        }
+        if (/먹어도|먹으면|드셔도|드시면|섭취|괜찮|좋아|효과|되나|될까|돼\?|먹는|드세요/.test(claim)) {
+          const dc = dishCaution(claim, dzF.canonical)
+          if (dc) {
+            const sections = await fetchDiseaseSections(dzF.canonical)
+            setInfo({ disease: dzF.canonical, summary: dc.msg, sections, hasOfficial: sections.length > 0, citation: undefined, isGuidance: true })
+            setLoading(false); void logQuery(claim, 'unverified', 'info'); return
+          }
+        }
       }
     }
 

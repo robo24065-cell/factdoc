@@ -162,7 +162,8 @@ export const ONTOLOGY_EXT: OntologyEntry[] = [
   { canonical: "냉방병", variants: ["냉방병", "에어컨병", "여름 감기"], type: "disease" },
   // ── 질환/기능 (건기식·만성질환 타깃) ──
   { canonical: '간건강', variants: ['간 건강', '간건강', '지방간', '간기능', '간 기능', '간수치', '알코올성 간', '숙취'], type: 'disease' },
-  { canonical: '간염', variants: ['간염', 'a형간염', 'b형간염', 'c형간염', 'e형간염', 'a형 간염', 'b형 간염', 'c형 간염', 'e형 간염', '바이러스간염', '바이러스성 간염', '황달'], type: 'disease', tags: ['infectious'] },
+  // 아형(A/B/C/E형)은 ontology-eid에서 개별 질병으로 인식 — umbrella엔 일반 '간염'만 둠(아형 혼동 방지).
+  { canonical: '간염', variants: ['간염', '바이러스간염', '바이러스성 간염'], type: 'disease', tags: ['infectious'] },
   { canonical: '암', variants: ['대장암', '위암', '간암', '유방암', '췌장암', '전립선암', '종양', '암 예방', '항암'], type: 'disease', tags: ['cancer'] },
   { canonical: '치매', variants: ['알츠하이머', '치매 예방', '인지기능 저하', '기억력 감퇴'], type: 'disease', tags: ['chronic_irreversible'] },
   { canonical: '인지기능', variants: ['기억력', '집중력', '두뇌건강', '두뇌 건강', '인지력', '학습능력'], type: 'disease' },

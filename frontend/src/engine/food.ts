@@ -1,6 +1,6 @@
 // 음식·성분 효과 답변 — "사과/여주/바나나가 ○○에 효과있나" 류를 KB로 추론(성분·효과·근거레벨).
 // AI 강점: 임의 음식도 성분·효과로 안전하게 설명. 치료 단정 X(명예훼손·부당광고 회피).
-import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry } from './food-kb'
+import { FOOD_KB as FOOD_KB_BASE, type FoodEffect, type FoodEntry, type FoodLevel } from './food-kb'
 import { FOOD_KB_EXT } from './food-kb-ext'
 import { FOOD_KB_COMMON } from './food-kb-common'
 import { FOOD_KB_GEN, FOOD_GEN_NEW } from './food-kb-gen'
@@ -140,4 +140,46 @@ export function foodAnswerAll(claim: string, max = 4): FoodResult[] {
     if (!matched) effects = f.effects.slice(0, 3)
     return { name: f.name, components: f.components, effects, disease: dz?.canonical ?? null, matched }
   })
+}
+
+// ── "○○에 좋은 음식은?" — 그 질병에 도움된다고 연구·인정된 음식 추천(mfds 우선) ──
+export function foodsFor(diseaseCanonical: string, max = 8): { name: string; level: FoodLevel; effect: string }[] {
+  const seen = new Set<string>(); const out: { name: string; level: FoodLevel; effect: string }[] = []
+  for (const f of FOOD_KB) {
+    const e = f.effects.find((ef) => (ef.level === 'mfds' || ef.level === 'research') && condMatches(ef.condition, diseaseCanonical))
+    if (e && !seen.has(f.name)) { seen.add(f.name); out.push({ name: f.name, level: e.level, effect: e.effect }) }
+  }
+  return out.sort((a, b) => (a.level === 'mfds' ? 0 : 1) - (b.level === 'mfds' ? 0 : 1)).slice(0, max)
+}
+
+// ── 임의 음식(KB 미수록)도 이름으로 영양 속성 추론 → 질병별 주의(대개편: 짬뽕·짜장면 등도 대응) ──
+const DISH_ATTRS: { attr: string; label: string; re: RegExp }[] = [
+  { attr: 'sodium', label: '나트륨(염분)', re: /짬뽕|짜장|짜파|라면|라멘|우동|국수|칼국수|쌀국수|냉면|찌개|국밥|곰탕|설렁탕|전골|부대|젓갈|장아찌|햄|소시지|베이컨|어묵|만두|육수|국물|장조림|간장|된장|고추장|찜닭|족발|보쌈|짠|절임/ },
+  { attr: 'refinedCarb', label: '정제 탄수화물', re: /짜장|짬뽕|라면|라멘|국수|우동|칼국수|냉면|파스타|스파게티|떡볶|떡|흰빵|흰쌀|흰밥|쌀밥|밀가루|만두|튀김|과자|케이크|도넛|피자|햄버거|버거|토스트|베이글/ },
+  { attr: 'fat', label: '지방·기름', re: /튀김|부침개|파전|볶음|탕수|돈가스|돈까스|치킨|피자|삼겹|족발|보쌈|곱창|막창|버거|마요|크림|치즈|짜장|탕수육|깐풍|유린기|튀긴|기름진/ },
+  { attr: 'sugar', label: '당분', re: /케이크|사탕|초콜릿|아이스크림|음료|주스|탄산|콜라|사이다|시럽|도넛|꿀|잼|디저트|빙수|마카롱|쿠키|단팥|약과|라떼|버블티|에이드/ },
+  { attr: 'spicy', label: '맵고 자극적', re: /매운|매콤|얼큰|불닭|마라|떡볶|불막창|낙지볶음|쭈꾸미|닭발|불족발|매콤/ },
+  { attr: 'alcohol', label: '알코올', re: /소주|맥주|와인|막걸리|위스키|보드카|사케|하이볼|칵테일|양주|폭탄주|술/ },
+  { attr: 'purine', label: '퓨린(요산↑)', re: /맥주|곱창|막창|내장|등푸른|고등어|꽁치|멸치육수|삼겹|소고기|돼지고기|새우|조개|홍합|곱창전골|간(?!장)/ },
+]
+const DZ_SENSITIVE: { re: RegExp; attrs: string[]; advice: string }[] = [
+  { re: /고혈압|혈압/, attrs: ['sodium', 'fat'], advice: '국물·소금을 줄이고 양을 조절하면' },
+  { re: /당뇨|혈당/, attrs: ['sugar', 'refinedCarb'], advice: '양을 줄이고 잡곡·채소를 곁들이면' },
+  { re: /지질|콜레스테롤|고지혈/, attrs: ['fat'], advice: '튀김·기름진 부분을 줄이면' },
+  { re: /신장|콩팥|신증|사구체|콩팥병/, attrs: ['sodium', 'purine'], advice: '나트륨·단백 과잉을 피하면' },
+  { re: /통풍|요산/, attrs: ['purine', 'alcohol'], advice: '과음·내장·진한 육수를 줄이면' },
+  { re: /위염|위궤양|역류|식도|속쓰림|장염/, attrs: ['spicy', 'alcohol', 'fat'], advice: '맵고 자극적인 것·술·기름진 것을 줄이면' },
+  { re: /비만|체중|체지방|과체중|다이어트/, attrs: ['fat', 'sugar', 'refinedCarb'], advice: '열량·당·기름을 줄이면' },
+  { re: /간염|간경변|지방간|간건강|숙취/, attrs: ['alcohol', 'fat'], advice: '금주하고 기름진 음식을 줄이면' },
+  { re: /심혈관|심장|동맥|협심|심근|뇌졸중|부정맥/, attrs: ['sodium', 'fat'], advice: '염분·포화지방을 줄이면' },
+]
+const ATTR_LABEL: Record<string, string> = Object.fromEntries(DISH_ATTRS.map((a) => [a.attr, a.label]))
+
+export function dishCaution(text: string, diseaseCanonical: string): { attrs: string[]; msg: string } | null {
+  const sens = DZ_SENSITIVE.find((s) => s.re.test(diseaseCanonical))
+  if (!sens) return null
+  const present = [...new Set(DISH_ATTRS.filter((a) => sens.attrs.includes(a.attr) && a.re.test(text)).map((a) => a.attr))]
+  if (!present.length) return null
+  const labels = present.map((a) => ATTR_LABEL[a]).join('·')
+  return { attrs: present, msg: `${labels} 함량이 높은 편이에요. ${diseaseCanonical} 관리 중이라면 ${sens.advice} 부담을 줄일 수 있어요. (음식 이름으로 추정한 일반 정보예요. 개인차가 있고 진단·치료를 대체하지 않아요.)` }
 }
