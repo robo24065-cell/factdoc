@@ -2,7 +2,7 @@
 import type { Citation, EvidenceRecord, Judgement, Strength, TraceStep, Triple, Verdict } from './types'
 import { CLAIM_GRAPH } from './claimGraph'
 import { MFDS_DISEASE_CLAIM_RULE } from './mfdsRules'
-import { isChronicIrreversible, isInfectious, subjectTags } from './ontology'
+import { isChronicIrreversible, isInfectious, isCancer, subjectTags } from './ontology'
 
 const DISCLAIMER = '본 결과는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.'
 const RISK_WARNING = '약물·치료를 임의로 중단하지 마세요. 반드시 표준치료를 따르고 전문가와 상담하세요.'
@@ -70,7 +70,8 @@ function judgeTriple(t: Triple, useGraph = true): SingleResult {
   const tags = subjectTags(t.subject)
   const isFood = tags.includes('food') || tags.includes('supplement')
   const isFoodLike = isFood || tags.includes('nutrient')
-  const chronic = isChronicIrreversible(t.objectDisease)
+  const cancer = isCancer(t.objectDisease)
+  const chronic = isChronicIrreversible(t.objectDisease) || cancer // 암도 '완치' 단정은 허위 대상(식품·민간요법)
 
   // 감염 경로 룰: 일반 식품 섭취로 감염병에 '걸린다'는 주장 → 근거없음(식품은 감염 경로 아님)
   if (isFoodLike && (t.relation === 'increases_risk' || t.relation === 'causes_or_worsens') && isInfectious(t.objectDisease) && t.polarity === 'assert') {
@@ -95,7 +96,10 @@ function judgeTriple(t: Triple, useGraph = true): SingleResult {
 
   // 룰 B — 완치 룰: 비가역 만성질환의 완치
   if (t.relation === 'cures' && chronic && t.polarity === 'assert') {
-    trace.push({ kind: 'rule', label: '완치 룰 발동', detail: `${t.objectDisease}은(는) 비가역 만성질환으로 공식적으로 '관리'만 인정됩니다(완치 불가).`, outcome: '근거없음·허위' })
+    const detail = cancer
+      ? `${t.objectDisease}은(는) 특정 식품·민간요법으로 '완치'된다고 볼 공식 근거가 없습니다. 표준치료(수술·항암·방사선 등)가 원칙이며, 완치 단정은 위험한 허위정보입니다.`
+      : `${t.objectDisease}은(는) 비가역 만성질환으로 공식적으로 '관리'만 인정됩니다(완치 불가).`
+    trace.push({ kind: 'rule', label: '완치 룰 발동', detail, outcome: '근거없음·허위' })
     const care = CLAIM_GRAPH.find((e) => e.objectDisease === t.objectDisease && e.relation === 'manages')
     if (care) citations.push(care.citation)
     return { verdict: 'false', confidence: 0.88, citations, trace }

@@ -142,6 +142,9 @@ export function isChronicIrreversible(diseaseCanonical: string): boolean {
 export function isInfectious(diseaseCanonical: string): boolean {
   return lookup.get(norm(diseaseCanonical))?.tags?.includes('infectious') ?? false
 }
+export function isCancer(diseaseCanonical: string): boolean {
+  return lookup.get(norm(diseaseCanonical))?.tags?.includes('cancer') ?? false
+}
 export function subjectTags(subjectCanonical: string): string[] {
   return lookup.get(norm(subjectCanonical))?.tags ?? []
 }
