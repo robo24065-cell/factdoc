@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { compareToMma } from '../engine/mma-bodyspec'
 import { bodyStandard, ADULT_YEAR } from '../data/bodyspec'
+import CheckupPercentile from '../components/CheckupPercentile'
 
 const KEY = 'factdoc_profile'
 
@@ -191,11 +192,16 @@ export default function Me() {
           </div>
         )
       })()}
+
+      {/* 건강검진 수치 → 또래(연령·성별) 분포 백분위 — KOSIS 건강검진통계 */}
+      <div className="mt-3">
+        <CheckupPercentile age={ageNum} sex={sex === 'male' ? 'M' : sex === 'female' ? 'F' : ''} />
+      </div>
       </div>{/* /우측 컬럼 */}
       </div>{/* /그리드 */}
 
       <p className="mt-5 text-center text-[11px] text-slate-400">
-        본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처 · 병무청
+        본 서비스는 의료 진단이 아니며 참고용입니다 · 출처 질병관리청 · 식품의약품안전처 · 병무청 · 국민건강보험공단
       </p>
     </div>
   )

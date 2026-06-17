@@ -10,6 +10,7 @@ import { fusionBrief } from '../lib/fusion'
 import { prevalenceFor, rumorsFor } from '../engine'
 import { MMA_YEARLY } from '../data/bodyspec'
 import { NAVER_TRENDS } from '../data/naver-trends'
+import CheckupPercentile from '../components/CheckupPercentile'
 
 type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
 const TABS: { key: TabKey; label: string }[] = [
@@ -214,6 +215,9 @@ function RiskReader() {
           </div>
         </div>
       </Panel>
+
+      {/* 검진수치 → 또래 분포 백분위(KOSIS 건강검진통계) */}
+      <CheckupPercentile age={ageNum} sex={sex === 'male' ? 'M' : sex === 'female' ? 'F' : ''} />
 
       {/* 내 또래·내 조건 유병률 */}
       {(conds.length > 0 || peer) && (
