@@ -140,7 +140,7 @@ const FUNCTION_CATS = new Set(['면역기능', '항산화', '장건강', '눈건
 function relatedQuestions(canonical: string, display: string): string[] {
   if (FUNCTION_CATS.has(canonical)) return []
   const q = [`${display} 증상이 뭐예요?`]
-  if (isInfectious(canonical)) q.push(`${display}은 어떻게 전염되나요?`, `${display} 예방법 알려줘`)
+  if (isInfectious(canonical)) q.push(`${josa(display, '은는')} 어떻게 전염되나요?`, `${display} 예방법 알려줘`)
   else if (isCancer(canonical)) q.push(`${display} 위험요인이 뭔가요?`, `${display} 예방법 알려줘`)
   else if (/당뇨|혈당|고혈압|혈압|지질|콜레스테롤|비만|체중|통풍|요산|장건강|변비|위염|역류|지방간|간건강|빈혈|골다공|심혈관/.test(canonical)) q.push(`${display}에 좋은 음식은?`, `${display} 관리법 알려줘`)
   else q.push(`${display} 예방법 알려줘`, `${display} 원인이 뭔가요?`)
@@ -603,16 +603,23 @@ export default function Home() {
       // ★측면 질문(합병증/증상/원인/전파…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.
       const aspectKw = (claim.match(/합병증|증상|원인|진단|검사|치료|예방|관리|종류|단계|경과|예후|위험요인|전조/) || [])[0]
       const isTransmitQ = /전염|전파|감염\s*경로|어떻게\s*(옮|감염|퍼지|걸)|옮(나|기|아|는)|퍼지/.test(claim)
+      const isFocusedQ = isTransmitQ || !!aspectKw // 특정 측면을 물은 질문 — 개요로 때우면 안 됨
       let summary = ''
       let cite: { portal: string; title: string; url?: string } | undefined
-      // 코퍼스(질병청 공식 본문)가 있으면 우선 — 전파질문은 전파언급 섹션, 측면질문은 해당 섹션, 아니면 개요.
+      // 코퍼스(질병청 공식 본문)가 있으면 우선 — 전파질문은 전파언급 섹션, 측면질문은 해당 섹션.
+      // ★포커스 질문(전파/합병증 등)인데 해당 섹션이 코퍼스에 없으면 개요(sections[0])로 때우지 않음 → 아래 Gemini가 '질문 맞춤'으로 답.
       if (sections.length) {
-        const best = (isTransmitQ && sections.find((s) => /전파|전염|감염|접촉|비말|체액|매개|물림|성\s*접촉|분비물|침방울/.test(s.section + s.text)))
+        // 전파 질문: ① 섹션 '제목'이 전파/전염/감염경로 → 최우선, ② 본문에 전파 '전용' 용어(비말·침방울·체액·매개·물림·성접촉·분비물·공기전파·전파/전염 직접 언급).
+        //   '손/기침/감염' 같은 일반어는 개요·예방 문단에도 나와 오매칭하므로 제외 → 전용 섹션이 없으면 아래 Gemini가 질문맞춤으로 답.
+        const match = (isTransmitQ && (
+          sections.find((s) => /전파|전염|감염\s*경로|전파\s*경로/.test(s.section))
+          || sections.find((s) => /비말|침방울|체액|매개|물림|성\s*접촉|분비물|공기\s*(중|전파)|전파(되|된|경로|력)|전염(되|된|성)|옮(는|기)/.test(s.text))))
           || (aspectKw && sections.find((s) => (s.section + s.text).includes(aspectKw)))
-          || sections[0]
-        summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || '공식 정보'}`, url: best.url ?? undefined }
+        const best = match || (isFocusedQ ? null : sections[0])
+        if (best) { summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || (isTransmitQ ? '전파 경로' : '공식 정보')}`, url: best.url ?? undefined } }
       }
-      setInfo({ disease, summary, sections, hasOfficial: sections.length > 0, citation: cite, isGuidance: false })
+      const focus = isTransmitQ ? '전파 경로' : aspectKw || undefined // 인식된 질문 측면(헤더 칩)
+      setInfo({ disease, summary, sections, hasOfficial: sections.length > 0, citation: cite, isGuidance: false, focus })
       setLoading(false)
       void logQuery(claim, 'unverified', 'info')
       // 코퍼스 발췌가 없으면 → Gemini로 '질문 맞춤' 답변(전파경로 등) 우선, 실패/미배포 시 일반 관리 안내.
@@ -981,8 +988,11 @@ export default function Home() {
           <div className="flex items-center gap-3 bg-blue-50 p-4 dark:bg-blue-950/30">
             <div className="h-11 w-1.5 rounded-full bg-blue-500" />
             <div>
-              <p className="text-lg font-semibold text-blue-700 dark:text-blue-300">{info.disease}</p>
-              <p className="text-xs text-slate-500">{info.isGuidance ? '질병관리청 건강관리 안내' : '질병관리청 공식 건강정보'}</p>
+              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold text-blue-700 dark:text-blue-300">
+                {info.disease}
+                {info.focus && <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-medium text-white">{info.focus}</span>}
+              </p>
+              <p className="text-xs text-slate-500">{info.focus ? `질문 인식: ${info.disease}의 ${info.focus}` : info.isGuidance ? '질병관리청 건강관리 안내' : '질병관리청 공식 건강정보'}</p>
             </div>
             <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{info.isGuidance ? '관리 안내' : '정보'}</span>
           </div>

@@ -2,7 +2,7 @@
 // 외부데이터 불필요: 급증신호(eidGrowthSignal) + 질병청 공식 증상(symptomsFor)·예방(preventionHint).
 import { eidGrowthSignal } from './eidStats'
 import { preventionHint } from './prevention'
-import { findInText, symptomsFor } from '../engine'
+import { findInText, symptomsFor, rumorsFor } from '../engine'
 
 export interface PrebunkItem { name: string; grp: string; growthPct: number; prior: number; recent: number }
 export function prebunkRows(n = 6): { week: number; rows: PrebunkItem[] } {
@@ -10,9 +10,17 @@ export function prebunkRows(n = 6): { week: number; rows: PrebunkItem[] } {
   return { week: g.week, rows: g.rows.slice(0, n).map((r) => ({ name: r.name, grp: r.grp, growthPct: r.growthPct, prior: r.prior, recent: r.recent })) }
 }
 
-// 그 질환에 곧 따라붙을 법한 가짜정보 유형 한 줄(시민 경고용) — 단정 아님(예시).
+// 그 질환에 '실제로 퍼진' 가짜정보 목록(질병 맞춤). 없으면 일반 경고.
+export function fakeRumors(name: string): string[] {
+  const canon = findInText(name, 'disease')?.canonical ?? name
+  const real = rumorsFor(canon) || rumorsFor(name)
+  if (real && real.length) return real.slice(0, 3)
+  return [`"${name}에 특정 즙·민간요법·건강식품이 특효·완치" 류의 미검증 정보`]
+}
+// 한 줄 요약(호환) — 첫 루머 + 일반 경고
 export function fakeClaimHint(name: string): string {
-  return `"${name}에 ○○(특정 즙·민간요법·건강식품)가 특효·완치" 같은 미검증 정보가 퍼질 수 있어요. 식품·민간요법이 ${name}을(를) 치료·예방한다고 단정할 수 없어요.`
+  const r = fakeRumors(name)
+  return `${r.map((x) => `‘${x}’`).join(', ')} 같은 미검증 정보가 퍼질 수 있어요. 식품·민간요법이 ${name}을(를) 치료·예방한다고 단정할 수 없습니다.`
 }
 
 // 질병청 공식 사실(증상·예방) 요약
@@ -27,8 +35,9 @@ export function prebunkDraft(name: string): string {
   return [
     `🚨 ${name} 주의 — 최근 4주 발생이 늘고 있어요`,
     '',
-    `⚠ 이런 가짜정보를 조심하세요`,
-    `· ${fakeClaimHint(name)}`,
+    `⚠ 이런 가짜정보를 조심하세요(실제 유포 사례)`,
+    ...fakeRumors(name).map((r) => `· "${r}" — 미검증·거짓`),
+    `· 식품·민간요법이 ${name}을(를) 치료·예방한다고 단정할 수 없습니다.`,
     '',
     `✅ 질병관리청 공식 정보`,
     `· 주요 증상: ${symptoms.length ? symptoms.join(', ') : '국가건강정보포털 참고'}`,

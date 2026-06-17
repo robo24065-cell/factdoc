@@ -1,94 +1,92 @@
-// 신체 표준 통계 자동 갱신 — KOSIS OpenAPI로 연도별·연령별 평균 신장/체중을 받아 frontend/src/data/bodyspec.ts 재생성.
-// 목적: 사람 손 없이 매년 자동 최신화(하드코딩 영구방치 X). GitHub Actions cron(.github/workflows/update-bodyspec.yml)에서 주기 실행.
-//
-// 필요: 환경변수 KOSIS_KEY (KOSIS 공유서비스 인증키 — https://kosis.kr/openapi/ 에서 무료 발급)
-//   선택: BODY_KOSIS_MMA_TBL  (병무청 병역판정 평균 신장/체중 통계표 tblId, orgId=144)
-//        BODY_KOSIS_ADULT_TBL (연령대별 평균 신장/체중 통계표 tblId — NHIS 건강검진 또는 KNHANES)
-//
-// 안전장치: KOSIS 응답이 비정상/빈값이면 기존 시드(질병청 성장도표 + 병무 평균)를 절대 지우지 않고 그대로 둔다(§10 — 날조·데이터 유실 방지).
+// 신체 표준 통계 자동 갱신 — KOSIS 국민건강보험 건강검진통계(orgId=350)로 연령대별·성별 평균 신장/체중 수집.
+//   DT_35007_N130=신장, DT_35007_N132=체중. 전국("계") × 연령대 × 성별, 최신연도(현재 2024, 매년 갱신).
+//   + 질병청 2017 소아청소년 성장도표(만6~18 신장 50%ile)는 소아 보조 시드(KOSIS는 '19세 이하' 묶음이라 세분 안 됨).
+// 목적: 방치해도 매월 자동 최신화(키·몸무게는 1년에 한 번 갱신 → 월 1회 cron이면 충분). 하드코딩 영구방치 X.
+// 필요: 환경변수 KOSIS_KEY (https://kosis.kr/openapi/). 안전: 호출 실패 시 기존 파일 유지(데이터 유실 방지).
 import fs from 'node:fs'
 
 const OUT = 'frontend/src/data/bodyspec.ts'
 const KEY = process.env.KOSIS_KEY
-const MMA_TBL = process.env.BODY_KOSIS_MMA_TBL // 병무청 병역판정 평균(연도별)
-const ADULT_TBL = process.env.BODY_KOSIS_ADULT_TBL // 연령대별 평균(성인)
+const Y0 = 2012, Y1 = 2024 // 수록기간(최신연도 자동 선택). 다음해 자료 올라오면 endPrdDe만 늘리거나 그대로 두면 최신 자동.
 
-// 질병청 2017 소아청소년 성장도표 — 신장 50백분위(고정 표준, 연 1회 개정 시에만 바뀜). 시드로 항상 유지.
-const GROWTH_M = [
-  [6, 115.9], [7, 122.1], [8, 127.9], [9, 133.4], [10, 138.8], [11, 144.7], [12, 151.4],
-  [13, 158.6], [14, 165.0], [15, 169.2], [16, 171.4], [17, 172.6], [18, 173.6],
-]
-const GROWTH_F = [
-  [6, 114.7], [7, 120.8], [8, 126.7], [9, 132.6], [10, 139.1], [11, 145.8], [12, 151.7],
-  [13, 155.9], [14, 158.3], [15, 159.5], [16, 160.0], [17, 160.2], [18, 160.6],
-]
-// 병무청 병역판정 평균(만19세 남) 시드 — KOSIS 수집 성공 시 교체/확장.
-let mmaYearly = [
-  { year: 2022, h: 174.3, w: 73.1 },
-  { year: 2024, h: 174.54, w: 73.27 },
-]
+// 질병청 2017 소아청소년 성장도표 — 신장 50%ile(소아 6~18, 고정 표준). 시드 유지.
+const GROWTH_M = [[6, 115.9], [7, 122.1], [8, 127.9], [9, 133.4], [10, 138.8], [11, 144.7], [12, 151.4], [13, 158.6], [14, 165.0], [15, 169.2], [16, 171.4], [17, 172.6], [18, 173.6]]
+const GROWTH_F = [[6, 114.7], [7, 120.8], [8, 126.7], [9, 132.6], [10, 139.1], [11, 145.8], [12, 151.7], [13, 155.9], [14, 158.3], [15, 159.5], [16, 160.0], [17, 160.2], [18, 160.6]]
+// 병무청 병역판정검사 평균(만19세 남) — 병무청 통계연보 발표치(연1회 갱신, KOSIS 건강검진과 별개 주최기관 출처). 시드.
+const MMA_YEARLY = [[2022, 174.3, 73.1], [2024, 174.54, 73.27]]
 
-async function kosis(tblId) {
-  if (!KEY || !tblId) return null
-  // KOSIS 통계자료 조회. newEstPrdCnt=30 → '뽑을 수 있는 데까지' 과거 전부(연단위 최대 30년). 데이터 가치=누적.
-  const url = `https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${KEY}&itmId=ALL&objL1=ALL&format=json&jsonVD=Y&prdSe=Y&newEstPrdCnt=30&orgId=144&tblId=${tblId}`
-  try {
-    const res = await fetch(url)
-    const txt = await res.text()
-    const data = JSON.parse(txt)
-    if (!Array.isArray(data) || !data.length || data[0].err) { console.warn('  KOSIS 응답 비정상:', txt.slice(0, 160)); return null }
-    return data // [{ PRD_DE, C1_NM, ITM_NM, DT, UNIT_NM, ... }]
-  } catch (e) { console.warn('  KOSIS 호출 실패:', e.message); return null }
-}
+const SEX = { 남자: 'M', 여자: 'F' }
+const bandOf = (c3) => { const m = String(c3).match(/(\d0)대/); if (m) return m[1] + '대'; if (/80세/.test(c3)) return '80세 이상'; return null }
 
-// 병무청 연도별 평균 신장/체중 — KOSIS 행에서 (연도, 신장/체중) 추출(통계표 구조에 맞게 ITM_NM 매칭).
-function parseMma(rows) {
-  const byYear = {}
-  for (const r of rows) {
-    const y = +String(r.PRD_DE).slice(0, 4); if (!y) continue
-    const itm = (r.ITM_NM || '') + (r.C1_NM || '')
-    const v = parseFloat(r.DT); if (!Number.isFinite(v)) continue
-    byYear[y] ??= {}
-    if (/신장|키/.test(itm)) byYear[y].h = v
-    else if (/체중|몸무게/.test(itm)) byYear[y].w = v
+async function kosisTable(tblId) {
+  const url = `https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${KEY}&itmId=001+&objL1=ALL&objL2=ALL&objL3=ALL&format=json&jsonVD=Y&prdSe=Y&startPrdDe=${Y0}&endPrdDe=${Y1}&orgId=350&tblId=${tblId}`
+  const res = await fetch(url); const txt = await res.text()
+  const data = JSON.parse(txt)
+  if (!Array.isArray(data) || !data.length || data[0].err) { console.warn(`  KOSIS ${tblId} 비정상:`, txt.slice(0, 120)); return null }
+  // 전국("계") × 성별(남/여) × 연령대, 최신연도만
+  const nat = data.filter((r) => /계|전국/.test(r.C1_NM) && SEX[r.C2_NM] && bandOf(r.C3_NM))
+  if (!nat.length) return null
+  const latestYr = nat.reduce((mx, r) => Math.max(mx, +r.PRD_DE), 0)
+  const out = {} // band → {M, F} value
+  for (const r of nat) {
+    if (+r.PRD_DE !== latestYr) continue
+    const band = bandOf(r.C3_NM), sx = SEX[r.C2_NM], v = parseFloat(r.DT)
+    if (!band || !sx || !Number.isFinite(v)) continue
+    ;(out[band] ??= {})[sx] = v
   }
-  const out = Object.entries(byYear).filter(([, v]) => v.h && v.w).map(([year, v]) => ({ year: +year, h: v.h, w: v.w })).sort((a, b) => a.year - b.year)
-  return out.length ? out : null
+  return { year: String(latestYr), byBand: out }
 }
 
 async function main() {
-  if (KEY && MMA_TBL) {
-    const rows = await kosis(MMA_TBL)
-    const parsed = rows && parseMma(rows)
-    if (parsed) { mmaYearly = parsed; console.log(`  ✓ 병무 연도별 ${parsed.length}개 연도 KOSIS 갱신`) }
-    else console.log('  · 병무 KOSIS 갱신 실패 → 시드 유지')
-  } else {
-    console.log('  · KOSIS_KEY/BODY_KOSIS_MMA_TBL 미설정 → 시드 유지(질병청 성장도표 + 병무 평균). KOSIS 키 발급: https://kosis.kr/openapi/')
+  let adult = null // band → {M:{h,w}, F:{h,w}}, year
+  if (KEY) {
+    const H = await kosisTable('DT_35007_N130'), W = await kosisTable('DT_35007_N132')
+    if (H && W) {
+      const year = H.year; const bands = [...new Set([...Object.keys(H.byBand), ...Object.keys(W.byBand)])]
+      const rows = []
+      for (const b of bands) for (const sx of ['M', 'F']) {
+        const h = H.byBand[b]?.[sx], w = W.byBand[b]?.[sx]
+        if (h && w) rows.push({ band: b, sex: sx, heightCm: Math.round(h * 10) / 10, weightKg: Math.round(w * 10) / 10, year })
+      }
+      if (rows.length) { adult = rows; console.log(`  ✓ KOSIS 연령대별 ${rows.length}행(${year}년)`) }
+    }
   }
-  // (성인 연령대별 ADULT_TBL은 통계표 확정 후 같은 방식으로 BODY_STD에 19세 이상 행 추가 — 현재는 미설정 시 생략)
+  if (!adult) console.log('  · KOSIS 미설정/실패 → 성인 연령대별 비움(소아 성장도표만). KOSIS 키: https://kosis.kr/openapi/')
 
-  const latest = mmaYearly[mmaYearly.length - 1]
   const std = [
-    ...GROWTH_M.map(([age, h]) => `  { age: ${age}, sex: 'M', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
-    `  { age: 19, sex: 'M', heightCm: ${latest.h}, weightKg: ${latest.w}, source: '병무청 병역판정(${latest.year})' },`,
-    ...GROWTH_F.map(([age, h]) => `  { age: ${age}, sex: 'F', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
+    ...GROWTH_M.map(([a, h]) => `  { age: ${a}, sex: 'M', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
+    ...GROWTH_F.map(([a, h]) => `  { age: ${a}, sex: 'F', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
   ].join('\n')
-  const mma = mmaYearly.map((m) => `  { year: ${m.year}, sex: 'M', heightCm: ${m.h}, weightKg: ${m.w}, source: '병무청 병역판정(${m.year})' },`).join('\n')
+  const adultRows = (adult || []).map((r) => `  { band: ${JSON.stringify(r.band)}, sex: '${r.sex}', heightCm: ${r.heightCm}, weightKg: ${r.weightKg}, year: '${r.year}' },`).join('\n')
+  const adultYear = adult ? adult[0].year : ''
 
-  const header = `// 신체 표준 통계 — 연령·연도별 평균 키/몸무게. ⚠ 자동 생성(scripts/fetch-bodyspec.mjs). 수기편집 금지(재생성됨).\n` +
-    `// 출처: 질병관리청 2017 소아청소년 성장도표(남자 신장 50백분위) + 병무청 병역판정검사 평균(KOSIS orgId=144).\n` +
-    `// KOSIS OpenAPI(KOSIS_KEY)로 GitHub Actions cron이 주기 갱신 → 매년 자동 최신화.\n\n` +
-    `export interface AgeStd { age: number; sex: 'M' | 'F'; heightCm: number; weightKg?: number; source: string }\n\n` +
+  const header = `// 신체 표준 통계 — 자동 생성(scripts/fetch-bodyspec.mjs). 수기편집 금지(재생성됨).\n` +
+    `// 소아(만6~18): 질병관리청 2017 소아청소년 성장도표 신장 50%ile. 성인(연령대별 남/여 신장·체중): KOSIS 국민건강보험 건강검진통계(orgId=350, DT_35007_N130/N132)${adultYear ? ` ${adultYear}년(최신)` : ''}.\n` +
+    `// KOSIS_KEY로 GitHub Actions 월1회 cron 자동 갱신 → 매년 최신 평균 반영.\n\n` +
+    `export interface AgeStd { age: number; sex: 'M' | 'F'; heightCm: number; weightKg?: number; source: string }\n` +
+    `export interface AdultStd { band: string; sex: 'M' | 'F'; heightCm: number; weightKg: number; year: string }\n` +
+    `export interface MmaYear { year: number; sex: 'M'; heightCm: number; weightKg: number; source: string }\n\n` +
     `export const BODY_STD: AgeStd[] = [\n${std}\n]\n\n` +
-    `export interface MmaYear { year: number; sex: 'M'; heightCm: number; weightKg: number; source: string }\n` +
-    `export const MMA_YEARLY: MmaYear[] = [\n${mma}\n]\n\n` +
-    `export function bodyStandard(sex: 'M' | 'F', age: number, maxGap = 1): AgeStd | null {\n` +
+    `// 병무청 병역판정검사 평균(만19세 남) — 주최기관(병무청) 데이터. 마이페이지 또래 비교 폴백.\n` +
+    `export const MMA_YEARLY: MmaYear[] = [\n${MMA_YEARLY.map(([y, h, w]) => `  { year: ${y}, sex: 'M', heightCm: ${h}, weightKg: ${w}, source: '병무청 병역판정(${y})' },`).join('\n')}\n]\n\n` +
+    `// 성인 연령대별(전국 평균, 남/여) — KOSIS 건강검진통계. 최신연도.\n` +
+    `export const ADULT_STD: AdultStd[] = [\n${adultRows}\n]\n` +
+    `export const ADULT_YEAR = ${JSON.stringify(adultYear)}\n\n` +
+    `// 만 나이 → 표준. 20세 이상은 KOSIS 연령대별(최신·실측 평균), 6~18세는 성장도표(50%ile).\n` +
+    `export function bodyStandard(sex: 'M' | 'F', age: number, maxGap = 1): { heightCm: number; weightKg?: number; label: string; source: string } | null {\n` +
+    `  if (!(age > 0)) return null\n` +
+    `  if (age >= 20) {\n` +
+    `    const band = age >= 80 ? '80세 이상' : \`\${Math.floor(age / 10) * 10}대\`\n` +
+    `    const a = ADULT_STD.find((x) => x.band === band && x.sex === sex)\n` +
+    `    if (a) return { heightCm: a.heightCm, weightKg: a.weightKg, label: \`\${a.band} \${sex === 'M' ? '남성' : '여성'}\`, source: \`국민건강보험 건강검진통계 \${a.year}년\` }\n` +
+    `    return null\n` +
+    `  }\n` +
     `  const cands = BODY_STD.filter((s) => s.sex === sex)\n` +
-    `  if (!cands.length || !(age > 0)) return null\n` +
+    `  if (!cands.length) return null\n` +
     `  let best = cands[0], bd = Infinity\n` +
     `  for (const c of cands) { const d = Math.abs(c.age - age); if (d < bd) { bd = d; best = c } }\n` +
-    `  return bd <= maxGap ? best : null\n}\n`
+    `  return bd <= maxGap ? { heightCm: best.heightCm, weightKg: best.weightKg, label: \`만 \${best.age}세 \${sex === 'M' ? '남성' : '여성'}\`, source: best.source } : null\n}\n`
   fs.writeFileSync(OUT, header, 'utf8')
-  console.log(`\n${OUT} 재생성 — 성장도표 ${GROWTH_M.length}행 + 병무 ${mmaYearly.length}개 연도`)
+  console.log(`\n${OUT} 재생성 — 소아 ${GROWTH_M.length + GROWTH_F.length}행 + 성인 ${(adult || []).length}행`)
 }
 main()

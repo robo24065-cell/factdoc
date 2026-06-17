@@ -2,7 +2,7 @@
 // 사후검증(팩트체크)을 넘어선 '사전예방'. S1 전략의 사용자 대면 구현.
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { prebunkRows, fakeClaimHint, officialFacts, prebunkDraft } from '../lib/prebunk'
+import { prebunkRows, fakeRumors, officialFacts, prebunkDraft } from '../lib/prebunk'
 
 export default function Forecast() {
   const { week, rows } = prebunkRows(6)
@@ -41,8 +41,13 @@ export default function Forecast() {
                     <div className="border-t border-slate-100 px-4 pb-4 pt-3 dark:border-slate-800">
                       {/* 곧 퍼질 가짜정보 경고 */}
                       <div className="rounded-xl bg-rose-50 p-3 dark:bg-rose-950/30">
-                        <p className="text-[13px] font-semibold text-rose-700 dark:text-rose-300">⚠ 이런 가짜정보를 조심하세요</p>
-                        <p className="mt-1 text-[13px] leading-relaxed text-rose-800/90 dark:text-rose-200/90">{fakeClaimHint(r.name)}</p>
+                        <p className="text-[13px] font-semibold text-rose-700 dark:text-rose-300">⚠ 이런 가짜정보를 조심하세요 <span className="font-normal text-rose-500/80">(실제 유포 사례)</span></p>
+                        <ul className="mt-1 space-y-0.5">
+                          {fakeRumors(r.name).map((rm, i) => (
+                            <li key={i} className="flex gap-1.5 text-[13px] leading-relaxed text-rose-800/90 dark:text-rose-200/90"><span className="shrink-0">·</span><span>“{rm}” <span className="text-rose-500/70">— 미검증·거짓</span></span></li>
+                          ))}
+                        </ul>
+                        <p className="mt-1 text-[11px] text-rose-700/60 dark:text-rose-300/60">식품·민간요법이 {r.name}을(를) 치료·예방한다고 단정할 수 없어요.</p>
                       </div>
                       {/* 질병청 공식 사실 */}
                       <div className="mt-2.5 rounded-xl bg-blue-50 p-3 dark:bg-blue-950/30">

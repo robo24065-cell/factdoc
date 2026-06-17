@@ -29,6 +29,30 @@ function dropStat(k: 'up' | 'down') { const s = feedbackStats(); s[k] = Math.max
 // 만족/불만족 누계 초기화(관리자) — 카운트만 0으로(큐 항목은 유지).
 export function resetFeedbackStats(): void { try { localStorage.setItem(LS_STATS, JSON.stringify({ up: 0, down: 0 })) } catch { /* */ } }
 
+// DB 우선 만족/불만족 누계(교차기기). answer_feedback rating별 row 수로 집계 → 어느 기기/관리자에서 보든 동일.
+// Supabase 미연동(테이블 미적용 포함) 또는 실패 시 localStorage 폴백.
+export async function fetchFeedbackStats(): Promise<{ up: number; down: number }> {
+  if (supabase) {
+    try {
+      const [up, down] = await Promise.all([
+        supabase.from('answer_feedback').select('*', { count: 'exact', head: true }).eq('rating', 'up'),
+        supabase.from('answer_feedback').select('*', { count: 'exact', head: true }).eq('rating', 'down'),
+      ])
+      if (!up.error && !down.error) return { up: up.count ?? 0, down: down.count ?? 0 }
+    } catch { /* fallback */ }
+  }
+  return feedbackStats()
+}
+
+// 부실응답 큐 백엔드 상태(관리자 진단 배지) — 'db'(테이블 적용·교차기기) / 'local'(Supabase는 연결됐으나 answer_feedback 미적용=0010 push 필요) / 'off'(로컬 모드).
+export async function feedbackBackendStatus(): Promise<'db' | 'local' | 'off'> {
+  if (!supabase) return 'off'
+  try {
+    const { error } = await supabase.from('answer_feedback').select('*', { head: true, count: 'exact' }).limit(1)
+    return error ? 'local' : 'db'
+  } catch { return 'local' }
+}
+
 // 규칙 기반 1차 검토 — AI Edge Function 미배포 시 대체(보류·무출처·과단문이면 부실 후보).
 function heuristicReview(verdict: string, snapshot: string): { poor: boolean; reason: string } {
   const s = snapshot || ''

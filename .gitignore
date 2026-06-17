@@ -4,6 +4,7 @@
 !.env.example
 key.txt
 api.txt
+배포-가이드.md
 *.key
 secrets/
 

@@ -1,8 +1,10 @@
-// 신체 표준 통계 — 연령·연도별 평균 키/몸무게. ⚠ 자동 생성(scripts/fetch-bodyspec.mjs). 수기편집 금지(재생성됨).
-// 출처: 질병관리청 2017 소아청소년 성장도표(남자 신장 50백분위) + 병무청 병역판정검사 평균(KOSIS orgId=144).
-// KOSIS OpenAPI(KOSIS_KEY)로 GitHub Actions cron이 주기 갱신 → 매년 자동 최신화.
+// 신체 표준 통계 — 자동 생성(scripts/fetch-bodyspec.mjs). 수기편집 금지(재생성됨).
+// 소아(만6~18): 질병관리청 2017 소아청소년 성장도표 신장 50%ile. 성인(연령대별 남/여 신장·체중): KOSIS 국민건강보험 건강검진통계(orgId=350, DT_35007_N130/N132) 2024년(최신).
+// KOSIS_KEY로 GitHub Actions 월1회 cron 자동 갱신 → 매년 최신 평균 반영.
 
 export interface AgeStd { age: number; sex: 'M' | 'F'; heightCm: number; weightKg?: number; source: string }
+export interface AdultStd { band: string; sex: 'M' | 'F'; heightCm: number; weightKg: number; year: string }
+export interface MmaYear { year: number; sex: 'M'; heightCm: number; weightKg: number; source: string }
 
 export const BODY_STD: AgeStd[] = [
   { age: 6, sex: 'M', heightCm: 115.9, source: '질병청 2017 성장도표(50%)' },
@@ -18,7 +20,6 @@ export const BODY_STD: AgeStd[] = [
   { age: 16, sex: 'M', heightCm: 171.4, source: '질병청 2017 성장도표(50%)' },
   { age: 17, sex: 'M', heightCm: 172.6, source: '질병청 2017 성장도표(50%)' },
   { age: 18, sex: 'M', heightCm: 173.6, source: '질병청 2017 성장도표(50%)' },
-  { age: 19, sex: 'M', heightCm: 174.54, weightKg: 73.27, source: '병무청 병역판정(2024)' },
   { age: 6, sex: 'F', heightCm: 114.7, source: '질병청 2017 성장도표(50%)' },
   { age: 7, sex: 'F', heightCm: 120.8, source: '질병청 2017 성장도표(50%)' },
   { age: 8, sex: 'F', heightCm: 126.7, source: '질병청 2017 성장도표(50%)' },
@@ -34,16 +35,43 @@ export const BODY_STD: AgeStd[] = [
   { age: 18, sex: 'F', heightCm: 160.6, source: '질병청 2017 성장도표(50%)' },
 ]
 
-export interface MmaYear { year: number; sex: 'M'; heightCm: number; weightKg: number; source: string }
+// 병무청 병역판정검사 평균(만19세 남) — 주최기관(병무청) 데이터. 마이페이지 또래 비교 폴백.
 export const MMA_YEARLY: MmaYear[] = [
   { year: 2022, sex: 'M', heightCm: 174.3, weightKg: 73.1, source: '병무청 병역판정(2022)' },
   { year: 2024, sex: 'M', heightCm: 174.54, weightKg: 73.27, source: '병무청 병역판정(2024)' },
 ]
 
-export function bodyStandard(sex: 'M' | 'F', age: number, maxGap = 1): AgeStd | null {
+// 성인 연령대별(전국 평균, 남/여) — KOSIS 건강검진통계. 최신연도.
+export const ADULT_STD: AdultStd[] = [
+  { band: "20대", sex: 'M', heightCm: 174.2, weightKg: 76.8, year: '2024' },
+  { band: "20대", sex: 'F', heightCm: 161.8, weightKg: 58.6, year: '2024' },
+  { band: "30대", sex: 'M', heightCm: 174.6, weightKg: 79.8, year: '2024' },
+  { band: "30대", sex: 'F', heightCm: 161.9, weightKg: 60.2, year: '2024' },
+  { band: "40대", sex: 'M', heightCm: 173.9, weightKg: 78.4, year: '2024' },
+  { band: "40대", sex: 'F', heightCm: 160.9, weightKg: 60.2, year: '2024' },
+  { band: "50대", sex: 'M', heightCm: 171.1, weightKg: 73.9, year: '2024' },
+  { band: "50대", sex: 'F', heightCm: 158.3, weightKg: 58.9, year: '2024' },
+  { band: "60대", sex: 'M', heightCm: 168.3, weightKg: 69.8, year: '2024' },
+  { band: "60대", sex: 'F', heightCm: 155.6, weightKg: 58, year: '2024' },
+  { band: "70대", sex: 'M', heightCm: 165.8, weightKg: 66.9, year: '2024' },
+  { band: "70대", sex: 'F', heightCm: 152.9, weightKg: 57.1, year: '2024' },
+  { band: "80세 이상", sex: 'M', heightCm: 163.8, weightKg: 63.5, year: '2024' },
+  { band: "80세 이상", sex: 'F', heightCm: 149.3, weightKg: 53.7, year: '2024' },
+]
+export const ADULT_YEAR = "2024"
+
+// 만 나이 → 표준. 20세 이상은 KOSIS 연령대별(최신·실측 평균), 6~18세는 성장도표(50%ile).
+export function bodyStandard(sex: 'M' | 'F', age: number, maxGap = 1): { heightCm: number; weightKg?: number; label: string; source: string } | null {
+  if (!(age > 0)) return null
+  if (age >= 20) {
+    const band = age >= 80 ? '80세 이상' : `${Math.floor(age / 10) * 10}대`
+    const a = ADULT_STD.find((x) => x.band === band && x.sex === sex)
+    if (a) return { heightCm: a.heightCm, weightKg: a.weightKg, label: `${a.band} ${sex === 'M' ? '남성' : '여성'}`, source: `국민건강보험 건강검진통계 ${a.year}년` }
+    return null
+  }
   const cands = BODY_STD.filter((s) => s.sex === sex)
-  if (!cands.length || !(age > 0)) return null
+  if (!cands.length) return null
   let best = cands[0], bd = Infinity
   for (const c of cands) { const d = Math.abs(c.age - age); if (d < bd) { bd = d; best = c } }
-  return bd <= maxGap ? best : null
+  return bd <= maxGap ? { heightCm: best.heightCm, weightKg: best.weightKg, label: `만 ${best.age}세 ${sex === 'M' ? '남성' : '여성'}`, source: best.source } : null
 }

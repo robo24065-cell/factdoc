@@ -52,11 +52,29 @@ function parseAgeKey(text: string): number | null {
 const FOLK_LIQUOR_RE = /(말벌|땅벌|뱀|살모사|독사|지네|굼벵이|불개미|왕지네|전갈|해마|녹용|산수유|더덕|마가목|오가피|하수오|구기자|복분자|머루|다래|개구리|두꺼비|지렁이|불나방|사슴|고삼|인삼|홍삼|도라지|당귀|천마|영지|상황|동충하초|벌집|봉독)\s*(주|술)|(담금주|보양주|약술|약주|뱀술|불로주|산삼주)/
 // 효능·건강 맥락 표지(이게 있어야 '검증 대상')
 const FOLK_HEALTH_RE = /(효능|효과|좋|낫|치료|예방|보양|기력|정력|관절|면역|혈액순환|피로|몸에)/
+// 독(곤충·파충류 독)을 함유한 재료 + 알레르기성 피부질환 — 질병청 공식정보상 '유발 요인'이라 효능 주장은 오히려 위험.
+const VENOM_AGENT_RE = /(말벌|땅벌|벌집|봉독|벌|뱀|살모사|독사|지네|왕지네|전갈|불개미|개미)/
+const ALLERGY_DZ_RE = /(두드러기|담마진|알레르기|아나필락시스|피부\s*발진|가려움|과민반응)/
 export function checkFolkRemedyClaim(text: string): Judgement | null {
   if (!FOLK_LIQUOR_RE.test(text)) return null
   if (!FOLK_HEALTH_RE.test(text)) return null
   // 알코올 주류 여부(대부분 술) — 경고 강도 결정
   const isLiquor = /(주|술)/.test(text)
+  // ★독 함유 재료 + 알레르기성 질환(두드러기 등): 질병청 두드러기/벌 쏘임 정보상 '곤충·동물의 독'은 두드러기·알레르기를 '유발'하는 요인.
+  //   → '좋다/치료'는 방향이 정반대라 보류가 아니라 '역효과 위험경고'로 답해야 함(사용자 피드백: '확인 어려움'은 부적절).
+  if (VENOM_AGENT_RE.test(text) && ALLERGY_DZ_RE.test(text)) {
+    return {
+      claimText: text, triples: [], verdict: 'false', confidence: 0.78,
+      citations: [{ portal: '질병관리청 국가건강정보포털', title: '두드러기 — 원인(곤충·동물의 독 등 알레르기 유발 요인)', url: 'https://health.kdca.go.kr' }],
+      trace: [
+        { kind: 'normalize', label: '독 함유 민간 약술 + 알레르기성 질환 인식', detail: '벌독·뱀독 등 독을 함유한 재료의 두드러기·알레르기 효능 주장' },
+        { kind: 'graph_match', label: '질병청 공식 근거 대조', detail: '질병청 두드러기 정보: 곤충·동물의 독은 두드러기·알레르기 반응을 유발할 수 있는 요인', outcome: '효능과 방향 반대 → 역효과 위험(허위)' },
+      ],
+      tier: 'auto_unverified',
+      warning: '벌·뱀 등의 독은 질병관리청 공식 정보상 두드러기·알레르기(심하면 아나필락시스)를 오히려 유발할 수 있는 요인이에요. 두드러기·알레르기 체질이라면 효능을 기대해 섭취·접촉하지 마세요. 호흡곤란·얼굴부종 등 전신 증상은 즉시 119·응급실.',
+      disclaimer: '효능 근거가 없을 뿐 아니라, 공식 정보상 오히려 유발 요인이라 권장되지 않습니다. ' + DISCLAIMER,
+    }
+  }
   const cite: Citation = { portal: '질병관리청 국가건강정보포털', title: '민간요법·약술의 효능은 공식 의학근거로 확립되지 않음', url: 'https://health.kdca.go.kr' }
   const trace: TraceStep[] = [
     { kind: 'normalize', label: '민간 약술·보양주 주장 인식', detail: '담금주/보양주류의 건강 효능 주장' },

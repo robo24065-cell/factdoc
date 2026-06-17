@@ -1,7 +1,6 @@
-# 신체 표준 통계 자동 갱신 — KOSIS OpenAPI로 연도별·연령별 평균 신장/체중을 받아 bodyspec.ts 재생성.
-# 목적: 매년 사람 손 없이 최신화(하드코딩 영구방치 X). 월 1회면 충분(통계 갱신 빈도 낮음).
+# 신체 표준 통계 자동 갱신 — KOSIS OpenAPI로 연령대별·성별 평균 신장/체중(건강검진통계 orgId=350)을 받아 bodyspec.ts 재생성.
+# 목적: 매년 사람 손 없이 최신화(하드코딩 영구방치 X). 월 1회면 충분(통계 갱신 빈도 낮음, 새 연도 자료 자동 반영).
 # 필요 시크릿: KOSIS_KEY (https://kosis.kr/openapi/ 무료 발급). 미설정이면 시드 유지(데이터 유실 없음).
-#   선택 변수: BODY_KOSIS_MMA_TBL (병무청 병역판정 평균 통계표 tblId, orgId=144)
 name: update-bodyspec
 
 on:
@@ -23,7 +22,6 @@ jobs:
       - name: 신체 표준 통계 재수집(KOSIS)
         env:
           KOSIS_KEY: ${{ secrets.KOSIS_KEY }}
-          BODY_KOSIS_MMA_TBL: ${{ vars.BODY_KOSIS_MMA_TBL }}
         run: node scripts/fetch-bodyspec.mjs
       - name: 변경분만 커밋
         run: |

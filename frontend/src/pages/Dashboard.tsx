@@ -10,7 +10,7 @@ import {
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
-import { loadPoorQueue, deletePoorItem, feedbackStats, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
+import { loadPoorQueue, deletePoorItem, feedbackStats, fetchFeedbackStats, feedbackBackendStatus, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 import InfoTip from '../components/InfoTip'
@@ -29,9 +29,9 @@ function PoorQueuePanel() {
   const [filt, setFilt] = useState<'all' | 'poor'>('all')
   const [full, setFull] = useState(false)
   const [st, setSt] = useState(feedbackStats())
-  const reload = () => { loadPoorQueue().then(setItems); setSt(feedbackStats()) }
+  const reload = () => { loadPoorQueue().then(setItems); fetchFeedbackStats().then(setSt) }
   useEffect(() => { reload() }, [])
-  const resetCounts = () => { if (typeof confirm !== 'undefined' && !confirm('만족·불만족 누계 카운트를 0으로 초기화할까요? (큐 항목은 유지)')) return; resetFeedbackStats(); setSt(feedbackStats()) }
+  const resetCounts = () => { if (typeof confirm !== 'undefined' && !confirm('만족·불만족 누계 카운트를 0으로 초기화할까요? (큐 항목은 유지)')) return; resetFeedbackStats(); fetchFeedbackStats().then(setSt) }
   const del = async (it: PoorItem) => { if (typeof confirm !== 'undefined' && !confirm('이 신고를 삭제할까요?')) return; await deletePoorItem(it); reload() }
   const download = () => {
     const blob = new Blob([poorQueueCSV(items)], { type: 'text/csv;charset=utf-8' })
@@ -126,7 +126,8 @@ export default function Dashboard() {
   const [top, setTop] = useState<TopClaim[] | null>(null)
   const [wmis, setWmis] = useState<{ day: string; count: number }[] | null>(null)
   const [hiddenMis, setHiddenMis] = useState<string[]>(() => { try { return JSON.parse(localStorage.getItem('factdoc_misinfo_hidden') || '[]') } catch { return [] } })
-  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchWeeklyMisinfo().then(setWmis) }, [])
+  const [fbBackend, setFbBackend] = useState<'db' | 'local' | 'off' | null>(null) // 부실응답 큐 백엔드 상태(테이블 도달성까지 점검)
+  useEffect(() => { fetchDbStats().then(setDb); fetchOutbreak().then(setOutbreak); fetchTopMisinfo().then(setTop); fetchWeeklyMisinfo().then(setWmis); feedbackBackendStatus().then(setFbBackend) }, [])
   function hideMisinfo(claim: string) {
     if (typeof confirm !== 'undefined' && !confirm('이 주장을 목록에서 삭제할까요? (verdict_cache에서도 제거)')) return
     const next = [...new Set([...hiddenMis, claim])]; setHiddenMis(next)
@@ -150,6 +151,15 @@ export default function Dashboard() {
           <span className={`rounded-full px-3 py-1 text-xs ${db ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300' : 'bg-slate-100 text-slate-500 dark:bg-slate-800'}`}>
             {db ? '● DB 연결됨' : '○ 로컬 모드'}
           </span>
+          {/* 부실응답 큐 백엔드 진단 — 'DB 연결됨'이어도 answer_feedback 테이블 미적용이면 큐가 로컬에만 쌓임 */}
+          {fbBackend === 'local' && (
+            <span className="rounded-full bg-amber-50 px-3 py-1 text-xs text-amber-700 dark:bg-amber-950/40 dark:text-amber-300" title="answer_feedback 테이블이 원격 DB에 없습니다. 배포-가이드 B(마이그레이션 0010 push) 실행 시 교차기기로 전환됩니다.">
+              ⚠ 피드백 큐 로컬 (0010 적용 필요)
+            </span>
+          )}
+          {fbBackend === 'db' && (
+            <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">● 피드백 큐 DB</span>
+          )}
           <span className="rounded-full bg-slate-100 px-3 py-1 text-xs text-slate-500 dark:bg-slate-800">일부 패널은 데모 데이터</span>
         </div>
       </div>

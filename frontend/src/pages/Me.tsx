@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { compareToMma } from '../engine/mma-bodyspec'
-import { bodyStandard } from '../data/bodyspec'
+import { bodyStandard, ADULT_YEAR } from '../data/bodyspec'
 
 const KEY = 'factdoc_profile'
 
@@ -48,11 +48,12 @@ export default function Me() {
   // 만 나이 하나만 입력받고 연령대(밴드)는 자동 도출 — 중복 입력 제거.
   const ageNum = parseInt(manAge, 10)
   const ageBand = ageNum > 0 ? (ageNum < 10 ? '' : ageNum >= 70 ? '70대 이상' : `${Math.floor(ageNum / 10) * 10}대`) : age
-  // ★좁은 또래 비교 — 정확 만나이의 표준(질병청 성장도표 남/여 + 병무 남19)과 비교(성장기 1세 차이도 큼).
+  // ★또래 신체 비교 — 6~19세는 질병청 성장도표(만나이별), 20세 이상은 KOSIS 건강검진통계 연령대 평균(2024 최신·남녀).
   const ageStd = ageNum > 0 && (sex === 'male' || sex === 'female') ? bodyStandard(sex === 'male' ? 'M' : 'F', ageNum, 1) : null
-  // 병무청 또래(만19세) 비교 — 정확 만나이가 없을 때의 폴백(남성 10·20대·미선택).
-  const mmaAgeOk = ageBand === '' || ageBand === '20대' || ageBand === '10대'
-  const mma = !ageStd && sex === 'male' && mmaAgeOk ? compareToMma(h, w) : null
+  const isAdultStd = ageNum >= 20
+  // 병무청 또래(병역판정검사 평균, 사실상 만19세 남성) — 주최기관 데이터. 남성 18~29세(또는 만나이 미입력)에 KOSIS와 함께 표시.
+  const mmaAgeOk = !(ageNum > 0) || (ageNum >= 18 && ageNum <= 29)
+  const mma = sex === 'male' && mmaAgeOk && h > 0 ? compareToMma(h, w) : null
 
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
 
@@ -141,14 +142,14 @@ export default function Me() {
         return (
           <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 dark:border-emerald-950 dark:bg-emerald-950/20">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-emerald-900 dark:text-emerald-200">또래(만 {ageNum}세 {sex === 'male' ? '남성' : '여성'}) 신체 비교</p>
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{ageNum <= 18 ? '질병청 성장도표' : '병무청'}</span>
+              <p className="font-medium text-emerald-900 dark:text-emerald-200">또래({ageStd.label}) 신체 비교</p>
+              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{isAdultStd ? `건강검진통계 ${ADULT_YEAR}` : '질병청 성장도표'}</span>
             </div>
-            <p className="mt-1 text-[12px] text-emerald-800/70 dark:text-emerald-200/70">만 {ageStd.age}세 표준 — 키 {ageStd.heightCm}cm{ageStd.weightKg != null ? ` · 몸무게 ${ageStd.weightKg}kg` : ''}</p>
+            <p className="mt-1 text-[12px] text-emerald-800/70 dark:text-emerald-200/70">{ageStd.label} 평균 — 키 {ageStd.heightCm}cm{ageStd.weightKg != null ? ` · 몸무게 ${ageStd.weightKg}kg` : ''}</p>
             <Row label="키" you={h} unit="cm" ref={ageStd.heightCm} delta={dH} range={12} />
             {dW != null ? <Row label="몸무게" you={w} unit="kg" ref={ageStd.weightKg!} delta={dW} range={18} /> : (w > 0 && <p className="mt-3 text-[12px] text-emerald-800/70 dark:text-emerald-200/70">※ 만 {ageNum}세 체중 표준은 공식 수치 확보 후 자동 추가될 예정이에요(키만 비교).</p>)}
             <p className="mt-3 text-[11px] text-emerald-900/50 dark:text-emerald-200/50">
-              ※ 출처: {ageStd.source}. {ageNum <= 18 ? '소아청소년 성장도표 50백분위(중앙값)' : '병역판정검사 평균'} 기준 ‘또래 비교’이며 개인 의료 진단이 아닙니다. 통계는 자동 갱신돼요.
+              ※ 출처: {ageStd.source}. {isAdultStd ? '국민건강보험공단 건강검진통계의 연령대별 국가 평균으로 매년 갱신돼요(현재 ' + ADULT_YEAR + '년이 최신, GitHub Actions 월1회 자동수집)' : '소아청소년 성장도표는 질병관리청이 약 10년 주기로 발표하는 국가 표준으로, 2017년판이 현행 최신판이에요(다음 개정 전까지 기준값)'} 기준 ‘또래 비교’이며 개인 의료 진단이 아닙니다.
             </p>
           </div>
         )

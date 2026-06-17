@@ -11,6 +11,7 @@ export interface InfoAnswer {
   hasOfficial: boolean
   citation?: Citation     // 관리 안내 출처(질병청)
   isGuidance?: boolean    // 조언/관리 안내(결정론) 여부
+  focus?: string          // 인식된 질문 측면(예: '전파 경로', '합병증') — 헤더에 표시해 질문 의도가 이해됐음을 보여줌
 }
 
 // ① 공식 발췌(코퍼스) — 빠른 1단계
