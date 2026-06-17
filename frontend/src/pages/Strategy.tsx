@@ -1,26 +1,23 @@
-// 전략 분석 — 관리자 콘솔의 '아이디어 구현' 탭. 내부 서브탭으로 4개 기능을 각각 페이지화.
-//  ① 인포데믹 조기경보·프리벙킹  ② 병무청×질병청 군 방역·괴담 통제  ③ KNHANES 초개인화 위험도  ④ 기관융합 물자 수요예측(로드맵)
-// 원칙: 라이브로 계산 가능한 건 실데이터(EID·KNHANES·MMA·네이버)로, 외부 미연동(방사청·조달청·기상청)은 정직하게 '로드맵' 분리(§10 날조 금지).
+// 전략 분석 — 관리자 콘솔의 B2G 관제 탭. 서브탭으로 3개 기능. (개인화 위험도는 마이페이지로 이전)
+//  ① 인포데믹 조기경보·프리벙킹  ② 병무청×질병청 군 방역·괴담 통제  ③ 기관융합 물자 수요예측
+// 원칙: 라이브로 계산 가능한 건 실데이터(EID·KNHANES·MMA·네이버·조달청)로, 외부 미연동(방사청·기상청)은 정직하게 '로드맵' 분리(§10 날조 금지).
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Panel from '../components/Panel'
 import { prebunkRows, fakeRumors, genericCaution, officialFacts, prebunkDraft } from '../lib/prebunk'
 import { eidPeerTop } from '../lib/eidStats'
 import { fusionBrief } from '../lib/fusion'
-import { prevalenceFor, rumorsFor } from '../engine'
 import { NAVER_TRENDS } from '../data/naver-trends'
-import CheckupPercentile from '../components/CheckupPercentile'
 import { uniformDemand } from '../lib/uniformDemand'
 import { supplyForecast } from '../lib/supplyForecast'
 import DemandModelPanel from '../components/DemandModelPanel'
 import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
 
-type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
+type TabKey = 'early' | 'cohort' | 'supply'
 const TABS: { key: TabKey; label: string }[] = [
   { key: 'early', label: '① 조기경보·프리벙킹' },
   { key: 'cohort', label: '② 군 방역·괴담 통제' },
-  { key: 'risk', label: '③ 개인화 위험도' },
-  { key: 'supply', label: '④ 기관융합 물자예측' },
+  { key: 'supply', label: '③ 기관융합 물자예측' },
 ]
 
 export default function Strategy() {
@@ -30,7 +27,7 @@ export default function Strategy() {
       <div className="flex flex-wrap items-end justify-between gap-2">
         <div>
           <h1 className="text-2xl font-medium text-slate-900 dark:text-white">전략 분석</h1>
-          <p className="mt-1 text-sm text-slate-500">주최기관(질병청·병무청+방사·조달) 데이터를 엮어 ‘사후 검증’을 넘어선 예측·통제·개인화·수요예측으로 확장.</p>
+          <p className="mt-1 text-sm text-slate-500">주최기관(질병청·병무청+방사·조달) 데이터를 엮어 ‘사후 검증’을 넘어선 예측·통제·수요예측으로 확장. (개인 건강 위험도는 마이페이지)</p>
         </div>
       </div>
 
@@ -47,7 +44,6 @@ export default function Strategy() {
       <div className="mt-5">
         {tab === 'early' && <EarlyWarning />}
         {tab === 'cohort' && <MilitaryCohort />}
-        {tab === 'risk' && <RiskReader />}
         {tab === 'supply' && <SupplyForecast />}
       </div>
     </div>
@@ -175,124 +171,8 @@ function MilitaryCohort() {
   )
 }
 
-// ───────────────────────── ③ KNHANES 기반 초개인화 위험도 판독기 ─────────────────────────
-const CONDITIONS: { key: string; label: string }[] = [
-  { key: '제2형당뇨', label: '당뇨' }, { key: '고혈압', label: '고혈압' }, { key: '비만', label: '비만' }, { key: '이상지질혈증', label: '이상지질혈증' },
-]
-function loadProfile(): { age: string; sex: string } {
-  try { const p = JSON.parse(localStorage.getItem('factdoc_profile') || '{}'); return { age: String(p.manAge || ''), sex: String(p.sex || '') } } catch { return { age: '', sex: '' } }
-}
-function dangerOf(rumor: string): { level: '높음' | '중간' | '낮음'; tone: string } {
-  if (/완치|끊|중단|대체|단식|안 ?맞|필요\s*없|평생/.test(rumor)) return { level: '높음', tone: 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' }
-  if (/즙|민간|특효|보조제|효능|좋다/.test(rumor)) return { level: '중간', tone: 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' }
-  return { level: '낮음', tone: 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' }
-}
-function RiskReader() {
-  const init = loadProfile()
-  const [age, setAge] = useState(init.age)
-  const [sex, setSex] = useState(init.sex)
-  const [conds, setConds] = useState<string[]>([])
-  const ageNum = parseInt(age, 10) || 0
-  const ageBand = ageNum >= 20 ? `${Math.min(70, Math.floor(ageNum / 10) * 10)}대` : ''
-  const toggle = (k: string) => setConds((c) => (c.includes(k) ? c.filter((x) => x !== k) : [...c, k]))
-  const peer = ageBand && (sex === 'male' || sex === 'female') ? eidPeerTop(ageBand, sex as 'male' | 'female', 3) : null
-  const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white p-2.5 text-sm text-slate-900 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
 
-  return (
-    <div className="space-y-4">
-      <Panel title="🧬 KNHANES 초개인화 위험도 판독기" desc="나이·성별·기저질환 → 공식 유병률 맥락 + ‘이 가짜정보가 나에게 위험한 이유’" badge="실데이터">
-        <p className="mb-3 rounded-lg bg-blue-50 p-2.5 text-[12px] leading-relaxed text-blue-800 dark:bg-blue-950/30 dark:text-blue-200">
-          ‘효과 없음’을 넘어, <b>당신 조건에서 그 가짜정보가 얼마나 위험한지</b>를 질병청 KNHANES 유병률로 맥락화합니다. 입력은 <b>이 기기에서만</b> 계산(서버 전송 없음).
-        </p>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <label className="block text-sm"><span className="text-slate-600 dark:text-slate-300">만 나이</span>
-            <input type="number" inputMode="numeric" value={age} onChange={(e) => setAge(e.target.value)} placeholder="예: 58" className={field} /></label>
-          <label className="block text-sm"><span className="text-slate-600 dark:text-slate-300">성별</span>
-            <select value={sex} onChange={(e) => setSex(e.target.value)} className={field}><option value="">선택</option><option value="male">남성</option><option value="female">여성</option></select></label>
-          <div className="col-span-2 text-sm"><span className="text-slate-600 dark:text-slate-300">기저질환(선택)</span>
-            <div className="mt-1 flex flex-wrap gap-1.5">
-              {CONDITIONS.map((c) => (
-                <button key={c.key} type="button" onClick={() => toggle(c.key)} className={`rounded-full border px-2.5 py-1 text-xs ${conds.includes(c.key) ? 'border-blue-400 bg-blue-50 text-blue-700 dark:border-blue-700 dark:bg-blue-950/40 dark:text-blue-300' : 'border-slate-200 text-slate-500 dark:border-slate-700'}`}>{c.label}</button>
-              ))}
-            </div>
-          </div>
-        </div>
-      </Panel>
-
-      {/* 검진수치 → 또래 분포 백분위(KOSIS 건강검진통계) */}
-      <CheckupPercentile age={ageNum} sex={sex === 'male' ? 'M' : sex === 'female' ? 'F' : ''} />
-
-      {/* 내 또래·내 조건 유병률 */}
-      {(conds.length > 0 || peer) && (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <Panel title="📊 내 또래·내 조건 공식 유병률" desc="질병청 국민건강영양조사(KNHANES) 근사" badge="실데이터">
-            {conds.length === 0 ? <p className="text-sm text-slate-400">기저질환을 선택하면 해당 질환의 연령대별 공식 유병률을 보여줍니다.</p> : (
-              <div className="space-y-3">
-                {conds.map((k) => {
-                  const p = prevalenceFor(k, ageNum || undefined)
-                  if (!p) return null
-                  const mid = (p.range[0] + p.range[1]) / 2
-                  return (
-                    <div key={k}>
-                      <div className="flex justify-between text-[13px]"><span className="text-slate-600 dark:text-slate-300">{p.label}{p.scope === '연령대' && ageBand ? ` · ${ageBand}` : ''}</span><span className="font-semibold text-slate-800 dark:text-slate-100">{p.range[0]}~{p.range[1]}%</span></div>
-                      <div className="mt-1 h-2 rounded-full bg-slate-100 dark:bg-slate-800"><div className="h-2 rounded-full bg-blue-500" style={{ width: `${Math.min(100, mid * 1.6)}%` }} /></div>
-                    </div>
-                  )
-                })}
-                <p className="text-[11px] text-slate-400">출처: 질병청 KNHANES 근사 · 참고용(개인 진단 아님)</p>
-              </div>
-            )}
-          </Panel>
-
-          <Panel title="🦠 내 또래 지금 유행 감염병" desc={peer ? `${peer.band} ${sex === 'male' ? '남성' : '여성'} 최근 실발생 Top` : '나이·성별 입력 시 표시'} badge="실데이터">
-            {peer && peer.rows.length ? (
-              <ol className="space-y-1.5 text-sm">
-                {peer.rows.map((d, i) => (
-                  <li key={d.name} className="flex items-center gap-2"><span className="text-slate-400">{i + 1}.</span><span className="flex-1 truncate text-slate-700 dark:text-slate-200">{d.name}</span>{d.surging && <span className="rounded bg-rose-500 px-1 text-[9px] font-bold text-white">급증</span>}<span className="text-xs text-slate-400">{d.count.toLocaleString()}건</span></li>
-                ))}
-              </ol>
-            ) : <p className="text-sm text-slate-400">만 나이·성별을 입력하면 또래 감염병을 보여줍니다.</p>}
-          </Panel>
-        </div>
-      )}
-
-      {/* 내 조건에서 위험한 가짜정보 */}
-      {conds.length > 0 && (
-        <Panel title="🚨 주의! 내 조건에서 특히 위험한 가짜정보" desc="기저질환 ↔ 실제 유포 루머 매칭 + 개인화 위험도(상대·참고)" badge="실데이터">
-          <div className="space-y-3">
-            {conds.map((k) => {
-              const rumors = rumorsFor(k) ?? []
-              const label = CONDITIONS.find((c) => c.key === k)?.label ?? k
-              if (!rumors.length) return null
-              return (
-                <div key={k} className="rounded-xl border border-rose-100 bg-rose-50/40 p-3 dark:border-rose-950 dark:bg-rose-950/20">
-                  <p className="text-[13px] font-semibold text-rose-800 dark:text-rose-200">{label} 환자가 특히 조심할 가짜정보</p>
-                  <ul className="mt-1.5 space-y-1.5">
-                    {rumors.slice(0, 3).map((rm, i) => {
-                      const d = dangerOf(rm)
-                      return (
-                        <li key={i} className="flex items-start gap-2 text-[13px] text-rose-900/90 dark:text-rose-100/90">
-                          <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${d.tone}`}>위험 {d.level}</span>
-                          <span className="flex-1">“{rm}”</span>
-                          <Link to={`/?q=${encodeURIComponent(rm)}`} target="_blank" className="shrink-0 text-xs text-blue-600">검증 →</Link>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </div>
-              )
-            })}
-          </div>
-          <p className="mt-3 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
-            ⚠ ‘위험도’는 기저질환·루머 유형으로 산출한 <b>상대·참고 지표</b>이며 개인 의료 진단이 아닙니다. 약 복용·치료 중단은 절대 임의로 하지 말고, 증상이 의심되면 전문가·질병관리청(1339)과 상담하세요. 입력값은 서버로 전송되지 않습니다.
-          </p>
-        </Panel>
-      )}
-    </div>
-  )
-}
-
-// ───────────────────────── ④ 기관융합 물자 수요예측 (대부분 로드맵) ─────────────────────────
+// ───────────────────────── ③ 기관융합 물자 수요예측 ─────────────────────────
 function DemandTableView({ t }: { t: import('../lib/uniformDemand').DemandTable }) {
   const nf = (n: number) => n.toLocaleString()
   const maxPct = Math.max(...t.rows.map((r) => r.pctFc), 0.01)

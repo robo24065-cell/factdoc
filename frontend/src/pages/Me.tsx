@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { compareToMma } from '../engine/mma-bodyspec'
 import { bodyStandard, ADULT_YEAR } from '../data/bodyspec'
 import CheckupPercentile from '../components/CheckupPercentile'
+import PersonalRisk from '../components/PersonalRisk'
 
 const KEY = 'factdoc_profile'
 
@@ -196,6 +197,10 @@ export default function Me() {
       {/* 건강검진 수치 → 또래(연령·성별) 분포 백분위 — KOSIS 건강검진통계 */}
       <div className="mt-3">
         <CheckupPercentile age={ageNum} sex={sex === 'male' ? 'M' : sex === 'female' ? 'F' : ''} />
+      </div>
+      {/* 개인화 위험도 — 기저질환·또래 감염병·내 조건 위험 가짜정보(전략분석에서 이전) */}
+      <div className="mt-3">
+        <PersonalRisk age={ageNum} sex={sex === 'male' ? 'M' : sex === 'female' ? 'F' : ''} />
       </div>
       </div>{/* /우측 컬럼 */}
       </div>{/* /그리드 */}
