@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, checkFolkRemedyClaim, checkVaccineClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, checkFolkRemedyClaim, checkVaccineClaim, checkChronicMedMyth, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf, isInfectious, isCancer } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -482,6 +482,15 @@ export default function Home() {
       const local = explainLocal(vax)
       setResult(vax); setHitKind(null); setLoading(false); setExplanation(local)
       void logQuery(claim, vax.verdict); void cacheVerdict(claim, vax, local)
+      return
+    }
+
+    // 0a-med) 만성질환 약물 오해(혈압약·당뇨약 내성·중독·평생복용) — 질병청 공식 반증 → 허위/과장. 통계·식품보다 먼저.
+    const med = checkChronicMedMyth(claim)
+    if (med) {
+      const local = explainLocal(med)
+      setResult(med); setHitKind(null); setLoading(false); setExplanation(local)
+      void logQuery(claim, med.verdict); void cacheVerdict(claim, med, local)
       return
     }
 
