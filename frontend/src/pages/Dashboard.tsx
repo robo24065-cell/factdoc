@@ -10,6 +10,7 @@ import {
 import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, deleteCachedByClaim, type DbStats, type OutbreakRow, type TopClaim } from '../lib/db'
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
+import { NAVER_TRENDS, NAVER_UPDATED } from '../data/naver-trends'
 import { loadPoorQueue, deletePoorItem, feedbackStats, fetchFeedbackStats, feedbackBackendStatus, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
@@ -314,6 +315,8 @@ export default function Dashboard() {
             )
           })()}
         </Panel>
+
+        <NaverRadarPanel />
       </div>
     </div>
   )
@@ -323,6 +326,38 @@ function trendInfo(trend: string | null) {
   if (trend === 'up') return { arrow: '▲', color: 'text-rose-600', bar: '#f43f5e' }
   if (trend === 'down') return { arrow: '▼', color: 'text-blue-600', bar: '#3b82f6' }
   return { arrow: '—', color: 'text-slate-500', bar: '#94a3b8' }
+}
+
+// 네이버 데이터랩 건강 검색어 급상승 레이더 — 건강주장 키워드의 검색량 추세(급상승=가짜정보 선행 후보).
+function NaverRadarPanel() {
+  const rows = [...NAVER_TRENDS].sort((a, b) => b.surgePct - a.surgePct).slice(0, 8)
+  const spark = (s: { ratio: number }[]) => {
+    if (s.length < 2) return ''
+    const v = s.map((p) => p.ratio), mn = Math.min(...v), mx = Math.max(...v), rng = mx - mn || 1
+    const W = 88, H = 22
+    return v.map((y, i) => `${(i / (v.length - 1) * W).toFixed(1)},${(H - ((y - mn) / rng) * H).toFixed(1)}`).join(' ')
+  }
+  return (
+    <Panel title="📈 네이버 건강 검색어 급상승" desc={`건강주장 키워드 워치리스트 · 최근7일 vs 직전7일 · ${NAVER_UPDATED} 기준 (네이버 데이터랩)`} badge="실데이터" span="lg:col-span-2">
+      <p className="mb-3 rounded-lg bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+        💡 검색량이 급상승하는 건강식품·민간요법은 <b>곧 관련 가짜정보가 따라 퍼질 선행 신호</b>예요. 클릭하면 해당 주장을 바로 팩트체크합니다.
+      </p>
+      <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {rows.map((r) => (
+          <Link key={r.name} to={`/?q=${encodeURIComponent(`${r.name} 효능이 있나요`)}`} target="_blank"
+            className="flex items-center gap-2.5 rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{r.cat}</span>
+            <span className="flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>
+            <svg width="88" height="22" className="shrink-0"><polyline points={spark(r.series)} fill="none" stroke={r.surgePct > 0 ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" /></svg>
+            <span className={`w-12 shrink-0 text-right text-xs font-bold ${r.surgePct > 5 ? 'text-rose-600' : r.surgePct < -5 ? 'text-blue-600' : 'text-slate-400'}`}>
+              {r.surgePct > 0 ? '▲' : r.surgePct < 0 ? '▼' : ''}{Math.abs(r.surgePct)}%
+            </span>
+          </Link>
+        ))}
+      </div>
+      <p className="mt-3 text-[11px] text-slate-400">상대 검색지수(0~100)이며 실제 검색량이 아닙니다. 출처: 네이버 데이터랩 통합검색어트렌드 · 하루 2회 자동 갱신.</p>
+    </Panel>
+  )
 }
 
 function Panel({ title, desc, badge, span, children }: { title: string; desc: string; badge: '실데이터' | '데모'; span?: string; children: ReactNode }) {

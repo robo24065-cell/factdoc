@@ -1,0 +1,38 @@
+# 네이버 데이터랩 건강 검색어/쇼핑 트렌드 자동 갱신 — 건강주장 키워드 워치리스트의 급상승 감지(가짜정보 선행지표).
+# per-request 외부호출 금지(§13.7) → 배치 cron. 검색어트렌드는 '일' 단위라 하루 2회면 충분(시간별은 같은 일자값).
+# 필요 시크릿: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET (https://developers.naver.com 무료, 일 1000건). 미설정 시 기존 파일 유지.
+name: refresh-naver-trends
+
+on:
+  schedule:
+    - cron: '20 21 * * *'   # 매일 06:20 KST (전일 21:20 UTC)
+    - cron: '20 9 * * *'    # 매일 18:20 KST (09:20 UTC) — 하루 2회
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 네이버 건강 검색어/쇼핑 트렌드 재수집
+        env:
+          NAVER_CLIENT_ID: ${{ secrets.NAVER_CLIENT_ID }}
+          NAVER_CLIENT_SECRET: ${{ secrets.NAVER_CLIENT_SECRET }}
+        run: node scripts/fetch-naver-trends.mjs
+      - name: 변경분만 커밋
+        run: |
+          if git diff --quiet -- frontend/src/data/naver-trends.ts; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add frontend/src/data/naver-trends.ts
+            git commit -m "chore: 네이버 데이터랩 건강 트렌드 자동 갱신"
+            git push
+          fi
