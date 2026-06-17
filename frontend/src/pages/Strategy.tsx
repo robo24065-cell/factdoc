@@ -12,6 +12,7 @@ import { NAVER_TRENDS } from '../data/naver-trends'
 import CheckupPercentile from '../components/CheckupPercentile'
 import { uniformDemand } from '../lib/uniformDemand'
 import { supplyForecast } from '../lib/supplyForecast'
+import DemandModelPanel from '../components/DemandModelPanel'
 import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
 
 type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
@@ -324,8 +325,11 @@ function SupplyForecast() {
   const DIR_TONE: Record<string, string> = { '급증': 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', '증가': 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', '유지': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', '감소': 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' }
   return (
     <div className="space-y-4">
-      {/* ★통합 수요예측 — 다년 유행 추세 → 내년 방역물자 수요 */}
-      <Panel title={`🔮 ${fcYear} 통합 물자 수요예측 — 다년 추세 기반`} desc="질병청 감염병 발생 다년 추세(선형회귀)를 내년으로 외삽 → 방역물자 카테고리별 수요 방향 + 조달청 현재 발주 교차" badge="실데이터">
+      {/* ★다중변수 가중치 모델 — 변수·가중치 조절 → 융합 → 발주 액션플랜 */}
+      <DemandModelPanel />
+
+      {/* 통합 수요예측 — 다년 유행 추세 → 내년 방역물자 수요(군별 개요) */}
+      <Panel title={`🔮 ${fcYear} 감염병군별 수요 방향 — 다년 추세 개요`} desc="질병청 감염병 발생 다년 추세(선형회귀)를 내년으로 외삽 → 방역물자 카테고리별 수요 방향 + 조달청 현재 발주 교차" badge="실데이터">
         <p className="mb-3 rounded-lg bg-violet-50 p-2.5 text-[12px] leading-relaxed text-violet-900 dark:bg-violet-950/30 dark:text-violet-200">
           <b>질병청(유행 추세)</b> + <b>병무청(입영 신체)</b> + <b>조달청(현재 발주)</b>을 통합해 <b>{fcYear}년 물자 수요</b>를 선제 예측합니다. 감염병군별 최근 추세를 회귀로 외삽해 방역물자 수요 방향을 산출하고, 조달청 실제 발주와 교차 검증합니다.
         </p>
