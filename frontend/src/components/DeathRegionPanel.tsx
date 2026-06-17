@@ -1,6 +1,6 @@
 // 시도별 감염병 사망률 패널 — 통계청 KOSIS 사망원인통계(DT_1B34E11). 감염병지도 발생수(질병청)와 별개 지표.
 // ⚠ 출처·집계기준·대상질병 다름 → 치명률(사망/발생) 직접산출 안 함. 사인셋은 KOSIS에 사망분류 있는 주요 감염사인 고정.
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { DEATH_REGION, DEATH_REGION_YEAR } from '../data/death-region'
 
 const SHORT = (s: string) => s.replace(/특별자치도|특별자치시|특별시|광역시/, '').replace(/^(충청|전라|경상)(북|남)도$/, (_, a, b) => a[0] + b)
@@ -20,6 +20,8 @@ export default function DeathRegionPanel({ diseaseLabel }: { diseaseLabel: strin
   const mapped = mapCause(diseaseLabel)
   const [cause, setCause] = useState(mapped ?? '폐렴')
   const [metric, setMetric] = useState<'rate' | 'count'>('rate')
+  // 지도에서 감염병을 바꾸면 사망 사인도 같이 연동(KOSIS에 매핑되는 질병). 미매핑이면 현재 선택 유지.
+  useEffect(() => { if (mapped) setCause(mapped) }, [mapped])
   const row = DEATH_REGION.find((c) => c.name === cause) ?? DEATH_REGION[0]
   const ranked = useMemo(() => {
     if (!row) return []
