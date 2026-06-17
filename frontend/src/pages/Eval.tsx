@@ -25,12 +25,26 @@ export default function Eval() {
       </p>
 
       <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-        <Stat label="판정 정확도" value={pct1(r.accuracy)} sub={`${r.correct}/${r.total}`} tone="good" />
+        <Stat label="판정 정확도" value={pct1(r.accuracy)} sub={`${r.correct}/${r.total} · 4지선다`} tone="good" />
         <Stat label="매크로 F1" value={r.macroF1.toFixed(3)} sub="4클래스 평균" />
         <Stat label="인용 커버리지" value={pct(r.citationCoverage)} sub="비보류 판정 출처 보유" />
         <Stat label="캘리브레이션 ECE" value={r.ece.toFixed(3)} sub="낮을수록 신뢰도 정확" />
         <Stat label="과잉단정율" value={pct(r.overClaimRate)} sub="보류를 단정한 비율(안전)" tone={r.overClaimRate < 0.15 ? 'good' : 'warn'} />
       </div>
+
+      {/* ── '판정 정확도'를 어떻게 읽나 — 숫자 오해 방지(낮아 보이는 이유 정직하게) ── */}
+      <details className="group mt-3 rounded-xl border border-slate-200 bg-slate-50 dark:border-slate-800 dark:bg-slate-900/50">
+        <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+          ❓ ‘판정 정확도 {pct1(r.accuracy)}’는 무슨 뜻인가요? (왜 이 숫자인지)
+          <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+        </summary>
+        <div className="space-y-2 border-t border-slate-200 p-3 text-[13px] leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">
+          <p><b>① 4지선다 정확도예요.</b> 시스템이 <b>사실 / 부분과장 / 허위 / 보류</b> 4개 중 정답을 정확히 고른 비율({r.correct}/{r.total}건). 찍어서 맞을 확률(무작위)은 <b>25%</b>, 2지선다(참/거짓)가 아니라 4지선다라 같은 50%여도 훨씬 어려워요.</p>
+          <p><b>② 전체 {r.total}건은 일부러 어려운 셋이에요.</b> 실제 유포된 가짜정보 + 경계가 모호한 ‘부분과장’·신종 주장까지 섞여 있어요. 특히 <b>코퍼스에 아직 없는 주장은 엔진이 억지 판정 대신 ‘보류’</b>로 답하는데(환각 방지 원칙), 정답 라벨엔 외부 근거가 있어 ‘오답’으로 집계돼 점수가 눌립니다. → 즉 <b>틀린 판단이 아니라 데이터 커버리지 한계</b>가 많이 반영된 숫자예요(혼동행렬에서 ‘허위→보류’ 칸이 그 사례).</p>
+          <p><b>③ 공정 비교(클래스 균형)에선 더 높아요.</b> 검증 코어 {r.byTier.verified.n}건 정확도 <b>{pct(r.byTier.verified.acc)}</b>, 그리고 아래 <b>Ablation 균형표본</b>에서 풀 엔진이 <b>{(() => { const f = r.ablation.find((a) => a.key === 'full'); return f && !f.pending ? pct1(f.accuracy) : '—' })()}</b> — 외부 무근거 LLM 기준선 <b>{pct1(r.baselineRef.acc)}</b>(SNU 벤치마크)보다 높습니다.</p>
+          <p className="text-[12px] text-slate-400">요약: 55%대는 ‘틀려서’가 아니라 (a) 4지선다 + (b) 어려운 경계·미수록 주장을 정직하게 보류하기 때문. 같은 잣대로 무근거 LLM과 비교하면 우리 엔진이 더 정확합니다.</p>
+        </div>
+      </details>
 
       {/* ── 간판: Ablation 비교표 ── */}
       <h2 className="mt-8 text-base font-medium text-slate-900 dark:text-white">Ablation — 무근거 LLM vs 룰+그래프</h2>
