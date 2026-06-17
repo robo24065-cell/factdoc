@@ -1030,24 +1030,32 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
     return { rows, r: Math.round(r * 100) / 100, n }
   }, [year, disease])
 
+  // 히트맵 호버 툴팁(인앱) — 빈 셀이라 native title이 안 떠서 직접 구현
+  const heatRef = useRef<HTMLDivElement>(null)
+  const [heatTip, setHeatTip] = useState<{ x: number; y: number; text: string } | null>(null)
+  const showHeat = (e: React.MouseEvent, text: string) => { const r = heatRef.current?.getBoundingClientRect(); if (r) setHeatTip({ x: e.clientX - r.left, y: e.clientY - r.top, text }) }
+
   return (
     <div className="mt-4">
       <h3 className="mb-2 px-1 text-sm font-bold text-slate-700 dark:text-slate-200">🔬 고급 분석</h3>
       <div className="grid gap-4 lg:grid-cols-2">
         {/* A. 발생률 히트맵 */}
         <Panel title={`발생률 히트맵 — 시도 × 주요 감염병 (연간 ${year}, 10만명당)`}>
-          <div className="overflow-x-auto">
+          <div ref={heatRef} className="relative overflow-x-auto" onMouseLeave={() => setHeatTip(null)}>
             <table className="w-full border-collapse text-[10px]">
               <thead><tr><th className="p-1" /><th className="p-0.5 font-normal text-slate-300" />{EID_SIDO.map((s) => <th key={s.code} className="p-0.5 font-normal text-slate-400">{s.name}</th>)}</tr></thead>
               <tbody>
                 {heat.dz.map((d, ri) => (
                   <tr key={d}>
                     <td className="whitespace-nowrap py-0.5 pr-2 text-right text-slate-600 dark:text-slate-300" colSpan={2}>{cleanName(d).length > 7 ? cleanName(d).slice(0, 7) : cleanName(d)}</td>
-                    {EID_SIDO.map((s) => { const v = EID_RATE[year]?.[d]?.[s.code] || 0; const t = v / heat.colMax[ri]; return <td key={s.code} title={`${s.name} · ${cleanName(d)} · ${v.toFixed(1)}/10만`} style={{ background: v ? rampColor(Math.sqrt(t)) : undefined }} className="h-5 border border-white/60 dark:border-slate-800/60" /> })}
+                    {EID_SIDO.map((s) => { const v = EID_RATE[year]?.[d]?.[s.code] || 0; const t = v / heat.colMax[ri]; const txt = `${s.name} · ${cleanName(d)} · ${v.toFixed(1)}/10만명` ; return <td key={s.code} onMouseEnter={(e) => showHeat(e, txt)} onMouseMove={(e) => showHeat(e, txt)} style={{ background: v ? rampColor(Math.sqrt(t)) : undefined }} className="h-5 cursor-crosshair border border-white/60 dark:border-slate-800/60" /> })}
                   </tr>
                 ))}
               </tbody>
             </table>
+            {heatTip && (
+              <div className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-full whitespace-nowrap rounded bg-slate-900/95 px-2 py-1 text-[10px] font-medium text-white shadow-lg" style={{ left: heatTip.x, top: heatTip.y - 6 }}>{heatTip.text}</div>
+            )}
           </div>
           <p className="mt-1.5 px-1 text-[11px] text-slate-400">행(질병)별 정규화 — 색이 진할수록 그 감염병이 해당 시도에서 상대적으로 높음. 칸 위에 마우스를 올리면 수치.</p>
         </Panel>

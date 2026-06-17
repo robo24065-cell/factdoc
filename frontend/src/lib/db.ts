@@ -14,6 +14,10 @@ const CORPUS_ALIAS: { re: RegExp; terms: string[] }[] = [
   { re: /CRE|카바페넴내성장내세균|다제내성|VRE|MRSA|내성균/i, terms: ['다제내성균'] },
   { re: /수막구균|뇌수막/, terms: ['뇌수막염'] },
   { re: /비브리오/, terms: ['비브리오'] },
+  // 결합 코퍼스 문서(여러 질병 한 글)로 딥링크 — 동의어로 그 글을 찾게.
+  { re: /유행성이하선염|이하선염|볼거리|mumps/i, terms: ['볼거리'] },
+  { re: /풍진|rubella/i, terms: ['풍진'] },
+  { re: /수족구/, terms: ['수족구'] },
 ]
 function aliasTerms(name: string): string[] { const hit = CORPUS_ALIAS.find((a) => a.re.test(name)); return hit ? hit.terms : [] }
 // 여러 질병이 섞이지 않게 좁히기 — 구체적(긴) 용어부터, '한 질병'만 잡힐 때만 채택.
