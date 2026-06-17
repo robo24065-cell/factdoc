@@ -976,6 +976,7 @@ function kmeans(pts: number[][], k: number, iters = 14): number[] {
 }
 
 function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; disease: string; diseaseLabel: string }) {
+  const cur = EID_CUR_YEAR
   const heat = useMemo(() => {
     const dz = topDzByCount(year, 8)
     const colMax = dz.map((d) => Math.max(...EID_SIDO.map((s) => EID_RATE[year]?.[d]?.[s.code] || 0), 0.0001))
@@ -1029,6 +1030,33 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
     }
     return { rows, r: Math.round(r * 100) / 100, n }
   }, [year, disease])
+
+  // F·G. 시간에 따른 확산 속도 — 시도별 주간 누적 발생률(기울기=초기 확산속도) + 도달시간 vs 밀도(전파력)
+  const spread = useMemo(() => {
+    const weeklyOk = disease === ALL || EID_WEEKLY_DISEASES.includes(disease)
+    if (!weeklyOk) return null
+    const sidos = EID_SIDO.map((s) => {
+      const arr = weeklySidoArr(disease, s.code); const pop = sidoPop(s.code); const area = areaOf(s.name)
+      const dens = area > 0 ? pop / area : 0
+      let cum = 0; const cumRate = arr.map((c) => { cum += c; return pop > 0 ? (cum / pop) * 100000 : 0 })
+      return { code: s.code, name: s.name, density: dens, cumRate, finalRate: cumRate[cumRate.length - 1] || 0 }
+    }).filter((s) => s.density > 0 && s.finalRate > 0)
+    if (sidos.length < 4) return null
+    // 도달시간 임계값 = 시도별 최종 누적발생률의 중앙값(절반 정도가 도달 → 측정 가능)
+    const fr = sidos.map((s) => s.finalRate).sort((a, b) => a - b)
+    const thr = fr[Math.floor(fr.length / 2)] || 0
+    const reach = sidos.map((s) => { let wk: number | null = null; for (let i = 0; i < s.cumRate.length; i++) if (s.cumRate[i] >= thr) { wk = i + 1; break } return { name: s.name, density: Math.round(s.density), weeks: wk } }).filter((s): s is { name: string; density: number; weeks: number } => s.weeks != null)
+    // density↔도달시간 피어슨(음수=밀도 높을수록 빨리 도달)
+    let r = 0
+    if (reach.length >= 3) { const n = reach.length, mx = reach.reduce((a, b) => a + b.density, 0) / n, my = reach.reduce((a, b) => a + b.weeks, 0) / n; let sxy = 0, sxx = 0, syy = 0; for (const v of reach) { const dx = v.density - mx, dy = v.weeks - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy } r = sxx > 0 && syy > 0 ? sxy / Math.sqrt(sxx * syy) : 0 }
+    // 선그래프: 고밀도 상위3 + 저밀도 하위3
+    const byD = [...sidos].sort((a, b) => b.density - a.density)
+    const pick = [...byD.slice(0, 3), ...byD.slice(-3)]
+    const maxW = Math.max(...pick.map((s) => s.cumRate.length))
+    const lineData = Array.from({ length: maxW }, (_, i) => { const row: Record<string, number> = { w: i + 1 }; pick.forEach((s) => { row[s.name] = Math.round((s.cumRate[i] ?? s.cumRate[s.cumRate.length - 1]) * 10) / 10 }); return row })
+    return { pick, lineData, reach, thr: Math.round(thr * 10) / 10, r: Math.round(r * 100) / 100 }
+  }, [disease])
+  const SPREAD_COLORS = ['#dc2626', '#f97316', '#f59e0b', '#3b82f6', '#0ea5e9', '#6366f1'] // 고밀도(붉음)→저밀도(푸름)
 
   // 히트맵 호버 툴팁(인앱) — 빈 셀이라 native title이 안 떠서 직접 구현
   const heatRef = useRef<HTMLDivElement>(null)
@@ -1137,6 +1165,50 @@ function AdvancedAnalytics({ year, disease, diseaseLabel }: { year: string; dise
               </p>
             </>
           ) : <p className="py-8 text-center text-sm text-slate-400">이 감염병·연도는 밀도-발생률 산출 데이터가 부족합니다.</p>}
+        </Panel>
+
+        {/* F. 시간에 따른 확산 속도(누적 발생률 기울기) — 고밀도 vs 저밀도 */}
+        <Panel title={<>확산 속도 — 시도별 누적 발생률 추이 ({cur}년 주별)<InfoTip label="확산 속도(기울기)">시도별 주간 누적 발생률(10만명당). 초기 기울기가 가파를수록 확산이 빠릅니다. 인구밀도 상위 3개(붉은 계열)와 하위 3개(푸른 계열)를 비교해 "밀도 높은 곳이 더 빨리 퍼지는지"를 봅니다.</InfoTip></>}>
+          {spread ? (
+            <>
+              <ResponsiveContainer width="100%" height={210}>
+                <LineChart data={spread.lineData} margin={{ top: 8, right: 14, left: -4, bottom: 14 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
+                  <XAxis dataKey="w" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: '주차', position: 'insideBottom', offset: -6, fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: '누적/10만', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }} />
+                  <RTooltip formatter={(v, n) => [`${v}/10만`, String(n)]} labelFormatter={(w) => `${w}주차`} contentStyle={{ fontSize: 11, borderRadius: 8 }} />
+                  {spread.pick.map((s, i) => <Line key={s.name} type="monotone" dataKey={s.name} stroke={SPREAD_COLORS[i] || '#94a3b8'} strokeWidth={2} dot={false} connectNulls />)}
+                </LineChart>
+              </ResponsiveContainer>
+              <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 px-1">
+                {spread.pick.map((s, i) => <span key={s.name} className="flex items-center gap-1 text-[10px] text-slate-500"><span className="inline-block h-2 w-2.5 rounded-sm" style={{ background: SPREAD_COLORS[i] }} />{s.name}<span className="text-slate-400">({nf(s.density)}/㎢)</span></span>)}
+              </div>
+              <p className="mt-1.5 px-1 text-[11px] leading-relaxed text-slate-400">붉은 계열=고밀도, 푸른 계열=저밀도. 초기 기울기가 가파를수록 확산이 빠름. 누적 발생률(10만명당)·{cur}년 주별. ⚠ 신고지연으로 최근 주는 잠정.</p>
+            </>
+          ) : <p className="py-8 text-center text-sm text-slate-400">이 감염병은 시도별 주간 데이터가 없어 확산속도 분석이 어렵습니다(상단에서 전체 또는 주별 수집 감염병 선택).</p>}
+        </Panel>
+
+        {/* G. 확산 도달시간 × 인구밀도 */}
+        <Panel title={<>확산 도달시간 × 인구밀도 ({cur}년)<InfoTip label="도달시간 × 밀도">특정 누적 발생률(중앙값)에 도달하기까지 걸린 '주수'와 인구밀도의 관계. 밀도가 높을수록 도달이 빠르면(음의 상관) 밀집이 전파를 가속한다는 근거가 됩니다.</InfoTip></>}>
+          {spread && spread.reach.length >= 3 ? (
+            <>
+              <ResponsiveContainer width="100%" height={210}>
+                <ScatterChart margin={{ top: 8, right: 14, left: 0, bottom: 14 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis type="number" dataKey="density" name="인구밀도" tick={{ fontSize: 9, fill: '#94a3b8' }} tickFormatter={(v) => nf(Number(v))} axisLine={false} tickLine={false} label={{ value: '인구밀도(명/㎢)', position: 'insideBottom', offset: -6, fontSize: 10, fill: '#94a3b8' }} />
+                  <YAxis type="number" dataKey="weeks" name="도달주수" tick={{ fontSize: 9, fill: '#94a3b8' }} axisLine={false} tickLine={false} label={{ value: '도달 주수', angle: -90, position: 'insideLeft', fontSize: 10, fill: '#94a3b8' }} />
+                  <ZAxis range={[55, 55]} />
+                  <RTooltip cursor={{ strokeDasharray: '3 3' }} content={({ payload }) => { const p = payload && payload[0] && payload[0].payload as { name: string; density: number; weeks: number }; return p ? <div className="rounded-lg bg-slate-900/95 px-2.5 py-1.5 text-xs text-white shadow-lg"><b>{p.name}</b><br />밀도 {nf(p.density)}명/㎢<br />{spread.thr}/10만 도달 {p.weeks}주</div> : null }} />
+                  <Scatter data={spread.reach} fill="#6366f1" />
+                </ScatterChart>
+              </ResponsiveContainer>
+              <p className="mt-1.5 px-1 text-[11px] leading-relaxed text-slate-400">
+                기준 누적발생률 <b>{spread.thr}/10만</b> 도달까지 걸린 주수. 밀도↔도달시간 <b className={spread.r <= -0.3 ? 'text-rose-600' : spread.r >= 0.3 ? 'text-blue-600' : 'text-slate-500'}>r = {spread.r.toFixed(2)}</b>
+                {spread.r <= -0.3 ? ' — 밀도 높을수록 더 빨리 도달(전파 빠름).' : spread.r >= 0.3 ? ' — 의외로 밀도 낮을수록 빨리 도달.' : ' — 뚜렷한 관계는 약함.'}
+                {' '}⚠ 상관·근사(면적 행정구역값) 참고.
+              </p>
+            </>
+          ) : <p className="py-8 text-center text-sm text-slate-400">도달시간 산출 데이터가 부족합니다.</p>}
         </Panel>
       </div>
     </div>
