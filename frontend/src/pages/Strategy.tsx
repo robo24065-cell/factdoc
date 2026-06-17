@@ -11,7 +11,7 @@ import { NAVER_TRENDS } from '../data/naver-trends'
 import { uniformDemand, jointUniformDemand, HW_RHO } from '../lib/uniformDemand'
 import { supplyForecast } from '../lib/supplyForecast'
 import DemandModelPanel from '../components/DemandModelPanel'
-import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
+import { PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED, PROCURE_PREV_HITS, PROCURE_PREV_RANGE, PROCURE_CAT_SURGE, PROCURE_KW_SURGE } from '../data/procurement'
 
 type TabKey = 'early' | 'cohort' | 'supply'
 const TABS: { key: TabKey; label: string }[] = [
@@ -271,7 +271,6 @@ function UniformJointModel({ cohort }: { cohort: number }) {
 function SupplyForecast() {
   const [cohort, setCohort] = useState(250000)
   const dem = uniformDemand(cohort)
-  const topCat = PROCURE_BY_CAT[0]
   const fc = supplyForecast()
   const fcYear = dem?.fcYear ?? 2027
   const DIR_TONE: Record<string, string> = { '지속증가': 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', '상승': 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', '안정': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', '감소': 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' }
@@ -322,37 +321,55 @@ function SupplyForecast() {
         </p>
       </Panel>
 
-      {/* 조달청 — 방역물자 조달 동향(라이브) */}
-      <Panel title="📦 조달청 — 방역물자 조달 동향" desc={`나라장터 입찰공고(물품) 최근 ${120}일 ${PROCURE_SCANNED.toLocaleString()}건 중 방역물자 ${PROCURE_HITS}건 · ${PROCURE_UPDATED}`} badge="실데이터">
+      {/* 조달청 — 전년 동기 대비 발주 폭증(조기경보 선행지표) */}
+      <Panel title="📦 조달청 — 방역물자 발주 폭증 레이더 (전년 동기 대비)" desc={`나라장터 입찰공고(물품) 최근 ${120}일 방역물자 ${PROCURE_HITS}건 vs 전년 동기 ${PROCURE_PREV_HITS}건 · ${PROCURE_UPDATED}`} badge="실데이터">
         <p className="mb-3 rounded-lg bg-emerald-50 p-2.5 text-[12px] leading-relaxed text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
-          🔗 <b>감염병 유행(질병청) → 방역물자 조달(조달청)</b> 흐름의 외부 선행지표. 마스크·진단키트·소독·해열제 등 정부 방역물자 발주를 추적해 조기경보를 보강합니다. <b>판정 근거가 아니라 조기경보 신호</b>로만 사용.
+          단순 공고 나열이 아니라 <b>‘무엇이 전년보다 급증했나’</b>를 봅니다. <b>감염병 유행(질병청) → 방역물자 발주(조달청)</b>의 선행 신호 — 특정 물자 발주가 전년 동기 대비 튀면 현장 수요가 먼저 움직이는 것. <b>조기경보 보조 신호</b>(판정 근거 아님).
         </p>
+        {(() => { const totalDelta = PROCURE_PREV_HITS > 0 ? Math.round(((PROCURE_HITS - PROCURE_PREV_HITS) / PROCURE_PREV_HITS) * 100) : 0; const fmt = (d: number) => (d === 999 ? '신규' : `${d > 0 ? '+' : ''}${d}%`); const tone = (d: number) => (d >= 50 || d === 999 ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' : d >= 15 ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' : d <= -15 ? 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300'); return (
         <div className="grid gap-4 md:grid-cols-2">
           <div>
-            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">카테고리별 방역물자 입찰</p>
+            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">🔺 품목별 발주 폭증 Top (전년 동기 대비)</p>
             <div className="space-y-1.5">
-              {PROCURE_BY_CAT.map((c) => (
-                <div key={c.cat} className="flex items-center gap-2 text-[13px]">
-                  <span className="w-20 shrink-0 truncate text-slate-700 dark:text-slate-200">{c.cat}</span>
-                  <span className="h-2.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2.5 rounded-full bg-emerald-500" style={{ width: `${(c.n / (topCat?.n || 1)) * 100}%` }} /></span>
-                  <span className="w-10 shrink-0 text-right text-xs font-medium tabular-nums text-slate-600 dark:text-slate-300">{c.n}건</span>
+              {PROCURE_KW_SURGE.slice(0, 6).map((r) => { const mag = r.deltaPct === 999 ? 100 : Math.min(100, Math.abs(r.deltaPct)); return (
+                <div key={r.kw} className="flex items-center gap-2 text-[13px]">
+                  <span className="w-16 shrink-0 truncate text-slate-700 dark:text-slate-200">{r.kw}</span>
+                  <span className="h-2.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800"><span className={`block h-2.5 rounded-full ${r.deltaPct >= 0 ? 'bg-rose-500' : 'bg-blue-500'}`} style={{ width: `${mag}%` }} /></span>
+                  <span className={`w-12 shrink-0 rounded text-center text-[11px] font-bold tabular-nums ${tone(r.deltaPct)}`}>{fmt(r.deltaPct)}</span>
+                  <span className="w-14 shrink-0 text-right text-[10px] text-slate-400">{r.prev}→{r.cur}건</span>
                 </div>
-              ))}
+              ) })}
             </div>
           </div>
           <div>
-            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">최근 방역물자 입찰공고</p>
-            <ul className="space-y-1">
-              {PROCURE_RECENT.slice(0, 6).map((it, i) => (
-                <li key={i} className="text-[12px] leading-snug">
-                  <span className="text-slate-700 dark:text-slate-200">{it.nm}</span>
-                  <span className="ml-1 text-slate-400">· {it.inst} · {it.date}</span>
-                </li>
+            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">카테고리별 전년 동기 대비</p>
+            <div className="space-y-1.5">
+              {PROCURE_CAT_SURGE.map((c) => (
+                <div key={c.cat} className="flex items-center gap-2 text-[13px]">
+                  <span className="w-20 shrink-0 truncate text-slate-700 dark:text-slate-200">{c.cat}</span>
+                  <span className="flex-1 text-[11px] text-slate-400 tabular-nums">{c.prev}→{c.cur}건</span>
+                  <span className={`w-12 shrink-0 rounded text-center text-[11px] font-bold tabular-nums ${tone(c.deltaPct)}`}>{fmt(c.deltaPct)}</span>
+                </div>
               ))}
-            </ul>
+              <div className="mt-1 flex items-center gap-2 border-t border-slate-100 pt-1.5 text-[13px] dark:border-slate-800">
+                <span className="w-20 shrink-0 font-medium text-slate-600 dark:text-slate-300">방역물자 전체</span>
+                <span className="flex-1 text-[11px] text-slate-400 tabular-nums">{PROCURE_PREV_HITS}→{PROCURE_HITS}건</span>
+                <span className={`w-12 shrink-0 rounded text-center text-[11px] font-bold tabular-nums ${tone(totalDelta)}`}>{fmt(totalDelta)}</span>
+              </div>
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-slate-500">📈 가장 튄 품목: <b>{PROCURE_KW_SURGE[0]?.kw}</b> {fmt(PROCURE_KW_SURGE[0]?.deltaPct ?? 0)}({PROCURE_KW_SURGE[0]?.prev}→{PROCURE_KW_SURGE[0]?.cur}건) — 호흡·검사 물자 발주가 전년보다 앞서 움직이는 신호.</p>
           </div>
         </div>
-        <p className="mt-2 text-[11px] text-slate-400">출처: 조달청 나라장터 입찰공고정보서비스(물품). 공고명에 방역 키워드 포함분만 집계 · 주1회 자동 갱신 · 조기경보 보조지표(의학근거 아님).</p>
+        ) })()}
+        <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
+          <summary className="flex cursor-pointer list-none items-center justify-between p-2.5 text-[12px] font-medium text-slate-600 dark:text-slate-300 [&::-webkit-details-marker]:hidden">최근 입찰공고 원본 보기 ({PROCURE_HITS}건 중 6건)<span className="text-slate-400 transition group-open:rotate-180">▾</span></summary>
+          <ul className="space-y-1 border-t border-slate-100 p-2.5 dark:border-slate-800">
+            {PROCURE_RECENT.slice(0, 6).map((it, i) => (
+              <li key={i} className="text-[12px] leading-snug"><a href={it.url} target="_blank" rel="noreferrer" className="text-slate-700 hover:text-emerald-600 hover:underline dark:text-slate-200">{it.nm}</a><span className="ml-1 text-slate-400">· {it.inst} · {it.date}</span></li>
+            ))}
+          </ul>
+        </details>
+        <p className="mt-2 text-[11px] text-slate-400">출처: 조달청 나라장터 입찰공고정보서비스(물품). 현재(최근 {120}일, {PROCURE_SCANNED.toLocaleString()}건 스캔) vs 전년 동기({PROCURE_PREV_RANGE}) 같은 방역 키워드 집계 비교 · 주1회 자동 갱신 · 조기경보 보조지표(의학근거 아님). 999%=전년 0건 신규 급등.</p>
       </Panel>
 
       <Panel title="🛣 연동 로드맵 — 방위사업청·기상청" desc="추가 연동 시 산출물. 현재 가짜 수치를 만들지 않습니다(§10 날조 금지)." badge="로드맵">
