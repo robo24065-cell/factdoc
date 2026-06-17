@@ -11,6 +11,7 @@ import { prevalenceFor, rumorsFor } from '../engine'
 import { NAVER_TRENDS } from '../data/naver-trends'
 import CheckupPercentile from '../components/CheckupPercentile'
 import { uniformDemand } from '../lib/uniformDemand'
+import { supplyForecast } from '../lib/supplyForecast'
 import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
 
 type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
@@ -318,9 +319,38 @@ function SupplyForecast() {
   const [cohort, setCohort] = useState(250000)
   const dem = uniformDemand(cohort)
   const topCat = PROCURE_BY_CAT[0]
+  const fc = supplyForecast()
+  const fcYear = dem?.fcYear ?? 2027
+  const DIR_TONE: Record<string, string> = { '급증': 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', '증가': 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', '유지': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', '감소': 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' }
   return (
     <div className="space-y-4">
-      <Panel title={`🎖 군복 호수별 수요예측 — 신체 분포 모델 (${dem?.fcYear ?? 2027} 예측)`} desc="평균이 아니라 분포로 각 호수 인원 추정 → 추세 외삽으로 내년 발주 수요·증감 예측 (키+몸무게)" badge="실데이터">
+      {/* ★통합 수요예측 — 다년 유행 추세 → 내년 방역물자 수요 */}
+      <Panel title={`🔮 ${fcYear} 통합 물자 수요예측 — 다년 추세 기반`} desc="질병청 감염병 발생 다년 추세(선형회귀)를 내년으로 외삽 → 방역물자 카테고리별 수요 방향 + 조달청 현재 발주 교차" badge="실데이터">
+        <p className="mb-3 rounded-lg bg-violet-50 p-2.5 text-[12px] leading-relaxed text-violet-900 dark:bg-violet-950/30 dark:text-violet-200">
+          <b>질병청(유행 추세)</b> + <b>병무청(입영 신체)</b> + <b>조달청(현재 발주)</b>을 통합해 <b>{fcYear}년 물자 수요</b>를 선제 예측합니다. 감염병군별 최근 추세를 회귀로 외삽해 방역물자 수요 방향을 산출하고, 조달청 실제 발주와 교차 검증합니다.
+        </p>
+        <div className="overflow-x-auto">
+          <table className="w-full text-[13px]">
+            <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1.5 pr-2">감염병군</th><th className="px-2">최신({fc[0]?.latestYear})</th><th className="px-2">{fcYear} 예측</th><th className="px-2">방향</th><th className="px-2">권장 물자</th></tr></thead>
+            <tbody>
+              {fc.map((g) => (
+                <tr key={g.key} className="border-b border-slate-100 dark:border-slate-800">
+                  <td className="py-1.5 pr-2 font-medium text-slate-700 dark:text-slate-200">{g.label}</td>
+                  <td className="px-2 tabular-nums text-slate-500">{g.latest.toLocaleString()}</td>
+                  <td className="px-2 tabular-nums font-semibold text-slate-800 dark:text-slate-100">{g.fc.toLocaleString()}</td>
+                  <td className="px-2"><span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${DIR_TONE[g.dir]}`}>{g.dir} {g.deltaPct > 0 ? '+' : ''}{g.deltaPct}%</span></td>
+                  <td className="px-2 text-[12px] text-slate-500">{g.supplies}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
+          📐 감염병군별 최근 완전연도(질병청 EID_NAT_YEAR) <b>최소제곱 선형회귀 → {fcYear} 외삽</b>. 발생 추세 기반 <b>수요 방향·우선순위</b>이며 절대 발주량은 조달 이력 연동 시 정밀화(아래 조달청). 의학 판정 아님·물자기획 보조.
+        </p>
+      </Panel>
+
+      <Panel title={`🎖 군복 호수별 수요예측 — 신체 분포 모델 (${fcYear} 예측)`} desc="평균이 아니라 분포로 각 호수 인원 추정 → 추세 외삽으로 내년 발주 수요·증감 예측 (키+몸무게)" badge="실데이터">
         <p className="mb-3 rounded-lg bg-indigo-50 p-2.5 text-[12px] leading-relaxed text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
           평균만으론 발주를 못 합니다 — <b>호수별 인원</b>이 필요하죠. 병무청 실측 평균({dem?.prevYear}→{dem?.baseYear})의 변화 추세를 <b>{dem?.fcYear}년으로 외삽</b>하고, <b>키(길이)·몸무게(체형) 분포</b>를 정규분포로 추정해 호수별 수요·전년대비 증감을 예측합니다.
         </p>
