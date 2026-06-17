@@ -13,14 +13,16 @@ export interface MmaRef {
   source: string
 }
 
-// 2024년 병역판정검사(2005년생) 공식 발표 평균. (실측 분포·분위수는 전파 완료 후 배치로 보강)
+// 병무청 병역판정 평균(만19세 남) — bodyspec.ts(자동 갱신)의 최신 연도에서 파생. 하드코딩 영구방치 X.
+import { MMA_YEARLY } from '../data/bodyspec'
+const _latest = MMA_YEARLY[MMA_YEARLY.length - 1] ?? { year: 2024, heightCm: 174.54, weightKg: 73.27 }
 export const MMA_REF: MmaRef = {
-  year: 2024,
+  year: _latest.year,
   n: 211000,
-  meanHeight: 174.54,
-  meanWeight: 73.27,
-  meanBmi: +(73.27 / (174.54 / 100) ** 2).toFixed(1), // ≈ 24.0
-  source: '병무청 병역판정검사 통계(2024, 2005년생 약 21.1만 명)',
+  meanHeight: _latest.heightCm,
+  meanWeight: _latest.weightKg,
+  meanBmi: +(_latest.weightKg / (_latest.heightCm / 100) ** 2).toFixed(1),
+  source: `병무청 병역판정검사 통계(${_latest.year})`,
 }
 
 export interface MmaCompare {
