@@ -8,9 +8,9 @@ import { prebunkRows, fakeRumors, genericCaution, officialFacts, prebunkDraft } 
 import { eidPeerTop } from '../lib/eidStats'
 import { fusionBrief } from '../lib/fusion'
 import { prevalenceFor, rumorsFor } from '../engine'
-import { MMA_YEARLY } from '../data/bodyspec'
 import { NAVER_TRENDS } from '../data/naver-trends'
 import CheckupPercentile from '../components/CheckupPercentile'
+import { uniformDemand } from '../lib/uniformDemand'
 
 type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
 const TABS: { key: TabKey; label: string }[] = [
@@ -291,26 +291,47 @@ function RiskReader() {
 
 // ───────────────────────── ④ 기관융합 물자 수요예측 (대부분 로드맵) ─────────────────────────
 function SupplyForecast() {
-  const mma = MMA_YEARLY[MMA_YEARLY.length - 1]
+  const [cohort, setCohort] = useState(250000)
+  const dem = uniformDemand(cohort)
+  const maxPct = dem ? Math.max(...dem.rows.map((r) => r.pctCur)) : 1
+  const nf = (n: number) => n.toLocaleString()
   return (
     <div className="space-y-4">
-      <Panel title="📦 4개 주최기관 융합 — 물자 수요예측 (융합 비전)" desc="병무·질병 + 방위사업·조달 데이터를 엮어 군·공공 방역/보급 물자 수요를 선제 예측" badge="로드맵">
+      <Panel title="🎖 군복 호수별 수요예측 — 신체 분포 모델 (병무청)" desc="평균이 아니라 분포로 각 호수 인원을 추정 → 작년 대비 호수별 발주 증감 예측" badge="실데이터">
         <p className="mb-3 rounded-lg bg-indigo-50 p-2.5 text-[12px] leading-relaxed text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
-          예: <b>감염병 유행(질병청)</b> → 방역물자 수요 / <b>폭염(기상청)</b> → 온열손상 키트 / <b>입영 신체분포(병무청)</b> → 군복·군화 사이즈별 수요 → <b>조달청·방위사업청 발주</b> 최적화. 아래는 라이브 가능분과 미연동(로드맵)을 정직하게 구분합니다.
+          입영 코호트 평균 키만으론 발주를 못 합니다 — <b>호수별로 몇 명인지</b>가 필요하죠. 병무청 실측 평균({dem?.meanCur}cm)에 <b>정규분포(σ={5.6}cm)</b>를 적용해 키 구간별 비중을 산출하고, <b>작년({dem?.yearPrev}) 대비 올해({dem?.yearCur}) 평균 상승</b>으로 호수별 수요 증감을 예측합니다.
         </p>
-        <div className="grid gap-3 md:grid-cols-2">
-          {/* 라이브 앵커: 병무청 입영 코호트 신체 */}
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
-            <div className="flex items-center justify-between"><p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">병무청 입영 코호트 신체기준</p><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">라이브</span></div>
-            {mma ? <p className="mt-1.5 text-sm text-emerald-900 dark:text-emerald-100">평균 키 <b>{mma.heightCm}cm</b> · 몸무게 <b>{mma.weightKg}kg</b> · BMI {(mma.weightKg / (mma.heightCm / 100) ** 2).toFixed(1)} <span className="text-xs opacity-70">({mma.year} 병역판정)</span></p> : null}
-            <p className="mt-2 text-[12px] leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">이 평균을 기준으로 군복·군화 호수별 수요를 추정하려면 <b>신체 치수 분포(표준편차·가슴둘레 등)</b>가 필요 — 병무청 상세 통계 연동 시 사이즈별 발주량 산출 가능.</p>
+        <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">입영 코호트 규모(가정)
+          <input type="number" inputMode="numeric" value={cohort} onChange={(e) => setCohort(Math.max(0, parseInt(e.target.value, 10) || 0))} className="w-32 rounded-lg border border-slate-300 bg-white p-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />명
+        </label>
+        {dem && (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-[13px]">
+              <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1.5 pr-2">호수(키 구간)</th><th className="px-2">비중</th><th className="px-2">필요 수량</th><th className="px-2">작년 대비</th></tr></thead>
+              <tbody>
+                {dem.rows.map((r) => (
+                  <tr key={r.band} className="border-b border-slate-100 dark:border-slate-800">
+                    <td className="py-1.5 pr-2 text-slate-700 dark:text-slate-200">{r.band}</td>
+                    <td className="px-2">
+                      <div className="flex items-center gap-1.5"><span className="h-2 w-16 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2 rounded-full bg-indigo-500" style={{ width: `${(r.pctCur / maxPct) * 100}%` }} /></span><span className="tabular-nums text-slate-500">{(r.pctCur * 100).toFixed(1)}%</span></div>
+                    </td>
+                    <td className="px-2 tabular-nums text-slate-700 dark:text-slate-200">{nf(r.qtyCur)}</td>
+                    <td className={`px-2 tabular-nums font-medium ${r.deltaQty > 0 ? 'text-rose-600' : r.deltaQty < 0 ? 'text-blue-600' : 'text-slate-400'}`}>{r.deltaQty > 0 ? '▲' : r.deltaQty < 0 ? '▼' : ''}{nf(Math.abs(r.deltaQty))} ({r.deltaPctPt > 0 ? '+' : ''}{r.deltaPctPt.toFixed(2)}%p)</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
+              📐 <b>방법론</b>: 평균 키는 병무청 병역판정검사 <b>실측</b>({dem.yearPrev} {dem.meanPrev}cm → {dem.yearCur} {dem.meanCur}cm), 분포는 <b>정규분포 가정</b>(σ=5.6cm, 한국 성인 남성 표준편차 문헌 근사). 평균이 오르면 큰 호수 수요가 늘고 작은 호수는 줄어듭니다. 실측 치수 히스토그램·가슴둘레는 병무청 상세통계 연동 시 정밀화(로드맵). 수량은 가정 코호트×비중.
+            </p>
           </div>
-          {/* 라이브 앵커: 질병청 유행 신호 */}
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50/40 p-3 dark:border-emerald-900 dark:bg-emerald-950/20">
-            <div className="flex items-center justify-between"><p className="text-sm font-semibold text-emerald-800 dark:text-emerald-200">질병청 유행 신호 → 방역물자</p><span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">라이브(신호)</span></div>
-            <p className="mt-1.5 text-[12px] leading-relaxed text-emerald-800/80 dark:text-emerald-200/80">조기경보 탭의 감염병 급증 신호를 마스크·진단키트·해열제 등 <b>방역물자 수요 선행지표</b>로 사용. 실제 발주량 매핑은 조달 이력 연동 필요(아래 로드맵).</p>
-          </div>
-        </div>
+        )}
+      </Panel>
+
+      <Panel title="🦠 질병청 유행 신호 → 방역물자 선행지표" desc="감염병 급증을 방역물자 수요 선행지표로 (조기경보 탭 연계)" badge="실데이터">
+        <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
+          ① 조기경보 탭의 감염병 급증 신호(EID)를 마스크·진단키트·해열제 등 <b>방역물자 수요 선행지표</b>로 사용합니다. 발생 급증 → 수요 증가의 시차를 조달 이력과 결합하면 품목별 적정 발주 시점을 예측할 수 있어요(아래 조달청 연동).
+        </p>
       </Panel>
 
       <Panel title="🛣 연동 로드맵 — 외부 데이터(미연동)" desc="아래는 데이터 연동 시 산출물 설계. 현재 가짜 수치를 만들지 않습니다(§10 날조 금지)." badge="로드맵">
