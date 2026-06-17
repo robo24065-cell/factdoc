@@ -48,7 +48,7 @@ const claimLike = (s: string) => s.length >= 10 && !!(findInText(s, 'disease') |
 // 팩트체크(진위) 의도 감지 — "A하면 B 되나요?" 류. 이건 백과사전(info)이 아니라 판정 경로로 보낸다(주체 미등록이어도).
 const FACTCHECK_RE = /완치|특효|낫게|치료(되|돼|된다|할\s*수|가\s*되)|유발|발암|일으키|전염|전파(되|돼|된다|되나|되니)|감염(되|될|돼)|옮(나|기|아|는)|변형|부작용|내성|평생\s*(먹|복용)|생기나|생겨|걸리나|걸리니|죽나|사망|위험한가|위험하나|막아주|예방(된|되나|해주)|효과(가\s*있|\s*있|없)|좋다는|좋아지|사실(인가|이야|이에|인지|일까)|정말(인가|이야|로|\?)|진짜(야|인가|로|\?)|되나요|된다는|된다던|맞나요|맞아요|괜찮나요|해도\s*(되나|돼|될)|해로운|독인가|독이/
 // 순수 정의·증상·예방·원인 질문(이건 info 유지)
-const isDefSymptomQ = (s: string) => /(뭐|뭔|무엇|어떤\s*(병|질환))\s*(예요|에요|이에요|인가요|야|니|\?|$)|^[가-힣A-Za-z0-9·\s]{2,20}(이|가)?\s*(뭐|뭔|무엇)|증상\s*(이|은)?\s*(뭐|무엇|어때|어떻|있|알려)|증상\s*알려|예방(법|\s*방법|하는)|관리(법|\s*방법)|원인(이|은)?\s*(뭐|무엇)|어떻게\s*(예방|관리)/.test(s)
+const isDefSymptomQ = (s: string) => /(뭐|뭔|무엇|어떤\s*(병|질환))\s*(예요|에요|이에요|인가요|야|니|\?|$)|^[가-힣A-Za-z0-9·\s]{2,20}(이|가)?\s*(뭐|뭔|무엇)|증상\s*(이|은)?\s*(뭐|무엇|어때|어떻|있|알려)|증상\s*알려|예방(법|\s*방법|하는)|관리(법|\s*방법)|원인(이|은)?\s*(뭐|무엇)|어떻게\s*(예방|관리|옮|감염|전염|전파|걸리|걸려|생기|퍼지)|(전염|전파|감염\s*경로|전파\s*경로|잠복기|잠복\s*기간)\s*(이|은|는|가)?\s*(어때|어떻|얼마|뭐|무엇|있|알려|궁금|되나|되니|되는지|되요|돼요|\?|$)/.test(s)
 
 // 다중 주어 분해 — "양파와 마늘도 혈압 감소에 탁월합니다" → "양파는 …", "마늘는 …" 각각의 주장으로.
 // 나열된 식품/성분(와/과/,/및)만 분해(흩어진 언급은 그대로). 성분(칼륨 등 nutrient)은 주어로 보지 않음.
@@ -591,13 +591,16 @@ export default function Home() {
       }
       const disease = intent.disease
       const sections = await fetchDiseaseSections(disease)
-      // ★측면 질문(합병증/증상/원인…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.
+      // ★측면 질문(합병증/증상/원인/전파…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.
       const aspectKw = (claim.match(/합병증|증상|원인|진단|검사|치료|예방|관리|종류|단계|경과|예후|위험요인|전조/) || [])[0]
+      const isTransmitQ = /전염|전파|감염\s*경로|어떻게\s*(옮|감염|퍼지|걸)|옮(나|기|아|는)|퍼지/.test(claim)
       let summary = '', isGuid = false
       let cite: { portal: string; title: string; url?: string } | undefined
-      // 코퍼스(질병청 공식 본문)가 있으면 우선 — 측면질문은 해당 섹션, 아니면 개요. 없을 때만 일반 관리 안내.
+      // 코퍼스(질병청 공식 본문)가 있으면 우선 — 전파질문은 전파언급 섹션, 측면질문은 해당 섹션, 아니면 개요.
       if (sections.length) {
-        const best = (aspectKw && sections.find((s) => (s.section + s.text).includes(aspectKw))) || sections[0]
+        const best = (isTransmitQ && sections.find((s) => /전파|전염|감염|접촉|비말|체액|매개|물림|성\s*접촉|분비물|침방울/.test(s.section + s.text)))
+          || (aspectKw && sections.find((s) => (s.section + s.text).includes(aspectKw)))
+          || sections[0]
         summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || '공식 정보'}`, url: best.url ?? undefined }
       }
       if (!summary) { const adv = adviceAnswer(claim); if (adv) { summary = adv.text; isGuid = true; cite = adv.citation } }
