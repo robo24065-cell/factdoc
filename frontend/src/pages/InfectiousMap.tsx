@@ -14,7 +14,7 @@ import {
 } from '../data/eid-region'
 import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 import { eidGrowthSignal } from '../lib/eidStats'
-import { openInfectionReport, type InfectionReportData } from '../lib/infectionReport'
+import { openInfectionReport, type InfectionReportData, type ReportSection } from '../lib/infectionReport'
 import InfoTip, { GLOSSARY } from '../components/InfoTip'
 
 type Metric = 'count' | 'rate'
@@ -225,28 +225,133 @@ export default function InfectiousMap() {
     if (r) setTip({ x: e.clientX - r.left, y: e.clientY - r.top, code })
   }
 
-  // 📄 PDF 리포트 — 현재 선택(감염병·기간·지표)을 A4 양식으로 새 창에 렌더 + 인쇄
+  // 📄 PDF 리포트 — 현재 선택(감염병·기간·지표·선택지역)을 섹션별 분석 코멘트와 함께 A4로 렌더 + 인쇄
   function generateReport() {
     const svg = mapRef.current?.querySelector('svg')
     const g = eidGrowthSignal()
+    const scope = selected ? `${SIDO_NAME[selected]} 중심` : '전국'
+    const sumAll = rankPos.reduce((s, r) => s + r.value, 0) || 1
+    const sections: ReportSection[] = []
+
+    // AI 종합 코멘트
+    const aiLines = [insight]
+    if (g.rows.length) aiLines.push(`최근 4주 기준 ${g.rows.slice(0, 2).map((r) => r.name).join('·')} 등의 발생이 직전 4주보다 빠르게 늘고 있어 개인 위생수칙 준수가 도움이 됩니다.`)
+    if (yoy !== null && yoy > 0) aiLines.push(`${inWeek ? '전주' : '전년'}보다 발생이 증가한 추세이므로 유행 시기·고위험군 노출에 유의가 필요합니다.`)
+    else if (yoy !== null && yoy < 0) aiLines.push(`${inWeek ? '전주' : '전년'}보다 발생이 줄었으나 계절성·신고지연을 감안한 지속 관찰이 권장됩니다.`)
+    aiLines.push('본 수치는 전수신고 기준 잠정치를 포함할 수 있으며 진단·의료적 판단을 대체하지 않습니다.')
+
+    // 1) 시·도 순위
+    if (rankPos.length) {
+      const top3 = rankPos.slice(0, 3)
+      const top3Share = Math.round((top3.reduce((s, r) => s + r.value, 0) / sumAll) * 100)
+      sections.push({
+        title: `시·도 ${effMetric === 'count' ? '발생' : '발생률'} 순위`, scopeTag: '전국',
+        comment: `${periodLabel} ${diseaseLabel}은(는) ${rankPos[0].name}(${fmt(rankPos[0].value, effMetric)}${u})에서 가장 ${effMetric === 'count' ? '많고' : '높고'}, 상위 3개 시·도(${top3.map((r) => r.name).join('·')})가 전체의 ${top3Share}%를 차지합니다. ${top3Share >= 50 ? '특정 지역 집중도가 높아 해당 지역 집중 대응이 필요합니다.' : '비교적 여러 지역에 분포합니다.'}`,
+        bars: rankPos.slice(0, 10).map((r) => ({ label: r.name, value: r.value, valueFmt: `${fmt(r.value, effMetric)}${u}` })),
+      })
+    }
+
+    // 2) 선택 지역 분석
+    if (selected) {
+      const rv = perSido[selected] || 0
+      const pos = ranking.findIndex((r) => r.code === selected) + 1
+      sections.push({
+        title: '선택 지역 심층 분석', scopeTag: SIDO_NAME[selected],
+        comment: `${SIDO_NAME[selected]}의 ${diseaseLabel} ${effMetric === 'count' ? '발생수' : '발생률'}는 ${fmt(rv, effMetric)}${u}로 전국 17개 시·도 중 ${pos}위, 전국의 ${Math.round((rv / sumAll) * 100)}%입니다.${sidoBreakdown.length ? ` 이 지역에서 가장 많이 발생한 감염병은 ${sidoBreakdown[0].name}입니다.` : ''}`,
+        bars: sidoBreakdown.slice(0, 8).map((b) => ({ label: b.name, value: b.value, valueFmt: `${fmt(b.value, effMetric)}${u}` })),
+        note: sidoBreakdown.length ? undefined : '해당 기간 이 지역의 세부 감염병 데이터가 없습니다.',
+      })
+    }
+
+    // 3) 연도별 추이
+    if (trend.length > 1) {
+      const vals = trend.map((t) => Number(t.전국))
+      const first = vals.find((v) => v > 0) || 0, last = vals[vals.length - 1] || 0
+      const dir = last > first ? '증가' : last < first ? '감소' : '유지'
+      sections.push({
+        title: '연도별 추이', scopeTag: '전국',
+        comment: `최근 수년간 ${diseaseLabel} 전국 ${effMetric === 'count' ? '발생수' : '발생률'}는 전반적으로 ${dir} 추세입니다(${trend[0].year}→${trend[trend.length - 1].year}).`,
+        table: { head: trend.map((t) => String(t.year)), rows: [trend.map((t) => `${fmt(Number(t.전국), effMetric)}`)] },
+      })
+    }
+
+    // 4) 성·연령 분포 (전국)
+    {
+      const acc: Record<string, { m: number; f: number }> = {}
+      const add = (o?: Record<string, { m: number; f: number }>) => { if (o) for (const [a, mf] of Object.entries(o)) { (acc[a] ??= { m: 0, f: 0 }); acc[a].m += mf.m; acc[a].f += mf.f } }
+      if (disease !== ALL) add(EID_SEXAGE[disease]?.[year]); else for (const d of EID_DISEASES) add(EID_SEXAGE[d]?.[year])
+      const order = ['00~09', '10~19', '20~29', '30~39', '40~49', '50~59', '60~69', '70~79', '80~89', '90~99', '100~109']
+      const rows = order.filter((a) => acc[a] && (acc[a].m || acc[a].f)).map((a) => ({ a, m: acc[a].m, f: acc[a].f }))
+      if (rows.length) {
+        const totM = rows.reduce((s, r) => s + r.m, 0), totF = rows.reduce((s, r) => s + r.f, 0)
+        const peak = rows.reduce((p, r) => (r.m + r.f > p.m + p.f ? r : p), rows[0])
+        sections.push({
+          title: '성별·연령 분포', scopeTag: '전국',
+          comment: `${diseaseLabel}은(는) ${peak.a.replace('~', '–')}세에서 가장 많이 발생했고, 성별로는 ${totM >= totF ? `남성(${nf(totM)}명)이 여성(${nf(totF)}명)보다 많` : `여성(${nf(totF)}명)이 남성(${nf(totM)}명)보다 많`}습니다.`,
+          table: { head: ['연령대', '남', '여'], rows: rows.map((r) => [r.a.replace('~', '–'), nf(r.m), nf(r.f)]) },
+        })
+      }
+    }
+
+    // 5) 환자분류 · 6) 추정 감염지역 (전국)
+    const ptnt = aggRecord(disease, EID_PTNT, year)
+    if (ptnt.length) {
+      const tot = ptnt.reduce((s, p) => s + p.value, 0) || 1
+      sections.push({ title: '환자 분류 (환자 vs 병원체보유자)', scopeTag: '전국', comment: `${ptnt.map((p) => `${p.name} ${Math.round((p.value / tot) * 100)}%`).join(', ')}. 병원체보유자는 증상 없이 균을 보유해 전파가 가능한 상태입니다.`, bars: ptnt.map((p) => ({ label: p.name, value: p.value, valueFmt: `${nf(p.value)}명` })) })
+    }
+    const area = aggRecord(disease, EID_AREA, year)
+    if (area.length) {
+      const tot = area.reduce((s, p) => s + p.value, 0) || 1
+      sections.push({ title: '추정 감염지역 (국내 vs 해외)', scopeTag: '전국', comment: `${area.map((p) => `${p.name} ${Math.round((p.value / tot) * 100)}%`).join(', ')}. 해외 유입 비중이 높으면 검역·입국자 관리가, 국내 비중이 높으면 지역사회 방역이 중요합니다.`, bars: area.map((p) => ({ label: p.name, value: p.value, valueFmt: `${nf(p.value)}명` })) })
+    }
+
+    // 7) 위험도 종합지수 (전체 감염병일 때)
+    if (disease === ALL) {
+      const gmap = new Map(eidGrowthSignal(0).rows.map((r) => [r.name, r.growthPct]))
+      const items = EID_DISEASES.map((d) => ({ name: cleanName(d), grp: EID_GROUP[d], cnt: annualVal('count', d, year, '00'), gr: gmap.get(cleanName(d)) ?? 0 })).filter((x) => x.cnt > 0)
+      if (items.length) {
+        const maxC = Math.max(...items.map((x) => x.cnt), 1), maxG = Math.max(...items.map((x) => x.gr), 1)
+        const gw: Record<string, number> = { '1급': 1, '2급': 0.7, '3급': 0.5, '4급': 0.3 }
+        const scored = items.map((x) => ({ name: x.name, grp: x.grp, score: Math.round((0.45 * (x.cnt / maxC) + 0.35 * Math.max(0, x.gr) / maxG + 0.2 * (gw[x.grp] || 0.3)) * 100) })).sort((a, b) => b.score - a.score).slice(0, 8)
+        sections.push({ title: '위험도 종합지수', scopeTag: '전국', comment: `발생수(45%)·최근 증가율(35%)·심각도(급, 20%)를 가중 합성한 방역 우선순위입니다. ${scored[0].name}(${scored[0].score}점)이 가장 높아 우선 대응 대상입니다.`, bars: scored.map((s) => ({ label: `${s.grp} ${s.name}`, value: s.score, valueFmt: `${s.score}점` })) })
+      }
+    }
+
+    // 8) 계절성
+    const { share, hasPrior } = seasonalShare(disease)
+    if (hasPrior) {
+      const idx = share.map((s) => Math.round(s * 12 * 100))
+      let peak = 0; idx.forEach((v, i) => { if (v > idx[peak]) peak = i })
+      sections.push({ title: '계절성 패턴', scopeTag: '전국', comment: `과거 연도 평균 월별 패턴상 ${diseaseLabel}은(는) 보통 ${peak + 1}월경 가장 많이 발생합니다(평균월=100 지수). 해당 시기 선제 예방·홍보가 효과적입니다.`, table: { head: ['월', ...idx.map((_, m) => `${m + 1}`)], rows: [['지수', ...idx.map((v) => String(v))]] } })
+    }
+
+    // 9) 인구밀도 × 발생률
+    {
+      const dr = EID_SIDO.map((s) => { const ar = areaOf(s.name); const pop = sidoPop(s.code); const cnt = annualVal('count', disease, year, s.code); return { name: s.name, density: ar > 0 ? Math.round(pop / ar) : 0, rate: pop > 0 ? Math.round((cnt / pop) * 100000 * 10) / 10 : 0 } }).filter((x) => x.density > 0 && x.rate > 0)
+      if (dr.length >= 3) {
+        const n = dr.length, mx = dr.reduce((a, b) => a + b.density, 0) / n, my = dr.reduce((a, b) => a + b.rate, 0) / n
+        let sxy = 0, sxx = 0, syy = 0; for (const v of dr) { const dx = v.density - mx, dy = v.rate - my; sxy += dx * dy; sxx += dx * dx; syy += dy * dy }
+        const r = sxx > 0 && syy > 0 ? Math.round((sxy / Math.sqrt(sxx * syy)) * 100) / 100 : 0
+        const byD = [...dr].sort((a, b) => b.density - a.density).slice(0, 8)
+        sections.push({ title: '인구밀도 × 발생률', scopeTag: '전국', comment: `인구밀도와 ${effMetric === 'count' ? '발생률' : '발생률'}의 상관계수 r=${r.toFixed(2)} — ${r >= 0.3 ? '밀도 높은 지역일수록 발생률이 높은 경향(밀집이 환경적 취약요인).' : r <= -0.3 ? '밀도와 발생률이 반대 경향.' : '뚜렷한 선형 관계는 약함.'} ⚠ 상관이며 인과는 아님(면적 행정구역 근사·인구 추정).`, table: { head: ['시·도', '인구밀도(명/㎢)', '발생률(10만)'], rows: byD.map((v) => [v.name, nf(v.density), String(v.rate)]) } })
+      }
+    }
+
+    // 10) 급증 주의 신호
+    if (g.rows.length) {
+      sections.push({ title: `급증 주의 신호 (최근 4주 vs 직전 4주 · ${g.week}주차)`, scopeTag: '전국', comment: `최근 4주 발생이 직전 4주보다 빠르게 늘어난 감염병입니다. ${g.rows[0].name}이(가) 가장 가파르게 증가(▲${g.rows[0].growthPct >= 999 ? '신규' : g.rows[0].growthPct + '%'})해 조기경보 대상입니다.`, table: { head: ['급', '감염병', '증감', '직전→최근'], rows: g.rows.slice(0, 6).map((r) => [r.grp, r.name, `▲${r.growthPct >= 999 ? '신규' : r.growthPct + '%'}`, `${r.prior}→${r.recent}`]) } })
+    }
+
     const data: InfectionReportData = {
-      diseaseLabel,
-      periodLabel,
-      metricLabel: effMetric === 'count' ? '발생 수' : '인구 10만 명당 발생률',
-      unit: u,
-      nationTotal: fmt(nationTotal, effMetric),
-      topName: topSido && topSido.value > 0 ? topSido.name : '—',
-      topValue: topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음',
-      yoyLabel: inWeek ? '전주 대비' : '전년 대비',
-      yoyBadge,
-      yoyIsUp: yoy === null ? null : yoy > 0 ? true : yoy < 0 ? false : null,
-      insight,
-      ranking: rankPos.map((r) => ({ name: r.name, value: r.value, valueFmt: `${fmt(r.value, effMetric)}${u}` })),
-      trend: trend.map((t) => ({ year: String(t.year), value: fmt(Number(t.전국), effMetric) })),
-      growth: g.rows.slice(0, 6).map((r) => ({ grp: r.grp, name: r.name, growthPct: r.growthPct, prior: r.prior, recent: r.recent })),
-      growthWeek: g.rows.length ? g.week : null,
+      diseaseLabel, periodLabel, metricLabel: effMetric === 'count' ? '발생 수' : '인구 10만 명당 발생률', unit: u, scope, isPartial,
       mapSvg: svg ? svg.outerHTML : null,
-      isPartial,
+      kpis: [
+        { label: `전국 ${effMetric === 'count' ? '발생수' : '발생률'}`, value: fmt(nationTotal, effMetric), sub: u, tone: 'slate' },
+        { label: effMetric === 'count' ? '최다 발생지' : '최고 발생률', value: topSido && topSido.value > 0 ? topSido.name : '—', sub: topSido && topSido.value > 0 ? `${fmt(topSido.value, effMetric)}${u}` : '발생 없음', tone: 'rose' },
+        { label: inWeek ? '전주 대비' : '전년 대비', value: yoyBadge, sub: yoy === null ? '기준' : '증감', tone: yoy === null ? 'slate' : yoy > 0 ? 'up' : 'down' },
+      ],
+      aiComment: aiLines.join(' '),
+      sections,
     }
     const ok = openInfectionReport(data)
     if (!ok) alert('팝업이 차단되었어요. 브라우저 주소창의 팝업 허용을 켜고 다시 시도해 주세요.')
