@@ -8,7 +8,7 @@ import { prebunkRows, fakeRumors, genericCaution, officialFacts, prebunkDraft } 
 import { eidPeerTop } from '../lib/eidStats'
 import { fusionBrief } from '../lib/fusion'
 import { NAVER_TRENDS } from '../data/naver-trends'
-import { uniformDemand } from '../lib/uniformDemand'
+import { uniformDemand, jointUniformDemand, HW_RHO } from '../lib/uniformDemand'
 import { supplyForecast } from '../lib/supplyForecast'
 import DemandModelPanel from '../components/DemandModelPanel'
 import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
@@ -173,25 +173,76 @@ function MilitaryCohort() {
 
 
 // ───────────────────────── ③ 기관융합 물자 수요예측 ─────────────────────────
-function DemandTableView({ t }: { t: import('../lib/uniformDemand').DemandTable }) {
+// 키×체중 결합 분포 히트맵 모델 — 체형 상관(ρ)을 반영한 결합분포로 군복 호수별 수요 + 독립가정 대비 교정 시연.
+const BUILD_RGB: Record<string, string> = { '저체중': '14,165,233', '정상': '16,185,129', '과체중': '245,158,11', '비만': '244,63,94' }
+function UniformJointModel({ cohort }: { cohort: number }) {
+  const [rho, setRho] = useState(HW_RHO)
+  const j = jointUniformDemand(cohort, rho)
   const nf = (n: number) => n.toLocaleString()
-  const maxPct = Math.max(...t.rows.map((r) => r.pctFc), 0.01)
+  if (!j) return null
+  const cellAt = (hi: number, wi: number) => j.cells.find((c) => c.hi === hi && c.wi === wi)!
   return (
-    <div className="overflow-x-auto">
-      <p className="mb-1 text-[12px] font-medium text-slate-600 dark:text-slate-300">{t.dim} 호수 — 평균 {t.meanBase}{t.unit}({t.baseYear}) → <b className="text-indigo-600 dark:text-indigo-400">{t.meanFc}{t.unit}({t.fcYear} 예측)</b></p>
-      <table className="w-full text-[13px]">
-        <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1 pr-2">호수</th><th className="px-2">{t.fcYear} 비중</th><th className="px-2">필요 수량</th><th className="px-2">{t.baseYear} 대비</th></tr></thead>
-        <tbody>
-          {t.rows.map((r) => (
-            <tr key={r.band} className="border-b border-slate-100 dark:border-slate-800">
-              <td className="py-1 pr-2 text-slate-700 dark:text-slate-200">{r.band}</td>
-              <td className="px-2"><div className="flex items-center gap-1.5"><span className="h-2 w-12 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2 rounded-full bg-indigo-500" style={{ width: `${(r.pctFc / maxPct) * 100}%` }} /></span><span className="tabular-nums text-slate-500">{(r.pctFc * 100).toFixed(1)}%</span></div></td>
-              <td className="px-2 tabular-nums text-slate-700 dark:text-slate-200">{nf(r.qtyFc)}</td>
-              <td className={`px-2 tabular-nums font-medium ${r.deltaQty > 0 ? 'text-rose-600' : r.deltaQty < 0 ? 'text-blue-600' : 'text-slate-400'}`}>{r.deltaQty > 0 ? '▲' : r.deltaQty < 0 ? '▼' : ''}{nf(Math.abs(r.deltaQty))}</td>
-            </tr>
+    <div className="space-y-3">
+      {/* ρ 슬라이더 */}
+      <div className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 p-2.5 dark:bg-slate-800/50">
+        <span className="text-[12px] font-medium text-slate-700 dark:text-slate-200">키–체중 상관계수 ρ</span>
+        <input type="range" min={0} max={0.8} step={0.05} value={rho} onChange={(e) => setRho(+e.target.value)} className="flex-1 accent-indigo-500" />
+        <span className="w-12 text-right text-[13px] font-bold tabular-nums text-indigo-600 dark:text-indigo-400">{rho.toFixed(2)}</span>
+        <span className="w-full text-[10px] leading-tight text-slate-400">ρ=0이면 키·체중 <b>독립</b>(단순 곱) · ρ↑이면 ‘키 크면 체중도↑’ 체형 상관을 반영. 기본 0.45=20대 남성 문헌 근사. 평균 키 {j.meanH}cm·체중 {j.meanW}kg({j.fcYear} 예측).</span>
+      </div>
+
+      {/* 결합 분포 히트맵 (가로=키, 세로=체중) */}
+      <div className="overflow-x-auto">
+        <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">📊 키 × 체중 결합 분포 — 격자 = 체격별 인원(명), 색 = 체형(BMI)</p>
+        <table className="w-full min-w-[34rem] border-collapse text-center text-[11px]">
+          <thead>
+            <tr><th className="p-1 text-[10px] font-normal text-slate-400">체중↓ \ 키→</th>{j.hBands.map((b, i) => <th key={i} className="p-1 font-medium text-slate-500 dark:text-slate-300">{b.label.replace(/\s*\(.*\)/, '')}<span className="block text-[9px] font-normal text-slate-400">{b.label.match(/\((.*)\)/)?.[1]}</span></th>)}</tr>
+          </thead>
+          <tbody>
+            {[...j.wBands.keys()].reverse().map((wi) => (
+              <tr key={wi}>
+                <td className="whitespace-nowrap p-1 text-right font-medium text-slate-500 dark:text-slate-300">{j.wBands[wi].label}</td>
+                {j.hBands.map((_, hi) => { const c = cellAt(hi, wi); const ratio = c.qty / j.maxQty; return (
+                  <td key={hi} className="p-0.5">
+                    <div className="rounded-md px-1 py-1.5 leading-tight" style={{ backgroundColor: `rgba(${BUILD_RGB[c.build]}, ${0.1 + 0.62 * ratio})` }} title={`${c.hLabel} × ${c.wLabel} · BMI ${c.bmi} ${c.build}`}>
+                      <span className="block font-semibold tabular-nums text-slate-800 dark:text-slate-100">{nf(c.qty)}</span>
+                      <span className="block text-[9px] text-slate-500 dark:text-slate-300/70">BMI {c.bmi}</span>
+                    </div>
+                  </td>
+                ) })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-slate-400">{j.builds.map((b) => <span key={b.type} className="inline-flex items-center gap-1"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: `rgb(${BUILD_RGB[b.type]})` }} />{b.type}</span>)}</div>
+      </div>
+
+      {/* 체형 4분류 */}
+      <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {j.builds.map((b) => (
+          <div key={b.type} className="rounded-xl border border-slate-200 p-2 dark:border-slate-700">
+            <div className="flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-sm" style={{ backgroundColor: `rgb(${BUILD_RGB[b.type]})` }} /><span className="text-[12px] font-semibold text-slate-700 dark:text-slate-200">{b.type}</span></div>
+            <p className="mt-0.5 text-[13px] font-bold tabular-nums text-slate-800 dark:text-slate-100">{nf(b.qty)}<span className="text-[11px] font-normal text-slate-400"> 명 · {(b.p * 100).toFixed(1)}%</span></p>
+            <p className="text-[10px] text-slate-400">{b.bmiRange} · {b.fit}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* 독립 가정의 함정 */}
+      <div className="rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900 dark:bg-amber-950/20">
+        <p className="text-[12px] font-semibold text-amber-800 dark:text-amber-200">⚠ ‘독립 확률의 함정’ 교정 — 키·체중을 따로 보면(ρ=0) 비현실적 체형이 과다·과소 계상</p>
+        <ul className="mt-1.5 space-y-1 text-[11px] text-amber-900/90 dark:text-amber-100/90">
+          {j.trap.map((t, i) => (
+            <li key={i} className="flex flex-wrap items-center gap-x-1.5">
+              <b>{t.hLabel.replace(/\s*\(.*\)/, '')} × {t.wLabel}</b>
+              <span className="text-amber-700/70 dark:text-amber-300/60">독립 {nf(t.indepQty)}명 →</span>
+              <span>결합 <b>{nf(t.jointQty)}명</b></span>
+              <span className={`rounded px-1 font-bold ${t.diffPct >= 0 ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300' : 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300'}`}>{t.diffPct > 0 ? '+' : ''}{t.diffPct}%</span>
+            </li>
           ))}
-        </tbody>
-      </table>
+        </ul>
+        <p className="mt-1.5 text-[10px] leading-relaxed text-amber-800/60 dark:text-amber-200/60">예: ‘키 큰데 마른형(특대×60kg대)’이나 ‘단신 고도비만형’은 독립 가정에서 과다 계상 → 상관 ρ 반영 시 실제 체형 비중으로 교정. 상·하의 호수 미스매치·재고 낭비를 줄임.</p>
+      </div>
     </div>
   )
 }
@@ -234,21 +285,16 @@ function SupplyForecast() {
         </p>
       </Panel>
 
-      <Panel title={`🎖 군복 호수별 수요예측 — 신체 분포 모델 (${fcYear} 예측)`} desc="평균이 아니라 분포로 각 호수 인원 추정 → 추세 외삽으로 내년 발주 수요·증감 예측 (키+몸무게)" badge="실데이터">
+      <Panel title={`🎖 군복 수요예측 — AI 신체 상관성 결합 분포 모델 (${fcYear} 예측)`} desc="키·체중을 따로가 아니라 '체형(결합 분포)'으로 — 상관계수 ρ로 가상 결합분포를 합성해 체격별·체형별 발주량 산출" badge="실데이터">
         <p className="mb-3 rounded-lg bg-indigo-50 p-2.5 text-[12px] leading-relaxed text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
-          평균만으론 발주를 못 합니다 — <b>호수별 인원</b>이 필요하죠. 병무청 실측 평균({dem?.prevYear}→{dem?.baseYear})의 변화 추세를 <b>{dem?.fcYear}년으로 외삽</b>하고, <b>키(길이)·몸무게(체형) 분포</b>를 정규분포로 추정해 호수별 수요·전년대비 증감을 예측합니다.
+          군복은 <b>체형(키+체중 결합)</b>에 맞춰 발주해야 합니다. 키·체중을 <b>독립</b>으로 보면 ‘키 큰 마른형·단신 고도비만형’이 과다 계상돼 상·하의 호수가 어긋납니다. 병무청 실측 평균({dem?.prevYear}→{dem?.baseYear} 추세를 <b>{dem?.fcYear}</b> 외삽)에 <b>키–체중 상관 ρ</b>로 <b>조건부 정규분포</b>를 적용해 <b>가상 결합분포</b>를 합성하고, 체격별 발주량과 체형 분포를 산출합니다.
         </p>
         <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">입영 코호트 규모(가정)
           <input type="number" inputMode="numeric" value={cohort} onChange={(e) => setCohort(Math.max(0, parseInt(e.target.value, 10) || 0))} className="w-32 rounded-lg border border-slate-300 bg-white p-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />명
         </label>
-        {dem && (
-          <div className="mt-3 grid gap-4 md:grid-cols-2">
-            <DemandTableView t={dem.height} />
-            <DemandTableView t={dem.weight} />
-          </div>
-        )}
+        <div className="mt-3"><UniformJointModel cohort={cohort} /></div>
         <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
-          📐 <b>방법론</b>: 평균 키·몸무게는 병무청 병역판정검사 <b>실측</b>, 추세를 {dem?.fcYear}년으로 선형 외삽. 호수 분포는 <b>정규분포 가정</b>(키 σ=5.6cm·체중 σ=11kg, 문헌 근사·키·체중 독립 가정). 평균이 오르면 큰 호수↑·작은 호수↓. 실측 치수 히스토그램·가슴둘레·키×체중 결합분포는 병무청 상세통계 연동 시 정밀화(로드맵). 수량=가정 코호트×비중.
+          📐 <b>방법론</b>: 평균 키·체중=병무청 병역판정검사 <b>실측</b>(추세 {dem?.fcYear} 외삽). 결합분포=<b>이변량 정규(조건부 분해)</b> — 체중│키 ~ N(μ<sub>W</sub>+ρ·(σ<sub>W</sub>/σ<sub>H</sub>)(키−μ<sub>H</sub>), σ<sub>W</sub>√(1−ρ²)). ρ=키–체중 상관(문헌 근사 {HW_RHO}, 원시 결합자료 확보 시 실측 대체). σ는 문헌 근사(키 5.6·체중 11). 체형=BMI 기준(대한비만학회/질병청). 근육질/비만 구분·정밀 가슴·허리둘레 호수는 병무청 상세 인체치수 연동 시 정밀화(로드맵). 수량=가정 코호트×결합확률.
         </p>
       </Panel>
 
