@@ -14,6 +14,7 @@ const Disease = lazy(() => import('./pages/Disease'))
 const Me = lazy(() => import('./pages/Me'))
 // 관리자(지연로딩)
 const Dashboard = lazy(() => import('./pages/Dashboard'))
+const Strategy = lazy(() => import('./pages/Strategy'))
 const Review = lazy(() => import('./pages/Review'))
 const Eval = lazy(() => import('./pages/Eval'))
 const Compare = lazy(() => import('./pages/Compare'))
@@ -34,6 +35,7 @@ createRoot(document.getElementById('root')!).render(
         {/* 관리자 (비밀번호 게이트) */}
         <Route path="admin" element={<AdminLayout />}>
           <Route index element={<Dashboard />} />
+          <Route path="strategy" element={<Strategy />} />
           <Route path="review" element={<Review />} />
           <Route path="eval" element={<Eval />} />
           <Route path="compare" element={<Compare />} />

@@ -22,6 +22,22 @@ const REFERENCE: Record<string, Ref> = {
 // 흡연율 등 비-질환 지표(별도)
 const SMOKING: Ref = { label: '현재흡연율(성인 남성)', overall: [30, 36] }
 
+// 외부 노출 — 위험도 판독기/대시보드용 KNHANES 유병률 조회. age(만나이) → byAge 키 매핑.
+export interface PrevalenceInfo { canonical: string; label: string; range: [number, number]; scope: '연령대' | '전체'; source: string }
+export const PREVALENCE_DISEASES = Object.keys(REFERENCE)
+export function prevalenceFor(diseaseCanonical: string, age?: number): PrevalenceInfo | null {
+  const ref = REFERENCE[diseaseCanonical]
+  if (!ref) return null
+  let key: number | null = null
+  if (age && age > 0) {
+    if (age >= 70) key = ref.byAge?.[70] ? 70 : (ref.byAge?.[65] ? 65 : null)
+    else if (age >= 20) key = Math.floor(age / 10) * 10
+  }
+  const hasKey = key != null && !!ref.byAge?.[key]
+  const range = hasKey ? ref.byAge![key as number] : ref.overall
+  return { canonical: diseaseCanonical, label: ref.label, range, scope: hasKey ? '연령대' : '전체', source: '질병청 국민건강영양조사(KNHANES) 근사' }
+}
+
 const num = (s: string) => parseFloat(s.replace(/[^\d.]/g, ''))
 
 // 다양한 한국어 표현에서 퍼센트 추출

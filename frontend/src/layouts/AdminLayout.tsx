@@ -5,6 +5,7 @@ import { ShieldIcon } from '../components/icons'
 
 const NAV = [
   { to: '/admin', label: '대시보드', end: true },
+  { to: '/admin/strategy', label: '전략 분석', end: false },
   { to: '/admin/review', label: '검토 큐', end: false },
   { to: '/admin/eval', label: '평가', end: false },
   { to: '/admin/compare', label: '비교 데모', end: false },
@@ -50,26 +51,27 @@ export default function AdminLayout() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
       <header className="border-b border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-3 px-4 py-3">
-          <div className="flex items-center gap-2">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
+          <div className="flex shrink-0 items-center gap-2">
             <ShieldIcon className="h-5 w-5 text-slate-500" />
             <span className="font-medium text-slate-900 dark:text-white">FactDoc 관리자</span>
           </div>
-          <div className="flex items-center gap-1">
+          {/* 모바일: 줄바꿈 대신 가로 스크롤(탭 5개+이상이면 자연스럽게) */}
+          <div className="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {NAV.map((n) => (
               <NavLink
                 key={n.to}
                 to={n.to}
                 end={n.end}
                 className={({ isActive }) =>
-                  `rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`
+                  `shrink-0 rounded-md px-3 py-1.5 text-sm font-medium ${isActive ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900' : 'text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800'}`
                 }
               >
                 {n.label}
               </NavLink>
             ))}
-            <Link to="/" className="ml-2 rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">사용자 화면</Link>
-            <button type="button" onClick={() => { logout(); setAuthed(false) }} className="rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">로그아웃</button>
+            <Link to="/" className="ml-2 shrink-0 rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">사용자 화면</Link>
+            <button type="button" onClick={() => { logout(); setAuthed(false) }} className="shrink-0 rounded-md px-3 py-1.5 text-sm text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800">로그아웃</button>
           </div>
         </div>
       </header>

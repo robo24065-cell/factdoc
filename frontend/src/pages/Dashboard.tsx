@@ -11,12 +11,12 @@ import { fetchDbStats, fetchOutbreak, fetchTopMisinfo, fetchWeeklyMisinfo, delet
 import { eidLatestOutbreak, eidGrowthSignal } from '../lib/eidStats'
 import { EID_SEXAGE, EID_CUR_YEAR } from '../data/eid-region'
 import { NAVER_TRENDS, NAVER_UPDATED } from '../data/naver-trends'
-import { fusionBrief } from '../lib/fusion'
 import { loadPoorQueue, deletePoorItem, feedbackStats, fetchFeedbackStats, feedbackBackendStatus, poorQueueCSV, resetFeedbackStats, type PoorItem } from '../lib/feedback'
 import { Link } from 'react-router-dom'
 import type { Verdict } from '../engine'
 import InfoTip from '../components/InfoTip'
 import PoorQueueModal from '../components/PoorQueueModal'
+import Panel from '../components/Panel'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
 const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }
@@ -318,8 +318,6 @@ export default function Dashboard() {
         </Panel>
 
         <NaverRadarPanel />
-
-        <FusionPanel />
       </div>
     </div>
   )
@@ -331,51 +329,6 @@ function trendInfo(trend: string | null) {
   return { arrow: '—', color: 'text-slate-500', bar: '#94a3b8' }
 }
 
-// 주최기관 데이터 융합 — 질병청(감염병)×병무청(입영 신체)×네이버(검색)를 '20대 남성(입영 코호트)'로 교차. 방사청은 로드맵.
-function FusionPanel() {
-  const b = fusionBrief(6)
-  const Card = ({ org, tone, children }: { org: string; tone: string; children: ReactNode }) => (
-    <div className={`rounded-xl border p-3 ${tone}`}>
-      <p className="text-[11px] font-semibold uppercase tracking-wide opacity-70">{org}</p>
-      <div className="mt-1.5">{children}</div>
-    </div>
-  )
-  return (
-    <Panel title="🔗 주최기관 데이터 융합 분석" desc="질병청·병무청·네이버를 한 코호트(20대 남성=입영 대상)로 교차 — 여러 공공데이터 동시 활용" badge="실데이터" span="lg:col-span-2">
-      <p className="mb-3 rounded-lg bg-indigo-50 p-2 text-[11px] leading-relaxed text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
-        🎯 같은 <b>{b.cohort}</b>를 세 데이터로 동시에 본다: <b>병무청</b>(이 코호트의 신체 기준) × <b>질병청</b>(이 코호트에 실제 많은 감염병) × <b>네이버</b>(이 코호트가 검색·현혹되기 쉬운 건강제품) → <b>표적형 가짜정보 방어</b>.
-      </p>
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
-        <Card org="병무청 · 입영 신체기준" tone="border-indigo-100 bg-indigo-50/40 text-indigo-900 dark:border-indigo-950 dark:bg-indigo-950/20 dark:text-indigo-200">
-          {b.mma ? (
-            <p className="text-sm">평균 키 <b>{b.mma.heightCm}cm</b> · 몸무게 <b>{b.mma.weightKg}kg</b><br /><span className="text-xs opacity-70">BMI {b.mma.bmi} · 병역판정검사 {b.mma.year}</span></p>
-          ) : <p className="text-sm opacity-60">데이터 없음</p>}
-        </Card>
-        <Card org={`질병청 · ${b.diseaseYear} 20대 남성 감염병`} tone="border-emerald-100 bg-emerald-50/40 text-emerald-900 dark:border-emerald-950 dark:bg-emerald-950/20 dark:text-emerald-200">
-          {b.diseases.length ? (
-            <ol className="space-y-0.5 text-[13px]">
-              {b.diseases.slice(0, 4).map((d, i) => (
-                <li key={d.disease} className="flex gap-1.5"><span className="opacity-50">{i + 1}.</span><span className="flex-1 truncate" title={d.disease}>{d.disease}</span><span className="opacity-60">{d.count.toLocaleString()}건</span></li>
-              ))}
-            </ol>
-          ) : <p className="text-sm opacity-60">데이터 없음</p>}
-        </Card>
-        <Card org="네이버 · 급상승 건강검색어" tone="border-rose-100 bg-rose-50/40 text-rose-900 dark:border-rose-950 dark:bg-rose-950/20 dark:text-rose-200">
-          {b.searchSurges.length ? (
-            <ul className="space-y-0.5 text-[13px]">
-              {b.searchSurges.map((s) => (
-                <li key={s.name} className="flex gap-1.5"><span className="flex-1 truncate">{s.name}</span><span className="font-semibold">{s.surgePct > 0 ? '▲' : ''}{s.surgePct}%</span></li>
-              ))}
-            </ul>
-          ) : <p className="text-sm opacity-60">데이터 없음</p>}
-        </Card>
-      </div>
-      <p className="mt-3 rounded-lg border border-dashed border-slate-300 p-2 text-[11px] leading-relaxed text-slate-500 dark:border-slate-700">
-        🛣 <b>로드맵 — 방위사업청·조달청 연계</b>: 위 감염병 유행 신호를 군·공공기관 <b>방역물자(마스크·백신·체온계) 조달 수요 예측</b>으로 확장(나라장터·국방조달 공개데이터). 현재는 데이터 미연동 — 발전가능성 단계.
-      </p>
-    </Panel>
-  )
-}
 
 // 네이버 데이터랩 건강 검색어 급상승 레이더 — 건강주장 키워드의 검색량 추세(급상승=가짜정보 선행 후보).
 function NaverRadarPanel() {
@@ -407,24 +360,6 @@ function NaverRadarPanel() {
       </div>
       <p className="mt-3 text-[11px] text-slate-400">상대 검색지수(0~100)이며 실제 검색량이 아닙니다. 출처: 네이버 데이터랩 통합검색어트렌드 · 하루 2회 자동 갱신.</p>
     </Panel>
-  )
-}
-
-function Panel({ title, desc, badge, span, children }: { title: string; desc: string; badge: '실데이터' | '데모'; span?: string; children: ReactNode }) {
-  const tag = badge === '실데이터'
-    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300'
-    : 'bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-  return (
-    <section className={`rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900 ${span ?? ''}`}>
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h2 className="text-base font-medium text-slate-900 dark:text-white">{title}</h2>
-          <p className="mt-0.5 text-xs text-slate-500">{desc}</p>
-        </div>
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] ${tag}`}>{badge}</span>
-      </div>
-      <div className="mt-4">{children}</div>
-    </section>
   )
 }
 
