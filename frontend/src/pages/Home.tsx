@@ -1,6 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { adviceAnswer, analyzeProduct, checkStatClaim, checkFolkRemedyClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
+import { adviceAnswer, analyzeProduct, checkStatClaim, checkFolkRemedyClaim, checkVaccineClaim, classifyIntent, dishCaution, drugAnswer, explainLocal, findAllInText, findInText, foodAnswerAll, foodEffectFor, foodsFor, guidanceFor, ingredientsInText, isBeneficialClaim, isCureClaim, isHarmfulClaim, isNonFood, judge, officialFunction, parseClaim, runPipeline, sharesDomain, suggest, symptomsFor, targetMatchNote, type DrugResult, type FoodResult, type IngredientInfo, type Judgement, type ProductAnalysis, type Verdict } from '../engine'
 import { variantsOf, isInfectious, isCancer } from '../engine/ontology'
 import { mergeTriples } from '../engine/fromRaw'
 import { geminiTriples } from '../lib/parseRemote'
@@ -475,6 +475,15 @@ export default function Home() {
     }
     // 후속 질문 추천 — 질병 인식 시(어떤 경로로 답하든 표시)
     { const dzR = findInText(claim, 'disease'); if (dzR) setRelated(relatedQuestions(dzR.canonical, dzR.variants[0] || dzR.canonical).filter((q) => q !== claim)) }
+
+    // 0a-vax) 백신 유해/괴담 주장 — 안전 최우선(parse 오판 방지). 확립된 반증 → 허위.
+    const vax = checkVaccineClaim(claim)
+    if (vax) {
+      const local = explainLocal(vax)
+      setResult(vax); setHitKind(null); setLoading(false); setExplanation(local)
+      void logQuery(claim, vax.verdict); void cacheVerdict(claim, vax, local)
+      return
+    }
 
     // 0a) 통계/유병률 주장이면 KNHANES 정합성 판정(정보분류·캐시보다 우선) — 결정론. 합성카드보다 먼저.
     const stat = checkStatClaim(claim)

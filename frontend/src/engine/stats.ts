@@ -73,6 +73,34 @@ export function checkFolkRemedyClaim(text: string): Judgement | null {
   }
 }
 
+// 백신 유해/괴담 주장 — 확립된 반증이 있는 거짓 인과를 허위로(안전 최우선). parse가 '백신→prevents'로 오판하기 전에 선검출.
+const VAX_RE = /(백신|예방\s*접종|예방주사|백신\s*접종)/
+export function checkVaccineClaim(text: string): Judgement | null {
+  if (!VAX_RE.test(text)) return null
+  const mk = (outcome: string, title: string): Judgement => ({
+    claimText: text, triples: [], verdict: 'false', confidence: 0.9,
+    citations: [{ portal: '질병관리청', title, url: 'https://nip.kdca.go.kr' }],
+    trace: [
+      { kind: 'normalize', label: '백신 유해 주장 인식', detail: '백신 관련 인과 주장' },
+      { kind: 'graph_match', label: '예방접종 안전성 반증 룰', detail: title, outcome: '허위' },
+    ],
+    tier: 'auto_unverified',
+    warning: outcome,
+    disclaimer: '백신 안전성은 국가 예방접종 근거에 기반합니다. 개인 접종 판단은 의료진과 상담하세요.',
+  })
+  // 1) DNA·유전자 변형
+  if (/(dna|디엔에이|유전자|유전체|rna)/i.test(text) && /(변형|변이|조작|바꾸|바뀌|손상|편집|바꾼다)/.test(text))
+    return mk('mRNA·코로나19 백신은 세포질에서 단백질 설계도로만 작용하고 핵 속 DNA(유전정보)에 들어가 바꾸지 않습니다. 백신이 유전자를 변형시킨다는 주장은 과학적 근거가 없는 허위입니다.', '코로나19 백신 — 유전자(DNA) 변형 무관')
+  // 2) 확립된 디벙크 유해설
+  if (/(자폐|아스퍼거|autism|불임|난임|마이크로\s*칩|마이크로칩|자석|5g|중금속|수은)/i.test(text))
+    return mk('백신이 자폐·불임·마이크로칩·자석 등을 유발한다는 주장은 대규모 역학연구로 반증된 잘못된 정보입니다(질병관리청·식약처·WHO).', '예방접종 안전성 — 허위정보 반증')
+  // 3) 백신이 '그 대상 질병'을 유발(오히려 걸린다) — 예방/부정 맥락이면 제외
+  if (!/(안|못|예방|막아|막는|덜)\s*걸|예방(되|된|할|돼)/.test(text)
+    && /(오히려|도리어|때문에|탓에|부작용으로|역효과|맞아서|맞고\s*나서|맞으면).{0,12}(걸린|걸리|걸려|유발|생기|감염|발병)|유발(한다|하|해|된다)|일으킨다|걸리게\s*하|감염\s*시킨/.test(text))
+    return mk('불활화·성분 기반 예방백신에는 살아있는 병원체가 없어 백신 자체가 그 감염병을 유발하지 않습니다. 접종 후 미열·근육통은 면역이 형성되는 정상 반응이며 감염이 아닙니다(질병관리청).', '예방접종 — 백신이 대상 질병을 유발하지 않음')
+  return null
+}
+
 // 통계 주장 여부 + 판정. 통계 주장 아니면 null(일반 파이프라인으로).
 export function checkStatClaim(text: string): Judgement | null {
   const pct = parsePercent(text)
