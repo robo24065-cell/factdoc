@@ -17,6 +17,7 @@ import type { Verdict } from '../engine'
 import InfoTip from '../components/InfoTip'
 import PoorQueueModal from '../components/PoorQueueModal'
 import Panel from '../components/Panel'
+import DeathTrendPanel from '../components/DeathTrendPanel'
 
 const axis = { fontSize: 12, fill: '#94a3b8' }
 const tooltipStyle = { borderRadius: 12, border: '1px solid #e2e8f0', fontSize: 12 }
@@ -282,6 +283,8 @@ export default function Dashboard() {
           )
         })()}
 
+        <DeathTrendPanel />
+
         <PoorQueuePanel />
 
         <Panel title="클레임그래프 자산" desc="손이 많이 가 못 베끼는 모트 — 정량 지표" badge="실데이터" span="lg:col-span-2">
@@ -345,16 +348,22 @@ function NaverRadarPanel() {
         💡 검색량이 급상승하는 건강식품·민간요법은 <b>곧 관련 가짜정보가 따라 퍼질 선행 신호</b>예요. 클릭하면 해당 주장을 바로 팩트체크합니다.
       </p>
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        {/* 2줄 레이아웃 — 1줄: 이름+증감%(이름 항상 우선), 2줄: 카테고리+반응형 스파크라인. 어느 폭에서도 이름 안 잘림 */}
         {rows.map((r) => (
           <Link key={r.name} to={`/?q=${encodeURIComponent(`${r.name} 효능이 있나요`)}`} target="_blank"
-            className="flex items-center gap-2 rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 sm:gap-2.5">
-            {/* 모바일: 카테고리 배지·스파크라인 숨겨 이름에 공간 확보(잘림 방지). 데스크톱에서만 노출 */}
-            <span className="hidden shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 sm:inline-block dark:bg-slate-800 dark:text-slate-400">{r.cat}</span>
-            <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>
-            <svg width="88" height="22" className="hidden shrink-0 sm:block"><polyline points={spark(r.series)} fill="none" stroke={r.surgePct > 0 ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" /></svg>
-            <span className={`w-14 shrink-0 text-right text-xs font-bold ${r.surgePct > 5 ? 'text-rose-600' : r.surgePct < -5 ? 'text-blue-600' : 'text-slate-400'}`}>
-              {r.surgePct > 0 ? '▲' : r.surgePct < 0 ? '▼' : ''}{Math.abs(r.surgePct)}%
-            </span>
+            className="block rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
+            <div className="flex items-baseline gap-2">
+              <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>
+              <span className={`shrink-0 text-xs font-bold ${r.surgePct > 5 ? 'text-rose-600' : r.surgePct < -5 ? 'text-blue-600' : 'text-slate-400'}`}>
+                {r.surgePct > 0 ? '▲' : r.surgePct < 0 ? '▼' : ''}{Math.abs(r.surgePct)}%
+              </span>
+            </div>
+            <div className="mt-1.5 flex items-center gap-2">
+              <span className="shrink-0 rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{r.cat}</span>
+              <div className="min-w-0 flex-1">
+                <svg viewBox="0 0 88 22" preserveAspectRatio="none" className="block h-[18px] w-full"><polyline points={spark(r.series)} fill="none" stroke={r.surgePct > 0 ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" vectorEffect="non-scaling-stroke" /></svg>
+              </div>
+            </div>
           </Link>
         ))}
       </div>
