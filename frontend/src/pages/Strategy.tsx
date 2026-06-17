@@ -173,6 +173,27 @@ function MilitaryCohort() {
 
 
 // ───────────────────────── ③ 기관융합 물자 수요예측 ─────────────────────────
+// 미니 스파크라인 — 다년 발생 시계열(파동)을 표 안에 그려 '직선 아님'을 시각화. 평년선(점선)·유행 피크(점) 표시.
+function Sparkline({ series, base }: { series: { year: number; value: number }[]; base: number }) {
+  const W = 88, H = 26, pad = 2
+  if (series.length < 2) return null
+  const vals = series.map((s) => s.value)
+  const max = Math.max(...vals, base, 1), min = Math.min(...vals, 0)
+  const x = (i: number) => pad + (i / (series.length - 1)) * (W - 2 * pad)
+  const y = (v: number) => H - pad - ((v - min) / (max - min || 1)) * (H - 2 * pad)
+  const pts = series.map((s, i) => `${x(i).toFixed(1)},${y(s.value).toFixed(1)}`).join(' ')
+  const peakI = vals.indexOf(Math.max(...vals))
+  const baseY = y(base).toFixed(1)
+  return (
+    <svg width={W} height={H} className="overflow-visible" aria-hidden>
+      <line x1={pad} y1={baseY} x2={W - pad} y2={baseY} stroke="currentColor" strokeWidth={0.75} strokeDasharray="2 2" className="text-slate-300 dark:text-slate-600" />
+      <polyline points={pts} fill="none" stroke="currentColor" strokeWidth={1.3} className="text-indigo-500" strokeLinejoin="round" />
+      <circle cx={x(peakI)} cy={y(vals[peakI])} r={2.1} className="fill-rose-500" />
+      <circle cx={x(series.length - 1)} cy={y(vals[series.length - 1])} r={1.8} className="fill-indigo-600" />
+    </svg>
+  )
+}
+
 // 키×체중 결합 분포 히트맵 모델 — 체형 상관(ρ)을 반영한 결합분포로 군복 호수별 수요 + 독립가정 대비 교정 시연.
 const BUILD_RGB: Record<string, string> = { '저체중': '14,165,233', '정상': '16,185,129', '과체중': '245,158,11', '비만': '244,63,94' }
 function UniformJointModel({ cohort }: { cohort: number }) {
@@ -270,7 +291,10 @@ function SupplyForecast() {
             <tbody>
               {fc.map((g) => (
                 <tr key={g.key} className="border-b border-slate-100 align-top dark:border-slate-800">
-                  <td className="py-1.5 pr-2 font-medium text-slate-700 dark:text-slate-200">{g.label}<span className="mt-0.5 block max-w-[15rem] text-[10px] font-normal leading-tight text-slate-400">{g.note}</span></td>
+                  <td className="py-1.5 pr-2 font-medium text-slate-700 dark:text-slate-200">
+                    <div className="flex items-center gap-2"><span>{g.label}</span><span className="text-slate-400"><Sparkline series={g.rf.series} base={g.base} /></span></div>
+                    <span className="mt-0.5 block max-w-[16rem] text-[10px] font-normal leading-tight text-slate-400">{g.note}</span>
+                  </td>
                   <td className="px-2 text-right tabular-nums text-slate-500">{g.base.toLocaleString()}<span className="block text-[9px] text-slate-400">건/년</span></td>
                   <td className="px-2 text-right tabular-nums font-semibold text-slate-800 dark:text-slate-100">{g.surge.toLocaleString()}<span className="block text-[9px] font-normal text-slate-400">×{(g.base > 0 ? g.surge / g.base : 1).toFixed(1)}</span></td>
                   <td className="px-2"><span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-bold ${DIR_TONE[g.trendDir]}`}>{g.trendDir}{g.trendDir !== '안정' && g.trendDir !== '지속증가' ? ` ${g.trendPct > 0 ? '+' : ''}${g.trendPct}%` : ''}</span></td>
@@ -281,7 +305,7 @@ function SupplyForecast() {
           </table>
         </div>
         <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
-          📐 <b>평년</b>=최근 5년 발생 중앙값(이상치 둔감) · <b>유행 대비</b>=최근 6년 최대(서지 버퍼) · <b>추세</b>=최근3년 vs 직전3년 중앙값(±60% 클램프, 단조증가는 ‘지속증가’). 보고체계 시작 전 선행 0(예: 매독 2015~16)은 제외. 발생 추세 기반 <b>수요 방향</b>이며 절대 발주량은 조달 이력 연동 시 정밀화. 의학 판정 아님·물자기획 보조.
+          📈 스파크라인=2015~ 실제 발생 추이(파동, 직선 아님) · 점선=평년선 · <span className="text-rose-500">●</span> 유행 피크. <b>평년</b>=최근 5년 발생 중앙값(이상치 둔감) · <b>유행 대비</b>=최근 6년 최대(서지 버퍼) · <b>추세</b>=최근3년 vs 직전3년 중앙값(±60% 클램프, 단조증가는 ‘지속증가’). 보고체계 시작 전 선행 0(예: 매독 2015~16)은 제외. 계절성 정점월은 위 ‘발주 액션플랜’에 반영. 발생 추세 기반 <b>수요 방향</b>이며 절대 발주량은 조달 이력 연동 시 정밀화. 의학 판정 아님·물자기획 보조.
         </p>
       </Panel>
 
