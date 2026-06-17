@@ -202,27 +202,27 @@ function SupplyForecast() {
   const topCat = PROCURE_BY_CAT[0]
   const fc = supplyForecast()
   const fcYear = dem?.fcYear ?? 2027
-  const DIR_TONE: Record<string, string> = { '급증': 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', '증가': 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', '유지': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', '감소': 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' }
+  const DIR_TONE: Record<string, string> = { '지속증가': 'bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300', '상승': 'bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300', '안정': 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300', '감소': 'bg-blue-100 text-blue-700 dark:bg-blue-950/50 dark:text-blue-300' }
   return (
     <div className="space-y-4">
       {/* ★다중변수 가중치 모델 — 변수·가중치 조절 → 융합 → 발주 액션플랜 */}
       <DemandModelPanel />
 
-      {/* 통합 수요예측 — 다년 유행 추세 → 내년 방역물자 수요(군별 개요) */}
-      <Panel title={`🔮 ${fcYear} 감염병군별 수요 방향 — 다년 추세 개요`} desc="질병청 감염병 발생 다년 추세(선형회귀)를 내년으로 외삽 → 방역물자 카테고리별 수요 방향 + 조달청 현재 발주 교차" badge="실데이터">
+      {/* 통합 수요예측 — 군별 로버스트 3신호(평년/유행대비/추세). 단순 직선외삽 폐기. */}
+      <Panel title={`🔮 ${fcYear} 감염병군별 방역물자 수요 — 평년·유행대비·추세`} desc="질병청 발생 다년치(2015~)에서 평년(중앙값)·유행대비(최근 피크)·추세방향을 산출 → 조달 '기본 비축 + 유행 버퍼' 직결. 단순 외삽의 이상치 과대예측 배제." badge="실데이터">
         <p className="mb-3 rounded-lg bg-violet-50 p-2.5 text-[12px] leading-relaxed text-violet-900 dark:bg-violet-950/30 dark:text-violet-200">
-          <b>질병청(유행 추세)</b> + <b>병무청(입영 신체)</b> + <b>조달청(현재 발주)</b>을 통합해 <b>{fcYear}년 물자 수요</b>를 선제 예측합니다. 감염병군별 최근 추세를 회귀로 외삽해 방역물자 수요 방향을 산출하고, 조달청 실제 발주와 교차 검증합니다.
+          조달 실무는 <b>기본 비축 + 유행 버퍼</b>로 운용됩니다. 단일 직선 외삽은 일회성 급증(예: 백일해 2024)을 ‘영구 추세’로 착각해 과대예측하므로, 군별 <b>평년 수요(중앙값)</b> · <b>유행 대비(최근 피크)</b> · <b>추세 방향</b> 3신호로 분리해 제시합니다.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-[13px]">
-            <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1.5 pr-2">감염병군</th><th className="px-2">최신({fc[0]?.latestYear})</th><th className="px-2">{fcYear} 예측</th><th className="px-2">방향</th><th className="px-2">권장 물자</th></tr></thead>
+            <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1.5 pr-2">감염병군</th><th className="px-2 text-right">평년 비축</th><th className="px-2 text-right">유행 대비</th><th className="px-2">추세</th><th className="px-2">권장 물자</th></tr></thead>
             <tbody>
               {fc.map((g) => (
-                <tr key={g.key} className="border-b border-slate-100 dark:border-slate-800">
-                  <td className="py-1.5 pr-2 font-medium text-slate-700 dark:text-slate-200">{g.label}</td>
-                  <td className="px-2 tabular-nums text-slate-500">{g.latest.toLocaleString()}</td>
-                  <td className="px-2 tabular-nums font-semibold text-slate-800 dark:text-slate-100">{g.fc.toLocaleString()}</td>
-                  <td className="px-2"><span className={`rounded px-1.5 py-0.5 text-[11px] font-bold ${DIR_TONE[g.dir]}`}>{g.dir} {g.deltaPct > 0 ? '+' : ''}{g.deltaPct}%</span></td>
+                <tr key={g.key} className="border-b border-slate-100 align-top dark:border-slate-800">
+                  <td className="py-1.5 pr-2 font-medium text-slate-700 dark:text-slate-200">{g.label}<span className="mt-0.5 block max-w-[15rem] text-[10px] font-normal leading-tight text-slate-400">{g.note}</span></td>
+                  <td className="px-2 text-right tabular-nums text-slate-500">{g.base.toLocaleString()}<span className="block text-[9px] text-slate-400">건/년</span></td>
+                  <td className="px-2 text-right tabular-nums font-semibold text-slate-800 dark:text-slate-100">{g.surge.toLocaleString()}<span className="block text-[9px] font-normal text-slate-400">×{(g.base > 0 ? g.surge / g.base : 1).toFixed(1)}</span></td>
+                  <td className="px-2"><span className={`whitespace-nowrap rounded px-1.5 py-0.5 text-[11px] font-bold ${DIR_TONE[g.trendDir]}`}>{g.trendDir}{g.trendDir !== '안정' && g.trendDir !== '지속증가' ? ` ${g.trendPct > 0 ? '+' : ''}${g.trendPct}%` : ''}</span></td>
                   <td className="px-2 text-[12px] text-slate-500">{g.supplies}</td>
                 </tr>
               ))}
@@ -230,7 +230,7 @@ function SupplyForecast() {
           </table>
         </div>
         <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
-          📐 감염병군별 최근 완전연도(질병청 EID_NAT_YEAR) <b>최소제곱 선형회귀 → {fcYear} 외삽</b>. 발생 추세 기반 <b>수요 방향·우선순위</b>이며 절대 발주량은 조달 이력 연동 시 정밀화(아래 조달청). 의학 판정 아님·물자기획 보조.
+          📐 <b>평년</b>=최근 5년 발생 중앙값(이상치 둔감) · <b>유행 대비</b>=최근 6년 최대(서지 버퍼) · <b>추세</b>=최근3년 vs 직전3년 중앙값(±60% 클램프, 단조증가는 ‘지속증가’). 보고체계 시작 전 선행 0(예: 매독 2015~16)은 제외. 발생 추세 기반 <b>수요 방향</b>이며 절대 발주량은 조달 이력 연동 시 정밀화. 의학 판정 아님·물자기획 보조.
         </p>
       </Panel>
 
