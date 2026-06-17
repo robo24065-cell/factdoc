@@ -38,14 +38,14 @@ export default function ConsumerLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-4 lg:max-w-6xl lg:px-6 lg:pb-12 xl:max-w-7xl">
+      <main className="mx-auto w-full max-w-2xl px-4 pb-[calc(6rem+env(safe-area-inset-bottom))] pt-4 lg:max-w-6xl lg:px-6 lg:pb-12 xl:max-w-7xl">
         <Suspense fallback={<div className="py-20 text-center text-sm text-slate-400">불러오는 중…</div>}>
           <Outlet />
         </Suspense>
       </main>
 
-      {/* 모바일: 하단 탭바 */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-5 border-t border-slate-100 bg-white/95 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
+      {/* 모바일: 하단 탭바 — safe-area 패딩으로 노치/홈바 겹침·스크롤 튐 방지 */}
+      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-5 border-t border-slate-100 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
         {TABS.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}

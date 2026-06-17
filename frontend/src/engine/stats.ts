@@ -135,6 +135,35 @@ export function checkVaccineClaim(text: string): Judgement | null {
   return null
 }
 
+// 만성질환 표준약(혈압약·당뇨약·스타틴 등)의 '내성·중독·평생복용' 오해 — 질병청 공식 반증이 있는 거짓이라 보류 아닌 허위/과장.
+//   ⚠ disease-rumors KB는 프리벙킹 전용이라 판정엔진이 소비 안 함 → 결정론 룰로 직접 차단(parse가 manages로 오분해해 보류로 새는 버그 픽스).
+const DRUG_RE = /((고?혈압|당뇨병?|혈당|콜레스테롤|고지혈증|갑상선|혈전|항응고)\s*약|스타틴|인슐린|메트포르민|항응고제|처방약|만성질환\s*약)/
+const MYTH_RE = /(내성|중독|의존|노예|독성?\s*(약|이?\s*된|성분)|몸에\s*쌓|한\s*번?\s*(먹|복용|맞)으면\s*평생|평생\s*(못\s*끊|끊을\s*수\s*없|먹어야|복용|달고\s*살)|끊을\s*수\s*없|평생\s*못\s*끊)/
+// 정당·균형 발화(반례)는 룰 미발동 — 의사상담·용량조절·"중독 아니다"류 보호.
+const MED_NEG_GUARD = /(의사(와|랑|에게|님)|약사|전문가|상담|상의|용량\s*(조절|조정|줄)|처방대로|중독성?\s*(은|는|이)?\s*아니|내성\s*(은|는|이)?\s*(없|아니)|평생\s*(복용|먹어야)\s*하는\s*(건|것은)?\s*아니)/
+export function checkChronicMedMyth(text: string): Judgement | null {
+  if (!DRUG_RE.test(text) || !MYTH_RE.test(text)) return null
+  if (MED_NEG_GUARD.test(text)) return null // 정당 발화 → 일반 파이프라인(보류/사실)
+  // 순수 '약 끊기/중단' 권유는 기존 대체치료(replaces_treatment) 경로에 양보(중복판정 방지)
+  if (/약\s*끊|안\s*먹어도\s*되|복용\s*중단/.test(text) && !/내성|중독|의존|노예|평생/.test(text)) return null
+  const disease = findInText(text, 'disease')
+  const dz = disease?.canonical
+  const absolute = /(내성|중독|의존|노예|독성?\s*(약|이?\s*된|성분)|한\s*번?\s*(먹|복용|맞)으면\s*평생|끊을\s*수\s*없|평생\s*못\s*끊)/.test(text)
+  const verdict: Verdict = absolute ? 'false' : 'partial'
+  const title = `${dz ?? '만성질환'} 약물치료 — 표준 치료제는 내성·중독·의존을 일으키지 않음`
+  return {
+    claimText: text, triples: [], verdict, confidence: absolute ? 0.85 : 0.7,
+    citations: [{ portal: '질병관리청 국가건강정보포털', title, url: 'https://health.kdca.go.kr' }],
+    trace: [
+      { kind: 'normalize', label: '만성질환 약물 오해 인식', detail: '표준 처방약의 내성·중독·평생복용 주장' },
+      { kind: 'graph_match', label: '질병청 공식 반증 룰', detail: '혈압약·당뇨약 등 표준 치료제는 내성·중독성 약물이 아니며, 비가역 만성질환의 꾸준한 복용은 약 탓이 아니라 질환 특성', outcome: verdict === 'false' ? '근거 있어 부정 → 허위' : '강도·맥락 과장 → 부분과장' },
+    ],
+    tier: 'auto_unverified',
+    warning: '혈압약·당뇨약 등 표준 치료제는 내성·중독을 일으키지 않습니다. 임의로 끊으면 합병증(뇌졸중·심근경색 등) 위험이 커지니, 복용·중단은 반드시 의료진과 상담하세요.',
+    disclaimer: DISCLAIMER,
+  }
+}
+
 // 통계 주장 여부 + 판정. 통계 주장 아니면 null(일반 파이프라인으로).
 export function checkStatClaim(text: string): Judgement | null {
   const pct = parsePercent(text)
