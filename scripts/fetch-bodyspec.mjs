@@ -26,8 +26,8 @@ let mmaYearly = [
 
 async function kosis(tblId) {
   if (!KEY || !tblId) return null
-  // KOSIS 통계자료 조회 표준 파라미터(orgId/tblId는 통계표별). 최근 다년 기간.
-  const url = `https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${KEY}&itmId=ALL&objL1=ALL&format=json&jsonVD=Y&prdSe=Y&newEstPrdCnt=8&orgId=144&tblId=${tblId}`
+  // KOSIS 통계자료 조회. newEstPrdCnt=30 → '뽑을 수 있는 데까지' 과거 전부(연단위 최대 30년). 데이터 가치=누적.
+  const url = `https://kosis.kr/openapi/Param/statisticsParameterData.do?method=getList&apiKey=${KEY}&itmId=ALL&objL1=ALL&format=json&jsonVD=Y&prdSe=Y&newEstPrdCnt=30&orgId=144&tblId=${tblId}`
   try {
     const res = await fetch(url)
     const txt = await res.text()

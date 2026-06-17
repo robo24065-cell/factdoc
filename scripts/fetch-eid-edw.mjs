@@ -66,8 +66,12 @@ const dayOfYear = (y, m, d) => { let n = d - 1; for (let mm = 1; mm < m; mm++) n
 const cw = await currentWeek()
 if (!cw) { console.error('현재 주차 조회 실패'); process.exit(1) }
 const CUR_YEAR = cw.yr, CUR_WEEK = cw.wk
-const YEARS = [CUR_YEAR - 3, CUR_YEAR - 2, CUR_YEAR - 1, CUR_YEAR].map(String)
-console.log(`현재 ${CUR_YEAR}년 ${CUR_WEEK}주차 · 연도 ${YEARS.join('/')}`)
+// 과거 데이터는 '뽑을 수 있는 데까지' 전부 수집(데이터 가치 = 누적). 빈 연도는 후처리에서 가지치기.
+//   EID_START_YEAR 환경변수로 시작연도 조절(기본 2015). EDW가 없는 옛 연도는 자동 제외됨.
+const START_YEAR = Math.max(2001, +(process.env.EID_START_YEAR || 2015))
+const CAND_PAST = []; for (let y = CUR_YEAR - 1; y >= START_YEAR; y--) CAND_PAST.push(String(y)) // 최신→과거
+let YEARS = [String(CUR_YEAR)] // 데이터 확인 후 과거연도 추가(가지치기)
+console.log(`현재 ${CUR_YEAR}년 ${CUR_WEEK}주차 · 과거 후보 ${START_YEAR}~${CUR_YEAR - 1} (데이터 있는 연도만 채택)`)
 
 // ── 1) 현재년 연간 시도(건수+율) 전 질병 → 상위 선별 ──
 const annual = {} // year → code → sido → {c,v}
@@ -85,13 +89,15 @@ const diseases = Object.keys(annual[String(CUR_YEAR)])
   .filter((d) => d.total > 0).sort((a, b) => b.total - a.total).slice(0, TOP_N).map((d) => d.code)
 console.log(`\n  상위 ${diseases.length}종: ${diseases.slice(0, 8).map((c) => CODES[c].name).join(', ')}…`)
 
-// ── 2) 상위 질병 × 과거연도 연간 ──
-for (const y of YEARS.slice(0, -1)) {
+// ── 2) 상위 질병 × 과거연도 연간 (뽑을 수 있는 데까지 전부) ──
+for (const y of CAND_PAST) {
   annual[y] = {}
-  for (const code of diseases) { const d = await region({ code, start: `${y}0101`, end: `${y}1231` }); await sleep(110); if (d) annual[y][code] = d }
-  process.stdout.write(`\r  ${y} 연간 수집 완료     `)
+  for (const code of diseases) { const d = await region({ code, start: `${y}0101`, end: `${y}1231` }); await sleep(105); if (d && Object.keys(d).length) annual[y][code] = d }
+  process.stdout.write(`\r  ${y} 연간 수집 (질병 ${Object.keys(annual[y]).length}종)     `)
 }
-console.log('')
+// 데이터 있는 과거연도만 채택 + 현재년 → 오름차순(차트용)
+YEARS = [...CAND_PAST.filter((y) => Object.keys(annual[y]).length > 0), String(CUR_YEAR)].sort()
+console.log(`\n  채택 연도(${YEARS.length}): ${YEARS.join('/')}`)
 
 // ── 3) 상위 질병(현재년 발생 많은 것) × 현재년 주별 시도 ──
 const now = new Date(); const yest = new Date(now); yest.setDate(now.getDate() - 1)
