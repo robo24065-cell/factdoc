@@ -218,3 +218,9 @@
 - **검진 백분위·모바일하단바**: 34차분 유지.
 - ⚠ **EID /death 블로커**: NO.8 /death(법정감염병 종류별 사망)는 ~40개 파라미터 조합 모두 104 DATATYPE_ERROR(/Region·/PeriodBasic도 동일 — 이들만의 특수 파라미터). **data.go.kr /death "확인" 버튼이 만드는 샘플 URL 1줄** 제공 시 즉시 EID 동일분류 사망 완전 동기화(현재 KOSIS로 부분 대체). 사용자 대기.
 - ⚠ **기상청**: 보건기상지수·생활기상지수 2종 data.go.kr 활용신청 권고(DATA_GO_KR 키로 동작). 신청 후 ① prebunk·④ 온열키트 연동.
+
+## (06-17) 자율 보강 36차 — EID /death 동기화 사망 + 다중변수 가중치 수요예측 모델(액션플랜)
+- **감염병 사망 /death 연동**: 사용자가 /death 정의서 제공 → 필수 파라미터 searchStartYear+searchEndYear 확인. scripts/fetch-death-eid.mjs → death-eid-legal.ts(법정감염병 65종×2017~2024). components/EidDeathPanel이 감염병지도 발생과 '동일 질병분류'라 질병 선택에 사망 그래프 완전 동기화(KOSIS 대체). 검증: CRE→2024 848명+추세, 수두→0명.
+- **다중변수 가중치 수요예측 모델(사용자 핵심 피드백 '자료나열→진짜 예측시스템')**: lib/demandModel.ts — 변수 A기본수요·B환경위험(기상 연동대기)·C유행가속(EID 회귀) 가중융합→조정률, 발주시점=EID_NAT_MONTH 계절성 정점−리드. components/DemandModelPanel(STEP1 슬라이더 변수·가중치→STEP2 융합 기여도→STEP3 발주 액션플랜). 검증: 말라리아 유행+33%·폭염+30% 가산→조정률+19%→예년 10만 대비 119,000개, 정점 7월 대비 5월 조기발주 권장.
+- lib/supplyForecast=감염병군별 2027 개요 테이블(보조). 군복=uniformDemand(키+몸무게 2027). 조달청=procurement 라이브.
+- ⚠ 기상청 2종(보건/생활기상지수) 활용신청 시 환경위험 변수 자동화(현재 수동 가산 슬롯).
