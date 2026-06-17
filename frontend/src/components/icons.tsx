@@ -20,3 +20,6 @@ export const ShieldIcon = ({ className }: P) => (
 export const MapIcon = ({ className }: P) => (
   <svg className={className ?? base} viewBox="0 0 24 24" {...common}><path d="M9 4 3 6v14l6-2 6 2 6-2V4l-6 2-6-2Z" /><path d="M9 4v14" /><path d="M15 6v14" /></svg>
 )
+export const RadarIcon = ({ className }: P) => (
+  <svg className={className ?? base} viewBox="0 0 24 24" {...common}><path d="M12 12 7 7" /><path d="M12 3a9 9 0 1 0 9 9" /><path d="M12 8a4 4 0 1 0 4 4" /><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" /></svg>
+)

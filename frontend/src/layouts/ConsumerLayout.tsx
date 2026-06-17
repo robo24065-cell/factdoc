@@ -1,11 +1,12 @@
 import { Suspense } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { HomeIcon, FireIcon, UserIcon, MapIcon } from '../components/icons'
+import { HomeIcon, FireIcon, UserIcon, MapIcon, RadarIcon } from '../components/icons'
 import FontScale from '../components/FontScale'
 
 const TABS = [
   { to: '/', label: '홈', Icon: HomeIcon, end: true },
   { to: '/trending', label: '유행', Icon: FireIcon, end: false },
+  { to: '/forecast', label: '예보', Icon: RadarIcon, end: false },
   { to: '/map', label: '감염병지도', Icon: MapIcon, end: false },
   { to: '/me', label: '내정보', Icon: UserIcon, end: false },
 ]
@@ -44,7 +45,7 @@ export default function ConsumerLayout() {
       </main>
 
       {/* 모바일: 하단 탭바 */}
-      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-4 border-t border-slate-100 bg-white/95 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
+      <nav className="fixed inset-x-0 bottom-0 z-10 mx-auto grid max-w-md grid-cols-5 border-t border-slate-100 bg-white/95 backdrop-blur lg:hidden dark:border-slate-800 dark:bg-slate-900/95">
         {TABS.map(({ to, label, Icon, end }) => (
           <NavLink
             key={to}
