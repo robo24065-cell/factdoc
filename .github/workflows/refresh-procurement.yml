@@ -23,14 +23,18 @@ jobs:
         env:
           DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
         run: node scripts/fetch-procurement.mjs
+      - name: 법정감염병 종류별 사망 재수집(질병청 /death)
+        env:
+          DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
+        run: node scripts/fetch-death-eid.mjs
       - name: 변경분만 커밋
         run: |
-          if git diff --quiet -- frontend/src/data/procurement.ts; then
+          if git diff --quiet -- frontend/src/data/procurement.ts frontend/src/data/death-eid-legal.ts; then
             echo "변경 없음 — 커밋 생략"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add frontend/src/data/procurement.ts
-            git commit -m "chore: 조달청 방역물자 조달 동향 자동 갱신 (나라장터)"
+            git add frontend/src/data/procurement.ts frontend/src/data/death-eid-legal.ts
+            git commit -m "chore: 조달청 조달동향·법정감염병 사망 자동 갱신"
             git push
           fi
