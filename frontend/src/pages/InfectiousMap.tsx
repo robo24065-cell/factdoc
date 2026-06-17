@@ -16,6 +16,7 @@ import { KR_GEO, KR_VIEWBOX } from '../data/kr-geo'
 import { eidGrowthSignal } from '../lib/eidStats'
 import { openInfectionReport, type InfectionReportData, type ReportSection } from '../lib/infectionReport'
 import InfoTip, { GLOSSARY } from '../components/InfoTip'
+import DeathRegionPanel from '../components/DeathRegionPanel'
 
 type Metric = 'count' | 'rate'
 const ALL = '__ALL__'
@@ -671,6 +672,8 @@ export default function InfectiousMap() {
           <SexAgePyramid disease={disease} diseaseLabel={diseaseLabel} year={year} />
           <DonutPanel title="환자분류" tip="병원체보유자" year={year} data={aggRecord(disease, EID_PTNT, year)} colors={['#14b8a6', '#3b82f6']} note="병원체보유자=증상 없이 균 보유 / 환자=증상 발현 · 전국" />
           <DonutPanel title="추정 감염지역" year={year} data={aggRecord(disease, EID_AREA, year)} colors={['#0ea5e9', '#f59e0b']} note="국내 감염 vs 해외 유입 추정 · 전국" />
+          {/* 시도별 감염병 사망률(통계청 KOSIS) — 발생수(질병청)와 별개 지표·출처 분리 */}
+          <DeathRegionPanel diseaseLabel={diseaseLabel} />
         </div>
         </div>
 

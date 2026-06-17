@@ -31,14 +31,18 @@ jobs:
         env:
           KOSIS_KEY: ${{ secrets.KOSIS_KEY }}
         run: node scripts/fetch-checkup-dist.mjs
+      - name: 시도별 감염병 사망 재수집(KOSIS 사망원인통계 DT_1B34E11)
+        env:
+          KOSIS_KEY: ${{ secrets.KOSIS_KEY }}
+        run: node scripts/fetch-death-region-kosis.mjs
       - name: 변경분만 커밋
         run: |
-          if git diff --quiet -- frontend/src/data/bodyspec.ts frontend/src/data/death-eid.ts frontend/src/data/checkup-dist.ts; then
+          if git diff --quiet -- frontend/src/data/bodyspec.ts frontend/src/data/death-eid.ts frontend/src/data/checkup-dist.ts frontend/src/data/death-region.ts; then
             echo "변경 없음 — 커밋 생략"
           else
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
-            git add frontend/src/data/bodyspec.ts frontend/src/data/death-eid.ts frontend/src/data/checkup-dist.ts
-            git commit -m "chore: KOSIS 통계 자동 갱신 (신체표준·감염병 사망·검진수치 분포)"
+            git add frontend/src/data/bodyspec.ts frontend/src/data/death-eid.ts frontend/src/data/checkup-dist.ts frontend/src/data/death-region.ts
+            git commit -m "chore: KOSIS 통계 자동 갱신 (신체·사망·검진분포·시도사망)"
             git push
           fi
