@@ -696,6 +696,21 @@ export default function Home() {
       }
     }
 
+    // 4) 보류(공식근거 없음) + 질병 인식 → 그 질병의 '관리에 도움되는 음식·관리법'을 함께 안내(전 질병 일반화).
+    //    예: "다이어트보조제 효능?" → 보류(제품 효능 미확인)는 유지하되, 비만 관리에 도움되는 음식·관리법을 덧붙여 바로 쓸 정보 제공.
+    //    제품·보조제·민간요법 효능 질문이 보류로 끝날 때 사용자가 '그래서 뭘 하면 되나'를 알 수 있게.
+    // ★질병명은 텍스트에 직접 없을 수 있음(예: '다이어트보조제'는 subject만 인식) → 파싱 트리플의 objectDisease를 fallback으로.
+    const dzCanon = dz?.canonical ?? triples.map((t) => t.objectDisease).find((d): d is string => !!d && d !== '(미상)')
+    if (dzCanon && j.verdict === 'unverified') {
+      const foods = foodsFor(dzCanon)
+      const g = guidanceFor(dzCanon)
+      if (foods.length || g) {
+        const foodLine = foods.length ? `${dzCanon} 관리에 도움이 된다고 알려지거나 연구된 음식: ${foods.slice(0, 8).map((f) => f.name).join(', ')}. (근거 수준은 식품별로 다르고 공식 효능 인정은 일부에 한해요. 균형 잡힌 식사의 일부로 참고하세요.)` : ''
+        const gSections = await fetchDiseaseSections(dzCanon)
+        setInfo({ disease: dzCanon, summary: [g?.text, foodLine].filter(Boolean).join(' '), sections: gSections, hasOfficial: gSections.length > 0, citation: g?.citation, isGuidance: true })
+      }
+    }
+
     // 5) AI 설명문(되면 교체, 다운/쿼터소진이면 로컬 유지) → 캐시 저장
     setExplaining(true)
     const exp = await explainVerdict(claim, j)
