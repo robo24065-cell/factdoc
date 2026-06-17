@@ -1,7 +1,14 @@
 import { supabase } from './supabase'
 import { parseClaim, type Verdict } from '../engine'
 import { findInText, normalizeTerm } from '../engine/ontology'
-import { KDCA_CORPUS } from '../engine/kdca-corpus'
+import type { KdcaDoc } from '../engine/kdca-corpus'
+
+// ⚠ KDCA 코퍼스(650문서·~2MB)는 Supabase 미스/오프라인 폴백 전용 → 동적 import로 지연 로딩(메인 번들 비대화 방지).
+let _corpus: KdcaDoc[] | null = null
+async function loadCorpus(): Promise<KdcaDoc[]> {
+  if (!_corpus) _corpus = (await import('../engine/kdca-corpus')).KDCA_CORPUS
+  return _corpus
+}
 
 // 질병청 국가건강정보포털 정적 코퍼스(건강정보검색 API 배치 수집) — Supabase 없이도 그라운딩 동작.
 const KDCA_URL = 'https://health.kdca.go.kr/healthinfo/biz/health/gnrlzHealthInfo/gnrlzHealthInfo/gnrlzHealthInfoView.do'
@@ -34,9 +41,10 @@ function narrowToOneDisease<T extends { title: string }>(docs: T[], terms: strin
   const exact = docs.filter((d) => terms.some((term) => nospace(d.title) === nospace(term)))
   return exact
 }
-function staticDocs(terms: string[]) {
+async function staticDocs(terms: string[]) {
   const t = [...new Set(terms)].filter((s) => s && s.length >= 2 && !s.includes(','))
-  const cand = KDCA_CORPUS.filter((d) => t.some((term) => d.title.includes(term)))
+  const KDCA = await loadCorpus()
+  const cand = KDCA.filter((d) => t.some((term) => d.title.includes(term)))
   return narrowToOneDisease(cand, t)
 }
 
@@ -202,7 +210,7 @@ export interface GroundedPassage { text: string; section: string; url: string | 
 // 코퍼스 그라운딩 — 손코딩 트리플이 없어도 실제 질병청 본문에서 (질병 문서 ∩ 주제어) 본문을 찾아 답.
 // 주제어가 그 질병의 '치료/관리' 맥락에 등장하면 treatment=true(주장 뒷받침 신호). 렉시컬(Gemini 불필요).
 export async function fetchGroundedAnswer(diseaseTerms: string[], subjectTerms: string[]): Promise<GroundedPassage[]> {
-  if (!supabase) return staticGrounded(diseaseTerms, subjectTerms)
+  if (!supabase) return await staticGrounded(diseaseTerms, subjectTerms)
   try {
     const dTerms = [...new Set(diseaseTerms)].filter((s) => s && s.length >= 2 && !s.includes(',')).slice(0, 5)
     if (!dTerms.length) return []
@@ -227,15 +235,15 @@ export async function fetchGroundedAnswer(diseaseTerms: string[], subjectTerms: 
     // 주제어 포함 본문 우선, 그다음 치료 맥락
     out.sort((a, b) => (Number(b._subj) - Number(a._subj)) || (Number(b.treatment) - Number(a.treatment)))
     const sup = out.slice(0, 4).map(({ _subj, ...g }) => g)
-    return sup.length ? sup : staticGrounded(diseaseTerms, subjectTerms)
+    return sup.length ? sup : await staticGrounded(diseaseTerms, subjectTerms)
   } catch {
-    return staticGrounded(diseaseTerms, subjectTerms)
+    return await staticGrounded(diseaseTerms, subjectTerms)
   }
 }
 
 // 정적 코퍼스(KDCA) 그라운딩 — Supabase 미스/오프라인 폴백.
-function staticGrounded(diseaseTerms: string[], subjectTerms: string[]): GroundedPassage[] {
-  const docs = staticDocs(diseaseTerms)
+async function staticGrounded(diseaseTerms: string[], subjectTerms: string[]): Promise<GroundedPassage[]> {
+  const docs = await staticDocs(diseaseTerms)
   if (!docs.length) return []
   const sNorm = [...new Set(subjectTerms)].filter((s) => s && s.length >= 2).map((s) => s.toLowerCase().replace(/\s+/g, ''))
   const out = docs.flatMap((d) => d.chunks.map((c) => {
@@ -259,12 +267,12 @@ export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] |
     .filter((s) => { const sn = nospace(s); return sn.includes(nn) || nn.includes(sn) })
     .concat(aliasTerms(name)) // CRE→다제내성균 등 별칭(가족필터 우회)
     .slice(0, 6)
-  if (!supabase) return staticDiseaseInfo(terms)
+  if (!supabase) return await staticDiseaseInfo(terms)
   try {
     const orFilter = terms.map((s) => `title.ilike.%${s}%`).join(',')
     const { data: docsRaw } = await supabase.from('source_doc').select('id,title,url,portal').or(orFilter).limit(6)
     const docs = narrowToOneDisease((docsRaw ?? []) as { id: number; title: string; url: string | null; portal: string }[], terms)
-    if (!docs.length) return staticDiseaseInfo(terms)
+    if (!docs.length) return await staticDiseaseInfo(terms)
     const ids = docs.map((d) => d.id)
     const { data: chunks } = await supabase.from('chunk').select('text,source_span,source_doc_id').in('source_doc_id', ids).limit(12)
     const docMap = new Map(docs.map((d) => [d.id, d]))
@@ -273,13 +281,13 @@ export async function fetchDiseaseInfo(name: string): Promise<DiseaseSection[] |
       const d = docMap.get(c.source_doc_id as number)
       return { section: span?.section ?? '', text: c.text as string, url: d?.url ?? null, portal: d?.portal ?? '' }
     })
-    return sup.length ? sup : staticDiseaseInfo(terms)
+    return sup.length ? sup : await staticDiseaseInfo(terms)
   } catch {
-    return staticDiseaseInfo(terms)
+    return await staticDiseaseInfo(terms)
   }
 }
 
 // 정적 코퍼스(KDCA) 질병정보 — Supabase 미스/오프라인 폴백.
-function staticDiseaseInfo(terms: string[]): DiseaseSection[] {
-  return staticDocs(terms).flatMap((d) => d.chunks.map((c) => ({ section: c.section, text: c.text, url: docUrl(d.cntntsSn), portal: d.portal })))
+async function staticDiseaseInfo(terms: string[]): Promise<DiseaseSection[]> {
+  return (await staticDocs(terms)).flatMap((d) => d.chunks.map((c) => ({ section: c.section, text: c.text, url: docUrl(d.cntntsSn), portal: d.portal })))
 }

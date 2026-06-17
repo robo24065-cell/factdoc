@@ -1,0 +1,36 @@
+# 질병청 국가건강정보포털 코퍼스 자동 갱신 — 건강정보 제공 API(healthInfoList+healthInfo) 전수 재수집.
+# 새 질환·개정 반영. 콘텐츠 변동이 잦지 않아 월 1회면 충분. 변경분만 커밋(대용량 파일이라 불필요 빌드 방지).
+# 필요 시크릿: KDCA_TOKEN (질병청 건강정보 API 인증키). 미설정이면 기존 코퍼스 유지.
+name: refresh-kdca-corpus
+
+on:
+  schedule:
+    - cron: '40 19 1 * *'   # 매월 1일 04:40 KST (전월말 19:40 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: KDCA 건강정보 코퍼스 전수 재수집
+        env:
+          KDCA_TOKEN: ${{ secrets.KDCA_TOKEN }}
+        run: node scripts/fetch-kdca-provide.mjs
+      - name: 변경분만 커밋
+        run: |
+          if git diff --quiet -- frontend/src/engine/kdca-corpus.ts; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add frontend/src/engine/kdca-corpus.ts
+            git commit -m "chore: 질병청 건강정보 코퍼스 자동 갱신 (국가건강정보포털)"
+            git push
+          fi
