@@ -394,11 +394,12 @@ function NaverRadarPanel() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {rows.map((r) => (
           <Link key={r.name} to={`/?q=${encodeURIComponent(`${r.name} 효능이 있나요`)}`} target="_blank"
-            className="flex items-center gap-2.5 rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
-            <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 dark:bg-slate-800 dark:text-slate-400">{r.cat}</span>
-            <span className="flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>
-            <svg width="88" height="22" className="shrink-0"><polyline points={spark(r.series)} fill="none" stroke={r.surgePct > 0 ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" /></svg>
-            <span className={`w-12 shrink-0 text-right text-xs font-bold ${r.surgePct > 5 ? 'text-rose-600' : r.surgePct < -5 ? 'text-blue-600' : 'text-slate-400'}`}>
+            className="flex items-center gap-2 rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50 sm:gap-2.5">
+            {/* 모바일: 카테고리 배지·스파크라인 숨겨 이름에 공간 확보(잘림 방지). 데스크톱에서만 노출 */}
+            <span className="hidden shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-500 sm:inline-block dark:bg-slate-800 dark:text-slate-400">{r.cat}</span>
+            <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>
+            <svg width="88" height="22" className="hidden shrink-0 sm:block"><polyline points={spark(r.series)} fill="none" stroke={r.surgePct > 0 ? '#f43f5e' : '#94a3b8'} strokeWidth="1.5" /></svg>
+            <span className={`w-14 shrink-0 text-right text-xs font-bold ${r.surgePct > 5 ? 'text-rose-600' : r.surgePct < -5 ? 'text-blue-600' : 'text-slate-400'}`}>
               {r.surgePct > 0 ? '▲' : r.surgePct < 0 ? '▼' : ''}{Math.abs(r.surgePct)}%
             </span>
           </Link>

@@ -24,6 +24,18 @@ export const DISEASE_RUMORS: Record<string, string[]> = {
   갑상선: ['갑상선약은 평생 노예가 되는 약이다', '미역·다시마를 끊으면 갑상선이 낫는다'],
   매독: ['매독은 변기·목욕탕에서 쉽게 옮는다', '한 번 치료하면 재감염되지 않는다'],
   대상포진: ['대상포진은 한 번 걸리면 다시 안 걸린다', '연고만 바르면 낫는다'],
+  // ── 급증 빈출 법정감염병(전수감시)의 실제 오해·잘못된 정보 ──
+  성홍열: ['항생제 없이 저절로 낫는다', '한 번 걸리면 다시 안 걸린다'],
+  유행성이하선염: ['MMR 백신이 자폐를 유발한다', '한 번 앓으면 평생 면역이라 예방접종이 필요 없다'],
+  백일해: ['예방접종을 했으면 평생 안전하다', '백일해는 어른은 걸리지 않는다'],
+  말라리아: ['특정 즙·민간요법으로 말라리아를 예방·치료할 수 있다', '우리나라에는 말라리아가 없다'],
+  뎅기열: ['한 번 걸리면 면역이 생겨 다시 걸려도 가볍다', '모기 기피제만으로 100% 예방된다'],
+  레지오넬라증: ['사람 간에 전염된다', '겉보기에 깨끗한 물에서는 생기지 않는다'],
+  '폐렴구균 감염증': ['폐렴은 감기가 심해진 것일 뿐이다', '폐렴구균 백신은 효과가 없다'],
+  E형간염: ['덜 익힌 고기·내장도 건강하면 먹어도 괜찮다', '한 번 걸리면 평생 면역이다'],
+  '카바페넴내성장내세균목(CRE) 감염증': ['건강한 사람은 절대 걸리지 않는다', '손소독제만으로 다 사라진다'],
+  쯔쯔가무시증: ['예방 백신이 있어서 맞으면 안 걸린다', '도시에서는 걸리지 않는다'],
+  수족구병: ['한 번 걸리면 다시 안 걸린다', '특효약으로 빨리 낫는다'],
 }
 
 const NORM = (s: string) => s.toLowerCase().replace(/\s+/g, '')
@@ -34,6 +46,12 @@ export function rumorsFor(canonical: string): string[] | null {
   // 부분 매칭(예: '위암'·'대장암' → '암' 일반 루머는 제외하고 정확 우선; 폴백으로 '암' 포함명)
   for (const k of Object.keys(DISEASE_RUMORS)) { if (NORM(k) === n) return DISEASE_RUMORS[k] }
   if (/암$/.test(canonical) && DISEASE_RUMORS[canonical]) return DISEASE_RUMORS[canonical]
+  if (/볼거리|이하선염|유행성이하/.test(canonical)) return DISEASE_RUMORS['유행성이하선염']
+  if (/뎅기/.test(canonical)) return DISEASE_RUMORS['뎅기열']
+  if (/CRE|카바페넴|다제내성/.test(canonical)) return DISEASE_RUMORS['카바페넴내성장내세균목(CRE) 감염증']
+  if (/폐렴구균/.test(canonical)) return DISEASE_RUMORS['폐렴구균 감염증']
+  if (/수족구/.test(canonical)) return DISEASE_RUMORS['수족구병']
+  if (/^E형간염|E형\s*간염/.test(canonical)) return DISEASE_RUMORS['E형간염']
   if (/간염/.test(canonical)) return DISEASE_RUMORS['간염']
   if (/당뇨|혈당/.test(canonical)) return DISEASE_RUMORS['제2형당뇨']
   if (/혈압/.test(canonical)) return DISEASE_RUMORS['고혈압']
