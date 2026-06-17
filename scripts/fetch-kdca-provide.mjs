@@ -61,6 +61,8 @@ async function fetchDoc(sn) {
     const section = clean(tag(c, 'CNTNTS_CL_NM')) || '개요'
     if (SKIP_SECTION.test(section)) continue
     let text = clean(tag(c, 'CNTNTS_CL_CN'))
+    // 이미지·표 파일 다운로드 링크(healthInfoFileDown 등)는 본문이 아님 → 제거. URL만 남은 섹션은 버림.
+    text = text.replace(/https?:\/\/\S+/g, ' ').replace(/\s+/g, ' ').trim()
     if (text.length < 20) continue
     if (text.length > SECTION_MAX) text = text.slice(0, SECTION_MAX)
     chunks.push({ section, text, rank: sectionRank(section) })

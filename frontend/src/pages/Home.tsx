@@ -851,6 +851,99 @@ export default function Home() {
     </div>
   )
 
+  // 정보질문/안내(질병청 공식 정보·보류 보강) 카드. 판정(result)이 있으면 판정 아래(보강), 없으면 합성 시 최상단 질환 카드로 렌더 → 두 위치에서 재사용하려 변수로 추출.
+  const infoCard = info ? (
+        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
+          <div className="flex items-center gap-3 bg-blue-50 p-4 dark:bg-blue-950/30">
+            <div className="h-11 w-1.5 rounded-full bg-blue-500" />
+            <div>
+              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold text-blue-700 dark:text-blue-300">
+                {info.disease}
+                {info.focus && <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-medium text-white">{info.focus}</span>}
+              </p>
+              <p className="text-xs text-slate-500">{info.focus ? `질문 인식: ${info.disease}의 ${info.focus}` : info.isGuidance ? '질병관리청 건강관리 안내' : '질병관리청 공식 건강정보'}</p>
+            </div>
+            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{info.isGuidance ? '관리 안내' : '정보'}</span>
+          </div>
+          <div className="p-4">
+            {info.summary ? (
+              <p className="text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{info.summary}</p>
+            ) : infoSummarizing ? (
+              <p className="flex items-center gap-2 text-sm text-slate-400">
+                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />
+                질병청 공식 정보를 정리 중…
+              </p>
+            ) : info.hasOfficial ? (
+              <p className="text-sm text-slate-500">아래 질병관리청 공식 자료를 확인하세요.</p>
+            ) : null}
+            {info.summary && info.citation && (
+              <p className="mt-1.5 text-[11px] text-slate-400">출처: {info.citation.portal} — {info.citation.title}</p>
+            )}
+
+            {info.sections.length > 0 && (
+              <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                  📚 공식 자료 {info.sections.length}건
+                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+                </summary>
+                <ul className="space-y-2 border-t border-slate-100 p-3 dark:border-slate-800">
+                  {info.sections.map((s, i) => (
+                    <li key={i} className="text-sm">
+                      {s.section && <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{s.section}</span>}
+                      <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300">{s.text.length > 180 ? `${s.text.slice(0, 180)}…` : s.text}</p>
+                      {s.url && <a href={s.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline dark:text-blue-400">원문 →</a>}
+                    </li>
+                  ))}
+                </ul>
+              </details>
+            )}
+
+            {symptomsFor(info.disease) && (
+              <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
+                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">🩺 주요 증상 (자가 참고용)</p>
+                <ul className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
+                  {symptomsFor(info.disease)!.map((s, i) => (
+                    <li key={i} className="flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
+                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />{s}
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-1.5 text-[11px] text-slate-400">진단이 아니에요. 증상이 의심되면 의료기관에서 확인하세요.</p>
+              </div>
+            )}
+
+            {preventionHint(info.disease) && (
+              <details className="group mt-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
+                  🛡 예방·관리 수칙 보기
+                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
+                </summary>
+                <p className="px-3 pb-3 text-sm text-slate-600 dark:text-slate-300">{preventionHint(info.disease)}</p>
+              </details>
+            )}
+
+            {!info.hasOfficial && (
+              <p className="mt-3 text-sm text-slate-500">
+                이 주제의 상세·최신 공식 정보는 질병관리청 국가건강정보포털에서 확인하실 수 있어요.
+              </p>
+            )}
+
+            <a href="https://health.kdca.go.kr" target="_blank" rel="noreferrer"
+              className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">
+              질병관리청 국가건강정보포털에서 더 보기 →
+            </a>
+
+            <Link to={`/disease/${encodeURIComponent(info.disease)}`}
+              className="mt-4 block rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white active:scale-[0.99]">
+              이 주제 관련 가짜정보도 확인하기
+            </Link>
+            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
+              본 정보는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.
+            </p>
+          </div>
+        </div>
+  ) : null
+
   return (
     <div>
       <h1 className="mt-2 text-[22px] font-semibold leading-snug text-slate-900 dark:text-white">건강 정보,<br className="lg:hidden" /> 진짜일까요?</h1>
@@ -1006,98 +1099,8 @@ export default function Home() {
         </div>
       )}
 
-      {/* 정보질문 응답 카드 (질병청 공식 정보) — 합성 시 최상단(질환) 카드 */}
-      {info && (
-        <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900">
-          <div className="flex items-center gap-3 bg-blue-50 p-4 dark:bg-blue-950/30">
-            <div className="h-11 w-1.5 rounded-full bg-blue-500" />
-            <div>
-              <p className="flex flex-wrap items-center gap-2 text-lg font-semibold text-blue-700 dark:text-blue-300">
-                {info.disease}
-                {info.focus && <span className="rounded-md bg-blue-600 px-1.5 py-0.5 text-[11px] font-medium text-white">{info.focus}</span>}
-              </p>
-              <p className="text-xs text-slate-500">{info.focus ? `질문 인식: ${info.disease}의 ${info.focus}` : info.isGuidance ? '질병관리청 건강관리 안내' : '질병관리청 공식 건강정보'}</p>
-            </div>
-            <span className="ml-auto rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">{info.isGuidance ? '관리 안내' : '정보'}</span>
-          </div>
-          <div className="p-4">
-            {info.summary ? (
-              <p className="text-[15px] leading-relaxed text-slate-800 dark:text-slate-100">{info.summary}</p>
-            ) : infoSummarizing ? (
-              <p className="flex items-center gap-2 text-sm text-slate-400">
-                <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />
-                질병청 공식 정보를 정리 중…
-              </p>
-            ) : info.hasOfficial ? (
-              <p className="text-sm text-slate-500">아래 질병관리청 공식 자료를 확인하세요.</p>
-            ) : null}
-            {info.summary && info.citation && (
-              <p className="mt-1.5 text-[11px] text-slate-400">출처: {info.citation.portal} — {info.citation.title}</p>
-            )}
-
-            {info.sections.length > 0 && (
-              <details className="group mt-3 rounded-xl border border-slate-200 dark:border-slate-800">
-                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
-                  📚 공식 자료 {info.sections.length}건
-                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
-                </summary>
-                <ul className="space-y-2 border-t border-slate-100 p-3 dark:border-slate-800">
-                  {info.sections.map((s, i) => (
-                    <li key={i} className="text-sm">
-                      {s.section && <span className="text-xs font-medium text-blue-600 dark:text-blue-400">{s.section}</span>}
-                      <p className="mt-0.5 leading-relaxed text-slate-600 dark:text-slate-300">{s.text.length > 180 ? `${s.text.slice(0, 180)}…` : s.text}</p>
-                      {s.url && <a href={s.url} target="_blank" rel="noreferrer" className="text-[11px] text-blue-600 hover:underline dark:text-blue-400">원문 →</a>}
-                    </li>
-                  ))}
-                </ul>
-              </details>
-            )}
-
-            {symptomsFor(info.disease) && (
-              <div className="mt-3 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
-                <p className="text-sm font-medium text-slate-700 dark:text-slate-200">🩺 주요 증상 (자가 참고용)</p>
-                <ul className="mt-1.5 grid grid-cols-1 gap-1 sm:grid-cols-2">
-                  {symptomsFor(info.disease)!.map((s, i) => (
-                    <li key={i} className="flex items-start gap-1.5 text-sm text-slate-600 dark:text-slate-300">
-                      <span className="mt-1 h-1.5 w-1.5 shrink-0 rounded-full bg-blue-400" />{s}
-                    </li>
-                  ))}
-                </ul>
-                <p className="mt-1.5 text-[11px] text-slate-400">진단이 아니에요. 증상이 의심되면 의료기관에서 확인하세요.</p>
-              </div>
-            )}
-
-            {preventionHint(info.disease) && (
-              <details className="group mt-3 rounded-xl bg-slate-50 dark:bg-slate-800/50">
-                <summary className="flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden">
-                  🛡 예방·관리 수칙 보기
-                  <span className="text-slate-400 transition group-open:rotate-180">▾</span>
-                </summary>
-                <p className="px-3 pb-3 text-sm text-slate-600 dark:text-slate-300">{preventionHint(info.disease)}</p>
-              </details>
-            )}
-
-            {!info.hasOfficial && (
-              <p className="mt-3 text-sm text-slate-500">
-                이 주제의 상세·최신 공식 정보는 질병관리청 국가건강정보포털에서 확인하실 수 있어요.
-              </p>
-            )}
-
-            <a href="https://health.kdca.go.kr" target="_blank" rel="noreferrer"
-              className="mt-3 inline-block text-sm font-medium text-blue-600 dark:text-blue-400">
-              질병관리청 국가건강정보포털에서 더 보기 →
-            </a>
-
-            <Link to={`/disease/${encodeURIComponent(info.disease)}`}
-              className="mt-4 block rounded-xl bg-blue-600 py-3 text-center text-sm font-semibold text-white active:scale-[0.99]">
-              이 주제 관련 가짜정보도 확인하기
-            </Link>
-            <p className="mt-3 text-[11px] leading-relaxed text-slate-400">
-              본 정보는 의료 진단이 아니며 참고용입니다. 증상이 의심되면 전문가와 상담하세요.
-            </p>
-          </div>
-        </div>
-      )}
+      {/* 정보질문/안내 카드 — 판정(result)이 있으면 보류 보강 카드로 판정 아래에서 렌더(infoCard 변수, 결과 블록 뒤). 판정이 없으면 여기(합성 시 최상단 질환 카드). */}
+      {!result && infoCard}
 
       {/* 식품·약·성분 카드 — 질환 카드 아래 아코디언(질환 있거나 2개↑면 접힘), 단독이면 펼침 */}
       {substances.map((s, i) => (
@@ -1220,6 +1223,9 @@ export default function Home() {
           </div>
         </div>
       )}
+
+      {/* 보류 등 판정 보강 — 판정 카드 아래에 질병청 관리 안내(도움 음식·공식자료·증상) 카드를 이어 붙임 */}
+      {result && infoCard}
 
       {/* 답변 품질 피드백 — 작게, 답변 하단. 불만족 시 관리자 부실응답 큐로(AI/규칙 1차 검토 후) */}
       {(result || info || topJudgment || substances.length > 0 || (multi && multi.length > 0)) && (
