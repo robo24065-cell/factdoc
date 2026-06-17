@@ -19,12 +19,12 @@ export async function fetchDiseaseSections(disease: string): Promise<DiseaseSect
   return all.filter((s) => s.text && s.text.length > 30).slice(0, 6)
 }
 
-// ② 그라운딩 요약 — Gemini(발췌 있으면 그것만, 없으면 일반 상식+포털 안내). 실패 시 '' 반환.
-export async function explainDiseaseInfo(disease: string, sections: DiseaseSection[]): Promise<string> {
+// ② 그라운딩 요약 — Gemini(발췌 있으면 그것만, 없으면 일반 의학지식+포털 안내). question=원래 질문(전파경로 등 맞춤답). 실패 시 '' 반환.
+export async function explainDiseaseInfo(disease: string, sections: DiseaseSection[], question?: string): Promise<string> {
   if (!supabase) return ''
   try {
     const { data } = await supabase.functions.invoke('explain-info', {
-      body: { disease, sections: sections.map((s) => ({ section: s.section, text: s.text })) },
+      body: { disease, question, sections: sections.map((s) => ({ section: s.section, text: s.text })) },
     })
     return (data as { summary?: string } | null)?.summary ?? ''
   } catch {

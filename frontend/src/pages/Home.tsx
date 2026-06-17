@@ -594,7 +594,7 @@ export default function Home() {
       // ★측면 질문(합병증/증상/원인/전파…)은 코퍼스 본문으로 답. 일반 관리 안내는 조언/관리 질문에만.
       const aspectKw = (claim.match(/합병증|증상|원인|진단|검사|치료|예방|관리|종류|단계|경과|예후|위험요인|전조/) || [])[0]
       const isTransmitQ = /전염|전파|감염\s*경로|어떻게\s*(옮|감염|퍼지|걸)|옮(나|기|아|는)|퍼지/.test(claim)
-      let summary = '', isGuid = false
+      let summary = ''
       let cite: { portal: string; title: string; url?: string } | undefined
       // 코퍼스(질병청 공식 본문)가 있으면 우선 — 전파질문은 전파언급 섹션, 측면질문은 해당 섹션, 아니면 개요.
       if (sections.length) {
@@ -603,15 +603,20 @@ export default function Home() {
           || sections[0]
         summary = best.text; cite = { portal: best.portal || '질병관리청 국가건강정보포털', title: `${disease} ${best.section || '공식 정보'}`, url: best.url ?? undefined }
       }
-      if (!summary) { const adv = adviceAnswer(claim); if (adv) { summary = adv.text; isGuid = true; cite = adv.citation } }
-      setInfo({ disease, summary, sections, hasOfficial: sections.length > 0, citation: cite, isGuidance: isGuid })
+      setInfo({ disease, summary, sections, hasOfficial: sections.length > 0, citation: cite, isGuidance: false })
       setLoading(false)
       void logQuery(claim, 'unverified', 'info')
-      if (!summary) { // 코퍼스·안내 없으면 Gemini 요약
+      // 코퍼스 발췌가 없으면 → Gemini로 '질문 맞춤' 답변(전파경로 등) 우선, 실패/미배포 시 일반 관리 안내.
+      if (!summary) {
         setInfoSummarizing(true)
-        const s = await explainDiseaseInfo(disease, sections)
-        setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary: s } : prev))
+        const s = await explainDiseaseInfo(disease, sections, claim)
         setInfoSummarizing(false)
+        if (s) {
+          setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary: s, isGuidance: true, citation: { portal: '질병관리청 국가건강정보포털', title: `${disease} 참고정보` } } : prev))
+        } else {
+          const adv = adviceAnswer(claim)
+          setInfo((prev) => (prev && prev.disease === disease ? { ...prev, summary: adv?.text || '이 주제의 상세·최신 정보는 질병관리청 국가건강정보포털에서 확인하실 수 있어요.', isGuidance: true, citation: adv?.citation } : prev))
+        }
       }
       return
     }
