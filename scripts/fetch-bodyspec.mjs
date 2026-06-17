@@ -13,10 +13,14 @@ const KEY = process.env.KOSIS_KEY
 const MMA_TBL = process.env.BODY_KOSIS_MMA_TBL // 병무청 병역판정 평균(연도별)
 const ADULT_TBL = process.env.BODY_KOSIS_ADULT_TBL // 연령대별 평균(성인)
 
-// 질병청 2017 소아청소년 성장도표 — 남자 신장 50백분위(고정 표준, 연 1회 개정 시에만 바뀜). 시드로 항상 유지.
+// 질병청 2017 소아청소년 성장도표 — 신장 50백분위(고정 표준, 연 1회 개정 시에만 바뀜). 시드로 항상 유지.
 const GROWTH_M = [
   [6, 115.9], [7, 122.1], [8, 127.9], [9, 133.4], [10, 138.8], [11, 144.7], [12, 151.4],
   [13, 158.6], [14, 165.0], [15, 169.2], [16, 171.4], [17, 172.6], [18, 173.6],
+]
+const GROWTH_F = [
+  [6, 114.7], [7, 120.8], [8, 126.7], [9, 132.6], [10, 139.1], [11, 145.8], [12, 151.7],
+  [13, 155.9], [14, 158.3], [15, 159.5], [16, 160.0], [17, 160.2], [18, 160.6],
 ]
 // 병무청 병역판정 평균(만19세 남) 시드 — KOSIS 수집 성공 시 교체/확장.
 let mmaYearly = [
@@ -67,6 +71,7 @@ async function main() {
   const std = [
     ...GROWTH_M.map(([age, h]) => `  { age: ${age}, sex: 'M', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
     `  { age: 19, sex: 'M', heightCm: ${latest.h}, weightKg: ${latest.w}, source: '병무청 병역판정(${latest.year})' },`,
+    ...GROWTH_F.map(([age, h]) => `  { age: ${age}, sex: 'F', heightCm: ${h}, source: '질병청 2017 성장도표(50%)' },`),
   ].join('\n')
   const mma = mmaYearly.map((m) => `  { year: ${m.year}, sex: 'M', heightCm: ${m.h}, weightKg: ${m.w}, source: '병무청 병역판정(${m.year})' },`).join('\n')
 

@@ -19,6 +19,19 @@ export const BODY_STD: AgeStd[] = [
   { age: 17, sex: 'M', heightCm: 172.6, source: '질병청 2017 성장도표(50%)' },
   { age: 18, sex: 'M', heightCm: 173.6, source: '질병청 2017 성장도표(50%)' },
   { age: 19, sex: 'M', heightCm: 174.54, weightKg: 73.27, source: '병무청 병역판정(2024)' },
+  { age: 6, sex: 'F', heightCm: 114.7, source: '질병청 2017 성장도표(50%)' },
+  { age: 7, sex: 'F', heightCm: 120.8, source: '질병청 2017 성장도표(50%)' },
+  { age: 8, sex: 'F', heightCm: 126.7, source: '질병청 2017 성장도표(50%)' },
+  { age: 9, sex: 'F', heightCm: 132.6, source: '질병청 2017 성장도표(50%)' },
+  { age: 10, sex: 'F', heightCm: 139.1, source: '질병청 2017 성장도표(50%)' },
+  { age: 11, sex: 'F', heightCm: 145.8, source: '질병청 2017 성장도표(50%)' },
+  { age: 12, sex: 'F', heightCm: 151.7, source: '질병청 2017 성장도표(50%)' },
+  { age: 13, sex: 'F', heightCm: 155.9, source: '질병청 2017 성장도표(50%)' },
+  { age: 14, sex: 'F', heightCm: 158.3, source: '질병청 2017 성장도표(50%)' },
+  { age: 15, sex: 'F', heightCm: 159.5, source: '질병청 2017 성장도표(50%)' },
+  { age: 16, sex: 'F', heightCm: 160, source: '질병청 2017 성장도표(50%)' },
+  { age: 17, sex: 'F', heightCm: 160.2, source: '질병청 2017 성장도표(50%)' },
+  { age: 18, sex: 'F', heightCm: 160.6, source: '질병청 2017 성장도표(50%)' },
 ]
 
 export interface MmaYear { year: number; sex: 'M'; heightCm: number; weightKg: number; source: string }

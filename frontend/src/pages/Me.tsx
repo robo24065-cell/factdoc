@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import { compareToMma } from '../engine/mma-bodyspec'
 import { bodyStandard } from '../data/bodyspec'
 
-const AGE_BANDS = ['10대', '20대', '30대', '40대', '50대', '60대', '70대 이상']
 const KEY = 'factdoc_profile'
 
 // 대한비만학회 기준(아시아인) BMI 분류
@@ -35,17 +34,24 @@ export default function Me() {
   useEffect(() => {
     try { localStorage.setItem(KEY, JSON.stringify({ age, manAge, sex, height, weight })) } catch { /* ignore */ }
   }, [age, manAge, sex, height, weight])
+  // 만 나이 → 연령대(밴드) 자동 동기화(중복 입력 제거). 만나이 입력 시 age 밴드 자동 채움.
+  useEffect(() => {
+    const n = parseInt(manAge, 10)
+    if (n > 0) { const b = n < 10 ? '' : n >= 70 ? '70대 이상' : `${Math.floor(n / 10) * 10}대`; if (b && b !== age) setAge(b) }
+  }, [manAge]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const h = parseFloat(height)
   const w = parseFloat(weight)
   const bmi = h > 0 && w > 0 ? w / (h / 100) ** 2 : null
   const cat = bmi != null ? bmiCategory(bmi) : null
   const fmt = (n: number) => (n > 0 ? `+${n}` : `${n}`)
-  // ★좁은 또래 비교 — 정확 만나이 입력 시 그 나이의 표준(질병청 성장도표/병무)과 비교(성장기 1세 차이도 큼).
+  // 만 나이 하나만 입력받고 연령대(밴드)는 자동 도출 — 중복 입력 제거.
   const ageNum = parseInt(manAge, 10)
-  const ageStd = sex === 'male' && ageNum > 0 ? bodyStandard('M', ageNum, 1) : null
+  const ageBand = ageNum > 0 ? (ageNum < 10 ? '' : ageNum >= 70 ? '70대 이상' : `${Math.floor(ageNum / 10) * 10}대`) : age
+  // ★좁은 또래 비교 — 정확 만나이의 표준(질병청 성장도표 남/여 + 병무 남19)과 비교(성장기 1세 차이도 큼).
+  const ageStd = ageNum > 0 && (sex === 'male' || sex === 'female') ? bodyStandard(sex === 'male' ? 'M' : 'F', ageNum, 1) : null
   // 병무청 또래(만19세) 비교 — 정확 만나이가 없을 때의 폴백(남성 10·20대·미선택).
-  const mmaAgeOk = age === '' || age === '20대' || age === '10대'
+  const mmaAgeOk = ageBand === '' || ageBand === '20대' || ageBand === '10대'
   const mma = !ageStd && sex === 'male' && mmaAgeOk ? compareToMma(h, w) : null
 
   const field = 'mt-1 w-full rounded-xl border border-slate-300 bg-white p-3 text-slate-900 outline-none focus:border-slate-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white'
@@ -59,13 +65,6 @@ export default function Me() {
       {/* 좌측 — 입력 + 기록 관리 */}
       <div className="min-w-0 space-y-3">
       <div className="space-y-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
-        <label className="block text-sm">
-          <span className="text-slate-600 dark:text-slate-300">연령대</span>
-          <select value={age} onChange={(e) => setAge(e.target.value)} className={field}>
-            <option value="">선택 안 함</option>
-            {AGE_BANDS.map((a) => <option key={a} value={a}>{a}</option>)}
-          </select>
-        </label>
         <div className="grid grid-cols-2 gap-3">
           <label className="block text-sm">
             <span className="text-slate-600 dark:text-slate-300">성별</span>
@@ -76,7 +75,7 @@ export default function Me() {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-slate-600 dark:text-slate-300">만 나이 <span className="text-[11px] text-slate-400">(또래 비교)</span></span>
+            <span className="text-slate-600 dark:text-slate-300">만 나이 {ageBand && <span className="text-[11px] text-blue-500">({ageBand})</span>}</span>
             <input type="number" inputMode="numeric" value={manAge} onChange={(e) => setManAge(e.target.value)} placeholder="예: 17" className={field} />
           </label>
         </div>
@@ -142,7 +141,7 @@ export default function Me() {
         return (
           <div className="mt-3 rounded-2xl border border-emerald-100 bg-emerald-50/60 p-4 dark:border-emerald-950 dark:bg-emerald-950/20">
             <div className="flex items-center justify-between">
-              <p className="font-medium text-emerald-900 dark:text-emerald-200">또래(만 {ageNum}세 남성) 신체 비교</p>
+              <p className="font-medium text-emerald-900 dark:text-emerald-200">또래(만 {ageNum}세 {sex === 'male' ? '남성' : '여성'}) 신체 비교</p>
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[11px] text-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">{ageNum <= 18 ? '질병청 성장도표' : '병무청'}</span>
             </div>
             <p className="mt-1 text-[12px] text-emerald-800/70 dark:text-emerald-200/70">만 {ageStd.age}세 표준 — 키 {ageStd.heightCm}cm{ageStd.weightKg != null ? ` · 몸무게 ${ageStd.weightKg}kg` : ''}</p>
