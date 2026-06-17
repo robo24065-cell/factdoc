@@ -11,6 +11,7 @@ import { prevalenceFor, rumorsFor } from '../engine'
 import { NAVER_TRENDS } from '../data/naver-trends'
 import CheckupPercentile from '../components/CheckupPercentile'
 import { uniformDemand } from '../lib/uniformDemand'
+import { PROCURE_BY_CAT, PROCURE_RECENT, PROCURE_SCANNED, PROCURE_HITS, PROCURE_UPDATED } from '../data/procurement'
 
 type TabKey = 'early' | 'cohort' | 'risk' | 'supply'
 const TABS: { key: TabKey; label: string }[] = [
@@ -290,56 +291,91 @@ function RiskReader() {
 }
 
 // ───────────────────────── ④ 기관융합 물자 수요예측 (대부분 로드맵) ─────────────────────────
+function DemandTableView({ t }: { t: import('../lib/uniformDemand').DemandTable }) {
+  const nf = (n: number) => n.toLocaleString()
+  const maxPct = Math.max(...t.rows.map((r) => r.pctFc), 0.01)
+  return (
+    <div className="overflow-x-auto">
+      <p className="mb-1 text-[12px] font-medium text-slate-600 dark:text-slate-300">{t.dim} 호수 — 평균 {t.meanBase}{t.unit}({t.baseYear}) → <b className="text-indigo-600 dark:text-indigo-400">{t.meanFc}{t.unit}({t.fcYear} 예측)</b></p>
+      <table className="w-full text-[13px]">
+        <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1 pr-2">호수</th><th className="px-2">{t.fcYear} 비중</th><th className="px-2">필요 수량</th><th className="px-2">{t.baseYear} 대비</th></tr></thead>
+        <tbody>
+          {t.rows.map((r) => (
+            <tr key={r.band} className="border-b border-slate-100 dark:border-slate-800">
+              <td className="py-1 pr-2 text-slate-700 dark:text-slate-200">{r.band}</td>
+              <td className="px-2"><div className="flex items-center gap-1.5"><span className="h-2 w-12 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2 rounded-full bg-indigo-500" style={{ width: `${(r.pctFc / maxPct) * 100}%` }} /></span><span className="tabular-nums text-slate-500">{(r.pctFc * 100).toFixed(1)}%</span></div></td>
+              <td className="px-2 tabular-nums text-slate-700 dark:text-slate-200">{nf(r.qtyFc)}</td>
+              <td className={`px-2 tabular-nums font-medium ${r.deltaQty > 0 ? 'text-rose-600' : r.deltaQty < 0 ? 'text-blue-600' : 'text-slate-400'}`}>{r.deltaQty > 0 ? '▲' : r.deltaQty < 0 ? '▼' : ''}{nf(Math.abs(r.deltaQty))}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 function SupplyForecast() {
   const [cohort, setCohort] = useState(250000)
   const dem = uniformDemand(cohort)
-  const maxPct = dem ? Math.max(...dem.rows.map((r) => r.pctCur)) : 1
-  const nf = (n: number) => n.toLocaleString()
+  const topCat = PROCURE_BY_CAT[0]
   return (
     <div className="space-y-4">
-      <Panel title="🎖 군복 호수별 수요예측 — 신체 분포 모델 (병무청)" desc="평균이 아니라 분포로 각 호수 인원을 추정 → 작년 대비 호수별 발주 증감 예측" badge="실데이터">
+      <Panel title={`🎖 군복 호수별 수요예측 — 신체 분포 모델 (${dem?.fcYear ?? 2027} 예측)`} desc="평균이 아니라 분포로 각 호수 인원 추정 → 추세 외삽으로 내년 발주 수요·증감 예측 (키+몸무게)" badge="실데이터">
         <p className="mb-3 rounded-lg bg-indigo-50 p-2.5 text-[12px] leading-relaxed text-indigo-800 dark:bg-indigo-950/30 dark:text-indigo-200">
-          입영 코호트 평균 키만으론 발주를 못 합니다 — <b>호수별로 몇 명인지</b>가 필요하죠. 병무청 실측 평균({dem?.meanCur}cm)에 <b>정규분포(σ={5.6}cm)</b>를 적용해 키 구간별 비중을 산출하고, <b>작년({dem?.yearPrev}) 대비 올해({dem?.yearCur}) 평균 상승</b>으로 호수별 수요 증감을 예측합니다.
+          평균만으론 발주를 못 합니다 — <b>호수별 인원</b>이 필요하죠. 병무청 실측 평균({dem?.prevYear}→{dem?.baseYear})의 변화 추세를 <b>{dem?.fcYear}년으로 외삽</b>하고, <b>키(길이)·몸무게(체형) 분포</b>를 정규분포로 추정해 호수별 수요·전년대비 증감을 예측합니다.
         </p>
         <label className="flex items-center gap-2 text-[13px] text-slate-600 dark:text-slate-300">입영 코호트 규모(가정)
           <input type="number" inputMode="numeric" value={cohort} onChange={(e) => setCohort(Math.max(0, parseInt(e.target.value, 10) || 0))} className="w-32 rounded-lg border border-slate-300 bg-white p-1.5 text-sm dark:border-slate-700 dark:bg-slate-900 dark:text-white" />명
         </label>
         {dem && (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full text-[13px]">
-              <thead><tr className="border-b border-slate-200 text-left text-slate-500 dark:border-slate-700"><th className="py-1.5 pr-2">호수(키 구간)</th><th className="px-2">비중</th><th className="px-2">필요 수량</th><th className="px-2">작년 대비</th></tr></thead>
-              <tbody>
-                {dem.rows.map((r) => (
-                  <tr key={r.band} className="border-b border-slate-100 dark:border-slate-800">
-                    <td className="py-1.5 pr-2 text-slate-700 dark:text-slate-200">{r.band}</td>
-                    <td className="px-2">
-                      <div className="flex items-center gap-1.5"><span className="h-2 w-16 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2 rounded-full bg-indigo-500" style={{ width: `${(r.pctCur / maxPct) * 100}%` }} /></span><span className="tabular-nums text-slate-500">{(r.pctCur * 100).toFixed(1)}%</span></div>
-                    </td>
-                    <td className="px-2 tabular-nums text-slate-700 dark:text-slate-200">{nf(r.qtyCur)}</td>
-                    <td className={`px-2 tabular-nums font-medium ${r.deltaQty > 0 ? 'text-rose-600' : r.deltaQty < 0 ? 'text-blue-600' : 'text-slate-400'}`}>{r.deltaQty > 0 ? '▲' : r.deltaQty < 0 ? '▼' : ''}{nf(Math.abs(r.deltaQty))} ({r.deltaPctPt > 0 ? '+' : ''}{r.deltaPctPt.toFixed(2)}%p)</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
-              📐 <b>방법론</b>: 평균 키는 병무청 병역판정검사 <b>실측</b>({dem.yearPrev} {dem.meanPrev}cm → {dem.yearCur} {dem.meanCur}cm), 분포는 <b>정규분포 가정</b>(σ=5.6cm, 한국 성인 남성 표준편차 문헌 근사). 평균이 오르면 큰 호수 수요가 늘고 작은 호수는 줄어듭니다. 실측 치수 히스토그램·가슴둘레는 병무청 상세통계 연동 시 정밀화(로드맵). 수량은 가정 코호트×비중.
-            </p>
+          <div className="mt-3 grid gap-4 md:grid-cols-2">
+            <DemandTableView t={dem.height} />
+            <DemandTableView t={dem.weight} />
           </div>
         )}
-      </Panel>
-
-      <Panel title="🦠 질병청 유행 신호 → 방역물자 선행지표" desc="감염병 급증을 방역물자 수요 선행지표로 (조기경보 탭 연계)" badge="실데이터">
-        <p className="text-[13px] leading-relaxed text-slate-600 dark:text-slate-300">
-          ① 조기경보 탭의 감염병 급증 신호(EID)를 마스크·진단키트·해열제 등 <b>방역물자 수요 선행지표</b>로 사용합니다. 발생 급증 → 수요 증가의 시차를 조달 이력과 결합하면 품목별 적정 발주 시점을 예측할 수 있어요(아래 조달청 연동).
+        <p className="mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50">
+          📐 <b>방법론</b>: 평균 키·몸무게는 병무청 병역판정검사 <b>실측</b>, 추세를 {dem?.fcYear}년으로 선형 외삽. 호수 분포는 <b>정규분포 가정</b>(키 σ=5.6cm·체중 σ=11kg, 문헌 근사·키·체중 독립 가정). 평균이 오르면 큰 호수↑·작은 호수↓. 실측 치수 히스토그램·가슴둘레·키×체중 결합분포는 병무청 상세통계 연동 시 정밀화(로드맵). 수량=가정 코호트×비중.
         </p>
       </Panel>
 
-      <Panel title="🛣 연동 로드맵 — 외부 데이터(미연동)" desc="아래는 데이터 연동 시 산출물 설계. 현재 가짜 수치를 만들지 않습니다(§10 날조 금지)." badge="로드맵">
-        <div className="grid gap-3 sm:grid-cols-3">
+      {/* 조달청 — 방역물자 조달 동향(라이브) */}
+      <Panel title="📦 조달청 — 방역물자 조달 동향" desc={`나라장터 입찰공고(물품) 최근 ${120}일 ${PROCURE_SCANNED.toLocaleString()}건 중 방역물자 ${PROCURE_HITS}건 · ${PROCURE_UPDATED}`} badge="실데이터">
+        <p className="mb-3 rounded-lg bg-emerald-50 p-2.5 text-[12px] leading-relaxed text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+          🔗 <b>감염병 유행(질병청) → 방역물자 조달(조달청)</b> 흐름의 외부 선행지표. 마스크·진단키트·소독·해열제 등 정부 방역물자 발주를 추적해 조기경보를 보강합니다. <b>판정 근거가 아니라 조기경보 신호</b>로만 사용.
+        </p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div>
+            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">카테고리별 방역물자 입찰</p>
+            <div className="space-y-1.5">
+              {PROCURE_BY_CAT.map((c) => (
+                <div key={c.cat} className="flex items-center gap-2 text-[13px]">
+                  <span className="w-20 shrink-0 truncate text-slate-700 dark:text-slate-200">{c.cat}</span>
+                  <span className="h-2.5 flex-1 rounded-full bg-slate-100 dark:bg-slate-800"><span className="block h-2.5 rounded-full bg-emerald-500" style={{ width: `${(c.n / (topCat?.n || 1)) * 100}%` }} /></span>
+                  <span className="w-10 shrink-0 text-right text-xs font-medium tabular-nums text-slate-600 dark:text-slate-300">{c.n}건</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div>
+            <p className="mb-1.5 text-[12px] font-medium text-slate-600 dark:text-slate-300">최근 방역물자 입찰공고</p>
+            <ul className="space-y-1">
+              {PROCURE_RECENT.slice(0, 6).map((it, i) => (
+                <li key={i} className="text-[12px] leading-snug">
+                  <span className="text-slate-700 dark:text-slate-200">{it.nm}</span>
+                  <span className="ml-1 text-slate-400">· {it.inst} · {it.date}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </div>
+        <p className="mt-2 text-[11px] text-slate-400">출처: 조달청 나라장터 입찰공고정보서비스(물품). 공고명에 방역 키워드 포함분만 집계 · 주1회 자동 갱신 · 조기경보 보조지표(의학근거 아님).</p>
+      </Panel>
+
+      <Panel title="🛣 연동 로드맵 — 방위사업청·기상청" desc="추가 연동 시 산출물. 현재 가짜 수치를 만들지 않습니다(§10 날조 금지)." badge="로드맵">
+        <div className="grid gap-3 sm:grid-cols-2">
           {[
-            { org: '조달청 · 나라장터', need: '방역·의료 물자 발주 이력 API', out: '유행↔발주 시차 학습 → 품목별 적정 발주량·시점 추천' },
             { org: '방위사업청', need: '군 의료/방역 물자 소요 데이터', out: '부대 규모·유행 결합 군 방역물자 소요 예측' },
-            { org: '기상청', need: '폭염·한파 예보·기온 추이 API', out: '온열·한랭손상 키트 수요 예측(여름·겨울 선발주)' },
+            { org: '기상청 (보건·생활기상지수)', need: '감기가능지수·체감온도(폭염)·식중독지수 API', out: '폭염→온열손상 키트, 감기가능지수↑→감기 prebunk·해열제 선발주' },
           ].map((r) => (
             <div key={r.org} className="rounded-xl border border-dashed border-slate-300 p-3 dark:border-slate-700">
               <p className="text-sm font-semibold text-slate-700 dark:text-slate-200">{r.org}</p>
@@ -349,7 +385,7 @@ function SupplyForecast() {
             </div>
           ))}
         </div>
-        <p className="mt-3 text-[11px] text-slate-400">이 서브탭은 4개 주최기관 융합 ‘비전 데모’입니다. 라이브 앵커(병무·질병)는 실데이터, 발주·기상 연동은 발전가능성 단계로 명시합니다.</p>
+        <p className="mt-3 text-[11px] text-slate-400">병무·질병·조달은 실데이터 연동 완료. 방사청(비공개)·기상청(신청 후)은 발전가능성 단계.</p>
       </Panel>
     </div>
   )

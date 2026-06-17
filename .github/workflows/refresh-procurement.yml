@@ -1,0 +1,36 @@
+# 조달청 나라장터 방역물자 조달 동향 자동 갱신 — 입찰공고(물품) 최근분을 방역 키워드로 필터·집계.
+# 감염병 유행→방역물자 조달 흐름의 외부 선행지표(조기경보 보조). per-request 외부호출 금지(§13.7) → 주1회 cron.
+# 필요 시크릿: DATA_GO_KR_API_KEY (공공데이터포털 일반 인증키, 조달청 입찰공고 승인). 미설정 시 기존 파일 유지.
+name: refresh-procurement
+
+on:
+  schedule:
+    - cron: '50 19 * * 1'   # 매주 월요일 04:50 KST (일 19:50 UTC)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: 조달청 방역물자 조달 동향 재수집
+        env:
+          DATA_GO_KR_API_KEY: ${{ secrets.DATA_GO_KR_API_KEY }}
+        run: node scripts/fetch-procurement.mjs
+      - name: 변경분만 커밋
+        run: |
+          if git diff --quiet -- frontend/src/data/procurement.ts; then
+            echo "변경 없음 — 커밋 생략"
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add frontend/src/data/procurement.ts
+            git commit -m "chore: 조달청 방역물자 조달 동향 자동 갱신 (나라장터)"
+            git push
+          fi
