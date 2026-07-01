@@ -1,5 +1,5 @@
 // 신체 표준 통계 — 자동 생성(scripts/fetch-bodyspec.mjs). 수기편집 금지(재생성됨).
-// 소아(만6~18): 질병관리청 2017 소아청소년 성장도표 신장 50%ile. 성인(연령대별 남/여 신장·체중): KOSIS 국민건강보험 건강검진통계(orgId=350, DT_35007_N130/N132) 2024년(최신).
+// 소아(만6~18): 질병관리청 2017 소아청소년 성장도표 신장 50%ile. 성인(연령대별 남/여 신장·체중): KOSIS 국민건강보험 건강검진통계(orgId=350, DT_35007_N130/N132).
 // KOSIS_KEY로 GitHub Actions 월1회 cron 자동 갱신 → 매년 최신 평균 반영.
 
 export interface AgeStd { age: number; sex: 'M' | 'F'; heightCm: number; weightKg?: number; source: string }
@@ -43,22 +43,9 @@ export const MMA_YEARLY: MmaYear[] = [
 
 // 성인 연령대별(전국 평균, 남/여) — KOSIS 건강검진통계. 최신연도.
 export const ADULT_STD: AdultStd[] = [
-  { band: "20대", sex: 'M', heightCm: 174.2, weightKg: 76.8, year: '2024' },
-  { band: "20대", sex: 'F', heightCm: 161.8, weightKg: 58.6, year: '2024' },
-  { band: "30대", sex: 'M', heightCm: 174.6, weightKg: 79.8, year: '2024' },
-  { band: "30대", sex: 'F', heightCm: 161.9, weightKg: 60.2, year: '2024' },
-  { band: "40대", sex: 'M', heightCm: 173.9, weightKg: 78.4, year: '2024' },
-  { band: "40대", sex: 'F', heightCm: 160.9, weightKg: 60.2, year: '2024' },
-  { band: "50대", sex: 'M', heightCm: 171.1, weightKg: 73.9, year: '2024' },
-  { band: "50대", sex: 'F', heightCm: 158.3, weightKg: 58.9, year: '2024' },
-  { band: "60대", sex: 'M', heightCm: 168.3, weightKg: 69.8, year: '2024' },
-  { band: "60대", sex: 'F', heightCm: 155.6, weightKg: 58, year: '2024' },
-  { band: "70대", sex: 'M', heightCm: 165.8, weightKg: 66.9, year: '2024' },
-  { band: "70대", sex: 'F', heightCm: 152.9, weightKg: 57.1, year: '2024' },
-  { band: "80세 이상", sex: 'M', heightCm: 163.8, weightKg: 63.5, year: '2024' },
-  { band: "80세 이상", sex: 'F', heightCm: 149.3, weightKg: 53.7, year: '2024' },
+
 ]
-export const ADULT_YEAR = "2024"
+export const ADULT_YEAR = ""
 
 // 만 나이 → 표준. 20세 이상은 KOSIS 연령대별(최신·실측 평균), 6~18세는 성장도표(50%ile).
 export function bodyStandard(sex: 'M' | 'F', age: number, maxGap = 1): { heightCm: number; weightKg?: number; label: string; source: string } | null {
