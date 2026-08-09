@@ -24,7 +24,12 @@ export async function probe() {
   probing = (async () => {
     try {
       const r = await fetch(ENDPOINT, { signal: AbortSignal.timeout(4000) })
-      available = r.ok ? !!(await r.json())?.ok : false
+      const ct = r.headers.get('content-type') || ''
+      if (r.ok && ct.includes('json')) available = !!(await r.json())?.ok
+      /* GET 이 SPA index.html 로 떨어지는 배치가 있다(Pages 정적 우선 라우팅).
+         그때 '없음'으로 단정하면 키가 있어도 영영 안 켜진다.
+         → 낙관적으로 켜두고, 실제 POST 가 503 을 주면 그 자리에서 끈다. */
+      else available = true
     } catch { available = false }
     return available
   })()
