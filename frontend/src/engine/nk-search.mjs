@@ -206,7 +206,7 @@ export function parseQuery(q, ov = {}) {
 
   const wantsStat = STAT_Q.test(body)
   const norm = ov.norm || normalizeByRule(body)
-  return { tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
+  return { raw: q, tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
     listIntent: listIntent || norm.intent === 'timeline', wantCount,
     askedYear: time.slot === 'year' ? String(time.year) : null,
     needsLLMTime: needsLLM(time) }
@@ -531,8 +531,22 @@ export function lookupNumeric(ix, Q, hits) {
 // ── 집계·분해 ───────────────────────────────────────────────
 // "몇 명" → 성별=전체 합계 / "여자가 몇 명" → 성별=여 합계
 // "나이 많은 사람이 더 많다며" → 연령대 분포
+/* 수량을 묻는 질문인가 — 이 판정이 없으면 '개성쥬악' 같은 오타에도 합계를 지어낸다.
+   실측: '개성쥬악' → 「북한이탈주민 재북 현황은 79명입니다」, '델리만쥬…' → 학술회의 기록.
+   묻지 않은 숫자를 만들어내는 것은 근거 없는 판정이며, 이 서비스가 해선 안 되는 일이다.
+   intent 만으로는 못 가른다 — '남북교역 규모'도 규칙층에선 intent=unknown 이다. */
+const COUNT_CUE = /몇|얼마|규모|건수|인원|총|합계|평균|비율|분포|퍼센트|%|많|적|늘|줄|증가|감소|추이/
+function asksQuantity(Q) {
+  const n = Q.norm || {}
+  if (n.aggregate && n.aggregate !== 'none') return true   // 분포·합계를 명시적으로 요구
+  if (n.unitFamily) return true                            // '몇 명/얼마' 류가 잡힘
+  if (Q.isQuant || Q.numeric != null) return true          // 질문에 수치가 들어 있음
+  return COUNT_CUE.test(String(Q.raw ?? Q.q ?? ''))
+}
+
 export function aggregate(ix, Q, hits) {
   const n = Q.norm
+  if (!asksQuantity(Q)) return null
   const rows = []
   for (const h of hits.slice(0, 40)) {
     for (const m of ix.mByRec.get(h.r.id) || []) {
