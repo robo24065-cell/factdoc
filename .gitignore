@@ -7,6 +7,9 @@ api.txt
 배포-가이드.md
 *.key
 secrets/
+*keys*.json
+.gemini-keys.tmp.json
+*.tmp.json
 
 # ===== Node =====
 node_modules/
@@ -48,3 +51,7 @@ scripts/_eid_detail.html
 _kr_prov.json
 scripts/_*.html
 _edw.html
+
+# 중간 산출물 — 북한자료/ CSV 에서 언제든 재생성된다 (node scripts/ingest-nk.mjs)
+# 배포에 필요한 것은 frontend/public/nk-index.json 쪽이므로 그건 커밋한다.
+frontend/src/data/nk-index.json

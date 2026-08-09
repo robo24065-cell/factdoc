@@ -1,11 +1,14 @@
+# ⛔ [사실은ON 전환] 자동 실행 중지 — 이 워크플로는 종료된 FactDoc(질병청·병무청 건강정보) 전용이다.
+#    저장소를 사실은ON으로 재사용하면서, 무관한 데이터를 계속 커밋하지 않도록 schedule을 제거했다.
+#    파일은 남겨둔다(과거 파이프라인 참고용). 필요하면 Actions 탭에서 수동 실행만 가능.
 # KOSIS 통계 자동 갱신 — ① 신체 표준(건강검진통계 orgId=350) → bodyspec.ts ② 감염병 사망(사망원인통계 orgId=101) → death-eid.ts.
 # 목적: 매년 사람 손 없이 최신화(하드코딩 영구방치 X). 월 1회면 충분(통계 연 1회 공표, 새 연도 자료 자동 반영).
 # 필요 시크릿: KOSIS_KEY (https://kosis.kr/openapi/ 무료 발급). 미설정이면 시드 유지(데이터 유실 없음).
 name: update-bodyspec
 
 on:
-  schedule:
-    - cron: '30 20 1 * *'   # 매월 1일 05:30 KST (전월말일 20:30 UTC)
+#  schedule:
+#    - cron: '30 20 1 * *'   # 매월 1일 05:30 KST (전월말일 20:30 UTC)
   workflow_dispatch:
 
 permissions:

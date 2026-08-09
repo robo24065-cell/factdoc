@@ -1,12 +1,15 @@
+# ⛔ [사실은ON 전환] 자동 실행 중지 — 이 워크플로는 종료된 FactDoc(질병청·병무청 건강정보) 전용이다.
+#    저장소를 사실은ON으로 재사용하면서, 무관한 데이터를 계속 커밋하지 않도록 schedule을 제거했다.
+#    파일은 남겨둔다(과거 파이프라인 참고용). 필요하면 Actions 탭에서 수동 실행만 가능.
 # 네이버 데이터랩 건강 검색어/쇼핑 트렌드 자동 갱신 — 건강주장 키워드 워치리스트의 급상승 감지(가짜정보 선행지표).
 # per-request 외부호출 금지(§13.7) → 배치 cron. 검색어트렌드는 '일' 단위라 하루 2회면 충분(시간별은 같은 일자값).
 # 필요 시크릿: NAVER_CLIENT_ID, NAVER_CLIENT_SECRET (https://developers.naver.com 무료, 일 1000건). 미설정 시 기존 파일 유지.
 name: refresh-naver-trends
 
 on:
-  schedule:
-    - cron: '20 21 * * *'   # 매일 06:20 KST (전일 21:20 UTC)
-    - cron: '20 9 * * *'    # 매일 18:20 KST (09:20 UTC) — 하루 2회
+#  schedule:
+#    - cron: '20 21 * * *'   # 매일 06:20 KST (전일 21:20 UTC)
+#    - cron: '20 9 * * *'    # 매일 18:20 KST (09:20 UTC) — 하루 2회
   workflow_dispatch:
 
 permissions:

@@ -4,6 +4,7 @@
   "type": "module",
   "description": "DB 마이그레이션·시드 러너 (Supabase Postgres)",
   "dependencies": {
-    "pg": "^8.13.1"
+    "@electric-sql/pglite": "^0.2.17",
+    "pg": "^8.23.0"
   }
 }

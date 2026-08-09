@@ -4,7 +4,7 @@ import { HomeIcon, FireIcon, UserIcon, MapIcon, RadarIcon } from '../components/
 import FontScale from '../components/FontScale'
 
 const TABS = [
-  { to: '/', label: '홈', Icon: HomeIcon, end: true },
+  { to: '/legacy', label: '홈', Icon: HomeIcon, end: true },
   { to: '/trending', label: '유행', Icon: FireIcon, end: false },
   { to: '/forecast', label: '예보', Icon: RadarIcon, end: false },
   { to: '/map', label: '감염병지도', Icon: MapIcon, end: false },

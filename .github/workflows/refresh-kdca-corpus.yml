@@ -1,11 +1,14 @@
+# ⛔ [사실은ON 전환] 자동 실행 중지 — 이 워크플로는 종료된 FactDoc(질병청·병무청 건강정보) 전용이다.
+#    저장소를 사실은ON으로 재사용하면서, 무관한 데이터를 계속 커밋하지 않도록 schedule을 제거했다.
+#    파일은 남겨둔다(과거 파이프라인 참고용). 필요하면 Actions 탭에서 수동 실행만 가능.
 # 질병청 국가건강정보포털 코퍼스 자동 갱신 — 건강정보 제공 API(healthInfoList+healthInfo) 전수 재수집.
 # 새 질환·개정 반영. 콘텐츠 변동이 잦지 않아 월 1회면 충분. 변경분만 커밋(대용량 파일이라 불필요 빌드 방지).
 # 필요 시크릿: KDCA_TOKEN (질병청 건강정보 API 인증키). 미설정이면 기존 코퍼스 유지.
 name: refresh-kdca-corpus
 
 on:
-  schedule:
-    - cron: '40 19 1 * *'   # 매월 1일 04:40 KST (전월말 19:40 UTC)
+#  schedule:
+#    - cron: '40 19 1 * *'   # 매월 1일 04:40 KST (전월말 19:40 UTC)
   workflow_dispatch:
 
 permissions:

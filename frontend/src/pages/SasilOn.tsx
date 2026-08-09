@@ -1,0 +1,1660 @@
+import { useEffect, useMemo, useRef, useState } from 'react'
+import type { ReactNode } from 'react'
+import {
+  answerAsync, asOfNotice, buildIndex,
+  type NkAnswer, type NkDataset, type NkRecord, type Notice,
+} from '../engine/nk-search.mjs'
+
+/* ────────────────────────────────────────────────────────────────
+   사실은ON — 국민이 묻고 국가 공식자료가 답하는 북한·통일 팩트체커
+
+   화면 설계 4원칙
+   ① emerald / amber / violet 은 자료 기준일(as-of) 3상태 전용색이다.
+      다른 의미로 쓰지 않는다 (정보=blue, 경고=rose, 중립=slate).
+   ② 답은 문장으로 먼저 말한다 — 화면 최대 활자는 항상 '요지 한 문장'이다.
+   ③ 색 없이도 상태가 읽혀야 한다 — 색·도형·테두리종류·한국어 라벨 4중 부호화.
+   ④ 노인이 읽어야 하는 문장은 전부 rem 계열(text-sm / text-base / text-2xl).
+      FontScale 이 html font-size 를 16/18/20px 로 바꾸므로 임의 px 는 확대되지 않는다.
+      → text-[11px] 는 캡션·출처·면책·기준일 스탬프에만 허용한다.
+   ──────────────────────────────────────────────────────────────── */
+
+/* ══════════════════════ 타입 (d.mts 가 any 로 둔 것을 지역에서 좁힌다) ══════════════════════ */
+
+type Level = 'live' | 'stale' | 'frozen'
+type Tone = 'emerald' | 'amber' | 'violet' | 'blue' | 'slate' | 'rose'
+
+type Measure = {
+  metric: string
+  value: number
+  unit: string | null
+  dims: Record<string, string> | null
+  periodStart: string | null
+}
+/* 엔진이 실제로 채우지만 .d.mts 선언에서 빠진 필드(top, measures)를 보강 */
+type Group = NonNullable<NkAnswer['groups']>[number] & { top?: number; measures?: Measure[] }
+
+type NumericOk = {
+  comparable: true
+  metric: string
+  unit: string | null
+  claimed: number
+  n: number
+  max: number
+  min: number
+  latest: number
+  latestPeriod: string | null
+  verdict: 'above_max' | 'below_min' | 'in_range'
+  ratioToMax: number | null
+}
+type RelatedMetric = { metric: string; unit: string | null; value: number; period: string | null }
+type NumericNo = {
+  comparable: false
+  wantUnit: string | null
+  claimed: number
+  reason: string
+  related: RelatedMetric[]
+  derived: { from: string; value: number; unit: string | null; note: string } | null
+}
+type NumericT = NumericOk | NumericNo
+
+type AggT = {
+  mode: 'distribution' | 'sum' | 'max' | 'min'
+  metric: string
+  unit: string | null
+  dimName: string | null
+  genderFilter: string | null
+  items?: Array<{ key: string; value: number; share: number }>
+  total?: number
+  sum?: number
+  count?: number
+  peak?: { key?: string; value: number }
+  low?: { key?: string; value: number }
+  dataset: NkDataset
+  record: NkRecord
+}
+
+type LookupT = {
+  askedUnit: string | null
+  windowLabel: string | null
+  outOfWindow: boolean
+  metric: string
+  unit: string | null
+  value: number
+  period: string | null
+  dataset: NkDataset
+  record: NkRecord
+  substituted: boolean
+  note: string | null
+}
+
+type Track = {
+  key: string
+  n: number
+  name: string
+  level: Level
+  end: string
+  gapDays: number
+  ds: NkDataset
+}
+
+/* ══════════════════════ 상수 ══════════════════════ */
+
+const EXAMPLES = [
+  '개성공단 아직 하냐',
+  '탈북은 나이 많은 사람이 더 많이 한다며',
+  '김정은 최근에 뭐 했어',
+  '개성공단에 기업 500개나 있었다던데',
+  '금강산 관광객 지금 얼마나 가',
+  '탈북민 여자가 몇 명이야',
+]
+
+const FOCUS =
+  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950'
+const CARD = 'rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
+const PROSE = 'break-keep break-words'
+
+const TONE: Record<Tone, { band: string; accent: string; text: string; soft: string; chip: string }> = {
+  emerald: {
+    band: 'bg-emerald-50 dark:bg-emerald-950/30',
+    accent: 'bg-emerald-500',
+    text: 'text-emerald-800 dark:text-emerald-200',
+    soft: 'bg-emerald-50/70 dark:bg-emerald-950/20',
+    chip: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200',
+  },
+  amber: {
+    band: 'bg-amber-50 dark:bg-amber-950/30',
+    accent: 'bg-amber-500',
+    text: 'text-amber-800 dark:text-amber-200',
+    soft: 'bg-amber-50/70 dark:bg-amber-950/20',
+    chip: 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200',
+  },
+  violet: {
+    band: 'bg-violet-50 dark:bg-violet-950/30',
+    accent: 'bg-violet-600',
+    text: 'text-violet-800 dark:text-violet-200',
+    soft: 'bg-violet-50/70 dark:bg-violet-950/20',
+    chip: 'bg-violet-100 text-violet-900 dark:bg-violet-950/50 dark:text-violet-200',
+  },
+  blue: {
+    band: 'bg-blue-50 dark:bg-blue-950/30',
+    accent: 'bg-blue-500',
+    text: 'text-blue-800 dark:text-blue-200',
+    soft: 'bg-blue-50/60 dark:bg-blue-950/20',
+    chip: 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200',
+  },
+  slate: {
+    band: 'bg-slate-100 dark:bg-slate-800',
+    accent: 'bg-slate-400',
+    text: 'text-slate-800 dark:text-slate-100',
+    soft: 'bg-slate-50 dark:bg-slate-800/50',
+    chip: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+  },
+  rose: {
+    band: 'bg-rose-50 dark:bg-rose-950/30',
+    accent: 'bg-rose-500',
+    text: 'text-rose-800 dark:text-rose-200',
+    soft: 'bg-rose-50/70 dark:bg-rose-950/20',
+    chip: 'bg-rose-100 text-rose-800 dark:bg-rose-950/50 dark:text-rose-200',
+  },
+}
+
+/* as-of 3상태 — 이 서비스의 정체성.
+   shape : 도형(● 채움 / ○ 비움 / ■ 사각) · edge : 테두리 종류(실선/점선/겹선)
+   verb  : 전문 설명 (레벨별 첫 등장에만)   · short : 축약 꼬리표 (반복 시)         */
+const AS_OF: Record<Level, {
+  tone: Tone; icon: string; label: string
+  verb: string; short: string; after: string; legend: string
+  shape: string; edge: string; dot: string
+}> = {
+  live: {
+    tone: 'emerald', icon: '🟢', label: '최신',
+    verb: '현재 시점까지 확인되는 자료입니다. 지금도 갱신되고 있습니다.',
+    short: '지금까지 확인됨',
+    after: '현재까지 확인됨', legend: '지금까지 확인됨',
+    shape: 'rounded-full border-white bg-emerald-500 dark:border-slate-900',
+    edge: 'border-l-4 border-solid border-emerald-500',
+    dot: 'bg-emerald-500',
+  },
+  stale: {
+    tone: 'amber', icon: '🟡', label: '이후 미확인',
+    verb: '이 시점 이후의 상황은 확인되지 않았습니다. 아래 값은 당시의 값이며 현재 값이 아닙니다. — 없다는 뜻이 아니라 모른다는 뜻입니다.',
+    short: '이후는 모름',
+    after: '이후 미확인', legend: '이후는 모름 (자료가 멈춤)',
+    shape: 'rounded-full border-amber-500 bg-white dark:bg-slate-900',
+    edge: 'border-l-4 border-dashed border-amber-500',
+    dot: 'bg-white ring-2 ring-amber-500 dark:bg-slate-900',
+  },
+  frozen: {
+    tone: 'violet', icon: '🔒', label: '데이터 종료',
+    verb: '활동 자체가 종료되어 이 시점 이후의 데이터는 존재하지 않습니다. 아래 값이 확정된 최종값이며, 더 최신 값이 어딘가에 있는 것이 아닙니다.',
+    short: '이후 없음(종료)',
+    after: '이후 데이터 없음', legend: '이후는 없음 (종료 확정)',
+    shape: 'rounded-sm border-white bg-violet-600 dark:border-slate-900',
+    edge: 'border-l-4 border-double border-violet-600',
+    dot: 'bg-violet-600',
+  },
+}
+
+/* frozen 구간 해치 — '데이터가 없는 구간'을 색이 아니라 질감으로.
+   축소 인쇄를 견디도록 4px/12px 주기 (2px/7px 는 뭉개진다) */
+const HATCH =
+  'bg-[repeating-linear-gradient(45deg,#a78bfa_0px,#a78bfa_4px,transparent_4px,transparent_12px)] ' +
+  'dark:bg-[repeating-linear-gradient(45deg,#7c3aed_0px,#7c3aed_4px,transparent_4px,transparent_12px)]'
+
+type LevelMeta = { tone: Tone; icon: string; label: string; sub: string }
+const LEVEL_FALLBACK: LevelMeta = {
+  tone: 'blue', icon: '📄', label: '공식 자료로 확인',
+  sub: '통일부 공개 데이터에서 관련 근거를 찾았습니다',
+}
+/* 엔진이 새 level(예: related_only)을 추가해도 화면이 백지가 되지 않도록 Record<string, …> + 폴백 */
+const LEVEL_META: Record<string, LevelMeta> = {
+  /* anyFrozen / anyLive 는 '포함' 판정이다 — 단정하면 6년 된 자료를 최신이라 말하게 된다 */
+  frozen_answer: {
+    tone: 'violet', icon: '🔒', label: '종료 확정 자료 포함',
+    sub: '이후 데이터가 존재하지 않는 자료가 근거에 포함되어 있습니다',
+  },
+  stale_answer: {
+    tone: 'amber', icon: '🟡', label: '이후 미확인 자료로 답변',
+    sub: '가장 최근 확인 시점 이후의 상황은 알 수 없습니다',
+  },
+  dated_answer: {
+    tone: 'emerald', icon: '🟢', label: '최신 자료 포함',
+    sub: '최근 갱신된 공식 자료가 근거에 포함되어 있습니다',
+  },
+  timeline: {
+    tone: 'blue', icon: '🗓', label: '기록을 시간순으로 정리',
+    sub: '공식 기록을 최신순으로 보여 드립니다',
+  },
+  no_evidence: {
+    tone: 'slate', icon: '📭', label: '근거 없음',
+    sub: '통일부 공식 자료에서 관련 기록을 찾지 못했습니다',
+  },
+}
+
+/* 엔진 checkNumeric 은 claimed/max/min/latest 를 base 단위로 환산해 넘기면서
+   unit 에는 원자료 단위를 담는다. 그대로 찍으면 '10,000,000,000 천달러' 가 된다. */
+const BASE_UNIT: Record<string, string> = {
+  '천달러': '달러', '만달러': '달러', '백만달러': '달러', '달러': '달러',
+  '만명': '명', '명': '명', '인': '명',
+  '억원': '원', '만원': '원', '원': '원',
+}
+
+const MS_D = 864e5
+
+/* ══════════════════════ 유틸 ══════════════════════ */
+
+function nf(v: unknown): string {
+  const n = typeof v === 'string' ? Number(v) : (v as number)
+  return typeof n === 'number' && Number.isFinite(n) ? n.toLocaleString('ko-KR') : '—'
+}
+function nf1(v: unknown): string | null {
+  const n = typeof v === 'string' ? Number(v) : (v as number)
+  return typeof n === 'number' && Number.isFinite(n)
+    ? n.toLocaleString('ko-KR', { maximumFractionDigits: 1 })
+    : null
+}
+/* 단위 미표기(unit === null)는 실재한다 — 맨숫자로 찍지 않고 명시한다 */
+const unitLabel = (u?: string | null) => (u && String(u).trim() ? String(u).trim() : '단위 미표기')
+const baseUnit = (u?: string | null) => {
+  const k = String(u ?? '').trim()
+  return k ? (BASE_UNIT[k] ?? k) : ''
+}
+/* 기계 지표명(반출입_중량_증가율)의 언더스코어만 푼다. 의미는 바꾸지 않는다. */
+const metricLabel = (s?: string | null) => String(s ?? '').replace(/_/g, ' ').trim()
+
+function ym(d?: string | null): string {
+  if (!d) return '기간 미상'
+  const m = String(d).match(/^(\d{4})-(\d{2})/)
+  return m ? `${m[1]}.${m[2]}` : String(d)
+}
+function gapText(days?: number | null): string {
+  if (typeof days !== 'number' || !Number.isFinite(days) || days <= 0) return '0개월'
+  let y = Math.floor(days / 365.25)
+  let mo = Math.round((days - y * 365.25) / 30.44)
+  if (mo >= 12) { y += 1; mo = 0 }
+  if (y <= 0) return `${Math.max(1, mo)}개월`
+  return mo >= 1 ? `${y}년 ${mo}개월` : `${y}년`
+}
+
+/* 원자료 정제 — 전각 문장부호(U+FF0C 13,137건)와 미디코딩 HTML 엔티티가 그대로 남아 있다.
+   React 는 &lt;br/&gt; 를 글자 그대로 찍으므로 렌더 직전에 정규화한다.
+   ※ 제목 90자 하드컷 / 본문 221자 '…' 컷은 원본에서 이미 잘린 것이므로 다시 자르지 않는다.
+      (line-clamp 를 얹으면 이중 절단이 된다) */
+function clean(s?: string | null): string {
+  if (!s) return ''
+  return String(s)
+    .replace(/&#(\d+);/g, (_m, d: string) => String.fromCharCode(Number(d)))
+    .replace(/&lt;\s*br\s*\/?\s*&gt;/gi, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/<br\s*\/?>/gi, ' ')
+    // 북한개황 본문에 원본 HTML 이 섞여 있다 (<p style="padding-bottom:15px"> 등).
+    // 엔티티 복원 뒤에 태그를 걷어내야 &lt;p&gt; 형태로 들어온 것까지 함께 잡힌다.
+    .replace(/<\/?[a-zA-Z][^<>]{0,200}>/g, ' ')
+    .replace(/\uFF0C/g, ', ')
+    .replace(/\uFF0E/g, '. ')
+    .replace(/\uFF1F/g, '? ')
+    .replace(/\uFF5E/g, '~')
+    .replace(/\uFF0D/g, '-')
+    .replace(/\uFF65/g, '·')
+    .replace(/\uFF62/g, '「')
+    .replace(/\uFF63/g, '」')
+    .replace(/[ \t]{2,}/g, ' ')
+    .trim()
+}
+
+const asLevel = (s?: string | null): Level =>
+  s === 'live' || s === 'frozen' ? s : 'stale'
+
+/* 기준일 문구는 엔진 asOfNotice 하나만 쓴다 — 재구현하면 엔진이 문구를 고칠 때 화면만 갈라진다.
+   record 가 있으면 레코드 단위로(정확), 없으면 dataset 을 캐스트한다.
+   (asOfNotice 가 읽는 필드는 coverageEnd / freshness / frozenReason 셋뿐이고 NkDataset 이 전부 갖는다) */
+function noticeOf(
+  rec?: NkRecord | null,
+  ds?: NkDataset | null,
+  askedAt?: unknown,
+): Notice {
+  const at = askedAt instanceof Date && !Number.isNaN(askedAt.getTime()) ? askedAt : new Date()
+  const src = rec?.coverageEnd ? rec : ds?.coverageEnd ? (ds as unknown as NkRecord) : null
+  if (!src) return { level: 'stale', gapDays: 0, text: '자료 기준일을 확인할 수 없습니다.' }
+  const n = asOfNotice(src, at)
+  /* frozenReason 이 null 인 frozen 자료가 있어 '(null)' 이 노출된다 */
+  return { ...n, level: asLevel(n.level), text: String(n.text).replace(/\s*\(null\)/, '') }
+}
+
+/* ── 조사 자동 선택 ─────────────────────────────────────────
+   요지 문장의 명사는 대부분 데이터에서 온다('연령대', '입주기업수', '2015년', '30-39세').
+   조사를 하드코딩하면 "가장 많은 연령대은" 같은 문장이 나온다.
+   받침 유무로 골라 붙인다. */
+const JOSA = {
+  '은/는': ['은', '는'], '이/가': ['이', '가'], '을/를': ['을', '를'],
+  '과/와': ['과', '와'], '으로/로': ['으로', '로'],
+} as const
+/* 숫자는 마지막 자릿수의 '읽는 소리'로 판정한다 — 1(일)·3(삼)·6(육)·7(칠)·8(팔)·0(영)은 받침 있음 */
+const DIGIT_JONG: Record<string, boolean> = {
+  '0': true, '1': true, '2': false, '3': true, '4': false,
+  '5': false, '6': true, '7': true, '8': true, '9': false,
+}
+function hasJong(word: string): boolean {
+  // 괄호·따옴표·공백 등 조사 발음에 영향 없는 꼬리는 벗겨낸다
+  const s = String(word ?? '').replace(/[)\]}’'"”\s.·]+$/, '')
+  const c = s.at(-1)
+  if (!c) return false
+  if (c === '%') return false                      // 퍼센트
+  if (DIGIT_JONG[c] !== undefined) return DIGIT_JONG[c]
+  const code = c.charCodeAt(0)
+  if (code >= 0xac00 && code <= 0xd7a3) return (code - 0xac00) % 28 !== 0
+  return true                                       // 영문·기타는 받침 있는 쪽으로 (덜 어색)
+}
+/** josa('연령대', '은/는') → '연령대는' */
+function josa(word: string, kind: keyof typeof JOSA): string {
+  const [withJong, without] = JOSA[kind]
+  return `${word}${hasJong(word) ? withJong : without}`
+}
+
+/* ── 요지 한 문장 — 화면 최대 활자가 될 문장을 만든다 ───────────
+   주제 종료 공지(topicNotice)는 '맥락'이지 '답'이 아니다.
+   "개성공단에 기업 500개나 있었다던데" 에 종료 공지부터 들이밀면 물어본 것에 답하지 않은 셈이다.
+   → 구체적인 답(수치 대조·집계·연혁)이 있으면 그것이 헤드라인, 종료 공지는 바로 아래 맥락 문장.
+     구체적인 답이 없을 때만 종료 공지가 헤드라인이 된다. */
+function summarize(a: NkAnswer): string | null {
+  const n = a.numeric as NumericT | null | undefined
+  if (n && n.comparable) {
+    const u = baseUnit(n.unit)
+    const su = u ? u : ''
+    const claimed = `${nf(n.claimed)}${su}`
+    if (n.verdict === 'above_max') {
+      const r = nf1(n.ratioToMax)
+      return r
+        ? `주장하신 ${josa(claimed, '은/는')} 공식 자료의 최댓값 ${nf(n.max)}${su}의 약 ${r}배입니다.`
+        : `주장하신 ${josa(claimed, '은/는')} 공식 자료에 기록된 최댓값 ${josa(`${nf(n.max)}${su}`, '을/를')} 넘어섭니다.`
+    }
+    if (n.verdict === 'below_min')
+      return `주장하신 ${josa(claimed, '은/는')} 공식 자료의 최솟값 ${nf(n.min)}${su}보다 작습니다.`
+    return `주장하신 ${josa(claimed, '은/는')} 공식 관측 범위(${nf(n.min)}~${nf(n.max)}${su}) 안에 있습니다.`
+  }
+  if (n && n.comparable === false)
+    return `주장하신 ‘${n.wantUnit ?? '해당'}’ 단위와 같은 단위의 공식 지표가 없어, 대조 대신 관련 지표만 제시합니다.`
+
+  const g = a.agg as AggT | null | undefined
+  if (g) {
+    const u = g.unit ? g.unit : ''
+    if (g.mode === 'distribution' && g.items && g.items.length) {
+      const top = g.items[0]
+      return `${metricLabel(g.metric)} ${nf(g.total)}${u} 중 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ${top.key}(${nf(top.value)}${u}, ${(top.share * 100).toFixed(1)}%)입니다.`
+    }
+    if (g.mode === 'max' && g.peak)
+      return `${josa(metricLabel(g.metric), '이/가')} 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ${g.peak.key ?? '(구분값 미기재)'}, ${nf(g.peak.value)}${u}입니다.`
+    if (g.mode === 'min' && g.low)
+      return `${josa(metricLabel(g.metric), '이/가')} 가장 적은 ${josa(g.dimName ?? '구간', '은/는')} ${g.low.key ?? '(구분값 미기재)'}, ${nf(g.low.value)}${u}입니다.`
+    /* 성별 등 필터가 걸린 합계를 조건 없이 말하면 전체값으로 읽힌다 —
+       '여자만 24,147명'이 '북한이탈주민 입국현황은 24,147명'으로 나가던 자리다. */
+    const cond = g.genderFilter && g.genderFilter !== '전체' ? `${g.genderFilter}성 ` : ''
+    return `공식 집계 기준 ${cond}${josa(metricLabel(g.metric), '은/는')} ${nf(g.sum)}${u}입니다.`
+  }
+
+  if (a.level === 'timeline') {
+    const shown = a.items?.length ?? 0
+    if (!shown) return '이 조건에 해당하는, 날짜가 확인된 공식 기록이 없습니다.'
+    return `관련 공식 기록 ${nf(a.available ?? shown)}건 중 최신 ${nf(shown)}건을 시간순으로 정리했습니다.`
+  }
+
+  /* 여기까지 왔다면 구체적인 답이 없다.
+     "개성공단 아직 하냐" 처럼 종료 공지 자체가 답인 경우가 여기다 —
+     '근거 N건을 찾았습니다' 같은 무내용 문장보다 종료 공지가 훨씬 나은 답이다. */
+  if (a.topicNotice?.text) return a.topicNotice.text
+
+  if (a.groups && a.groups.length) {
+    const g0 = a.groups[0]
+    const r0 = g0.hits?.[0]?.r
+    if (!r0) return null
+    /* 요지 문장에 원본 제목을 인용한다 — clean() 을 거치지 않으면 전각쉼표(，)·HTML 태그가
+       화면 최대 활자에 그대로 박힌다. 제목이 길면 요지가 아니게 되므로 60자에서 끊는다. */
+    const t0 = clean(r0.title)
+    const title0 = t0.length > 60 ? t0.slice(0, 60) + '…' : t0
+    const ds0 = clean(g0.ds?.name) || '공식 자료'
+    const more = a.groups.length > 1 ? ` 외 공식 자료 ${a.groups.length - 1}종을 함께 확인했습니다.` : ''
+
+    /* 질의에 변별력 있는 어휘가 하나도 걸리지 않았다 (예: '북한방사능' → '방사능'이 코퍼스에 0건).
+       이때 아래 자료는 '근거'가 아니라 '참고'다. 그렇다고 빈손으로 돌려보내지는 않는다 —
+       그게 이 프로젝트가 갈아엎은 그 실패다. 무엇을 못 찾았는지만 정직하게 밝힌다.
+       ※ Q.unmatched 는 '뭐함/어떰/무서워' 같은 어미 파편이 섞여 화면에 인용하지 않는다. */
+    if (a.Q?.genericOnly)
+      return `질문의 핵심어에 걸리는 공식 자료를 찾지 못했습니다. 아래는 근거가 아니라 참고 자료입니다 — ` +
+             `가장 가까운 기록은 ${ds0}의 「${title0}」입니다.`
+
+    /* 건수가 아니라 제목으로 말한다. 무엇을 근거로 삼았는지가 숫자보다 검증 가능하다. */
+    /* 검색에 쓴 내부 토큰을 인용하지 않는다 — 조사가 붙은 형태('북한주민은')와
+       변별력 없는 조각('많이')이 '핵심어'인 양 노출돼 오히려 질문 요지를 흐렸다.
+       사용자가 무엇을 물었는지는 바로 아래 '묻고 계신 것' 줄에 원문 그대로 보인다. */
+    return `확인된 가장 가까운 공식 기록은 ${ds0}의 「${title0}」입니다.${more}`
+  }
+  return null
+}
+
+/* ══════════════════════ 원자 컴포넌트 ══════════════════════ */
+
+function NumChip({ n }: { n: number }) {
+  return (
+    <span
+      className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-900 text-[11px] font-semibold tabular-nums text-white dark:bg-white dark:text-slate-900"
+      aria-hidden="true"
+    >
+      {n}
+    </span>
+  )
+}
+
+/* 조항 라벨 — 검은 알약을 쓰지 않는다. frozen 배지(violet)·근거번호(검은 원)와 3자 분리 */
+function ClauseTag({ children }: { children: ReactNode }) {
+  return (
+    <span className="mt-0.5 shrink-0 rounded border border-slate-300 px-1.5 py-0.5 text-[11px] font-semibold tracking-wider text-slate-500 dark:border-slate-600 dark:text-slate-400">
+      {children}
+    </span>
+  )
+}
+
+function AsOfPill({ level }: { level: string }) {
+  const lv = asLevel(level)
+  const m = AS_OF[lv]
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold ${TONE[m.tone].chip}`}
+    >
+      <span aria-hidden="true">{m.icon}</span>
+      <span className="sr-only">자료 기준 등급: </span>
+      {m.label}
+    </span>
+  )
+}
+
+/**
+ * 기준일 안내. verbose=true 면 전문(모른다 vs 없다)을 쓰고,
+ * 같은 레벨이 화면에 다시 나올 때는 축약 꼬리표만 붙인다.
+ * (같은 5줄 경고를 카드마다 반복하면 두 번째부터 아무도 안 읽는다)
+ */
+function AsOfBanner({ notice, verbose }: { notice: Notice; verbose: boolean }) {
+  const lv = asLevel(notice.level)
+  const m = AS_OF[lv]
+  const T = TONE[m.tone]
+  return (
+    <div className={`rounded-xl ${m.edge} ${T.soft} p-3`}>
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <AsOfPill level={lv} />
+        {!verbose && (
+          <span className={`text-sm font-medium ${T.text}`}>→ {m.short}</span>
+        )}
+        {lv !== 'live' && (notice.gapDays ?? 0) > 30 && (
+          <span className="text-[11px] tabular-nums text-slate-500">
+            {lv === 'frozen' ? '종료 후' : '미확인'} {gapText(notice.gapDays)} 경과
+          </span>
+        )}
+      </div>
+      <p className={`mt-1.5 text-base font-medium leading-relaxed ${PROSE} ${T.text}`}>{notice.text}</p>
+      {verbose && (
+        <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{m.verb}</p>
+      )}
+    </div>
+  )
+}
+
+function SourceLine({ ds, no }: { ds?: NkDataset | null; no?: number }) {
+  if (!ds) return null
+  return (
+    <div className="mt-3 border-t border-slate-100 pt-2.5 dark:border-slate-800">
+      <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+        <span className="text-slate-500" aria-hidden="true">📎 </span>
+        <span className="text-slate-500">출처</span>{' '}
+        {no != null && <span className="tabular-nums text-slate-500">[{no}] </span>}
+        <span className="font-medium text-slate-500">{ds.name}</span>
+        {' · '}{ds.provider}
+        {ds.status === 'pending' && (
+          <span className="ml-1 rounded bg-blue-50 px-1 py-0.5 text-[10px] text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+            API 연계 예정
+          </span>
+        )}
+        {' · '}
+        <span className="tabular-nums">자료 기준일 {ds.coverageEnd}</span>
+        {ds.url ? (
+          <>
+            {' · '}
+            <a
+              href={ds.url}
+              target="_blank"
+              rel="noreferrer"
+              className={`rounded text-blue-600 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}
+            >
+              원본 데이터
+            </a>
+          </>
+        ) : (
+          <>{' · '}원본 링크 미제공</>
+        )}
+      </p>
+      {ds.note && (
+        <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-sm leading-relaxed text-slate-600 dark:bg-slate-800/50 dark:text-slate-300 ${PROSE}`}>
+          <span aria-hidden="true">ℹ️ </span>{ds.note}
+        </p>
+      )}
+    </div>
+  )
+}
+
+/* 블록 껍데기 — 카드마다 조항 라벨을 달아, 스크롤 어디에서 멈춰도 정체를 알 수 있게 한다 */
+function Block({
+  tag, tone, icon, title, sub, no, children,
+}: {
+  tag: string; tone: Tone; icon: string; title: string
+  sub?: string | null; no?: number; children: ReactNode
+}) {
+  const T = TONE[tone]
+  return (
+    <section className={`mt-6 overflow-hidden ${CARD}`}>
+      <div className={`flex items-start gap-2.5 p-4 ${T.band}`}>
+        <ClauseTag>{tag}</ClauseTag>
+        <div className={`h-10 w-1.5 shrink-0 rounded-full ${T.accent}`} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <h2 className={`text-base font-semibold leading-snug ${PROSE} ${T.text}`}>
+            <span aria-hidden="true">{icon}</span> {title}
+          </h2>
+          {sub && <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>{sub}</p>}
+        </div>
+        {no != null && (
+          <span className="ml-auto flex shrink-0 items-center gap-1 rounded-full bg-white/70 px-2 py-0.5 text-[11px] text-slate-500 dark:bg-slate-800">
+            근거 <NumChip n={no} />
+          </span>
+        )}
+      </div>
+      <div className="p-4">{children}</div>
+    </section>
+  )
+}
+
+/* ══════════════════════ ★ 근거 시점 지도 ══════════════════════
+   이 서비스의 발명을 배지가 아니라 '공간'으로 옮긴 그래픽.
+   가로축 = 시간. 막대는 자료가 확인되는 지점까지, 그 '이후'를 상태별로 다르게 그린다.
+     live   실선으로 오늘까지 이어짐
+     stale  점선 (끊긴 채 이어짐 = 모른다)
+     frozen 사선 해치 + 세로 벽 (막힘 = 없다)
+   ※ 기획서 축소 인쇄를 견디도록 본문 전폭·h-3 막대·4px 해치·rem 라벨을 쓴다.
+      (레일 안 6px 막대 + 10px 라벨은 축소하면 회색 띠로 뭉개진다)                */
+function TrackMap({ tracks }: { tracks: Track[] }) {
+  const now = Date.now()
+  const tmin = Math.min(...tracks.map(t => new Date(t.end).getTime()))
+  const span = Math.max(now - tmin, 5 * 365.25 * MS_D)
+  const t0 = now - span * 1.1
+  const pct = (d: string) =>
+    Math.min(95, Math.max(6, ((new Date(d).getTime() - t0) / (now - t0)) * 100))
+  const nowD = new Date()
+
+  return (
+    <section className={`mt-6 overflow-hidden ${CARD}`}>
+      <div className="flex items-start gap-2.5 border-b border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
+        <ClauseTag>기준일</ClauseTag>
+        <div className="min-w-0 flex-1">
+          <h2 className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
+            <span aria-hidden="true">🕒</span> 근거 시점 지도
+          </h2>
+          <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>
+            이 답변이 쓴 자료가 각각 <b className="font-medium text-slate-700 dark:text-slate-200">어느 시점까지</b> 확인되는지.
+            아래 번호는 근거 카드의 번호와 같습니다.
+          </p>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <div className="flex items-baseline justify-between text-[11px] tabular-nums text-slate-400">
+          <span>{new Date(t0).getFullYear()}년</span>
+          <span>오늘 {nowD.getFullYear()}.{String(nowD.getMonth() + 1).padStart(2, '0')}</span>
+        </div>
+
+        <ol className="mt-2 space-y-5">
+          {tracks.map(t => {
+            const m = AS_OF[t.level]
+            const p = pct(t.end)
+            return (
+              <li key={t.key}>
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  <NumChip n={t.n} />
+                  <span className={`min-w-0 flex-1 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>
+                    {t.name}
+                  </span>
+                  <AsOfPill level={t.level} />
+                </div>
+
+                <div className="relative mt-2.5 h-8">
+                  {/* 시간축 */}
+                  <div className="absolute inset-x-0 top-1/2 h-3 -translate-y-1/2 rounded-full bg-slate-100 dark:bg-slate-800" />
+                  {/* 자료가 확인되는 구간 */}
+                  <div
+                    className={`absolute left-0 top-1/2 h-3 -translate-y-1/2 rounded-l-full ${TONE[m.tone].accent}`}
+                    style={{ width: `${p}%` }}
+                  />
+                  {/* 기준일 '이후' 구간 — 상태별로 완전히 다른 표현 */}
+                  {t.level === 'live' && (
+                    <div
+                      className="absolute right-0 top-1/2 h-3 -translate-y-1/2 rounded-r-full bg-emerald-400"
+                      style={{ left: `${p}%` }}
+                    />
+                  )}
+                  {t.level === 'stale' && (
+                    <div
+                      className="absolute right-0 top-1/2 flex h-3 -translate-y-1/2 items-center"
+                      style={{ left: `${p}%` }}
+                    >
+                      <span className="block w-full border-t-[3px] border-dashed border-amber-500" />
+                    </div>
+                  )}
+                  {t.level === 'frozen' && (
+                    <>
+                      <div
+                        className={`absolute right-0 top-1/2 h-5 -translate-y-1/2 rounded-r-sm ring-1 ring-violet-300 dark:ring-violet-800 ${HATCH}`}
+                        style={{ left: `${p}%` }}
+                      />
+                      <span
+                        className="absolute top-0 h-8 w-1 -translate-x-1/2 rounded-full bg-violet-600"
+                        style={{ left: `${p}%` }}
+                      />
+                    </>
+                  )}
+                  {/* 기준일 마커 — 도형으로도 구분 (● / ○ / ■) */}
+                  <span
+                    className={`absolute top-1/2 h-4 w-4 -translate-x-1/2 -translate-y-1/2 border-2 ${m.shape}`}
+                    style={{ left: `${p}%` }}
+                    aria-hidden="true"
+                  />
+                  {/* 오늘 */}
+                  <span className="absolute right-0 top-0 h-8 w-px bg-slate-300 dark:bg-slate-600" aria-hidden="true" />
+                </div>
+
+                <div className="mt-1 flex flex-wrap items-baseline justify-between gap-x-2 gap-y-0.5">
+                  <span className="text-[11px] tabular-nums text-slate-400">기준일 {ym(t.end)}</span>
+                  <span className={`shrink-0 text-sm font-medium ${TONE[m.tone].text}`}>
+                    {m.after}
+                    {t.level !== 'live' && t.gapDays > 30 ? ` (${gapText(t.gapDays)})` : ''}
+                  </span>
+                </div>
+              </li>
+            )
+          })}
+        </ol>
+
+        <div className="mt-5 border-t border-slate-100 pt-3 dark:border-slate-800">
+          <p className={`text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
+            🟡 은 <b className="font-semibold">모른다</b>, 🔒 는 <b className="font-semibold">없다</b> 입니다.
+            이 서비스는 두 상태를 같은 것으로 표시하지 않습니다.
+          </p>
+          <ul className="mt-2 flex flex-col gap-1.5">
+            {(['live', 'stale', 'frozen'] as Level[]).map(l => {
+              const m = AS_OF[l]
+              return (
+                <li key={l} className="flex items-center gap-2 text-sm text-slate-500">
+                  <span className={`h-3.5 w-3.5 shrink-0 border-2 ${m.shape}`} aria-hidden="true" />
+                  <b className={`font-medium ${TONE[m.tone].text}`}>{m.icon} {m.label}</b>
+                  <span className={`text-slate-500 ${PROSE}`}>— {m.legend}</span>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* 검색 전 안내 / 데스크톱 레일 기본 카드 */
+function LegendCard() {
+  return (
+    <section className={`${CARD} p-4`}>
+      <h2 className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
+        <span aria-hidden="true">🕒</span> 답변마다 ‘자료 기준일’을 붙입니다
+      </h2>
+      <p className={`mt-1 text-sm leading-relaxed text-slate-500 ${PROSE}`}>
+        2026년에 물었는데 2020년 자료를 그냥 말해 버리지 않습니다.
+        🟡 은 <b className="font-semibold text-slate-700 dark:text-slate-200">모른다</b>,
+        🔒 는 <b className="font-semibold text-slate-700 dark:text-slate-200">없다</b> 입니다.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {(['live', 'stale', 'frozen'] as Level[]).map(l => {
+          const m = AS_OF[l]
+          return (
+            <li key={l} className={`rounded-xl ${m.edge} ${TONE[m.tone].soft} p-3`}>
+              <div className="flex items-center gap-2">
+                <span className={`h-3.5 w-3.5 shrink-0 border-2 ${m.shape}`} aria-hidden="true" />
+                <b className={`text-sm font-semibold ${TONE[m.tone].text}`}>{m.icon} {m.label}</b>
+              </div>
+              <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{m.verb}</p>
+            </li>
+          )
+        })}
+      </ul>
+    </section>
+  )
+}
+
+/* 데스크톱 레일 — 답변 → 근거 → 출처 추적의 종착점 */
+function SourceRail({ tracks }: { tracks: Track[] }) {
+  return (
+    <section className={`${CARD} p-4`}>
+      <h2 className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
+        <span aria-hidden="true">📎</span> 사용한 공식 출처 {tracks.length}종
+      </h2>
+      <ul className="mt-3 space-y-3">
+        {tracks.map(t => (
+          <li key={t.key} className="flex items-start gap-2">
+            <NumChip n={t.n} />
+            <div className="min-w-0 flex-1">
+              <p className={`text-sm font-medium leading-snug text-slate-700 dark:text-slate-200 ${PROSE}`}>
+                {t.name}
+              </p>
+              <p className="mt-0.5 text-[11px] tabular-nums text-slate-400">
+                {t.ds.provider} · 기준일 {t.ds.coverageEnd}
+              </p>
+              {t.ds.url ? (
+                <a
+                  href={t.ds.url}
+                  target="_blank"
+                  rel="noreferrer"
+                  className={`rounded text-[11px] text-blue-600 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}
+                >
+                  원본 데이터 열기
+                </a>
+              ) : (
+                <span className="text-[11px] text-slate-400">원본 링크 미제공</span>
+              )}
+            </div>
+            <span className="shrink-0" aria-hidden="true">{AS_OF[t.level].icon}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  )
+}
+
+/* ══════════════════════ 판정 헤더 ══════════════════════
+   화면 최대 활자는 '상태 라벨'이 아니라 '답 문장'이다.
+   주제 종료 공지(topicNotice)가 있으면 그 문장 자체가 답이므로 최상단 헤드라인이 된다. */
+function Headline({
+  a, q, lm, headText, refOnly = false,
+}: { a: NkAnswer; q: string; lm: LevelMeta; headText: string; refOnly?: boolean }) {
+  const tn = a.topicNotice
+  const frozenTopic = tn?.state === 'frozen'
+  const tone: Tone = tn ? (frozenTopic ? 'violet' : 'amber') : lm.tone
+  const icon = tn ? (frozenTopic ? '🔒' : '⏸') : lm.icon
+  const label = tn ? (frozenTopic ? '종료된 사안' : '중단된 사안') : lm.label
+  const T = TONE[tone]
+
+  return (
+    <section className={`mt-6 overflow-hidden ${CARD}`} aria-label="확인 결과 요지">
+      <div className={`flex gap-3 p-4 lg:p-5 ${T.band}`}>
+        <span className={`w-2 shrink-0 rounded-full ${T.accent}`} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span className={`inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${T.chip}`}>
+              <span aria-hidden="true">{icon}</span> {label}
+            </span>
+            <span className="text-xs font-medium text-slate-500">사실은ON 확인 결과</span>
+          </div>
+          <h2
+            className={`mt-2 text-2xl font-semibold leading-snug lg:text-[1.75rem] lg:leading-[1.35] ${PROSE} ${T.text}`}
+          >
+            {headText}
+          </h2>
+          {/* 참고 자료뿐일 때 '근거에 포함되어 있습니다'는 헤드라인과 모순된다 */}
+          <p className={`mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
+            {refOnly ? '질문의 핵심어에 걸린 공식 자료는 없습니다' : lm.sub}
+          </p>
+          {tn?.since && (
+            <p className="mt-1.5 text-[11px] tabular-nums text-slate-500">
+              {frozenTopic ? '종료 시점' : '중단 시점'} {tn.since}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <div className="p-4">
+        <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+          <span className="text-slate-400">묻고 계신 것 — </span>“{q}”
+        </p>
+        {/* 종료 공지가 헤드라인을 차지하지 않은 경우(구체적 답이 있는 경우)에도
+            그 사실은 반드시 전달되어야 한다 — 자리만 헤드라인 아래로 내린다 */}
+        {tn && tn.text !== headText && (
+          <p className={`mt-3 rounded-lg px-3 py-2 text-sm leading-relaxed ${TONE[tone].soft} ${TONE[tone].text} ${PROSE}`}>
+            <span aria-hidden="true">{icon}</span> {tn.text}
+          </p>
+        )}
+        {tn && (
+          <p className={`mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
+            {frozenTopic
+              ? '→ 아래 수치·기록은 모두 종료 이전의 확정된 값이며, 그 이후의 자료는 존재하지 않습니다.'
+              : '→ 아래 기록 이후의 진행 상황은 공식 자료로 확인되지 않습니다.'}
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════ 수치 주장 대조 ══════════════════════ */
+function NumericCompare({ n }: { n: NumericOk }) {
+  const u = baseUnit(n.unit)
+  const rescaled = !!n.unit && u !== String(n.unit).trim()
+  const rows: Array<{ k: string; v: number; hint: string | null; strong: boolean }> = [
+    { k: '주장값', v: n.claimed, hint: '질문에 포함된 수치', strong: true },
+    { k: '공식 최댓값', v: n.max, hint: `${metricLabel(n.metric)} · 관측 ${nf(n.n)}구간`, strong: false },
+    { k: '공식 최솟값', v: n.min, hint: metricLabel(n.metric), strong: false },
+    { k: '최종 관측', v: n.latest, hint: n.latestPeriod ? `${n.latestPeriod} 기준` : '기간 미상', strong: false },
+  ]
+  /* ratioToMax 는 max === 0 일 때 null 이다 — 그대로 toFixed 하면 화면 전체가 죽는다 */
+  const ratio = nf1(n.ratioToMax)
+  const concl =
+    n.verdict === 'above_max'
+      ? ratio
+        ? `주장값이 공식 최댓값의 ${ratio}배입니다.`
+        : `주장값이 공식 관측 최댓값(${nf(n.max)}${u ? ` ${u}` : ''})을 넘어섭니다.`
+      : n.verdict === 'below_min'
+        ? '주장값이 공식 관측 최솟값보다 작습니다.'
+        : '주장값이 공식 관측 범위 안에 있습니다.'
+  const ctone: Tone = n.verdict === 'in_range' ? 'blue' : 'rose'
+
+  return (
+    <Block
+      tag="대조"
+      tone="blue"
+      icon="📊"
+      title="수치 대조"
+      sub={`공식 지표 ‘${metricLabel(n.metric)}’ 와 직접 맞춰 봤습니다`}
+    >
+      <dl className="divide-y divide-slate-100 dark:divide-slate-800">
+        {rows.map(r => (
+          <div key={r.k} className="flex flex-wrap items-baseline gap-x-3 py-2.5 first:pt-0">
+            <dt className="w-24 shrink-0 text-sm text-slate-500">{r.k}</dt>
+            <dd className="min-w-0 flex-1">
+              <span
+                className={`text-base font-semibold tabular-nums ${PROSE} ${
+                  r.strong ? 'text-slate-900 dark:text-white' : 'text-slate-700 dark:text-slate-200'
+                }`}
+              >
+                {nf(r.v)}
+              </span>
+              <span className="ml-1 text-sm text-slate-500">{u || '단위 미표기'}</span>
+              {r.hint && <p className={`mt-0.5 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>{r.hint}</p>}
+            </dd>
+          </div>
+        ))}
+      </dl>
+      <p className={`mt-3 rounded-xl p-3 text-base font-semibold leading-relaxed ${PROSE} ${TONE[ctone].soft} ${TONE[ctone].text}`}>
+        <span aria-hidden="true">→ </span>{concl}
+      </p>
+      {rescaled && (
+        <p className={`mt-2 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+          ※ 원자료 지표 ‘{metricLabel(n.metric)}’ 의 배포 단위는 ‘{n.unit}’ 이며, 비교를 위해 네 행 모두 ‘{u}’ 기준으로 환산해 표시했습니다.
+        </p>
+      )}
+      <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+        ※ 이 대조에 쓰인 지표의 자료 기준일은 아래 근거 카드에 표시됩니다.
+      </p>
+    </Block>
+  )
+}
+
+/* ══════════════════════ 단위 가족 불일치 — 대조 거부 ══════════════════════ */
+function NumericIncomparable({ n }: { n: NumericNo }) {
+  const list = Array.isArray(n.related) ? n.related : []
+  return (
+    <Block tag="대조" tone="blue" icon="⚖" title="직접 대조 불가" sub="틀린 대조를 하느니 하지 않습니다">
+      <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+        주장하신 단위 <b className="font-semibold">{n.wantUnit ?? '(단위 인식 실패)'}</b> 와 같은 단위의 공식 지표가 없어
+        ({n.reason}), 잘못된 대조 대신 <b className="font-semibold">관련 지표</b>만 제시합니다.
+      </p>
+      <p className="mt-1.5 text-sm tabular-nums text-slate-500">
+        질문에 나온 수치 {nf(n.claimed)} {n.wantUnit ?? ''}
+      </p>
+
+      {list.length > 0 && (
+        <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+          {list.map((r, i) => (
+            <li key={`${r.metric}-${i}`} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+              <p className={`text-sm text-slate-500 ${PROSE}`}>{metricLabel(r.metric)}</p>
+              <p className="mt-0.5 text-base font-semibold tabular-nums text-slate-900 dark:text-white">
+                {nf(r.value)}
+                <span className="ml-1 text-sm font-normal text-slate-500">{unitLabel(r.unit)}</span>
+              </p>
+              <p className="mt-0.5 text-[11px] tabular-nums text-slate-400">{ym(r.period)}</p>
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {n.derived && (
+        <div className="mt-3 rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-950 dark:bg-blue-950/20">
+          <p className="text-sm font-semibold text-blue-800 dark:text-blue-300">
+            <span aria-hidden="true">🧮 </span>역산 추정치 · 공식 발표값이 아닙니다
+          </p>
+          <p className="mt-1 text-xl font-medium tabular-nums text-slate-900 dark:text-white">
+            약 {nf(n.derived.value)}
+            <span className="ml-1 text-sm font-normal text-slate-500">{unitLabel(n.derived.unit)}</span>
+          </p>
+          <p className={`mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200 ${PROSE}`}>{n.derived.note}</p>
+        </div>
+      )}
+    </Block>
+  )
+}
+
+/* ══════════════════════ 관련 정보 (lookupNumeric) ══════════════════════
+   lookupNumeric 은 '몇/얼마' 질문이면 친화도가 낮은 지표라도 반환한다.
+   따라서 '질문하신 수치'라고 단정하면 안 된다.                              */
+function RelatedCard({
+  r, no, askedAt, verbose,
+}: { r: LookupT; no?: number; askedAt: unknown; verbose: boolean }) {
+  const notice = noticeOf(r.record, r.dataset, askedAt)
+  return (
+    <Block
+      tag="참고"
+      tone="blue"
+      icon="🔎"
+      title="관련 정보 — 질문에 대한 직접적인 답은 아닙니다"
+      sub={r.substituted ? '질문하신 단위의 공식 지표가 없어 다른 지표로 답합니다' : null}
+      no={no}
+    >
+      {r.note && (
+        <p className={`rounded-xl border border-blue-200 bg-blue-50/60 p-3 text-base leading-relaxed text-blue-900 dark:border-blue-950 dark:bg-blue-950/20 dark:text-blue-100 ${PROSE}`}>
+          {r.note}
+        </p>
+      )}
+      {r.outOfWindow && (
+        <p className={`mt-2 rounded-xl bg-amber-50 p-3 text-sm leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 ${PROSE}`}>
+          <span aria-hidden="true">⚠ </span>
+          질문하신 ‘{r.windowLabel ?? '해당 기간'}’ 구간에는 자료가 없어, 전 기간에서 가장 최근 값을 보여 드립니다.
+        </p>
+      )}
+      <div className="mt-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+        <p className={`text-sm text-slate-500 ${PROSE}`}>{metricLabel(r.metric)}</p>
+        <p className="mt-0.5 text-2xl font-medium tabular-nums text-slate-900 dark:text-white">
+          {nf(r.value)}
+          <span className="ml-1 text-base font-normal text-slate-500">{unitLabel(r.unit)}</span>
+        </p>
+        <p className="mt-0.5 text-[11px] tabular-nums text-slate-400">{ym(r.period)} 기준</p>
+      </div>
+      <div className="mt-3"><AsOfBanner notice={notice} verbose={verbose} /></div>
+      <SourceLine ds={r.dataset} no={no} />
+    </Block>
+  )
+}
+
+/* ══════════════════════ 집계 · 분포 ══════════════════════ */
+function AggCard({
+  agg, no, askedAt, verbose,
+}: { agg: AggT; no?: number; askedAt: unknown; verbose: boolean }) {
+  const notice = noticeOf(agg.record, agg.dataset, askedAt)
+  const gender = agg.genderFilter && agg.genderFilter !== '전체' ? ` — ${agg.genderFilter}성` : ''
+  const title =
+    agg.mode === 'distribution' ? `${agg.dimName ?? '항목'}별 분포`
+      : agg.mode === 'max' ? '가장 많은 항목'
+        : agg.mode === 'min' ? '가장 적은 항목'
+          : '합계'
+  /* 엔진이 dims 에 해당 키를 못 채우는 경우가 실재한다 — undefined 를 그대로 찍지 않는다 */
+  const pickKey = agg.mode === 'max' ? agg.peak?.key : agg.low?.key
+  const pickVal = agg.mode === 'max' ? agg.peak?.value : agg.low?.value
+  const items = Array.isArray(agg.items) ? agg.items : []
+
+  return (
+    <Block tag="집계" tone="blue" icon="📊" title={`${title}${gender}`} sub={metricLabel(agg.metric)} no={no}>
+      {agg.mode === 'distribution' ? (
+        <>
+          <ul className="space-y-3">
+            {items.map((it, i) => (
+              <li key={`${it.key}-${i}`}>
+                <div className="flex items-baseline justify-between gap-2">
+                  <span className={`min-w-0 text-base font-medium text-slate-800 dark:text-slate-100 ${PROSE}`}>
+                    {it.key}
+                  </span>
+                  <span className="shrink-0 text-sm tabular-nums text-slate-600 dark:text-slate-300">
+                    <b className="text-base font-semibold text-slate-900 dark:text-white">{nf(it.value)}</b>
+                    <span className="ml-0.5 text-slate-500">{agg.unit ?? ''}</span>
+                    <span className="ml-2 text-slate-500">{(it.share * 100).toFixed(1)}%</span>
+                  </span>
+                </div>
+                {/* 최소 비율 3.87% 가 실재하므로 하한 가드가 필요하다 */}
+                <div className="mt-1.5 h-2.5 rounded-full bg-slate-100 dark:bg-slate-800" aria-hidden="true">
+                  <div
+                    className={`h-2.5 rounded-full ${i === 0 ? 'bg-blue-600' : 'bg-blue-400 dark:bg-blue-500'}`}
+                    style={{ width: `${Math.max(2, it.share * 100)}%` }}
+                  />
+                </div>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[11px] tabular-nums text-slate-400">
+            합계 {nf(agg.total)}{agg.unit ?? ''} · {items.length}개 항목
+          </p>
+        </>
+      ) : agg.mode === 'max' || agg.mode === 'min' ? (
+        <>
+          <p className={`text-sm text-slate-500 ${PROSE}`}>
+            {agg.dimName ?? '구간'} 기준 {agg.mode === 'max' ? '가장 큰' : '가장 작은'} 값
+          </p>
+          <p className={`mt-1 text-xl font-semibold text-slate-900 dark:text-white ${PROSE}`}>
+            {pickKey ?? '(구분값 미기재)'}
+          </p>
+          <p className="mt-0.5 text-2xl font-medium tabular-nums text-slate-900 dark:text-white">
+            {nf(pickVal)}
+            <span className="ml-1 text-base font-normal text-slate-500">{unitLabel(agg.unit)}</span>
+          </p>
+          {pickKey == null && (
+            <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+              원자료에 해당 구분값이 비어 있어 항목명을 표시하지 못했습니다.
+            </p>
+          )}
+          <p className="mt-2 text-[11px] tabular-nums text-slate-400">
+            비교 대상 {nf(agg.count)}개 구간 · 전체 합계 {nf(agg.sum)}{agg.unit ?? ''}
+          </p>
+        </>
+      ) : (
+        <>
+          <p className="text-2xl font-medium tabular-nums text-slate-900 dark:text-white">
+            {nf(agg.sum)}
+            <span className="ml-1 text-base font-normal text-slate-500">{unitLabel(agg.unit)}</span>
+          </p>
+          <p className="mt-1 text-[11px] tabular-nums text-slate-400">
+            {agg.dimName ?? '구간'} {nf(agg.count)}개 합산
+          </p>
+        </>
+      )}
+      <div className="mt-3"><AsOfBanner notice={notice} verbose={verbose} /></div>
+      <SourceLine ds={agg.dataset} no={no} />
+    </Block>
+  )
+}
+
+/* ══════════════════════ 연혁 ══════════════════════ */
+function TimelineItem({ it }: { it: NonNullable<NkAnswer['items']>[number] }) {
+  const lv = asLevel(it.notice?.level)
+  const m = AS_OF[lv]
+  const title = clean(it.r.title)
+  const body = clean(it.r.body)
+  return (
+    <li className="relative">
+      <span
+        className={`absolute -left-[21px] top-2 h-2.5 w-2.5 rounded-full ring-2 ring-white dark:ring-slate-900 ${m.dot}`}
+        aria-hidden="true"
+      />
+      <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+        <time className="text-sm font-medium tabular-nums text-slate-500" dateTime={it.r.occurredOn ?? undefined}>
+          {it.r.occurredOn ?? '일자 미상'}
+        </time>
+        <AsOfPill level={lv} />
+      </div>
+      {/* 제목이 본문보다 커야 한다 (FontScale 확대 시에도 유지되도록 둘 다 rem) */}
+      <p className={`mt-1 text-base font-semibold leading-snug text-slate-900 dark:text-white ${PROSE}`}>{title}</p>
+      {body && body !== title && (
+        <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{body}</p>
+      )}
+      <p className={`mt-1.5 text-[11px] text-slate-400 ${PROSE}`}>{it.ds?.name}</p>
+    </li>
+  )
+}
+
+function TimelineCard({ a }: { a: NkAnswer }) {
+  const items = a.items ?? []
+  const sources = a.sources ?? []
+  const mix = items.reduce<Record<string, number>>((m, it) => {
+    const k = asLevel(it.notice?.level)
+    m[k] = (m[k] ?? 0) + 1
+    return m
+  }, {})
+  const mixKeys = (['live', 'stale', 'frozen'] as Level[]).filter(k => mix[k])
+  const head = items.slice(0, 8)
+  const rest = items.slice(8)
+
+  return (
+    <Block
+      tag="연혁"
+      tone="blue"
+      icon="🗓"
+      title={`공식 기록 ${nf(items.length)}건 (시간순)`}
+      sub={`관련 ${nf(a.available ?? items.length)}건 중 최신순`}
+    >
+      {a.widened && items.length > 0 && (
+        <p className={`mb-3 rounded-xl bg-amber-50 p-3 text-sm leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 ${PROSE}`}>
+          <span aria-hidden="true">⚠ </span>
+          ‘{a.Q?.win?.label ?? '요청하신 기간'}’ 구간의 자료가 부족해 전 기간에서 최신순으로 보여 드립니다.
+        </p>
+      )}
+
+      {items.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50 p-5 text-center dark:border-slate-700 dark:bg-slate-800/50">
+          <p className={`text-base font-semibold text-slate-800 dark:text-slate-100 ${PROSE}`}>
+            <span aria-hidden="true">📭 </span>날짜가 확인되는 기록이 없어 연혁을 만들 수 없습니다.
+          </p>
+          <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
+            관련 자료는 찾았지만, 시간순으로 나열할 수 있는 <b className="font-semibold">발생 일자</b>가 기록된 자료가 없습니다.
+            사건이 없었다는 뜻이 아니라, 날짜가 함께 공개된 자료가 없다는 뜻입니다.
+          </p>
+        </div>
+      ) : (
+        <>
+          {mixKeys.length > 1 && (
+            <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+              <span className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>
+                이 목록은 자료 기준 상태가 섞여 있습니다
+              </span>
+              {mixKeys.map(k => (
+                <span key={k} className="inline-flex items-center gap-1.5">
+                  <AsOfPill level={k} />
+                  <span className="text-sm tabular-nums text-slate-600 dark:text-slate-300">{mix[k]}건</span>
+                </span>
+              ))}
+            </div>
+          )}
+
+          <ol className="relative ml-1 space-y-5 border-l border-slate-200 pl-4 dark:border-slate-700">
+            {head.map((it, i) => <TimelineItem key={`${it.r.id}-${i}`} it={it} />)}
+          </ol>
+
+          {rest.length > 0 && (
+            <details className="group mt-4 rounded-xl border border-slate-200 dark:border-slate-800">
+              <summary
+                className={`flex cursor-pointer list-none items-center justify-between p-3 text-sm font-medium text-slate-700 dark:text-slate-200 [&::-webkit-details-marker]:hidden ${FOCUS}`}
+              >
+                나머지 {nf(rest.length)}건 더 보기
+                <span aria-hidden="true" className="text-slate-400 transition group-open:rotate-180">▾</span>
+              </summary>
+              <ol className="relative ml-4 space-y-5 border-l border-slate-200 py-4 pl-4 pr-3 dark:border-slate-700">
+                {rest.map((it, i) => <TimelineItem key={`${it.r.id}-r${i}`} it={it} />)}
+              </ol>
+            </details>
+          )}
+        </>
+      )}
+
+      {sources.length > 0 && (
+        <div className="mt-4 border-t border-slate-100 pt-2 dark:border-slate-800">
+          <p className="mt-1 text-sm font-medium text-slate-500">
+            <span aria-hidden="true">📚 </span>이 목록이 사용한 공식 출처 {sources.length}곳
+          </p>
+          {sources.map((s, i) => <SourceLine key={s.name} ds={s} no={i + 1} />)}
+        </div>
+      )}
+    </Block>
+  )
+}
+
+/* ══════════════════════ 근거 그룹 ══════════════════════ */
+function GroupCard({ g, no, verbose, refOnly = false }: { g: Group; no: number; verbose: boolean; refOnly?: boolean }) {
+  const lv = asLevel(g.notice?.level)
+  const m = AS_OF[lv]
+  const T = TONE[m.tone]
+  const measures = (g.measures ?? []).filter(
+    (x, i, arr) => arr.findIndex(y => y.metric === x.metric && y.periodStart === x.periodStart) === i,
+  )
+  const shown = measures.slice(0, 4)
+  const head = g.hits?.[0]?.r
+
+  return (
+    <section className={`mt-6 overflow-hidden ${CARD}`}>
+      <div className={`flex items-start gap-2.5 p-4 ${T.band}`}>
+        <ClauseTag>{refOnly ? '참고' : '근거'}</ClauseTag>
+        <div className={`h-10 w-1.5 shrink-0 rounded-full ${T.accent}`} aria-hidden="true" />
+        <div className="min-w-0 flex-1">
+          <div className="flex items-start gap-1.5">
+            <NumChip n={no} />
+            {/* 근거의 정체성인 데이터셋명은 자르지 않는다 (최장 18자) */}
+            <h3 className={`min-w-0 flex-1 text-base font-semibold leading-snug ${PROSE} ${T.text}`}>{g.ds?.name}</h3>
+          </div>
+          <div className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <AsOfPill level={lv} />
+            <span className="text-[11px] tabular-nums text-slate-500">
+              기준일 {head?.coverageEnd ?? g.ds?.coverageEnd}
+            </span>
+            <span className="text-[11px] tabular-nums text-slate-400">적중 {g.hits?.length ?? 0}건</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="p-4">
+        <AsOfBanner notice={g.notice} verbose={verbose} />
+
+        {shown.length > 0 && (
+          <div className="mt-3">
+            <p className="text-sm font-medium text-slate-500">이 자료에 담긴 수치</p>
+            <ul className="mt-1.5 grid gap-2 sm:grid-cols-2">
+              {shown.map((mm, i) => (
+                <li key={`${mm.metric}-${mm.periodStart ?? i}-${i}`} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                  <p className={`text-sm text-slate-500 ${PROSE}`}>
+                    {metricLabel(mm.metric)}
+                    {mm.dims && (
+                      <span className="ml-1 text-[11px] text-slate-400">
+                        ({Object.entries(mm.dims).map(([k, v]) => `${k} ${String(v)}`).join(' · ')})
+                      </span>
+                    )}
+                  </p>
+                  <p className="mt-0.5 text-base font-semibold tabular-nums text-slate-900 dark:text-white">
+                    {nf(mm.value)}
+                    <span className="ml-1 text-sm font-normal text-slate-500">{unitLabel(mm.unit)}</span>
+                  </p>
+                  {mm.periodStart && (
+                    <p className="mt-0.5 text-[11px] tabular-nums text-slate-400">{mm.periodStart} 기준</p>
+                  )}
+                </li>
+              ))}
+            </ul>
+            {measures.length > shown.length && (
+              <p className="mt-2 text-[11px] text-slate-400">
+                이 자료에서 확인된 수치 {measures.length}개 중 4개만 표시
+              </p>
+            )}
+          </div>
+        )}
+
+        <ul className="mt-3 space-y-2">
+          {(g.hits ?? []).map(h => {
+            const title = clean(h.r.title)
+            const body = clean(h.r.body)
+            return (
+              <li key={h.r.id} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
+                <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                  {h.r.isLatestInDataset && (
+                    <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[11px] font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
+                      이 자료의 최종 관측
+                    </span>
+                  )}
+                  <time className="text-[11px] tabular-nums text-slate-400" dateTime={h.r.occurredOn ?? undefined}>
+                    {h.r.occurredOn ?? '일자 미상'}
+                  </time>
+                </div>
+                <p className={`mt-1 text-base font-semibold leading-snug text-slate-900 dark:text-white ${PROSE}`}>{title}</p>
+                {body && body !== title && (
+                  <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{body}</p>
+                )}
+              </li>
+            )
+          })}
+        </ul>
+
+        <SourceLine ds={g.ds} no={no} />
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════ 페이지 ══════════════════════ */
+
+export default function SasilOn() {
+  const [ix, setIx] = useState<any>(null)
+  const [q, setQ] = useState('')
+  const [a, setA] = useState<NkAnswer | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
+  const resultRef = useRef<HTMLDivElement>(null)
+  const seq = useRef(0)
+
+  useEffect(() => {
+    let alive = true
+    fetch('/nk-index.json')
+      .then(r => { if (!r.ok) throw new Error(`인덱스 로드 실패 (${r.status})`); return r.json() })
+      .then(d => { if (alive) setIx(buildIndex(d)) })
+      .catch(e => { if (alive) setErr(e?.message ?? '인덱스를 불러오지 못했습니다.') })
+    return () => { alive = false }
+  }, [])
+
+  const stats = useMemo(() => {
+    if (!ix) return null
+    const ds = Object.values(ix.data.datasets ?? {}) as NkDataset[]
+    return {
+      records: (ix.data.records ?? []).length,
+      measures: (ix.data.measures ?? []).length,
+      datasets: ds.filter(d => d.status !== 'pending').length,
+      pending: ds.filter(d => d.status === 'pending').length,
+      frozen: ds.filter(d => d.freshness === 'frozen').length,
+    }
+  }, [ix])
+
+  const groups = (a?.groups ?? []) as Group[]
+  const numeric = (a?.numeric ?? null) as NumericT | null
+  const related = (a?.related ?? null) as LookupT | null
+  const agg = (a?.agg ?? null) as AggT | null
+  const askedAt = a?.Q?.askedAt
+
+  /* 답변이 사용한 자료를 하나의 시간축 위로 모은다. 번호 = 근거 카드 번호 */
+  const tracks = useMemo<Track[]>(() => {
+    if (!a) return []
+    const out: Track[] = []
+    const seen = new Set<string>()
+    const push = (ds: NkDataset | null | undefined, notice: Notice, end?: string | null) => {
+      const at = end ?? ds?.coverageEnd
+      if (!ds || !at || seen.has(ds.name)) return
+      seen.add(ds.name)
+      out.push({
+        key: ds.name, n: out.length + 1, name: ds.name,
+        level: asLevel(notice.level), end: at, gapDays: notice.gapDays ?? 0, ds,
+      })
+    }
+    for (const g of groups) push(g.ds, g.notice, g.hits?.[0]?.r.coverageEnd ?? g.ds?.coverageEnd)
+    for (const s of a.sources ?? []) push(s, noticeOf(null, s, askedAt))
+    if (agg?.dataset) push(agg.dataset, noticeOf(agg.record, agg.dataset, askedAt))
+    if (related?.dataset) push(related.dataset, noticeOf(related.record, related.dataset, askedAt))
+    return out
+  }, [a]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const noOf = (ds?: NkDataset | null) => (ds ? tracks.find(t => t.name === ds.name)?.n : undefined)
+
+  /* as-of 전문 설명은 레벨별 '첫 등장'에만. 이후 카드는 축약 꼬리표만 쓴다.
+     (렌더 순서: 관련정보 → 집계 → 근거그룹) */
+  const verboseSlots = useMemo(() => {
+    const out = new Set<string>()
+    if (!a) return out
+    const seenLv = new Set<string>()
+    const mark = (slot: string, lvl: string) => {
+      if (seenLv.has(lvl)) return
+      seenLv.add(lvl)
+      out.add(slot)
+    }
+    if (related?.dataset) mark('related', noticeOf(related.record, related.dataset, askedAt).level)
+    if (agg?.dataset) mark('agg', noticeOf(agg.record, agg.dataset, askedAt).level)
+    for (const g of groups) mark(`g:${g.dsKey}`, asLevel(g.notice?.level))
+    return out
+  }, [a]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  const summary = useMemo(() => (a ? summarize(a) : null), [a])
+
+  useEffect(() => {
+    if (a && typeof window !== 'undefined' && window.innerWidth < 1024) {
+      resultRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }, [a])
+
+  /* ?q= 퍼머링크 — 팩트체크 결과는 공유되어야 의미가 있다.
+     인덱스가 준비된 뒤 한 번만 실행한다. */
+  const bootstrapped = useRef(false)
+  useEffect(() => {
+    if (!ix || bootstrapped.current) return
+    bootstrapped.current = true
+    const q0 = new URLSearchParams(window.location.search).get('q')?.trim()
+    if (!q0) return
+    if (inputRef.current) inputRef.current.value = q0
+    void run(q0)
+  }, [ix]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  async function run(text: string) {
+    const t = String(text ?? '').trim()
+    if (!ix || !t) return
+    const id = ++seq.current
+    setQ(t)
+    setErr(null)
+    setBusy(true)
+    try {
+      const res = await answerAsync(ix, t)
+      if (id !== seq.current) return
+      setA(res)
+      window.history.replaceState(null, '', `?q=${encodeURIComponent(t)}`)
+    } catch (e: any) {
+      if (id !== seq.current) return
+      setA(null)
+      setErr(e?.message ?? '대조 중 오류가 발생했습니다.')
+    } finally {
+      if (id === seq.current) setBusy(false)
+    }
+  }
+
+  function pick(text: string) {
+    if (inputRef.current) inputRef.current.value = text
+    void run(text)
+  }
+
+  /* 엔진이 새 level 을 추가해도 결과가 백지가 되지 않도록 폴백을 둔다 */
+  const lm: LevelMeta = a ? (LEVEL_META[a.level] ?? LEVEL_FALLBACK) : LEVEL_FALLBACK
+  const outOfDomain = a?.Q?.inDomain === false
+  /* 변별 어휘가 하나도 안 걸린 질의 — 아래 자료는 근거가 아니라 참고다 */
+  const refOnly = !!a?.Q?.genericOnly && groups.length > 0
+  const headText =
+    summary ??
+    (outOfDomain
+      /* "다루는 분야가 아닙니다" 라고 단정하지 않는다 — 거짓이 될 수 있다.
+         '방사능 폐수'는 통일부가 실제로 보도설명자료를 낸 주제인데(평산 우라늄공장),
+         우리 적재분에 '방사능'이 0건이라 걸리지 않았을 뿐이다.
+         엔진이 실제로 판정한 것은 '주제'가 아니라 '이 질문에서 연결 신호를 못 찾았다'이다. */
+      ? '북한·통일 자료와 연결되는 내용을 찾지 못했습니다.'
+      : '관련 통일부 공식 자료를 찾지 못했습니다.')
+  const evidenceCount = a ? (a.level === 'timeline' ? (a.sources ?? []).length : groups.length) : 0
+
+  return (
+    <div className="pb-4">
+      <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_22rem] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1fr)_24rem]">
+        {/* ══ 본문 ══ */}
+        <div className="min-w-0">
+          <header className={PROSE}>
+            <p className="text-xs font-semibold tracking-wide text-blue-700 dark:text-blue-400">
+              통일부 공공데이터 기반 북한·통일 팩트체커
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold leading-snug text-slate-900 dark:text-white">
+              국민이 묻고 <span className="text-blue-700 dark:text-blue-400">국가 공식자료</span>가 답합니다
+            </h1>
+            <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
+              모든 답변에 <b className="font-semibold text-slate-800 dark:text-slate-100">그 자료가 언제까지 확인된 것인지</b>를 함께 표시합니다.
+            </p>
+          </header>
+
+          <form
+            className={`mt-5 ${CARD} p-3`}
+            onSubmit={e => { e.preventDefault(); void run(inputRef.current?.value ?? '') }}
+          >
+            <label htmlFor="son-q" className="block px-1 text-sm font-medium text-slate-700 dark:text-slate-200">
+              궁금한 주장이나 질문을 그대로 입력하세요
+            </label>
+            <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-center">
+              <input
+                id="son-q"
+                ref={inputRef}
+                defaultValue={q}
+                type="text"
+                enterKeyHint="search"
+                autoComplete="off"
+                placeholder="예) 개성공단 아직 하냐"
+                className={`min-w-0 flex-1 rounded-xl border border-slate-300 bg-white p-3 text-base text-slate-900 outline-none placeholder:text-slate-400 focus:border-blue-500 dark:border-slate-700 dark:bg-slate-900 dark:text-white ${FOCUS}`}
+              />
+              <button
+                type="submit"
+                disabled={!ix || busy}
+                className={`shrink-0 rounded-xl bg-blue-700 px-6 py-3 text-base font-semibold text-white transition active:scale-[0.99] disabled:opacity-40 sm:w-32 ${FOCUS}`}
+              >
+                {!ix ? '준비 중' : busy ? '대조 중' : '확인'}
+              </button>
+            </div>
+            {(!ix || busy) && !err && (
+              <p className="mt-2 flex items-center gap-2 px-1 text-sm text-slate-500">
+                <span
+                  aria-hidden="true"
+                  className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500"
+                />
+                {!ix ? '통일부 공식자료 색인을 불러오는 중…' : '공식 자료와 대조하는 중…'}
+              </p>
+            )}
+          </form>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <span className="self-center text-xs text-slate-400">예시</span>
+            {EXAMPLES.map(x => (
+              <button
+                key={x}
+                type="button"
+                disabled={!ix}
+                onClick={() => pick(x)}
+                className={`rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 transition active:scale-95 disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 ${FOCUS}`}
+              >
+                {x}
+              </button>
+            ))}
+          </div>
+
+          {!a && stats && (
+            <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+              {[
+                { k: '데이터셋', v: `${stats.datasets}종`, h: `API 연계 예정 ${stats.pending}종` },
+                { k: '공식 기록', v: nf(stats.records), h: '건' },
+                { k: '수치', v: nf(stats.measures), h: '건' },
+                { k: '종료 확정', v: `${stats.frozen}종`, h: '🔒 이후 데이터 없음' },
+              ].map(s => (
+                <div key={s.k} className={`${CARD} p-4`}>
+                  <dt className="text-xs text-slate-500">{s.k}</dt>
+                  <dd className="mt-0.5 text-2xl font-medium tabular-nums text-slate-900 dark:text-white">{s.v}</dd>
+                  <dd className={`text-[11px] text-slate-400 ${PROSE}`}>{s.h}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
+
+          {err && (
+            <div
+              role="alert"
+              className={`mt-4 rounded-xl border border-rose-200 bg-rose-50 p-3.5 text-base leading-relaxed text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200 ${PROSE}`}
+            >
+              <span aria-hidden="true">⚠ </span>{err}
+            </div>
+          )}
+
+          <div ref={resultRef} className="scroll-mt-24">
+            {a && (
+              <section aria-label="확인 결과">
+                <p role="status" aria-live="polite" className="sr-only">
+                  대조 완료. {lm.label}. {headText}
+                </p>
+
+                {/* ① 요지 + 주제 종료/중단 공지 — 무엇을 묻든 최상단 */}
+                <Headline a={a} q={q} lm={lm} headText={headText} refOnly={refOnly} />
+
+                {/* ② 근거 시점 지도 — 근거가 2종 이상일 때만 (1종이면 막대 한 줄짜리 과잉) */}
+                {tracks.length >= 2 && <TrackMap tracks={tracks} />}
+
+                {/* 메타 — 잡음이 되지 않게 최소한만 */}
+                {a.level !== 'no_evidence' && (
+                  <p className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[11px] tabular-nums text-slate-400">
+                    <span>{refOnly ? '참고 자료' : '근거 데이터셋'} {evidenceCount}종</span>
+                    {a.totalHits != null && <span>검색 적중 {nf(a.totalHits)}건</span>}
+                    {a.Q?.win?.label && <span>조회 구간 {a.Q.win.label}</span>}
+                    {a.llmUsed && a.llmUsed.length > 0 && <span>AI 보정 적용 ({a.llmUsed.join(', ')})</span>}
+                  </p>
+                )}
+
+                {/* ③ 근거 없음 */}
+                {a.level === 'no_evidence' && (
+                  <Block
+                    tag="안내"
+                    tone="slate"
+                    icon="📭"
+                    title={outOfDomain ? '북한·통일 자료와 연결되는 내용을 찾지 못했습니다' : '관련 통일부 공식 자료를 찾지 못했습니다'}
+                    sub={outOfDomain ? '이 서비스는 북한·통일 분야 공공데이터만 근거로 씁니다' : null}
+                  >
+                    <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+                      {outOfDomain
+                        ? '질문에 북한·통일과 이어지는 말이 없으면 답하지 않습니다. 대상을 구체적으로 적거나(예: ‘평산 우라늄’) ‘북한’을 함께 적어 주시면 찾을 수 있습니다.'
+                        : '근거가 없어서 확인할 수 없다는 뜻이며, 주장이 거짓이라는 의미가 아닙니다. 근거가 없을 때 억지로 판정하지 않는 것이 이 서비스의 원칙입니다.'}
+                    </p>
+                    <div className="mt-3 rounded-xl border border-dashed border-blue-300 bg-blue-50/40 p-3.5 dark:border-blue-900/60 dark:bg-blue-950/10">
+                      <p className="text-sm font-medium text-blue-800 dark:text-blue-300">
+                        이렇게 물어보면 답할 수 있습니다
+                      </p>
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {EXAMPLES.slice(0, 3).map(x => (
+                          <button
+                            key={x}
+                            type="button"
+                            onClick={() => pick(x)}
+                            className={`rounded-full border border-slate-200 bg-white px-3 py-1.5 text-sm text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 ${FOCUS}`}
+                          >
+                            {x}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </Block>
+                )}
+
+                {/* ④ 수치 대조 */}
+                {numeric && numeric.comparable && <NumericCompare n={numeric} />}
+                {numeric && numeric.comparable === false && <NumericIncomparable n={numeric} />}
+
+                {/* ⑤ 관련 정보 */}
+                {related && (
+                  <RelatedCard
+                    r={related}
+                    no={noOf(related.dataset)}
+                    askedAt={askedAt}
+                    verbose={verboseSlots.has('related')}
+                  />
+                )}
+
+                {/* ⑥ 집계·분포 */}
+                {agg && (
+                  <AggCard
+                    agg={agg}
+                    no={noOf(agg.dataset)}
+                    askedAt={askedAt}
+                    verbose={verboseSlots.has('agg')}
+                  />
+                )}
+
+                {/* ⑦ 연혁 */}
+                {a.level === 'timeline' && <TimelineCard a={a} />}
+
+                {/* ⑧ 근거 그룹 */}
+                {groups.length > 0 && (
+                  <>
+                    {/* 질의의 핵심어가 코퍼스에 하나도 안 걸렸으면 이건 '근거'가 아니라 '참고'다.
+                        헤드라인만 참고라고 하고 여기서 근거라고 부르면 화면이 스스로와 모순된다. */}
+                    <h2 className="mt-8 text-base font-semibold text-slate-800 dark:text-slate-100">
+                      <span aria-hidden="true">{refOnly ? '🔎 ' : '📚 '}</span>
+                      {refOnly ? `참고 자료 ${groups.length}종 (근거 아님)` : `이 답변의 근거 ${groups.length}종`}
+                    </h2>
+                    {refOnly ? (
+                      <p className="mt-0.5 text-sm text-slate-500">
+                        질문의 핵심어가 공식 자료에 걸리지 않아, 주제만 같은 자료를 참고용으로 보여 드립니다.
+                      </p>
+                    ) : tracks.length >= 2 ? (
+                      <p className="mt-0.5 text-sm text-slate-500">번호는 위 ‘근거 시점 지도’의 번호와 같습니다.</p>
+                    ) : null}
+                    {groups.map((g, i) => (
+                      <GroupCard key={g.dsKey} g={g} no={i + 1} verbose={verboseSlots.has(`g:${g.dsKey}`)} refOnly={refOnly} />
+                    ))}
+                  </>
+                )}
+
+                {/* ⑨ 면책 — 항상 마지막 */}
+                <p className={`mt-6 rounded-2xl border border-slate-200 bg-slate-50/70 p-3.5 text-[11px] leading-relaxed text-slate-400 dark:border-slate-800 dark:bg-slate-800/30 ${PROSE}`}>
+                  본 결과는 통일부 공개 데이터와의 자동 대조 결과이며 최종적인 사실 판단이 아닙니다.
+                  북한 관련 정보의 특성상 공식 자료에 수록되지 않은 사실이 존재할 수 있습니다.
+                </p>
+              </section>
+            )}
+          </div>
+
+          {/* 모바일: 검색 전 3상태 안내 */}
+          {!a && (
+            <div className="mt-6 lg:hidden">
+              <LegendCard />
+            </div>
+          )}
+        </div>
+
+        {/* ══ 데스크톱 우측 레일 ══ */}
+        <aside className="mt-8 hidden space-y-5 lg:sticky lg:top-24 lg:mt-1 lg:block" aria-label="이 답변의 자료 요약">
+          <LegendCard />
+          {tracks.length > 0 && <SourceRail tracks={tracks} />}
+        </aside>
+
+        {/* 모바일: 결과가 있을 때만 출처 요약을 하단에 */}
+        {tracks.length > 0 && (
+          <div className="mt-6 lg:hidden">
+            <SourceRail tracks={tracks} />
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

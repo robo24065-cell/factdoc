@@ -3,10 +3,12 @@ import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './index.css'
 import ConsumerLayout from './layouts/ConsumerLayout'
+import SasilOnLayout from './layouts/SasilOnLayout'
 import AdminLayout from './layouts/AdminLayout'
-import Home from './pages/Home'
+import SasilOn from './pages/SasilOn'
 
 // 사용자(지연로딩)
+const Home = lazy(() => import('./pages/Home'))
 const Trending = lazy(() => import('./pages/Trending'))
 const Forecast = lazy(() => import('./pages/Forecast'))
 const InfectiousMap = lazy(() => import('./pages/InfectiousMap'))
@@ -23,9 +25,13 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* 일반 사용자 */}
+        {/* 사실은ON — 전용 레이아웃 (레거시 탭 없음) */}
+        <Route element={<SasilOnLayout />}>
+          <Route index element={<SasilOn />} />
+        </Route>
+        {/* 레거시 FactDoc — 그대로 보존 */}
         <Route element={<ConsumerLayout />}>
-          <Route index element={<Home />} />
+          <Route path="legacy" element={<Home />} />
           <Route path="trending" element={<Trending />} />
           <Route path="forecast" element={<Forecast />} />
           <Route path="map" element={<InfectiousMap />} />
