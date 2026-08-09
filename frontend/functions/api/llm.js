@@ -1,8 +1,8 @@
 // LLM 중간계층 프록시 — Cloudflare Pages Function
 //
-// ⚠ 위치 주의: 이 파일은 **저장소 루트의 functions/** 에 있어야 한다.
-//   frontend/functions/ 에 두면 활성화되지 않는다 (Pages 프로젝트 루트가 저장소 루트라 확인됨 —
-//   frontend/functions 로 배포했을 때 GET /api/llm 이 SPA index.html 로 떨어지고 POST 가 405 였다).
+// ⚠ 위치: 반드시 **frontend/functions/** 다. Pages 프로젝트 루트가 frontend 이기 때문이다.
+//   저장소 루트 functions/ 로 옮기면 무시되고 /api/llm 이 SPA index.html 로 떨어진다(실측).
+//   한 번 반대로 옮겼다가 되돌렸다 — 배포 전파를 기다리지 않고 판단한 탓이다.
 //
 // 왜 프록시인가: 브라우저에서 Gemini 를 직접 부르면 API 키가 번들에 그대로 실린다.
 // 키는 Cloudflare Pages 환경변수(GEMINI_API_KEYS)에만 두고, 브라우저는 이 엔드포인트만 부른다.
@@ -17,8 +17,8 @@
 // 키가 없으면 503 을 준다. 프론트는 그걸 보고 조용히 규칙 계층만으로 동작한다 —
 // LLM 이 죽어도 서비스가 죽지 않는다는 원칙(§5 LLM 4원칙 ④)을 배포 경로에서도 지킨다.
 
-import { LLM_NORMALIZE_PROMPT } from '../../frontend/src/engine/nk-normalize.mjs'
-import { LLM_TIME_PROMPT } from '../../frontend/src/engine/nk-time.mjs'
+import { LLM_NORMALIZE_PROMPT } from '../../src/engine/nk-normalize.mjs'
+import { LLM_TIME_PROMPT } from '../../src/engine/nk-time.mjs'
 
 const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
 const Q_MAX = 200                     // 질의 길이 상한 — 프롬프트 주입·비용 폭주 방지
