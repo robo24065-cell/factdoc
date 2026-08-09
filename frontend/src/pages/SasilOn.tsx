@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+// @ts-expect-error — 순수 JS 어댑터 (프록시 경유, 키를 만지지 않는다)
+import { llmAdapter, probe as probeLLM } from '../engine/nk-llm-proxy.mjs'
 import {
   answerAsync, asOfNotice, buildIndex,
   type NkAnswer, type NkDataset, type NkRecord, type Notice,
@@ -1295,6 +1297,11 @@ export default function SasilOn() {
   const resultRef = useRef<HTMLDivElement>(null)
   const seq = useRef(0)
 
+  /* LLM 중간계층은 /api/llm 프록시가 살아 있을 때만 켠다.
+     없으면 규칙 계층만으로 그대로 동작한다 — 화면에는 아무 차이가 없다. */
+  const [llmOn, setLlmOn] = useState(false)
+  useEffect(() => { probeLLM().then((ok: boolean) => setLlmOn(!!ok)).catch(() => {}) }, [])
+
   useEffect(() => {
     let alive = true
     fetch('/nk-index.json')
@@ -1390,7 +1397,7 @@ export default function SasilOn() {
     setErr(null)
     setBusy(true)
     try {
-      const res = await answerAsync(ix, t)
+      const res = await answerAsync(ix, t, llmOn ? { llm: llmAdapter } : undefined)
       if (id !== seq.current) return
       setA(res)
       window.history.replaceState(null, '', `?q=${encodeURIComponent(t)}`)
