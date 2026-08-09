@@ -425,7 +425,7 @@ function summarize(a: NkAnswer): string | null {
        이때 아래 자료는 '근거'가 아니라 '참고'다. 그렇다고 빈손으로 돌려보내지는 않는다 —
        그게 이 프로젝트가 갈아엎은 그 실패다. 무엇을 못 찾았는지만 정직하게 밝힌다.
        ※ Q.unmatched 는 '뭐함/어떰/무서워' 같은 어미 파편이 섞여 화면에 인용하지 않는다. */
-    if (a.Q?.genericOnly)
+    if (a.Q?.weakMatch ?? a.Q?.genericOnly)
       return `질문의 핵심어에 걸리는 공식 자료를 찾지 못했습니다. 아래는 근거가 아니라 참고 자료입니다 — ` +
              `가장 가까운 기록은 ${ds0}의 「${title0}」입니다.`
 
@@ -1419,7 +1419,7 @@ export default function SasilOn() {
   const lm: LevelMeta = a ? (LEVEL_META[a.level] ?? LEVEL_FALLBACK) : LEVEL_FALLBACK
   const outOfDomain = a?.Q?.inDomain === false
   /* 변별 어휘가 하나도 안 걸린 질의 — 아래 자료는 근거가 아니라 참고다 */
-  const refOnly = !!a?.Q?.genericOnly && groups.length > 0
+  const refOnly = !!(a?.Q?.weakMatch ?? a?.Q?.genericOnly) && groups.length > 0
   const headText =
     summary ??
     (outOfDomain

@@ -298,6 +298,11 @@ export function search(ix, q, { limit = 40, ov } = {}) {
   //   하나도 없으면 이 엔진에 문서를 구분할 능력이 없다. 그 사실을 위로 올린다(화면 문구에만 쓴다).
   Q.specific = [...expanded.keys()].filter(t => ix.df.has(t) && ix.df.get(t) <= ix.N * 0.15)
   Q.genericOnly = Q.specific.length === 0
+  /* ★ 변별 토큰이 딱 하나뿐인데 모르는 낱말까지 있으면, 걸린 자료는 '근거'가 아니라 '참고'다.
+     '델리만쥬 북한인도 먹어봤을까' → specific=[북한] 하나, unmatched=[델리만쥬] →
+     학술회의 기록을 '가장 가까운 공식 기록'이라 부르던 자리.
+     정상 질의는 specific 이 4~10개다(실측) — 문턱이 정상 질의를 삼키지 않는다. */
+  Q.weakMatch = Q.genericOnly || (Q.specific.length <= 1 && Q.unmatched.length > 0)
 
   // ── 도메인 판정 (분해·복원·확장이 끝난 뒤에 한다) ──────────────
   //  ① 도메인 어휘  ② 주제 라우팅  ③ 엔티티  ④ 희소토큰 2개 공기(共起)
