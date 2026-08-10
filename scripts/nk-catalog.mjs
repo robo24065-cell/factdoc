@@ -163,6 +163,29 @@ export const DATASETS = {
     url: 'https://www.data.go.kr/data/15151324/openapi.do' },
 }
 
+/* ★ 아직 못 실은 자료가 답할 질문들 — "없다"와 "우리가 아직 못 가져왔다"는 다르다.
+   통일부에 실제로 있는 자료인데 API 가 죽어 연동을 못 한 것이라면 그렇게 말해야 한다.
+   "안녕하세요 북한말로?" 는 「남북한 언어비교」가 답할 질문이지 자료가 없는 질문이 아니다.
+   PENDING 5종이 ready 로 바뀌면 이 안내는 자동으로 사라진다(아래 pendingSourceFor 참조). */
+export const PENDING_HINTS = {
+  lexicon:  /북한말|북한어|북한식|말로\s*(뭐|어떻게)|문화어|사투리|용어|어휘|낱말|단어|표현|무슨\s*뜻|뜻이\s*(뭐|무엇)|어떻게\s*말|뭐라고\s*(해|하나|불러)/,
+  briefing: /사실은\s*이렇|보도설명|해명|반박|정정보도|가짜뉴스|허위\s*보도|사실이\s*아니/,
+  accord:   /합의서|합의문|공동선언|공동성명|판문점\s*선언|기본합의서/,
+  trend:    /일일\s*동향|주간\s*동향|월간\s*동향|동향\s*보고/,
+}
+
+/** 질의가 '아직 못 실은 자료'의 영역인지 — 맞으면 그 데이터셋을 알려준다 */
+export function pendingSourceFor(q, datasets = DATASETS) {
+  const text = String(q || '')
+  for (const [key, re] of Object.entries(PENDING_HINTS)) {
+    const ds = datasets[key]
+    if (ds?.status === 'pending' && re.test(text)) {
+      return { key, name: ds.name, url: ds.url || null, note: ds.note || null }
+    }
+  }
+  return null
+}
+
 // ── 헬퍼 ────────────────────────────────────────────────────
 function statDs(file, name, topic, asOf) {
   return { ...MOU, file, kind: 'csv', parser: 'stat', name, topic,

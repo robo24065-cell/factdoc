@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { tokenize } from '../frontend/src/engine/nk-search.mjs'
+import { PENDING_HINTS } from './nk-catalog.mjs'
 
 const IN = path.resolve('frontend/src/data/nk-index.json')
 const OUT = path.resolve('frontend/public/nk-index.json')
@@ -61,6 +62,12 @@ const web = {
   }),
   measures: d.measures,
   entities: d.entities,
+  /* 아직 못 실은 자료가 답할 질문의 표지 — 정규식을 문자열로 실어 보낸다.
+     카탈로그가 단일 진실 소스로 남고, 프론트는 정의를 복제하지 않는다. */
+  pendingHints: Object.fromEntries(Object.entries(PENDING_HINTS)
+    .filter(([k]) => d.datasets[k]?.status === 'pending')
+    .map(([k, re]) => [k, { re: re.source,
+      name: d.datasets[k].name, url: d.datasets[k].url || null }])),
 }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true })

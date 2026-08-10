@@ -1418,6 +1418,17 @@ export default function SasilOn() {
   /* 엔진이 새 level 을 추가해도 결과가 백지가 되지 않도록 폴백을 둔다 */
   const lm: LevelMeta = a ? (LEVEL_META[a.level] ?? LEVEL_FALLBACK) : LEVEL_FALLBACK
   const outOfDomain = a?.Q?.inDomain === false
+  /* 아직 못 실은 자료가 답할 질문인가 — "없다"와 "우리가 아직 못 가져왔다"는 다르다.
+     '안녕하세요 북한말로?' 는 통일부 「남북한 언어비교」가 답할 질문이지, 자료가 없는 질문이 아니다. */
+  const pendingSource = useMemo(() => {
+    const hints = ix?.data?.pendingHints
+    if (!hints || !q) return null
+    for (const [key, h] of Object.entries(hints) as [string, any][]) {
+      try { if (new RegExp(h.re).test(q)) return { key, ...h } } catch { /* 잘못된 정규식은 무시 */ }
+    }
+    return null
+  }, [ix, q])
+
   /* 변별 어휘가 하나도 안 걸린 질의 — 아래 자료는 근거가 아니라 참고다 */
   const refOnly = !!(a?.Q?.weakMatch ?? a?.Q?.genericOnly) && groups.length > 0
   const headText =
@@ -1609,6 +1620,27 @@ export default function SasilOn() {
 
                 {/* ⑦ 연혁 */}
                 {a.level === 'timeline' && <TimelineCard a={a} />}
+
+                {/* 아직 연동하지 못한 자료가 답할 질문 — 못 찾았을 때만 알린다 */}
+                {pendingSource && (refOnly || a.level === 'no_evidence') && (
+                  <Block tag="안내" tone="blue" icon="🔌"
+                    title={`이 질문은 「${pendingSource.name}」 자료가 답할 수 있습니다`}
+                    sub="통일부에 있는 자료이지만 아직 싣지 못했습니다">
+                    <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+                      해당 공개 API가 현재 응답하지 않아(서비스 연결 오류) 연동을 완료하지 못했습니다.
+                      자료가 존재하지 않는다는 뜻이 아니라, <b>이 서비스가 아직 가져오지 못했다</b>는 뜻입니다.
+                      복구되는 대로 이 안내는 사라지고 해당 자료로 답하게 됩니다.
+                    </p>
+                    {pendingSource.url && (
+                      <p className="mt-2 text-[11px]">
+                        <a className="text-blue-700 underline dark:text-blue-400"
+                           href={pendingSource.url} target="_blank" rel="noreferrer">
+                          공공데이터포털에서 원본 보기
+                        </a>
+                      </p>
+                    )}
+                  </Block>
+                )}
 
                 {/* ⑧ 근거 그룹 */}
                 {groups.length > 0 && (
