@@ -37,6 +37,8 @@ const SHOTS = [
   { name: '11-북한핵',           q: '북한 핵',                              dev: DESKTOP, dark: false },
   { name: '12-우라늄폐수',       q: '우라늄 공장 폐수',                     dev: DESKTOP, dark: false },
   { name: '13-변별신호없음',     q: '북한방사능',                           dev: DESKTOP, dark: false },
+  { name: '14-미연동자료안내',   q: '안녕하세요 북한말로?',                 dev: DESKTOP, dark: false },
+  { name: '15-오타',             q: '개성쥬악',                             dev: DESKTOP, dark: false },
   { name: '08-모바일-종료된사안', q: '개성공단 아직 하냐',                  dev: MOBILE,  dark: false },
   { name: '09-모바일-분포',      q: '탈북은 나이 많은 사람이 더 많이 한다며', dev: MOBILE,  dark: false },
   { name: '10-종료된사안-다크',  q: '개성공단 아직 하냐',                  dev: DESKTOP, dark: true  },
