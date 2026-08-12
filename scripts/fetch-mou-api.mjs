@@ -104,6 +104,26 @@ async function sweep(ep, base, label) {
   return rows
 }
 
+/* 페이징이 **정상인** 엔드포인트용 — 복구 호출을 하지 않는다.
+   위의 k·n−1 버그가 통일부 API 전체에 있는 것은 아니다(2026-08-12 실측).
+     · 버그 있음: search / trend / nesdta  → sweep() 을 쓴다
+     · 정상    : othbcact(김정은 공개활동) / prsn(인물) / hist(약사)
+                오프셋이 정확히 (pageNo−1)×numOfRows 다. 검증: 19행 집합에서
+                n=5 p1=행0~4, p2=행5~9. 258행 집합에서 n=10 p26=8행.
+   정상인 곳에 복구 호출을 얹으면 **중복만 늘어난다.** 그래서 함수를 나눈다.
+   numOfRows 상한은 100이다(1000을 보내면 조용히 100으로 깎인다). */
+async function pageThrough(ep, base, label) {
+  const rows = []
+  for (let p = 1; p <= MAXP; p++) {
+    const res = await call(ep, { ...base, pageNo: p, numOfRows: 100 })
+    if (!res.ok) { log(`  ! ${label} p${p} ${res.error}`); break }
+    rows.push(...res.items)
+    if (res.items.length < 100) break
+    if (p % 20 === 0) log(`    …${label} p${p} 누적 ${rows.length}`)
+  }
+  return rows
+}
+
 // ── 날짜 유틸 ────────────────────────────────────────────────
 const pad = n => String(n).padStart(2, '0')
 const ymd8 = d => `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`
@@ -217,12 +237,78 @@ const JOBS = {
   ...searchJob('nkinfoOverview', '개황', [1, 2, 3, 4, 5], '북한개황(포털)'),
 
   // ↓ 2026-08-12 현재 백엔드 db_error. 시도는 하되 실패를 실패로 기록한다.
+  /* 2026-08-12 파라미터 실측(에이전트 전수 열거):
+       · bgng_ymd/end_ymd 필수. 빼면 rc=11.
+       · **country 가 유일한 실질 필터**이고 완전일치다. 비우면 rc=0 인데 0건(조용한 빈 결과).
+         북측 97 · 남측 28 · 해외 7 · 기타 6 → 4회 훑어야 전량이다.
+       · thema 는 **무시된다**. 1~99·빈값 어느 것이든 같은 결과가 온다.
+         사용자 예시(thema=2 → 18건)가 걸러진 건 thema 가 아니라 keyword=남북 때문이었다.
+       · 날짜 필터는 agmnt_ymd(합의일)에 걸린다. bgng_ymd 가 빈 문자열인 6건도
+         country=기타 로 도달한다 — 옛 주석의 "영구 도달 불가"는 **틀렸다.** */
   accord: {
     name: '남북합의서', endpoint: `${B}/nktalkmng/getNktalkmng`, fragile: true,
-    pk: r => { const t = String(r.title || r.sj || '').replace(/\s+/g, ''); return t ? `${r.agmnt_ymd || r.bgng_ymd || '00000000'}:${t}`.slice(0, 120) : null },
+    pk: r => {
+      const id = (String(r.url || '').match(/[?&]id=(\d+)/) || [])[1]
+      if (id) return `id:${id}`
+      const t = String(r.title || r.sj || '').replace(/\s+/g, '')
+      return t ? `${r.agmnt_ymd || r.bgng_ymd || '00000000'}:${t}`.slice(0, 120) : null
+    },
     date: r => dash(String(r.agmnt_ymd || '').replace(/\D/g, '')),
-    // bgng_ymd/end_ymd 는 '회담일자' 기준 필수 파라미터. 8자리가 아니면 db_error 가 난다.
-    run: () => sweep(`${B}/nktalkmng/getNktalkmng`, { bgng_ymd: '19700101', end_ymd: T8 }, 'accord'),
+    run: async () => {
+      const out = []
+      for (const country of ['북측', '남측', '해외', '기타']) {
+        out.push(...await sweep(`${B}/nktalkmng/getNktalkmng`,
+          { bgng_ymd: '19480101', end_ymd: T8, country }, `accord:${country}`))
+      }
+      return out
+    },
+  },
+
+  /* 김정은 공개활동 7,544건.
+     ★ 이 엔드포인트는 페이징이 **정상**이다(오프셋 = (pageNo−1)×numOfRows).
+       다른 통일부 API 의 k·n−1 버그가 여기엔 없어서, 복구 호출을 쓰면 중복만 생긴다.
+       sweep() 은 first>=100 일 때 복구 호출을 하므로 여기서는 쓰지 않고 직접 넘긴다.
+     ★ 원본에 완전 동일 행이 대량 중복돼 있다(같은 날 같은 내용이 3~5회).
+       totalCount 가 중복까지 세므로 연도별 건수를 활동 횟수로 읽으면 안 된다. */
+  kjuAct: {
+    name: '김정은 공개활동', endpoint: `${B}/othbcact/getOthbcact`, fragile: true,
+    pk: r => {
+      const cn = String(r.nes_cn || '').replace(/\s+/g, ' ').replace(/상세보기\s*$/, '').trim()
+      return cn ? `${r.nes_ymd || '00000000'}:${cn}`.slice(0, 160) : null
+    },
+    date: r => dash(String(r.nes_ymd || '').replace(/\D/g, '')),
+    run: () => pageThrough(`${B}/othbcact/getOthbcact`,
+      { bgng_ymd: '20110101', end_ymd: T8 }, 'kjuAct'),
+  },
+
+  /* 북한 인물 — sexdstn(1남/2여) × nk_prsn_death_at(N생존/Y사망) 이 **둘 다 필수**라
+     4회 훑어야 전량(433건)이다. bgng_ymd/end_ymd 는 게시일이 아니라 **출생일 범위**다.
+     ★ 이 엔드포인트의 totalCount 는 '반환행수 에코'다 — 총량으로 쓰면 안 된다. */
+  personApi: {
+    name: '북한 인물(API)', endpoint: `${B}/prsn/getPrsn`, fragile: true,
+    pk: r => {
+      const nm = String(r.nm || r.korean_nm || '').trim()
+      return nm ? `${nm}|${String(r.brth || '').trim()}|${String(r.rspofc || '').trim()}`.slice(0, 120) : null
+    },
+    date: () => null,
+    run: async () => {
+      const out = []
+      for (const sexdstn of ['1', '2']) {
+        for (const death of ['N', 'Y']) {
+          out.push(...await pageThrough(`${B}/prsn/getPrsn`,
+            { sexdstn, nk_prsn_death_at: death, bgng_ymd: '19000101', end_ymd: T8 },
+            `person:${sexdstn}${death}`))
+        }
+      }
+      return out
+    },
+  },
+
+  hist: {
+    name: '북한 약사', endpoint: `${B}/hist/getHist`, fragile: true,
+    pk: r => { const t = String(r.sj || r.title || r.cn || '').replace(/\s+/g, '').slice(0, 90); return t || null },
+    date: r => dash(String(r.ymd || r.occrrnc_ymd || '').replace(/\D/g, '')),
+    run: () => pageThrough(`${B}/hist/getHist`, { bgng_ymd: '19000101', end_ymd: T8 }, 'hist'),
   },
   lexicon: {
     name: '북한 용어사전', endpoint: `${B}/nkword/getNkword`, fragile: true,

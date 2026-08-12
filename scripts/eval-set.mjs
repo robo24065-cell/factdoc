@@ -46,7 +46,7 @@ export const CASES = [
 
   // ── 연혁 나열 ───────────────────────────────────────────
   { q: '김정은 최근에 뭐 했어', tag: 'timeline',
-    mode: 'timeline', minItems: 10, mustDatasets: ['kjuActivity'] },
+    mode: 'timeline', minItems: 10, mustDatasets: ['kjuAct'] },
   { q: '김정은 최근 동향 10개만', tag: 'timeline',
     mode: 'timeline', exactItems: 10 },
   { q: '남북회담 뭐가 있었나', tag: 'timeline', mode: 'timeline' },

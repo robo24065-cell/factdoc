@@ -141,6 +141,9 @@ function push(dsKey, ds, r) {
     sourceUrl: r.sourceUrl || ds.url || null, sourceName: ds.name,
     priority: r.priority || ds.searchPriority || 50,
     ...(r.truncated ? { truncated: true } : {}),   // 원문이 잘린 레코드 — 근거로 인용할 때 경고해야 한다
+    /* 시점 감쇠 면제 표시. 체결된 합의서처럼 '더 새 판본'이 존재하지 않는 문서에만 붙인다.
+       남발하면 as-of 모델이 무의미해지므로, 붙일 때마다 이유를 파서에 적어 둘 것. */
+    ...(r.decayClass ? { decayClass: r.decayClass } : {}),
     entities: r.entities || mentionsOf(text),
     isLatestInDataset: false,   // pointInTime 처리에서 채움
   })
@@ -429,6 +432,72 @@ const P = {
      빌드 산출물은 scripts/build-nk-lexicon.mjs 가 만든다. */
   wordCmp(ds, key, items) { ds.rowsSeen = items.length },
   lexicon(ds, key, items) { ds.rowsSeen = items.length },
+
+  /* 남북합의서 — 합의 **원문**이다. 이 코퍼스에서 가장 강한 근거다.
+     "판문점선언에 뭐라고 돼 있어" 같은 질문은 뉴스가 아니라 이걸로 답해야 한다. */
+  accord(ds, key, items) {
+    for (const r of items) {
+      const title = clean(r.title || r.sj)
+      if (!title) continue
+      const on = dashYmd(r.agmnt_ymd)
+      const where = [clean(r.region), clean(r.facility)].filter(Boolean).join(' · ')
+      push(key, ds, {
+        kind: 'doc', topic: 'ik.accord',
+        factKey: `accord.${(String(r.url || '').match(/[?&]id=(\d+)/) || [])[1] || title.slice(0, 40)}`,
+        title,
+        body: [where && `장소: ${where}`, clean(r.country) && `구분: ${clean(r.country)}`, blocks(clean(r.cn))]
+          .filter(Boolean).join(' · '),
+        occurredOn: on,
+        // ★ 합의서는 그 날짜로 확정된 문서다 — 데이터셋 기준일로 뭉개면 거짓이 된다
+        asOf: on, coverageEnd: on, freshness: 'stale',
+        /* 시점 감쇠 면제. 체결된 문서에는 '더 새 판본'이 없다 —
+           감쇠를 걸면 1972년 7·4 공동성명이 0.002배가 되어 검색에서 사라진다. */
+        decayClass: 'doc.agreement',
+        sourceUrl: r.url || ds.url,
+      })
+    }
+  },
+
+  /* 김정은 공개활동 — excman(수행자)을 본문에 남긴다. 관계망이 여기서 간선을 뽑는다. */
+  kjuAct(ds, key, items) {
+    for (const r of items) {
+      const cn = clean(r.nes_cn).replace(/상세보기\s*$/, '').trim()
+      if (!cn) continue
+      const on = dashYmd(r.nes_ymd)
+      const esc = clean(r.excman)
+      push(key, ds, {
+        kind: 'event', topic: 'who.person',
+        factKey: `kju.${r.nes_ymd || '00000000'}.${cn.slice(0, 40)}`,
+        title: cn,
+        body: esc ? `수행: ${esc}` : '',
+        occurredOn: on,
+        asOf: on, coverageEnd: on, freshness: 'stale',
+        entities: esc ? esc.split(/[,·]/).map(s => s.trim()).filter(Boolean) : [],
+        sourceUrl: ds.url,
+      })
+    }
+  },
+
+  hist(ds, key, items) {
+    for (const r of items) {
+      const cn = clean(r.cn)
+      if (!cn) continue
+      const on = dashYmd(r.base_ymd)
+      push(key, ds, {
+        kind: 'event', topic: 'nk',
+        factKey: `hist.${r.base_ymd || '00000000'}.${cn.slice(0, 40)}`,
+        title: cn, body: '',
+        occurredOn: on, asOf: on, coverageEnd: on, freshness: 'stale',
+        sourceUrl: ds.url,
+      })
+    }
+  },
+}
+
+/* YYYYMMDD → YYYY-MM-DD. 8자리가 아니면 null (추정으로 채우지 않는다). */
+function dashYmd(v) {
+  const s = String(v ?? '').replace(/\D/g, '')
+  return /^\d{8}$/.test(s) ? `${s.slice(0, 4)}-${s.slice(4, 6)}-${s.slice(6)}` : null
 }
 
 // ── API 보조 ────────────────────────────────────────────────

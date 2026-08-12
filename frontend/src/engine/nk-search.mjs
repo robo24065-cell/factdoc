@@ -129,6 +129,7 @@ function expandTokens(tokens, data) {
 
 // ── BM25 인덱스 ─────────────────────────────────────────────
 const K1 = 1.2, B = 0.75, TITLE_W = 3
+const LEN_CAP = 3        // 길이 정규화 상한 (평균 대비 배수) — 아래 점수 계산부 주석 참조
 const REL_FLOOR = 0.25   // 1위 그룹 대비 부스트 전 관련도가 이보다 낮으면 근거가 아니다
 
 export function buildIndex(data) {
@@ -207,10 +208,28 @@ function bm25(ix, weighted) {
   const scores = new Map()
   for (const [t, w] of weighted) {
     const posting = ix.inv.get(t); if (!posting) continue
-    const idf = Math.log(1 + (ix.N - ix.df.get(t) + 0.5) / (ix.df.get(t) + 0.5))
+    /* ★ 조사가 붙은 형태는 별개의 '개념'이 아니다 — idf 를 따로 계산하면
+       희귀한 표면형이 희귀한 개념 대접을 받는다.
+       실측: '김정은'은 42,788건에 흔해 idf 가 바닥인데 '김정은은'은 드물어 idf 가 크다.
+       그래서 "김정은은 누구야" 가 제목에 우연히 '김정은은'이 든 단신 기사에 걸리고
+       정작 인물 카드가 밀렸다(코퍼스를 3배로 키우자 드러났다).
+       조사형의 df 는 **원형의 df 이상**으로 본다 — 개념의 흔함을 물려받게 한다. */
+    const base = t.replace(JOSA, '')
+    const dfEff = base !== t && ix.df.has(base)
+      ? Math.max(ix.df.get(t), ix.df.get(base))
+      : ix.df.get(t)
+    const idf = Math.log(1 + (ix.N - dfEff + 0.5) / (dfEff + 0.5))
     for (const i of posting) {
       const d = ix.docs[i], f = d.tf.get(t)
-      const s = idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * d.len / ix.avg))
+      /* ★ 길이 정규화에 상한을 둔다.
+         BM25 의 길이 페널티는 "긴 문서는 이것저것 덧붙여 우연히 걸린다"는 가정에서 나온다.
+         그런데 이 코퍼스에서 가장 권위 있는 문서(합의서 원문·개황)가 정확히 그 이유로 깎였다 —
+         accord 평균 291토큰 / 코퍼스 평균 80 → 페널티 2.97배.
+         합의서의 길이는 군더더기가 아니라 **문서의 실체**다. 7·4 남북공동성명 원문이
+         그 성명을 언급한 단신 뉴스보다 아래에 놓이는 것은 이 서비스의 목적에 정면으로 어긋난다.
+         상한 3배: 그 이상 길어도 더 깎지 않는다. 짧은 문서 쪽 동작은 그대로 둔다. */
+      const dl = Math.min(d.len, ix.avg * LEN_CAP)
+      const s = idf * (f * (K1 + 1)) / (f + K1 * (1 - B + B * dl / ix.avg))
       scores.set(i, (scores.get(i) || 0) + s * w)
     }
   }
@@ -278,8 +297,17 @@ export function parseQuery(q, ov = {}) {
 // ── as-of 가중 ──────────────────────────────────────────────
 // frozen은 감쇠하지 않는다 — 오래됐지만 그게 확정 최종값이므로.
 const HALF_LIFE_Y = 6
+/* 시점 감쇠가 묻는 것: "이 자료보다 새 판본이 있을 수 있는가?"
+   통계는 그렇다 — 2015년 탈북민 수치는 2026년 값이 따로 있다.
+   그러나 **체결된 문서는 그렇지 않다.** 1972년 7·4 남북공동성명은 1972년의 낡은
+   정보가 아니라 그 날짜로 확정된 문서 자체다. 더 새 판본이란 것이 존재하지 않는다.
+   감쇠를 걸면 0.5^(54/6) ≈ 0.002 배가 되어 검색에서 사실상 사라진다 —
+   실제로 "판문점선언 내용이 뭐야" 에 합의서 원문 대신 뉴스가 올라왔다.
+   frozen 과 같은 이유로 면제한다. */
+const NO_DECAY = new Set(['doc.agreement'])
 export function asofWeight(rec, askedAt) {
   if (rec.freshness === 'frozen') return 1
+  if (NO_DECAY.has(rec.decayClass)) return 1
   const gapY = (askedAt - new Date(rec.coverageEnd)) / (365.25 * 864e5)
   if (gapY <= 0) return 1
   return Math.pow(0.5, gapY / HALF_LIFE_Y)      // 6년 지나면 0.5
@@ -408,8 +436,18 @@ export function search(ix, q, { limit = 40, ov } = {}) {
   if (!Q.inDomain) return { Q, hits: [] }
 
   // ★ 변별 토큰의 posting 합집합 — '북한' 하나만 든 인물 카드가 근거로 못 올라오게 한다
+  /* 변별 토큰을 실제로 담은 문서 집합.
+     ★ 조사형은 원형으로도 인정한다. '김정은은'을 담은 문서만 세면
+       정작 표제가 '김정은'인 인물 카드가 근거 자격에서 탈락한다 —
+       검색 1위였는데 answer() 의 cover 게이트에서 사라졌다(실측).
+       조사는 표기의 차이지 다른 낱말이 아니다. */
   const coveredSet = new Set()
-  for (const t of Q.specific) for (const i of ix.inv.get(t) || []) coveredSet.add(i)
+  for (const t of Q.specific) {
+    for (const i of ix.inv.get(t) || []) coveredSet.add(i)
+    const base = t.replace(JOSA, '')
+    if (base !== t && base.length >= 2)
+      for (const i of ix.inv.get(base) || []) coveredSet.add(i)
+  }
 
   const base = bm25(ix, expanded)
   const maxBase = Math.max(1e-9, ...base.values())
@@ -462,8 +500,14 @@ export function search(ix, q, { limit = 40, ov } = {}) {
       if (inFrom && inTo) s *= yearWin ? 2.2 : 1.15
       else if (yearWin) s *= 0.15
     }
-    // '최근/최종' 요청이면 최신순 가산
-    if ((Q.win.preferLatest || Q.time.slot === 'recent') && r.occurredOn) {
+    /* '최근/최종' 요청이면 최신순 가산.
+       ★ 감쇠 면제 문서(체결된 합의서 등)는 **명시적으로 '최근'을 물었을 때만** 깎는다.
+         preferLatest 는 시간 표현이 없을 때도 켜지는 기본값이라, 그대로 두면
+         "판문점선언" 같이 문서를 이름으로 지목한 질의에서도 2018년 원문이 ×0.275 로 깎여
+         2026년 기념식 단신에 밀린다(실측: accord 19위, 뉴스 1위).
+         감쇠는 asofWeight 와 여기 두 곳에 있는데 한쪽만 면제해서 생긴 구멍이었다. */
+    const skipRecency = NO_DECAY.has(r.decayClass) && Q.time.slot !== 'recent'
+    if ((Q.win.preferLatest || Q.time.slot === 'recent') && r.occurredOn && !skipRecency) {
       const ageY = (Q.askedAt - new Date(r.occurredOn)) / (365.25 * 864e5)
       s *= 1 / (1 + Math.max(0, ageY) / 3)
     }

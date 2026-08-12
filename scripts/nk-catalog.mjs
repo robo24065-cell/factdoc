@@ -65,7 +65,12 @@ export const DATASETS = {
     note: '갱신 주기 불명 — 직책 변동·사망은 별도 확인 필요', searchPriority: 75,
     url: 'https://www.data.go.kr/data/15079264/openapi.do' },
 
+  /* ⛔ API 판(kjuAct)이 이 CSV 를 완전히 포함한다 — 실측: CSV 14건(2026-07-05~29) vs
+     API 1,864건(2012-01-01~2026-07-29), 제목 겹침 13/14.
+     둘 다 적재하면 같은 활동이 연혁에 두 번 나온다(실제로 그렇게 나왔다).
+     파일과 카탈로그 항목은 남겨 둔다 — API 가 다시 죽으면 이쪽으로 되돌아갈 수 있다. */
   kjuActivity: { ...MOU, file: '김정은공개활동.csv', kind: 'csv', parser: 'kju',
+    status: 'superseded', supersededBy: 'kjuAct',
     name: '김정은 공개활동 동향', topic: 'who.person',
     asOf: '2026-07-29', coverageEnd: '2026-07-29', freshness: 'live',
     updateCycle: '수시', searchPriority: 80,
@@ -211,17 +216,46 @@ export const DATASETS = {
   // ── 아직 못 가져온 것 ───────────────────────────────────────
   // 2026-08-12 실측: 둘 다 HTTP 200 + {"resultCode":"2","resultMsg":"db_error"}.
   // 인증·파라미터 문제가 아니다(같은 키로 briefing/trend/search 는 정상). 제공기관 백엔드 DB 장애다.
-  accord: { ...API, status: 'pending',
+  /* 2026-08-12 복구·수집 완료 134건 (1972-07-04 7·4공동성명 ~ 2018-09-19 평양공동선언).
+     필수 파라미터는 bgng_ymd/end_ymd + **country**(완전일치)다. thema 는 무시된다.
+     country 를 북측·남측·해외·기타 4회 훑어야 전량이다 — 옛 주석의
+     "회담일자 없는 6건은 영구 도달 불가"는 틀렸다. country=기타 로 도달한다. */
+  accord: { ...API, status: 'ready',
     name: '남북합의서', topic: 'ik.accord',
     endpoint: 'https://apis.data.go.kr/1250000/nktalkmng/getNktalkmng',
-    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', country: '북측|남측|해외|기타', pageNo: 1, numOfRows: 100 },
     file: 'accord.json', parser: 'accord', incrementalBy: 'full',
-    asOf: null, coverageEnd: '2018-09-19',    // 원본(남북회담본부)에서 확인한 최신 합의일
-    freshness: 'stale', searchPriority: 90,
-    pendingReason: '제공기관 백엔드 db_error (2026-08-12 실측). 같은 URL 이 0건→504→db_error 로 오락가락한다',
-    note: '원본 시스템 기준 남북합의서 168 + 공동보도문 90 = 258건. 회담일자가 없는 6건은 '
-        + '날짜가 필수 파라미터인 이 API 로는 영구 도달 불가',
+    asOf: '2018-09-19', coverageEnd: '2018-09-19',   // 최신 합의일
+    freshness: 'stale', searchPriority: 95,          // ★ 합의서 원문은 최상급 근거다
+    note: '원본 시스템 258건 중 이 API 로 노출되는 것은 138건(공동보도문 90건은 미포함). '
+        + '결과집합마다 1행이 페이징 버그로 도달 불가라 실수집은 134건',
     url: 'https://www.data.go.kr/data/15131895/openapi.do' },   // ★ 15079225 는 통합검색 문서였다
+
+  /* 김정은 공개활동 — 원본 7,544건에 완전 동일 행이 대량 중복돼 있어 1,864건으로 정리됐다.
+     ★ excman(수행자) 필드가 관계망의 원재료다. 날짜까지 붙은 2012~2026년 수행 기록이다. */
+  kjuAct: { ...API, status: 'ready',
+    /* 이름을 '김정은 공개활동 동향'으로 둔다 — sourceName 도 색인되므로 이름이 곧 검색 경로다.
+       '동향'을 뺐더니 "김정은 최근 동향 10개만" 이 0건이 됐다(회귀가 잡아냈다).
+       CSV 판(kjuActivity)이 쓰던 이름을 그대로 승계해 그 경로를 끊지 않는다. */
+    name: '김정은 공개활동 동향', topic: 'who.person',
+    endpoint: 'https://apis.data.go.kr/1250000/othbcact/getOthbcact',
+    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'kjuAct.json', parser: 'kjuAct', incrementalBy: 'date',
+    autoCoverage: true,
+    asOf: '2026-07-29', coverageEnd: '2026-07-29',
+    freshness: 'live', searchPriority: 85,
+    note: '원본에 중복 4,212건. nes_ymd+정규화한 nes_cn 으로 제거함',
+    url: 'https://www.data.go.kr/data/15108096/openapi.do' },
+
+  /* 북한 약사 — 짧은 사건 연표. 남북관계연표와 겹치되 북한 내부 사건이 더 많다. */
+  hist: { ...API, status: 'ready',
+    name: '북한 약사', topic: 'nk',
+    endpoint: 'https://apis.data.go.kr/1250000/hist/getHist',
+    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'hist.json', parser: 'hist', incrementalBy: 'date',
+    autoCoverage: true,
+    asOf: null, coverageEnd: null, freshness: 'stale', searchPriority: 70,
+    url: 'https://www.data.go.kr/data/15079276/openapi.do' },
 
   /* 2026-08-12 오후 재확인: 백엔드 복구됨. resultCode 0 · totalCount 177,684.
      오전의 db_error 는 제공기관 쪽 일시 장애였다 — 죽었다고 단정하지 말고 다시 두드릴 것. */

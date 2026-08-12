@@ -79,6 +79,17 @@ console.log('\n' + '═'.repeat(72))
 console.log(' ② 마지막 기록일 vs 실제 소멸 시점')
 console.log('═'.repeat(72))
 
+/* ★ 우측 절단(right-censoring) — 이 검증의 전제다.
+   인물동향 채록은 2001-02-18 ~ **2015-10-17** 에서 끝난다(실측, 14,468건).
+   그 시점까지 활동 중이던 사람은 마지막 기록이 채록 종료일에 걸린다.
+   그건 그 사람이 사라진 것이 아니라 **자료가 끝난 것**이다.
+   실측: 566명 중 90명(16%)이 여기 해당한다. 김원홍(2015-10-10)·박봉주(2015-10-17)가 그 예로,
+   실제로는 각각 2017년·2021년까지 활동했다.
+   이들을 섞어 재면 방법이 틀린 것처럼 보인다 — 판정 모집단에서 제외해야 한다.
+   판정 가능한 모집단은 채록 종료 이전에 기록이 끊긴 476명이다. */
+const CORPUS_END = '2015-10-17'
+const CENSOR_FROM = '2015-10'          // 이 달에 마지막 기록이 있으면 절단으로 본다
+
 const KNOWN = [
   { n: '리영호', when: '2012-07-15', what: '총참모장 전격 해임' },
   { n: '장성택', when: '2013-12-08', what: '정치국 확대회의서 체포' },
@@ -87,6 +98,7 @@ const KNOWN = [
   { n: '김원홍', when: '2017-01-31', what: '보위상 해임' },
   { n: '박봉주', when: '2021-01-10', what: '8차 당대회 후 퇴진' },
 ]
+let judged = 0, hitN = 0, censored = 0
 for (const k of KNOWN) {
   const rows = (byPerson.get(k.n) || []).sort((a, b) => a.d.localeCompare(b.d))
   const allPk = trend.filter(r => (String(r.sj || '').match(PERSON) || [])[1]?.trim() === k.n).length
@@ -100,11 +112,20 @@ for (const k of KNOWN) {
     continue
   }
   const last = rows.at(-1)
+  if (last.d.slice(0, 7) >= CENSOR_FROM) {
+    console.log(`  ⊘ ${k.n.padEnd(4)} 마지막 ${last.d} — 채록 종료(${CORPUS_END})에 걸림. 절단이므로 판정 제외`)
+    console.log(`      (실제 ${k.when} ${k.what} — 채록이 끝난 뒤의 일이라 이 자료로는 알 수 없다)`)
+    censored++
+    continue
+  }
   const gap = Math.round((new Date(last.d) - new Date(k.when)) / 86400000)
   const mark = Math.abs(gap) <= 60 ? '★' : ' '
+  judged++; if (Math.abs(gap) <= 60) hitN++
   console.log(`  ${mark} ${k.n.padEnd(4)} 마지막 ${last.d} · 실제 ${k.when}(${k.what}) · 차이 ${gap > 0 ? '+' : ''}${gap}일  [${rows.length}/${allPk}건 확보]`)
 }
-console.log('  (수집이 끝나면 566명 전원에 대해 같은 계산을 한다)')
+console.log(`
+  판정 ${judged}건 중 60일 이내 일치 ${hitN}건 · 절단으로 제외 ${censored}건`)
+ok(judged > 0 && hitN === judged, `채록 기간 안에서 사라진 인물은 마지막 기록일이 실제 시점과 맞는다 (${hitN}/${judged})`)
 
 // ── ③ 간선이 헛것인가 ──────────────────────────────────────
 console.log('\n' + '═'.repeat(72))
