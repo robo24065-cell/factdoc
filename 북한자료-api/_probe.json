@@ -1,0 +1,201 @@
+{
+  "briefing": {
+    "id": "15079284",
+    "name": "통일부 보도자료",
+    "url": "https://apis.data.go.kr/1250000/nesdta/getNesdta",
+    "priority": 1,
+    "note": "「#사실은 이렇습니다」의 원천. 정부가 특정 보도의 주장을 부인·정정한 공식 기록",
+    "ok": true,
+    "params": {
+      "pageNo": 1,
+      "numOfRows": 10,
+      "bgng_ymd": "19480101",
+      "end_ymd": "TODAY",
+      "type": "json"
+    },
+    "totalCount": 10,
+    "isXml": false,
+    "fields": [
+      "sj",
+      "dept",
+      "url",
+      "wrt_ymd",
+      "cn",
+      "dwld_url",
+      "filenm"
+    ],
+    "sample": {
+      "sj": "  “음악으로 통합을 노래하다” ｢남북예술교류 2025 가을음악회｣ 개최(10.25.)",
+      "dept": null,
+      "url": "https://www.unikorea.go.kr/unikorea/news/release/?boardId=bbs_0000000000000004&mode=view&searchCondition=all&searchKeyword=&cntId=55873&category=&pageIdx=1",
+      "wrt_ymd": "20251024",
+      "cn": "“음악으로 통합을 노래하다”｢남북예술교류 2025 가을음악회｣ 개최(10.25.)□ 통일부 남북통합문화센터는 10월 25일(토) 오후 5시, 김포아트홀(경기도 김포시 소재)에서 ｢남북예술교류 2025가을음악회｣를 개최한다.   o 2024년에 이어 올해 2번째로 개최되는 가을음악회는 남북한 출신 주민간의 심리적 거리를 음악으로 좁히고, 상호 이해와 문화적 공감을 증진하기 위해 기획되었다.□ 이번 음악회는 남북한 출신 예술인들이 한자리에 모여 평화와 화합의 메시지를 전하는 특별한 무대로, 세대와 지역을아우르는 21곡의 공연을 선보일 예정이다.   o 탈북 성악가 김상혁, 탈북 피아니스트 황상혁 외 다수의탈북민 예술가들과 성악가 이효범, 가수 윤나리, '서울로망스오케스트라', '신한별국악인가요', '한국공연예술단' 등 남북한출신의 예술가들이 따뜻하고 감미로운 선율을 선사할 것으로 기대된다. ※ 공연은 무료로 진행되며,현장에서 접수 가능□ 남북통합문화센터는 앞으로도 매년 찾아가는 가을음악회를 개최하여 탈북민의 문화예술행사 참여 기회를 넓히고, 남북한 출신주민 간 정서적 교류 증진과 통합문화 기반을 확대해 나갈 예정이다.붙임 : 행사 관련 홍보물",
+      "dwld_url": "https://www.unikorea.go.kr/board/file/bbs_0000000000000004/55873/FILE_000000000046796/2025102415252330943.pdf;jsessionid=hnccmcZB5Pg0mOOaf2J2BP5x.unikorea11'",
+      "filenm": "251024 (통일부 보도자료) 남북통합문화센터 2025 가을음악회 개최(10.25.).pdf"
+    }
+  },
+  "trend": {
+    "id": "15079311",
+    "name": "북한 동향",
+    "url": "https://apis.data.go.kr/1250000/trend/getTrend",
+    "priority": 1,
+    "extra": {
+      "cl": "ARGUMENT_DAIL"
+    },
+    "note": "일일·주간·월간 동향",
+    "ok": true,
+    "params": {
+      "pageNo": 1,
+      "numOfRows": 10,
+      "cl": "ARGUMENT_DAIL",
+      "bgng_ymd": "19480101",
+      "end_ymd": "TODAY",
+      "type": "json"
+    },
+    "totalCount": 10,
+    "isXml": false,
+    "fields": [
+      "dwld_url",
+      "first_reg_ymd",
+      "url",
+      "cl",
+      "sj",
+      "cn",
+      "filenm"
+    ],
+    "sample": {
+      "dwld_url": null,
+      "first_reg_ymd": "20260811",
+      "url": "https://nkinfo.unikorea.go.kr/nkp/trend/view.do?pstgSeCode=&menuId=MENU_494&trendMngNo=134653",
+      "cl": "ARGUMENT_DAIL",
+      "sj": "전면적 발전의 시대적 요구 : 당 일군의 자세 강조",
+      "cn": "□ 전면적 발전의 시대적 요구 : 당 일군의 자세 강조(노동)  o “과학적으로 예견성있게, 실리있게 진행한다는 것은 계획 작성·집행·총화 전 과정을 객관적 법칙과 과학기술적 이치에 맞게, 있을 수 있는 정황을 예단하면서 최상의 사업결과를 목적의식적으로 이끌어낸다는 것”",
+      "filenm": null
+    }
+  },
+  "accord": {
+    "id": "15131895",
+    "name": "남북관계 남북합의서",
+    "url": "https://apis.data.go.kr/1250000/nktalkmng/getNktalkmng",
+    "priority": 1,
+    "ok": true,
+    "params": {
+      "pageNo": 1,
+      "numOfRows": 10,
+      "bgng_ymd": "19480101",
+      "end_ymd": "TODAY",
+      "type": "json"
+    },
+    "totalCount": 0,
+    "isXml": false,
+    "fields": [],
+    "sample": null
+  },
+  "kjuAct": {
+    "id": "15108096",
+    "name": "김정은 공개활동",
+    "url": "https://apis.data.go.kr/1250000/othbcact/getOthbcact",
+    "priority": 1,
+    "ok": false
+  },
+  "person": {
+    "id": "15079264",
+    "name": "북한 인물",
+    "url": "https://apis.data.go.kr/1250000/prsn/getPrsn",
+    "priority": 1,
+    "ok": false
+  },
+  "overview": {
+    "id": "15108107",
+    "name": "북한 개황",
+    "url": "https://apis.data.go.kr/1250000/nkinfo/getNkinfo",
+    "priority": 1,
+    "ok": false
+  },
+  "corps": {
+    "id": "15108108",
+    "name": "허가법인",
+    "url": "https://apis.data.go.kr/1250000/prmisncpr/getPrmisncpr",
+    "priority": 1,
+    "ok": false
+  },
+  "nkword": {
+    "id": "15151324",
+    "name": "북한 용어사전",
+    "url": "https://apis.data.go.kr/1250000/nkword/getNkword",
+    "priority": 2,
+    "note": "★ 검색 근거가 아니라 질의 정규화·entity_alias 적재용",
+    "ok": false
+  },
+  "wordCmp": {
+    "id": "15151340",
+    "name": "남북한 언어비교",
+    "url": "https://apis.data.go.kr/1250000/nskwordcmp/getNskwordCmp",
+    "priority": 2,
+    "note": "★ 남북 표기 대응(오물풍선 ↔ 대남 쓰레기 풍선)",
+    "ok": false
+  },
+  "search": {
+    "id": "15079225",
+    "name": "북한정보포털 통합검색",
+    "url": "https://apis.data.go.kr/1250000/search/getSearch",
+    "priority": 2,
+    "ok": false
+  },
+  "research": {
+    "id": "15131892",
+    "name": "북한 연구자료",
+    "url": "https://apis.data.go.kr/1250000/udbresearch/getUdbresearch",
+    "priority": 2,
+    "ok": false
+  },
+  "hist": {
+    "id": "15079276",
+    "name": "북한 약사(略史)",
+    "url": "https://apis.data.go.kr/1250000/hist/getHist",
+    "priority": 2,
+    "ok": false
+  },
+  "tvprgm": {
+    "id": "15079329",
+    "name": "북한 TV 프로그램 편성표",
+    "url": "https://apis.data.go.kr/1250000/tvprgm/getTvprgm",
+    "priority": 3,
+    "ok": false
+  },
+  "textbook": {
+    "id": "15079243",
+    "name": "북한교과서·어린이도서",
+    "url": "https://apis.data.go.kr/1250000/textbook/getTextbook",
+    "priority": 3,
+    "ok": false
+  },
+  "pblictn": {
+    "id": "15079299",
+    "name": "북한 및 국내외 연속간행물",
+    "url": "https://apis.data.go.kr/1250000/pblictn/getPblictn",
+    "priority": 3,
+    "ok": false
+  },
+  "lonbook": {
+    "id": "15079804",
+    "name": "연도별 인기 대출 도서",
+    "url": "https://apis.data.go.kr/1250000/lonbook/getLonbook",
+    "priority": 3,
+    "ok": false
+  },
+  "newbook": {
+    "id": "15108105",
+    "name": "신착자료",
+    "url": "https://apis.data.go.kr/1250000/newbook/getNewbook",
+    "priority": 3,
+    "ok": false
+  },
+  "rcrit": {
+    "id": "15079125",
+    "name": "통일부 채용공고",
+    "url": "https://apis.data.go.kr/1250000/rcrit/getRcrit",
+    "priority": 3,
+    "ok": false
+  }
+}
