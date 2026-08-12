@@ -36,7 +36,16 @@ const MARK_KO = new RegExp([
   `${KO_LOC}\\s*${SAY}`,
   `${KO_LOC}\\s*(?:쓰는|쓰이는|사용하는)?\\s*${WORD_N}`,
 ].join('|'))
-const ASK_MEAN = /(무슨\s*뜻|뜻이\s*(뭐|무엇)|무슨\s*말|의미가\s*(뭐|무엇))/
+/* '무슨 뜻' 계열만 잡으면 가장 흔한 형태를 놓친다 — "노농적위군이 뭐야"(실측).
+   다만 '뭐야'를 맨몸으로 잡으면 "북한 요즘 뭐야" 같은 것까지 어휘 질문이 된다.
+   **낱말 + 조사 + 뭐야** 라는 모양일 때만 인정한다. 사전에 있는지는 뒤에서 다시 거른다. */
+/* 명시형 — 이 표현이 있으면 낱말을 묻는 것이 분명하다. 못 찾아도 '미등재'라고 답한다. */
+const EXPLICIT_MEAN = /(무슨\s*뜻|뜻이\s*(뭐|무엇)|무슨\s*말|의미가\s*(뭐|무엇))/
+const ASK_MEAN = new RegExp([
+  '무슨\\s*뜻', '뜻이\\s*(뭐|무엇)', '무슨\\s*말', '의미가\\s*(뭐|무엇)',
+  '[가-힣]{2,}(?:이|가)\\s*(?:뭐야|뭔데|뭡니까|무엇인가|무엇입니까|뭐임)',
+  '[가-힣]{2,}\\s*(?:이|가)?\\s*무슨\\s*(?:뜻|말|의미)',
+].join('|'))
 
 /* 낱말 뽑기는 **어절 단위**로 한다.
    ⚠ 전역 정규식으로 조사를 지우면 낱말 안쪽을 파먹는다 —
@@ -106,8 +115,19 @@ export function wordOf(q, intent, lx) {
  */
 export function lexiconAnswer(lx, q, { intent = null, limit = 6 } = {}) {
   const s = String(q ?? '')
-  const byIntent = intent?.type === 'lexicon'
-  const isLexQ = byIntent || MARK_NK.test(s) || MARK_KO.test(s) || ASK_MEAN.test(s)
+  /* 우선순위: LLM 의도분류가 있으면 **그것이 결정한다.**
+     규칙을 뒤에 또 얹으면 분류기가 person 이라고 한 것까지 어휘로 끌고 온다 —
+     "김정은이 뭐야" 가 인물 카드 대신 '대응어 목록에 없습니다'로 답하게 된다(실측).
+     분류기가 없을 때만 규칙으로 판정한다. */
+  /* 표지를 두 등급으로 나눈다.
+     ㉮ 명시형 — '북한말로', '무슨 뜻'. 낱말을 묻는 게 분명하다.
+        못 찾으면 **못 찾았다고 답한다**(그게 이 계층의 일이다).
+     ㉯ 느슨형 — 'X이 뭐야'. 가장 흔한 형태지만 낱말 질문이 아닐 때가 많다 —
+        "김여정 직책이 뭐야"는 인물 질문이다(wild 가 잡았다).
+        느슨형은 **사전에 실제로 있을 때만** 어휘로 인정하고, 없으면 검색에 넘긴다. */
+  const explicit = MARK_NK.test(s) || MARK_KO.test(s) || EXPLICIT_MEAN.test(s)
+  const loose = ASK_MEAN.test(s)
+  const isLexQ = intent?.type ? intent.type === 'lexicon' : (explicit || loose)
   if (!isLexQ) return null
 
   /* ★ 사전이 없어도 **문서로 넘기지 않는다.**
@@ -117,6 +137,7 @@ export function lexiconAnswer(lx, q, { intent = null, limit = 6 } = {}) {
      자료 상태와 무관하게 **질문 유형으로** 막는다. */
   if (!lx?.n) return { kind: 'unavailable', word: wordOf(q, intent, null), source: null }
 
+  const byIntentLex = intent?.type === 'lexicon'
   const word = wordOf(q, intent, lx)
   if (!word || word.length < 2) return null
 
@@ -129,6 +150,9 @@ export function lexiconAnswer(lx, q, { intent = null, limit = 6 } = {}) {
   const found = dir === 'toNK' ? toNK : toKO
 
   const term = lx.term.get(word) ?? null
+
+  /* 느슨형인데 사전에 없으면 어휘 질문이 아니었던 것이다 — 검색이 답하게 둔다. */
+  if (!explicit && !byIntentLex && !found?.length && !term) return null
 
   if (found?.length || term) {
     return {
