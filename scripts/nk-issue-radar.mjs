@@ -4,8 +4,14 @@
 // 빅카인즈의 "오늘의 이슈" 를 북한·통일 도메인에 특화해 재현한다.
 // 클러스터링은 TF-IDF 코사인 + 단일연결(union-find). 임베딩 없이 결정론적으로 동작.
 
+/* 키는 api.txt 에서 loadEnv 로 읽는다.
+   ⚠ 직접 파싱하지 말 것 — api.txt 의 값은 큰따옴표로 감싸여 있고(NCP_ID="…"),
+     따옴표째 헤더에 넣으면 게이트웨이가 401 "Authentication information are missing" 을 준다.
+     실측 2026-08-13: 이것 때문에 키가 죽은 줄 알고 한참 헤맸다. loadEnv 가 따옴표를 벗긴다. */
+import { loadEnv } from './nk-env.mjs'
+loadEnv()
 const ID = process.env.NCP_ID, SECRET = process.env.NCP_SECRET
-if (!ID || !SECRET) { console.error('NCP_ID / NCP_SECRET 필요'); process.exit(1) }
+if (!ID || !SECRET) { console.error('NCP_ID / NCP_SECRET 필요 (api.txt 또는 환경변수)'); process.exit(1) }
 
 const HOURS = Number(process.argv[2] || 24)
 const TOPN = Number(process.argv[3] || 10)

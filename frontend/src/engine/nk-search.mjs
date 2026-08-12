@@ -140,7 +140,15 @@ export function buildIndex(data) {
     for (const t of tokenize(r.sourceName)) tf.set(t, (tf.get(t) || 0) + 2)   // own 에 넣지 않는다
     for (const t of tokenize(r.body)) { tf.set(t, (tf.get(t) || 0) + 1); own.add(t) }
     for (const t of tokenize(r.st)) { tf.set(t, (tf.get(t) || 0) + 1); own.add(t) }  // 웹 절단 보완
-    return { r, tf, own, len: [...tf.values()].reduce((a, b) => a + b, 0) }
+    /* ★ 길이는 **원본 기준**이어야 한다.
+       웹 인덱스는 본문을 자른다(BODY_MAX 220 · 포털동향 150). 그런데 BM25 의 길이 정규화는
+       짧은 문서를 우대하므로, **자르는 행위 자체가 그 문서의 순위를 올려 버린다.**
+       실측 사고 2026-08-13: 포털동향 42,788건을 150자로 잘라 웹에 실었더니
+       그 문서들이 통계 레코드를 300위 밖으로 밀어냈고, "탈북민 여자가 몇 명이야" 의
+       집계가 배포본에서만 죽었다(로컬 48/48 · 배포본 40/48).
+       len0(원본 토큰 수)을 실어 보내면 절단이 순위를 바꾸지 않는다. */
+    const len = [...tf.values()].reduce((a, b) => a + b, 0)
+    return { r, tf, own, len: r.len0 ?? len }
   })
   const df = new Map()
   for (const d of docs) for (const t of d.tf.keys()) df.set(t, (df.get(t) || 0) + 1)
@@ -520,7 +528,14 @@ export function search(ix, q, { limit = 40, ov } = {}) {
       const dw = ix.docs[i].own
       for (const t of expanded.keys()) if (dw.has(t)) { own = 1; break }
     }
-    hits.push({ r, score: s, bm25: raw, rel, own, cover: coveredSet.has(i) ? 1 : 0 })
+    /* ★ NaN 방어. 필드 하나가 비면 곱셈이 NaN 이 되고, NaN 비교는 늘 false 라
+       **정렬 전체가 무너진다** — 일부가 아니라 전부다.
+       실측 사고 2026-08-13: 웹 인덱스의 포털동향 42,788건에 priority 가 없어
+       `1 + (undefined - 50)/100` = NaN 이 됐고, 815건 중 86건이 NaN 이 되자
+       점수 1.81 짜리가 476위, 0.07 짜리가 1위가 됐다. 배포본에서만 집계·연혁이 죽은 원인이다.
+       데이터를 고치는 것과 별개로, 엔진이 이런 입력에 조용히 무너지면 안 된다. */
+    hits.push({ r, score: Number.isFinite(s) ? s : 0, bm25: raw, rel, own,
+      cover: coveredSet.has(i) ? 1 : 0 })
   }
   hits.sort((a, b) => b.score - a.score)
 
@@ -948,7 +963,21 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
   // ── 연혁 모드: 시간순 나열 ────────────────────────────────
   if (Q.listIntent) {
     const N = Q.wantCount || 20
-    const dated = hits.filter(h => h.r.occurredOn)
+    /* ★ 연혁은 **날짜 있는 기록**만 쓴다. 그런데 코퍼스의 62%(포털동향 42,788건)에
+       날짜가 없다 — 응답에 날짜 필드가 아예 없는 API 라서다.
+       상위 300만 보면 그중 192건이 날짜 없는 것이라 연혁 후보가 108건으로 쪼그라든다
+       (실측 2026-08-13, "북한이 미사일 발사 언제언제 했니").
+       연혁을 물었을 때는 더 깊이 본다 — 관련성 순서는 그대로 두고 창만 넓힌다. */
+    let scan = hits
+    if (hits.filter(h => h.r.occurredOn).length < N * 3) {
+      const deep = ov?.searched && ov.searched.hits.length > hits.length
+        ? ov.searched.hits : search(ix, q, { limit: 3000, ov }).hits
+      const kept = ov?.scores
+        ? deep.filter(h => (ov.scores.get(h.r.id) ?? 9) >= JUDGE_KEEP_MIN)
+        : deep
+      scan = kept.length ? kept : deep
+    }
+    const dated = scan.filter(h => h.r.occurredOn)
     const inWin = dated.filter(h =>
       (!Q.win.from || h.r.occurredOn >= Q.win.from) && (!Q.win.to || h.r.occurredOn <= Q.win.to))
     const widened = inWin.length < Math.min(5, N)

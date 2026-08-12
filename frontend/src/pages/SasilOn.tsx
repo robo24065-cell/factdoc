@@ -1458,6 +1458,33 @@ function AggCard({
   )
 }
 
+/* ══════════════════════ 원문 링크 ══════════════════════
+   지금까지 출처 링크가 **데이터셋 페이지**(data.go.kr 의 API 문서)로만 갔다.
+   사용자가 원하는 건 "그 글이 실제로 적힌 페이지"다.
+   레코드별 sourceUrl 을 갖고 있는 자료가 실제로 있다(실측):
+     briefing·trendDaily·accord·포털동향 → 개별 글 주소 ✅
+     timeline·kjuAct·hist·people        → 원본이 CSV/API 라 개별 페이지가 없다
+   그래서 **레코드 주소가 데이터셋 주소와 다를 때만** 원문 링크를 붙인다.
+
+   본문 절단(…)과도 한 세트다. 웹 인덱스는 본문을 220자에서 자르므로 '펼치기'로
+   더 보여줄 원본이 애초에 없다. 잘렸다는 사실을 숨기지 말고 원문으로 보낸다. */
+function RecordLink({ r, ds }: { r: any; ds?: NkDataset }) {
+  const u = r?.sourceUrl
+  if (!u || u === ds?.url) return null
+  const truncated = typeof r.body === 'string' && r.body.endsWith('…')
+  return (
+    <a
+      href={u}
+      target="_blank"
+      rel="noreferrer"
+      className={`mt-1 inline-flex items-center gap-1 rounded text-[11px] text-blue-600 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}
+    >
+      {truncated ? '원문 전체 보기' : '원문 보기'}
+      <span aria-hidden="true">↗</span>
+    </a>
+  )
+}
+
 /* ══════════════════════ 연혁 ══════════════════════ */
 function TimelineItem({ it }: { it: NonNullable<NkAnswer['items']>[number] }) {
   const lv = asLevel(it.notice?.level)
@@ -1481,7 +1508,10 @@ function TimelineItem({ it }: { it: NonNullable<NkAnswer['items']>[number] }) {
       {body && body !== title && (
         <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{body}</p>
       )}
-      <p className={`mt-1.5 text-[11px] text-slate-400 ${PROSE}`}>{it.ds?.name}</p>
+      <p className={`mt-1.5 text-[11px] text-slate-400 ${PROSE}`}>
+        {it.ds?.name}
+        <RecordLink r={it.r} ds={it.ds} />
+      </p>
     </li>
   )
 }
@@ -1658,6 +1688,7 @@ function GroupCard({ g, no, verbose, refOnly = false }: { g: Group; no: number; 
                 {body && body !== title && (
                   <p className={`mt-1 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{body}</p>
                 )}
+                <RecordLink r={h.r} ds={g.ds} />
               </li>
             )
           })}
@@ -1702,12 +1733,12 @@ export default function SasilOn() {
     const expandTrend = (p: any) => {
       if (!p?.rows?.length) return []
       const d = p.defaults ?? {}
+      /* ★ defaults 를 통째로 펼친다. 손으로 나열하면 빠뜨리고, 빠진 필드는
+         랭킹에서 조용히 NaN 이 되어 **정렬 전체**를 무너뜨린다(2026-08-13 실측 사고). */
       return p.rows.map((r: any[]) => ({
+        ...d,
         id: r[0], topic: r[1], title: r[2], body: r[3],
-        datasetId: d.datasetId, kind: d.kind, sourceName: d.sourceName,
-        asOf: d.asOf, coverageEnd: d.coverageEnd,
-        freshness: d.freshness, frozenReason: d.frozenReason ?? null,
-        occurredOn: null,
+        occurredOn: null, len0: r[5] ?? undefined,
         sourceUrl: r[4] ? String(d.urlTemplate).replace('{pk}', String(r[4])) : null,
       }))
     }

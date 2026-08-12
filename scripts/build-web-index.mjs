@@ -68,10 +68,17 @@ const web = {
     const b = r.body || ''
     const cut = b.length > BODY_MAX ? b.slice(0, BODY_MAX) + '…' : b
     const st = searchTail(r, cut)
+    /* ★ 자르기 전 원본 토큰 수. BM25 의 길이 정규화는 짧은 문서를 우대하므로
+       **자르는 행위 자체가 그 문서의 순위를 올린다.** 그러면 배포본과 로컬의 검색이 갈린다.
+       실측 사고 2026-08-13: 포털동향 42,788건을 150자로 잘라 실었더니 그 문서들이
+       통계 레코드를 300위 밖으로 밀어냈고, 집계가 배포본에서만 죽었다
+       (로컬 eval 48/48 · 배포본 40/48). len0 을 실어 절단이 순위를 바꾸지 않게 한다. */
+    const len0 = tokenize(r.title).length * 3 + tokenize(r.sourceName).length * 2 + tokenize(b).length
     return {
       id: r.id, datasetId: r.datasetId, kind: r.kind, topic: r.topic,
       title: r.title,
       body: cut,
+      len0,
       ...(st ? { st } : {}),          // 검색 전용. 화면에 절대 렌더하지 않는다
       occurredOn: r.occurredOn, asOf: r.asOf, coverageEnd: r.coverageEnd,
       freshness: r.freshness, frozenReason: r.frozenReason,
@@ -122,10 +129,17 @@ const trendPack = {
     sourceName: trendDs.name ?? null,
     asOf: trendDs.asOf ?? null, coverageEnd: trendDs.coverageEnd ?? null,
     freshness: trendDs.freshness ?? null, frozenReason: trendDs.frozenReason ?? null,
+    /* ★ priority 를 빠뜨리면 랭킹이 `1 + (undefined-50)/100` = NaN 이 되고,
+       NaN 비교가 늘 false 라 **정렬 전체가 무너진다**(일부가 아니라 전부).
+       실측 사고: 이것 때문에 배포본에서만 집계·연혁이 죽었다(eval 48/48 → 40/48).
+       공통값은 반드시 여기에 다 넣는다 — 빠진 필드는 조용히 NaN 이 된다. */
+    priority: trendDs.searchPriority ?? 50,
+    isLatestInDataset: false,
+    entities: [],
     urlTemplate: 'https://nkinfo.unikorea.go.kr/nkp/trend/view.do?trendMngNo={pk}&menuId=MENU_395',
   },
   /* 배열의 배열로 실어 키 이름 반복도 없앤다: [id, topic, title, body, pk] */
-  cols: ['id', 'topic', 'title', 'body', 'pk'],
+  cols: ['id', 'topic', 'title', 'body', 'pk', 'len0'],
   rows: trendRecs.map(r => {
     const b = String(r.body || '')
     return [
@@ -133,6 +147,8 @@ const trendPack = {
       r.title,
       b.length > TREND_BODY_MAX ? b.slice(0, TREND_BODY_MAX) + '…' : b,
       Number((String(r.sourceUrl || '').match(URL_RE) || [])[1]) || 0,
+      // 원본 토큰 수 — 절단이 순위를 바꾸지 않게 한다(위 records 의 len0 과 같은 이유)
+      tokenize(r.title).length * 3 + tokenize(r.sourceName).length * 2 + tokenize(b).length,
     ]
   }),
 }

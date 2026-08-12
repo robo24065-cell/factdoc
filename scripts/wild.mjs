@@ -6,15 +6,40 @@ import { buildIndex, answer } from '../frontend/src/engine/nk-search.mjs'
 import { WILD } from './wild-set.mjs'
 
 const V = process.argv.includes('--v')
-const data = JSON.parse(fs.readFileSync('frontend/src/data/nk-index.json', 'utf8'))
+
+/* ★ --web : 브라우저가 실제로 받는 파일 그대로 검증한다.
+   지금까지 회귀는 로컬 인덱스(frontend/src/data/nk-index.json)만 봤다.
+   그런데 배포본은 **본문이 잘려 있고**(BODY_MAX) 잘린 어휘는 st 로만 남으며,
+   포털동향은 열 배열로 압축돼 별도 파일로 온다. 즉 **검증한 적 없는 인덱스가 배포돼 있었다.**
+   실측 사고 2026-08-13: "북한이 미사일 발사 언제언제 했니" 가 로컬에선 연혁 20건인데
+   웹 인덱스에선 items=0 이었고, eval 을 통과하던 "탈북민 여자가 몇 명이야" 도 라이브에서 깨졌다. */
+function loadWeb() {
+  const P = 'frontend/public/'
+  const idx = JSON.parse(fs.readFileSync(P + 'nk-index.json', 'utf8'))
+  const ms = JSON.parse(fs.readFileSync(P + 'nk-measures.json', 'utf8'))
+  const opt = f => (fs.existsSync(P + f) ? JSON.parse(fs.readFileSync(P + f, 'utf8')) : null)
+  const g = opt('nk-graph.json'), lx = opt('nk-lexicon.json'), p = opt('nk-trend.json')
+  const tr = p?.rows?.length ? p.rows.map(r => ({
+    /* ★ defaults 를 **통째로 펼친다.** 손으로 나열하면 또 빠뜨리고,
+       빠진 필드는 랭킹에서 조용히 NaN 이 되어 정렬 전체를 무너뜨린다(실측 사고). */
+    ...p.defaults,
+    id: r[0], topic: r[1], title: r[2], body: r[3],
+    occurredOn: null, len0: r[5] ?? undefined,
+    sourceUrl: r[4] ? String(p.defaults.urlTemplate).replace('{pk}', String(r[4])) : null,
+  })) : []
+  return { ...idx, records: [...(idx.records ?? []), ...tr], measures: ms.measures ?? [], graph: g, lexicon: lx }
+}
+
+const WEB = process.argv.includes('--web')
+const data = WEB ? loadWeb() : JSON.parse(fs.readFileSync('frontend/src/data/nk-index.json', 'utf8'))
 /* 관계망도 함께 싣는다 — 안 실으면 관계 답변이 조용히 꺼진 채로 전부 통과해 버린다.
    없으면 경고하고 계속한다(관계 케이스만 실패하고 나머지는 그대로 돈다). */
 const GP = '북한자료-api/nk-graph.json'
-if (fs.existsSync(GP)) data.graph = JSON.parse(fs.readFileSync(GP, 'utf8'))
+if (!WEB && fs.existsSync(GP)) data.graph = JSON.parse(fs.readFileSync(GP, 'utf8'))
 else console.log('⚠ 관계망 없음 — node scripts/build-nk-graph.mjs 를 먼저 돌리세요')
 /* 어휘 사전도 함께 — 안 실으면 낱말 질문이 '사전 없음' 경로로만 돌아 실제 동작을 못 잰다. */
 const LP = '북한자료-api/nk-lexicon.json'
-if (fs.existsSync(LP)) data.lexicon = JSON.parse(fs.readFileSync(LP, 'utf8'))
+if (!WEB && fs.existsSync(LP)) data.lexicon = JSON.parse(fs.readFileSync(LP, 'utf8'))
 const ix = buildIndex(data)
 
 const VERDICT_WORDS = ['거짓입니다', '허위입니다', '사실입니다', '틀렸습니다', '맞습니다']
