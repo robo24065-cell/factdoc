@@ -56,6 +56,27 @@ for (const c of WILD) {
   if (c.mustEvidenceAny && r.hasAnswer && !c.mustEvidenceAny.some(w => r.text.includes(w)))
     fails.push(`근거에 ${c.mustEvidenceAny.join('/')} 없음`)
   if (c.expectGenericOnly && !a.Q?.genericOnly) fails.push('변별신호 없음을 못 알아챔')
+  /* ── 시간 정합성 ────────────────────────────────────────
+     as-of 원칙은 근거(groups)에만 걸려 있었고 집계(agg)에는 없었다.
+     그 구멍은 정답 문자열로는 안 잡힌다 — 값은 늘 맞고 '시점'만 틀리기 때문이다. */
+  if (c.mustNumber && !(a.agg && !a.agg.unsolicited)) fails.push('가진 수치가 요지에서 사라짐')
+  if (c.mustDemoteNumber && !(a.agg && a.agg.unsolicited)) fails.push('묻지 않은 수치가 요지로 올라감')
+  if (c.mustOutOfWindow && !(a.agg && a.agg.outOfWindow)) fails.push('물어본 시점의 값이 아닌데 표식 없음')
+  if (c.mustNotOutOfWindow && a.agg?.outOfWindow) fails.push('창 안인데 창 밖으로 표시')
+  if (c.mustFuture && !(a.Q?.win?.future && a.agg?.future)) fails.push('미래 시점을 과거로 처리')
+  if (c.mustNoAgg && a.agg) fails.push(`없는 차원(${a.agg.dimName})으로 수치 생성`)
+  /* 연도 질의의 1순위 근거는 질의 주제의 데이터셋이어야 한다.
+     '2018년 남북회담'이 '북한이탈주민 정착현황 — 2018'을 1위로 물어오던 자리다.
+     정답 문자열이 아니라 데이터셋 주제 일치로 검사한다(유도형 질문 금지 원칙). */
+  if (c.topDatasetAny) {
+    const top = (a.groups || [])[0]?.dsKey ?? (a.items || [])[0]?.r.datasetId ?? null
+    if (!c.topDatasetAny.includes(top)) fails.push(`1순위 근거 ${top || '없음'}`)
+  }
+  if (c.mustItemsYear) {
+    const it = a.items || []
+    const off = it.filter(i => !String(i.r.occurredOn || '').startsWith(c.mustItemsYear))
+    if (!it.length || off.length) fails.push(`연도 벗어난 항목 ${off.length}/${it.length}`)
+  }
 
   rows.push({ c, fails, a, r })
 }

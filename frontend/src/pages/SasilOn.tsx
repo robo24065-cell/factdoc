@@ -71,6 +71,17 @@ type AggT = {
   count?: number
   peak?: { key?: string; value: number }
   low?: { key?: string; value: number }
+  /* 엔진 aggregate() 가 붙이는 시점 표식 — 값이 '언제 것인지'를 화면이 말할 수 있게 한다 */
+  outOfWindow?: boolean
+  timeScoped?: boolean
+  windowLabel?: string | null
+  future?: boolean
+  targetYear?: number | null
+  basis?: 'periodic' | 'snapshot'
+  hasPeriodic?: boolean
+  cumulativeSince?: string | null
+  asOfDate?: string | null
+  unsolicited?: boolean
   dataset: NkDataset
   record: NkRecord
 }
@@ -264,6 +275,12 @@ const baseUnit = (u?: string | null) => {
 /* 기계 지표명(반출입_중량_증가율)의 언더스코어만 푼다. 의미는 바꾸지 않는다. */
 const metricLabel = (s?: string | null) => String(s ?? '').replace(/_/g, ' ').trim()
 
+/* 요지 문장용 — 카드의 '2020.03' 과 달리 문장 안에서는 '2020년 3월'이 읽힌다 */
+function ymKo(d?: string | null): string {
+  const m = String(d ?? '').match(/^(\d{4})-(\d{2})/)
+  return m ? `${m[1]}년 ${Number(m[2])}월` : '기준일 미상'
+}
+
 function ym(d?: string | null): string {
   if (!d) return '기간 미상'
   const m = String(d).match(/^(\d{4})-(\d{2})/)
@@ -358,6 +375,51 @@ function josa(word: string, kind: keyof typeof JOSA): string {
   return `${word}${hasJong(word) ? withJong : without}`
 }
 
+/* ── 집계 한 문장 ─────────────────────────────────────────────
+   as-of 3상태(live/stale/frozen)는 '자료가 언제까지 있나'를 말한다.
+   여기서 다루는 건 그 옆 축이다 — '물어본 시점의 값이 맞나'.
+   숫자를 지우지 않는다. 가진 것을 주되 그것이 무엇의 값인지 먼저 밝힌다. */
+function aggSentence(g: AggT): string {
+  const u = g.unit ? g.unit : ''
+  const asof = ymKo(g.asOfDate)
+  /* '누적'은 카탈로그가 확정한 것만 단정한다(nk-catalog CUMULATIVE).
+     등록되지 않은 스냅샷은 '기간 미분해 집계'로만 말한다 — 재고를 누적이라 부르지 않기 위해서다. */
+  const cum = g.cumulativeSince
+    ? `${String(g.cumulativeSince).slice(0, 4)}년 이후 ${asof}까지 누적`
+    : g.basis === 'snapshot' ? `${asof} 기준(기간 미분해 집계)` : `${asof} 기준`
+  /* 성별 등 필터가 걸린 합계를 조건 없이 말하면 전체값으로 읽힌다 —
+     '여자만 24,147명'이 '북한이탈주민 입국현황은 24,147명'으로 나가던 자리다. */
+  const cond = g.genderFilter && g.genderFilter !== '전체' ? `${g.genderFilter}성 ` : ''
+  const name = metricLabel(g.metric)
+  const val = nf(g.sum ?? g.total)
+
+  // ① 미래 — 자료가 '없는' 게 아니라 '아직 발생하지 않은' 것이다. 그 차이를 말한다.
+  if (g.future) {
+    const tgt = !g.windowLabel || g.windowLabel === '앞으로' ? '앞으로의' : g.windowLabel
+    return `${tgt} 수치는 아직 발생하지 않았으므로 어떤 공식 자료에도 없습니다. ` +
+      `가장 최근 확인된 값은 ${cond}${name} ${cum} ${val}${u}입니다.`
+  }
+  // ② 시점을 물었는데 그 구간으로 나뉜 수치가 코퍼스에 아예 없다 → 단정할 수 있다
+  if (g.outOfWindow && g.hasPeriodic === false)
+    return `${g.windowLabel} 수치는 이 자료에 없습니다 — 이 지표는 기간별로 나뉘어 있지 않습니다. ` +
+      `확인되는 것은 ${cond}${name} ${cum} ${val}${u}뿐입니다.`
+  // ③ 기간별 자료이긴 한데 그 구간이 비었다 → 모른다
+  if (g.outOfWindow)
+    return `${g.windowLabel} 자료는 확인되지 않습니다. 아래는 ${cond}${name}의 ${cum} 값 ${val}${u}입니다.`
+
+  // ④ 시점 조건 없음 — 기존 4갈래에 basis/as-of 만 얹는다
+  if (g.mode === 'distribution' && g.items && g.items.length) {
+    const top = g.items[0]
+    return `${name} ${cum} ${nf(g.total)}${u} 중 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ` +
+      `${top.key}(${nf(top.value)}${u}, ${(top.share * 100).toFixed(1)}%)입니다.`
+  }
+  if (g.mode === 'max' && g.peak)
+    return `${josa(name, '이/가')} 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ${g.peak.key ?? '(구분값 미기재)'}, ${nf(g.peak.value)}${u}입니다. (${cum})`
+  if (g.mode === 'min' && g.low)
+    return `${josa(name, '이/가')} 가장 적은 ${josa(g.dimName ?? '구간', '은/는')} ${g.low.key ?? '(구분값 미기재)'}, ${nf(g.low.value)}${u}입니다. (${cum})`
+  return `${cond}${josa(name, '은/는')} ${cum} ${val}${u}입니다.`
+}
+
 /* ── 요지 한 문장 — 화면 최대 활자가 될 문장을 만든다 ───────────
    주제 종료 공지(topicNotice)는 '맥락'이지 '답'이 아니다.
    "개성공단에 기업 500개나 있었다던데" 에 종료 공지부터 들이밀면 물어본 것에 답하지 않은 셈이다.
@@ -383,21 +445,8 @@ function summarize(a: NkAnswer): string | null {
     return `주장하신 ‘${n.wantUnit ?? '해당'}’ 단위와 같은 단위의 공식 지표가 없어, 대조 대신 관련 지표만 제시합니다.`
 
   const g = a.agg as AggT | null | undefined
-  if (g) {
-    const u = g.unit ? g.unit : ''
-    if (g.mode === 'distribution' && g.items && g.items.length) {
-      const top = g.items[0]
-      return `${metricLabel(g.metric)} ${nf(g.total)}${u} 중 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ${top.key}(${nf(top.value)}${u}, ${(top.share * 100).toFixed(1)}%)입니다.`
-    }
-    if (g.mode === 'max' && g.peak)
-      return `${josa(metricLabel(g.metric), '이/가')} 가장 많은 ${josa(g.dimName ?? '구간', '은/는')} ${g.peak.key ?? '(구분값 미기재)'}, ${nf(g.peak.value)}${u}입니다.`
-    if (g.mode === 'min' && g.low)
-      return `${josa(metricLabel(g.metric), '이/가')} 가장 적은 ${josa(g.dimName ?? '구간', '은/는')} ${g.low.key ?? '(구분값 미기재)'}, ${nf(g.low.value)}${u}입니다.`
-    /* 성별 등 필터가 걸린 합계를 조건 없이 말하면 전체값으로 읽힌다 —
-       '여자만 24,147명'이 '북한이탈주민 입국현황은 24,147명'으로 나가던 자리다. */
-    const cond = g.genderFilter && g.genderFilter !== '전체' ? `${g.genderFilter}성 ` : ''
-    return `공식 집계 기준 ${cond}${josa(metricLabel(g.metric), '은/는')} ${nf(g.sum)}${u}입니다.`
-  }
+  /* 수량을 묻지 않은 질문이면 수치 카드는 남기되 요지로는 쓰지 않는다(엔진이 unsolicited 로 표시) */
+  if (g && !g.unsolicited) return aggSentence(g)
 
   if (a.level === 'timeline') {
     const shown = a.items?.length ?? 0
@@ -1007,6 +1056,16 @@ function AggCard({
 
   return (
     <Block tag="집계" tone="blue" icon="📊" title={`${title}${gender}`} sub={metricLabel(agg.metric)} no={no}>
+      {agg.outOfWindow && (
+        <p className={`mb-3 rounded-xl bg-amber-50 p-3 text-sm leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 ${PROSE}`}>
+          <span aria-hidden="true">⚠ </span>
+          {agg.future
+            ? `‘${agg.windowLabel}’은 아직 오지 않은 시점입니다. 아래는 그 시점의 값이 아니라, 현재까지 확인된 ${ym(agg.asOfDate)} 기준 집계입니다.`
+            : agg.hasPeriodic === false
+              ? `이 지표에는 기간별 수치가 없습니다. 아래는 ‘${agg.windowLabel}’ 값이 아니라 ${ym(agg.asOfDate)} 기준 집계값입니다.`
+              : `‘${agg.windowLabel}’ 구간의 자료는 확인되지 않아, ${ym(agg.asOfDate)} 기준 값을 보여 드립니다.`}
+        </p>
+      )}
       {agg.mode === 'distribution' ? (
         <>
           <ul className="space-y-3">

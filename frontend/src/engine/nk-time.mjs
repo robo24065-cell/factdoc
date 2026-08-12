@@ -13,12 +13,20 @@ const Y = () => new Date().getFullYear()
 
 // 규칙 사전 — [정규식, 슬롯 생성기]
 const RULES = [
+  /* ★ 미래는 새 슬롯이 아니라 직교 플래그다 — TIME_SLOTS 닫힌 집합과 LLM 프롬프트를 건드리지 않는다.
+     과거 규칙보다 먼저 판정해야 '다음 해'가 '해'류 규칙에 먼저 먹히지 않는다. */
+  [/내후년|다다음\s?해/,                          () => ({ slot: 'year', year: Y() + 2, future: true })],
+  [/내년|명년|다음\s?해/,                         () => ({ slot: 'year', year: Y() + 1, future: true })],
+  // (?<!\d) 가 없으면 '2018년 후반기' 가 "2018년 후" 로 걸려 year=4044 가 된다 (실측)
+  [/(?<!\d)(\d{1,2})\s?년\s?(?:후|뒤)/,            (m) => ({ slot: 'year', year: Y() + Number(m[1]), future: true })],
+  [/앞으로|향후|장차|앞날/,                        () => ({ slot: 'latest', future: true })],
   [/지금|현재|오늘날|현시점|이제/,                 () => ({ slot: 'now' })],
   [/최근|근래|요새|요즘|얼마\s?전|며칠\s?전/,      () => ({ slot: 'recent', months: 6 })],
   [/올해|금년|올\s?한\s?해/,                      () => ({ slot: 'year', year: Y() })],
+  [/재작년|지지난해/,                              () => ({ slot: 'year', year: Y() - 2 })],   // ← /작년/ 보다 먼저
   [/작년|지난해|전년/,                            () => ({ slot: 'year', year: Y() - 1 })],
-  [/재작년/,                                      () => ({ slot: 'year', year: Y() - 2 })],
-  [/(\d+)\s?년\s?전/,                             (m) => ({ slot: 'year', year: Y() - Number(m[1]) })],
+  // 같은 이유 — '2020년 전후' 가 "2020년 전" 으로 걸려 year=6 이 되던 자리 (기존 버그)
+  [/(?<!\d)(\d{1,2})\s?년\s?전/,                   (m) => ({ slot: 'year', year: Y() - Number(m[1]) })],
   [/역대|사상|이제까지|지금까지|통틀어/,           () => ({ slot: 'historical' })],
   [/마지막|최종|맨\s?끝|가장\s?최근/,              () => ({ slot: 'latest' })],
   [/(19|20)\d{2}\s?년\s?대/,                      (m) => ({ slot: 'range',
@@ -30,26 +38,57 @@ const RULES = [
 ]
 
 // 시간 표현으로만 쓰이는 어휘 — 검색 토큰에서 제거
-const TIME_WORDS = /지금|현재|오늘날|요즘|현시점|최근|근래|요새|올해|금년|작년|지난해|전년|재작년|역대|사상|마지막|최종|이제|얼마\s?전/g
+const TIME_WORDS = /지금|현재|오늘날|요즘|현시점|최근|근래|요새|올해|금년|작년|지난해|전년|재작년|내후년|내년|명년|다음\s?해|향후|앞으로|장차|앞날|역대|사상|마지막|최종|이제|얼마\s?전/g
 
 export function extractTime(q, now = new Date()) {
   for (const [re, make] of RULES) {
     const m = q.match(re)
     if (m) {
       const t = make(m)
-      return { ...t, matched: m[0], cleaned: stripTime(q), resolvedBy: 'rule' }
+      const future = isFuture(t, now)
+      /* ★ 연도는 '검색어'가 아니지만 '검색 불가'도 아니다.
+         이 코퍼스는 제목에 연도가 박혀 있어("남북교역 통계 — 2018-12"), 연도를 통째로 버리면
+         "2018년에 남북관계 무슨 일" 이 2018년 기록을 아예 못 부른다(창내 129건 → 0건, 실측).
+         → 본문에서는 떼고, 회수용 약가중 토큰으로만 따로 넘긴다.
+         사용자가 실제로 친 숫자만 대상이다 — '작년'을 2025 로 바꿔 넣으면
+         "작년 남북교역 얼마" 가 2025년 레코드(연표)로 새어 나간다(실측). */
+      return { ...t, future, matched: m[0],
+        yearToken: (!future && /(19|20)\d{2}/.test(m[0])) ? m[0].match(/(19|20)\d{2}/)[0] : null,
+        cleaned: stripTime(q, m[0]), resolvedBy: 'rule' }
     }
   }
-  return { slot: 'now', matched: null, cleaned: stripTime(q), resolvedBy: 'default' }
+  return { slot: 'now', future: false, matched: null, yearToken: null,
+    cleaned: stripTime(q), resolvedBy: 'default' }
 }
 
-export function stripTime(q) {
-  return q.replace(TIME_WORDS, ' ').replace(/\s+/g, ' ').trim()
+/* 어휘 OR 숫자. 문자열 비교 금지 — '6-01-01' > '2026-08-09' 가 참이라 오식 연도가 미래로 뒤집힌다. */
+export function isFuture(t, now = new Date()) {
+  if (t.future) return true
+  if (t.slot === 'year')  return Number(t.year) > now.getFullYear()
+  if (t.slot === 'range') return Number(String(t.from).slice(0, 4)) > now.getFullYear()
+  return false
+}
+
+/* 시간표현을 떼어낸 뒤 남는 껍데기 — 단독 토큰일 때만 제거.
+   '올해 말'에서 '올해'만 지우면 '말'이, '2030년까지'에서는 '까지'가 남는다. */
+const TIME_HUSK = /(^|\s)(?:년도?|년대|말|초|중반|하반기|상반기|경|쯤|까지|부터)(?=\s|$)/g
+
+export function stripTime(q, matched = null) {
+  let s = q
+  if (matched) s = s.split(matched).join(' ')
+  return s.replace(TIME_WORDS, ' ').replace(TIME_HUSK, '$1').replace(/\s+/g, ' ').trim()
 }
 
 // 슬롯 → 조회 구간
 export function timeWindow(t, now = new Date()) {
   const iso = d => d.toISOString().slice(0, 10)
+  /* ★ 미래 창은 조회 창이 될 수 없다. 아직 오지 않은 구간으로 필터하면 결과가 반드시 0건이다.
+     조회는 '지금까지'로 하고, '물어본 구간이 미래였다'는 사실은 future/askedLabel 로만 올린다. */
+  if (isFuture(t, now)) {
+    return { from: null, to: iso(now), label: '현재까지 확인된 자료', preferLatest: true, future: true,
+      askedFrom: t.slot === 'year' ? `${t.year}-01-01` : iso(now),
+      askedLabel: t.slot === 'year' ? `${t.year}년` : '앞으로' }
+  }
   switch (t.slot) {
     case 'year':  return { from: `${t.year}-01-01`, to: `${t.year}-12-31`, label: `${t.year}년` }
     case 'range': return { from: t.from, to: t.to, label: `${t.from.slice(0,4)}~${t.to.slice(0,4)}` }

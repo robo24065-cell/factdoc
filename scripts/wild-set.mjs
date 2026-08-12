@@ -95,4 +95,35 @@ export const WILD = [
   // 반대 방향 — 진짜 탈북민 질문은 여전히 그 데이터로 답해야 한다
   { q: '북한이탈주민 몇 명이야', domain: true, mustDataset: ['defectorAge'] },
   { q: '탈북민 여자가 몇 명이야', domain: true, mustDataset: ['defectorAge'] },
+  // ── 시간 정합성 감시 ──────────────────────────────────────
+  // 없는 시점을 물었을 때 '숫자를 지우는 것'도 '그냥 답해버리는 것'도 실패다.
+  // 가진 값은 주되(mustNumber) 물어본 시점의 것이 아님을 표시해야 한다(mustOutOfWindow).
+  { q: '작년 탈북민은 몇명', domain: true, mustNumber: true, mustOutOfWindow: true },
+  { q: '2020년 탈북민은 몇명', domain: true, mustNumber: true, mustOutOfWindow: true,
+    topDatasetAny: ['defectorAge', 'defectorOrigin', 'defectorSettle'] },
+  { q: '2019년 탈북민 몇명', domain: true, mustNumber: true, mustOutOfWindow: true,
+    topDatasetAny: ['defectorAge', 'defectorOrigin', 'defectorSettle'] },
+  { q: '내년 탈북민 몇명이야', domain: true, mustNumber: true, mustFuture: true },
+  { q: '요즘 탈북민 몇 명이야', domain: true, mustNumber: true, mustOutOfWindow: true },
+  // 연도가 검색어로 살아 있으면 제목에 그 연도가 박힌 무관 데이터셋이 1위로 올라온다
+  { q: '2018년 남북회담 몇 번 했어', domain: true, topDatasetAny: ['talks'],
+    mustNotDataset: ['defectorSettle', 'defectorAge', 'travelAir'] },
+  // 반대 방향 — 연도 토큰을 죽이면 이 질의의 재현율이 0이 된다(창내 129건 → 0건)
+  { q: '2018년에 남북관계 무슨 일 있었어', domain: true, mustItemsYear: '2018' },
+  { q: '2015년 개성공단 생산액', domain: true, expectTopic: 'econ.kaesong',
+    topDatasetAny: ['ksFirmsProd', 'ksProduction', 'ksFirms'] },
+  // 코퍼스에 '학력' 차원 자료는 0건 — 다른 차원의 수치를 학력인 척 내놓으면 안 된다
+  { q: '탈북민 학력 어때', domain: true, mustNoAgg: true },
+  // 수량을 묻지 않았다 — 카드로는 남기되 요지가 되면 안 된다
+  { q: '탈북했다 다시 월북한다던데', domain: true, mustDemoteNumber: true },
+
+  // ── 과잉회피 감시 (위 시간 조건이 절대 삼켜서는 안 되는 것들) ──
+  { q: '탈북민 몇 명이야', domain: true, mustNumber: true, mustNotOutOfWindow: true,
+    topDatasetAny: ['defectorAge'] },
+  { q: '탈북은 나이 많은 사람이 더 많이 한다며', domain: true, mustNumber: true, mustNotOutOfWindow: true },
+  { q: '북한이탈 주민 통계', domain: true, mustNumber: true, mustNotOutOfWindow: true },
+  { q: '김정은 최근에 뭐 했어', domain: true },
+  { q: '남북교역 규모가 어느 정도야', domain: true },
+  { q: '금강산 관광객 지금 얼마나 가', domain: true, expectTopic: 'econ.kumgang' },
+  { q: '개성공단에 기업 500개나 있었다던데', domain: true, expectTopic: 'econ.kaesong' },
 ]

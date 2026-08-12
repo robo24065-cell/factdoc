@@ -40,6 +40,15 @@ export const TOPIC_STATUS = {
     text: '남북 당국 회담은 2018년 이후 사실상 중단된 상태로, 그 이후의 회담 기록은 확인되지 않습니다.' },
 }
 
+/* 누적(cumulative) 지표 — 사람이 확정한다. 자동 추론으로 되돌리지 말 것.
+   헤더·파일명 어디에도 '1998년 이후 누적'이라는 사실이 없다(금강산 coverageEnd 수동확정과 같은 구조).
+   실측: dims 를 가진 measure 60건은 전부 이 두 데이터셋의 것이고 periodStart 보유율 0%다.
+   여기에 등록되지 않은 스냅샷은 '누적'이라 말하지 않고 '기간 미분해 집계'로만 표기된다. */
+export const CUMULATIVE = {
+  defectorAge:    { since: '1998-01-01' },   // 북한이탈주민 연령대별 입국현황 (as-of 2020-03-31)
+  defectorOrigin: { since: '1998-01-01' },   // 북한이탈주민 재북 출신지역별 현황 (동일)
+}
+
 export const DATASETS = {
   // ══ 시간축 척추 ═════════════════════════════════════════════
   timeline: { ...MOU, file: '남북관계연표.csv', kind: 'csv', parser: 'timeline',

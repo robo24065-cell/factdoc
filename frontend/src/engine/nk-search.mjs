@@ -6,7 +6,7 @@
 
 import { extractTime, timeWindow, needsLLM } from './nk-time.mjs'
 import { normalizeByRule } from './nk-normalize.mjs'
-import { TOPIC_STATUS } from '../../../scripts/nk-catalog.mjs'
+import { TOPIC_STATUS, CUMULATIVE } from '../../../scripts/nk-catalog.mjs'
 
 // ── 토크나이저 ──────────────────────────────────────────────
 const STOP = new Set(['그리고','에서','으로','인가','인가요','뭐야','뭔가','얼마','어떻게','있나','있나요',
@@ -140,7 +140,14 @@ export function buildIndex(data) {
     if (!vocByChar.has(ch)) vocByChar.set(ch, [])
     vocByChar.get(ch).push(t)
   }
-  return { data, docs, df, titleDf, N, avg, inv, mByRec, vocByChar }
+  /* ★ 지표별 기간분해 유무. 실측: measure 37,912 중 periodStart 보유 37,310(98.4%),
+     그런데 dims 를 가진 60건은 0%다. 이 사실이 '연도별 수치는 없습니다'의 근거다.
+     metric 이름은 데이터셋을 교차하므로(52종 중 15종) 데이터셋으로 키를 잡는다. */
+  const dsOfRec = new Map(data.records.map(r => [r.id, r.datasetId]))
+  const periodicMetrics = new Set()
+  for (const m of data.measures || []) if (m.periodStart)
+    periodicMetrics.add(dsOfRec.get(m.recordId) + '::' + m.metric)
+  return { data, docs, df, titleDf, N, avg, inv, mByRec, vocByChar, periodicMetrics }
 }
 
 function bm25(ix, weighted) {
@@ -185,7 +192,8 @@ export function parseQuery(q, ov = {}) {
 
   const tokens = tokenize(body)
   const topics = TOPIC_HINTS.filter(([re]) => re.test(body)).map(([, t]) => t)
-  const askedAt = time.slot === 'year' ? new Date(`${time.year}-12-31`)
+  // 미래 질의는 askedAt 을 미래로 밀지 않는다 — as-of 감쇠가 전부 과대해진다
+  const askedAt = (time.slot === 'year' && !win.future) ? new Date(`${time.year}-12-31`)
     : win.to ? new Date(win.to) : new Date()
 
   let numeric = null
@@ -208,7 +216,7 @@ export function parseQuery(q, ov = {}) {
   const norm = ov.norm || normalizeByRule(body)
   return { raw: q, tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
     listIntent: listIntent || norm.intent === 'timeline', wantCount,
-    askedYear: time.slot === 'year' ? String(time.year) : null,
+    askedYear: (time.slot === 'year' && !win.future) ? String(time.year) : null,
     needsLLMTime: needsLLM(time) }
 }
 
@@ -287,7 +295,13 @@ export function search(ix, q, { limit = 40, ov } = {}) {
   }
   for (const rt of residuals) expandVoc(rt, true)      // '방사능' → 확장 실패 → unmatched
 
+  /* ★ 연도는 내용어가 아니라 필터다. 그러나 삭제도 안 된다(재현율 붕괴, 실측).
+     회수만 남기고 변별력은 뺀다. 스윕: 0.05·0.15·0.3 에서 '2020년 탈북민'이 교정되고
+     0.5·0.7·1.0 에서는 「남북 항공기 왕래 — 2020」이 1위로 되돌아온다. */
+  const YEAR_W = 0.15
   const expanded = expandTokens(seedTokens, ix.data)
+  const yearTok = Q.time.yearToken || null
+  if (yearTok && ix.df.has(yearTok)) expanded.set(yearTok, YEAR_W)
   /* 원형('주민은')도 검색어로는 남기되 절단형('주민')과 같은 개념이므로 가중치를 낮춘다.
      둘 다 1점이면 주어가 두 배로 세어져, "북한 주민이 굶는다"에서 술어가 밀린다. */
   for (const t of Q.tokens) if (!expanded.has(t)) expanded.set(t, isInflected(t) ? 0.3 : 1)
@@ -364,8 +378,9 @@ export function search(ix, q, { limit = 40, ov } = {}) {
     if (r.occurredOn) {
       const inFrom = !Q.win.from || r.occurredOn >= Q.win.from
       const inTo   = !Q.win.to   || r.occurredOn <= Q.win.to
-      if (inFrom && inTo) s *= (Q.time.slot === 'year' || Q.time.slot === 'range') ? 2.2 : 1.15
-      else if (Q.time.slot === 'year' || Q.time.slot === 'range') s *= 0.15
+      const yearWin = (Q.time.slot === 'year' || Q.time.slot === 'range') && !Q.win.future
+      if (inFrom && inTo) s *= yearWin ? 2.2 : 1.15
+      else if (yearWin) s *= 0.15
     }
     // '최근/최종' 요청이면 최신순 가산
     if ((Q.win.preferLatest || Q.time.slot === 'recent') && r.occurredOn) {
@@ -536,22 +551,11 @@ export function lookupNumeric(ix, Q, hits) {
 // ── 집계·분해 ───────────────────────────────────────────────
 // "몇 명" → 성별=전체 합계 / "여자가 몇 명" → 성별=여 합계
 // "나이 많은 사람이 더 많다며" → 연령대 분포
-/* 수량을 묻는 질문인가 — 이 판정이 없으면 '개성쥬악' 같은 오타에도 합계를 지어낸다.
-   실측: '개성쥬악' → 「북한이탈주민 재북 현황은 79명입니다」, '델리만쥬…' → 학술회의 기록.
-   묻지 않은 숫자를 만들어내는 것은 근거 없는 판정이며, 이 서비스가 해선 안 되는 일이다.
-   intent 만으로는 못 가른다 — '남북교역 규모'도 규칙층에선 intent=unknown 이다. */
-const COUNT_CUE = /몇|얼마|규모|건수|인원|총|합계|평균|비율|분포|퍼센트|%|많|적|늘|줄|증가|감소|추이/
-function asksQuantity(Q) {
-  const n = Q.norm || {}
-  if (n.aggregate && n.aggregate !== 'none') return true   // 분포·합계를 명시적으로 요구
-  if (n.unitFamily) return true                            // '몇 명/얼마' 류가 잡힘
-  if (Q.isQuant || Q.numeric != null) return true          // 질문에 수치가 들어 있음
-  return COUNT_CUE.test(String(Q.raw ?? Q.q ?? ''))
-}
-
+// ── 집계·분해 ───────────────────────────────────────────────
+// "몇 명" → 성별=전체 합계 / "여자가 몇 명" → 성별=여 합계
+// "나이 많은 사람이 더 많다며" → 연령대 분포
 export function aggregate(ix, Q, hits) {
   const n = Q.norm
-  if (!asksQuantity(Q)) return null
   const rows = []
   for (const h of hits.slice(0, 40)) {
     for (const m of ix.mByRec.get(h.r.id) || []) {
@@ -563,8 +567,13 @@ export function aggregate(ix, Q, hits) {
 
   // 가장 관련 높은 지표 하나로 좁힌다
   const aff = s => Q.tokens.reduce((a, t) => a + (s.includes(t) ? 2 : 0), 0)
+  /* ★ 질문이 지목한 차원을 실제로 가진 지표만 그 질문의 답이 될 수 있다.
+     코퍼스에 '학력' 차원은 0건인데 연령대 최빈값 9,634 를 '학력' 라벨로 내보내던 자리다. */
+  const carries = mt => !!(n.dimensionAsked &&
+    rows.some(r => r.m.metric === mt && r.m.dims?.[n.dimensionAsked]))
   const metric = [...new Set(rows.map(r => r.m.metric))]
-    .sort((a, b) => aff(b) - aff(a))[0]
+    .sort((a, b) => (carries(b) - carries(a)) || aff(b) - aff(a))[0]
+  if (n.dimensionAsked && !carries(metric)) return null
   let pool = rows.filter(r => r.m.metric === metric)
 
   // 성별 필터 — 지정 없으면 '전체'만 사용해 중복합산 방지
@@ -572,6 +581,42 @@ export function aggregate(ix, Q, hits) {
   const hasTotal = pool.some(r => r.m.dims.성별 === '전체')
   pool = pool.filter(r => r.m.dims.성별 === (hasTotal ? g : (g === '전체' ? '남' : g)) ||
     (!hasTotal && g === '전체'))
+  if (!pool.length) return null
+
+  /* ★ 시간창 — 여기가 비어 있던 자리다. 근거(groups) 경로에만 걸려 있던 as-of 원칙을 집계에도 건다.
+     창 밖이어도 null 을 돌려주지 않는다. 침묵은 답이 아니다.
+     가진 것을 주되 '물어본 시점의 것이 아님'을 표식으로 함께 올린다(lookupNumeric 과 같은 계약).
+     timeScoped 를 win.from 유무로 재는 것이 핵심이다 — slot 이름으로 재면 'recent'(요즘)가 새어 나간다. */
+  const per = r => r.m.periodStart || r.rec.occurredOn || null
+  const dated = pool.filter(per)
+  const windowed = dated.filter(r => {
+    const p = per(r)
+    return (!Q.win.from || p >= Q.win.from) && (!Q.win.to || p <= Q.win.to)
+  })
+  const timeScoped = !!Q.win.from || !!Q.win.future
+  let outOfWindow = false
+  if (timeScoped) {
+    if (windowed.length) pool = windowed
+    else outOfWindow = true
+  }
+  const basis = dated.length ? 'periodic' : 'snapshot'
+  const dsKey = pool[0].rec.datasetId
+  /* 수량을 묻지 않은 질문인가. 숫자를 지우지는 않는다 — 요지(헤드라인)에서만 내린다.
+     '탈북했다 다시 월북한다던데' 에 누적 33,501명이 헤드라인으로 나가던 자리다.
+     단서 둘: ① 질의가 사실상 주어 하나뿐이면('탈북민') 요청한 것으로 본다
+              — 이 단서가 없으면 wild-set 의 '탈북민' 이 헤드라인을 잃는다(실측).
+             ② 미래 질의는 '아직 없습니다'가 곧 답이므로 내리지 않는다. */
+  const bareSubject = Q.tokens.length <= 2
+  const unsolicited = !bareSubject && !Q.win.future && !Q.isQuant && !Q.numeric && !Q.wantsStat &&
+    n.intent !== 'lookup' && n.aggregate === 'none' && !n.dimensionAsked
+  const scope = { windowLabel: Q.win.askedLabel || Q.win.label, timeScoped, outOfWindow, basis,
+    unsolicited, future: !!Q.win.future, targetYear: Q.time.year ?? null,
+    /* hasPeriodic=false 여야만 '기간별로 나뉘어 있지 않습니다'라고 단정할 수 있다.
+       true 면 '해당 기간 자료는 확인되지 않습니다'(모른다)로 물러선다. stale/frozen 과 같은 문법. */
+    hasPeriodic: !!ix.periodicMetrics?.has(dsKey + '::' + metric),
+    cumulativeSince: (basis === 'snapshot' && CUMULATIVE[dsKey]) ? CUMULATIVE[dsKey].since : null,
+    asOfDate: pool.map(per).filter(Boolean).sort().pop() ||
+      pool[0].rec.coverageEnd || pool[0].rec.asOf || null }
 
   const unit = pool[0]?.m.unit || null
   const dimName = n.dimensionAsked ||
@@ -588,7 +633,7 @@ export function aggregate(ix, Q, hits) {
     const total = items.reduce((a, b) => a + b.value, 0)
     items.forEach(i => { i.share = total ? i.value / total : 0 })
     items.sort((a, b) => b.value - a.value)
-    return { mode: 'distribution', metric, unit, dimName, genderFilter: g,
+    return { mode: 'distribution', metric, unit, dimName, genderFilter: g, ...scope,
       items, total, dataset: ix.data.datasets[pool[0].rec.datasetId], record: pool[0].rec }
   }
 
@@ -599,7 +644,7 @@ export function aggregate(ix, Q, hits) {
   const mx = pool.reduce((a, b) => (a.m.value > b.m.value ? a : b))
   const mn = pool.reduce((a, b) => (a.m.value < b.m.value ? a : b))
   const mode = n.aggregate === 'max' ? 'max' : n.aggregate === 'min' ? 'min' : 'sum'
-  return { mode, metric, unit, genderFilter: g, dimName,
+  return { mode, metric, unit, genderFilter: g, dimName, ...scope,
     sum, count: vals.length,
     peak: { key: mx.m.dims[dimName], value: mx.m.value },
     low: { key: mn.m.dims[dimName], value: mn.m.value },
