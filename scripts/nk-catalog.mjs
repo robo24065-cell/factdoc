@@ -185,7 +185,14 @@ export const DATASETS = {
     file: 'nkinfoTrend.json', parser: 'nkinfoTrend', incrementalBy: 'full',
     asOf: '2026-08-12', coverageEnd: '2026-08-11', autoCoverage: true,
     freshness: 'live', updateCycle: '일 1회', searchPriority: 45,
-    ingestLimit: 8000,      // ★ 6.3만건 전량은 웹 인덱스에 못 싣는다 — 최신 id 우선 상한. 원본은 전량 보관
+    /* 상한을 풀었다(8,000 → 전량).
+       ★ 왜 8,000이 문제였나: 최신 pk 순으로 자르는데 인물동향(pk 6,596~121,809)이
+         적재 하한 126,513 아래라 **14,468건 전부가 잘려 나갔다.** 엘리트 수행 일지가
+         통째로 빠진 채였다. 상한이 '최신 우선'처럼 보였지만 실제로는 특정 구간을 지웠다.
+       ★ 웹 부피는 다른 방법으로 푼다: Cloudflare 상한은 **파일당** 25MiB 이므로
+         포털동향만 별도 파일(nk-trend.json)로 내보낸다 — build-web-index.mjs 참조.
+         본문을 150자로 잘라 22.2MB(상한의 89%), gzip 4.2MB 다. */
+    ingestLimit: 0,         // 0 = 전량
     note: '★ 본문은 통일부의 판정이 아니라 북한 매체 주장의 채록이다. 화면에 반드시 그렇게 표기할 것. '
         + '레코드에 날짜 필드가 없어 occurredOn 이 null 이다',
     url: 'https://www.data.go.kr/data/15079225/openapi.do' },

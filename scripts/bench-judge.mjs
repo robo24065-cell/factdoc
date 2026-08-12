@@ -76,13 +76,29 @@ const CASES = [
   { g: '정상', q: '금강산 관광객 얼마나 갔었어', want: 'evidence' },
   { g: '정상', q: '2018년에 남북관계 무슨 일 있었어', want: 'evidence' },
   { g: '정상', q: '북한 요즘 뭐함', want: 'evidence' },
+
+  /* ⑥ 열린 질문 — 특정 사실을 콕 집지 않는다. 리랭커가 '주제만 겹침'으로 전부 지우면
+     빈손이 되는데, 자료는 실제로 있다. 이 프로젝트가 갈아엎은 실패가 정확히 그것이다. */
+  { g: '열린질문', q: '북한 최근 어떰', want: 'evidence' },
+  { g: '열린질문', q: '북한에 무슨 일 있어', want: 'evidence' },
+  { g: '열린질문', q: '요즘 북한 어떻게 돌아가', want: 'evidence' },
+  { g: '열린질문', q: '북한 소식 좀', want: 'evidence' },
 ]
 
 const hasEvidence = a => (a.groups?.length ?? 0) > 0 || (a.items?.length ?? 0) > 0 || !!a.agg
+/* '근거가 있다'와 '근거라고 부를 수 있다'는 다르다.
+   weakMatch 면 화면은 "핵심어에 걸리는 공식 자료를 찾지 못했습니다 — 아래는 참고"라고 쓴다.
+   그걸 통과로 세면 리랭커가 다 지워도 벤치가 초록이 된다(실제로 그랬다).
+   과잉회피 감시는 **화면에 답으로 보이는가**로 판정해야 한다. */
+/* genericOnly(주제 미지정)와 weakMatch(지정했는데 없음)를 구분한다.
+   "북한 요즘 뭐함" 은 리랭커와 무관하게 원래부터 genericOnly 다 — 변별 어휘가 없는 질의라
+   참고로 표시하는 것이 설계대로다. 그걸 실패로 세면 멀쩡한 동작을 고치려 들게 된다.
+   막아야 할 것은 **지정했는데 못 찾았다고 하는 경우**(weakMatch)와 빈손이다. */
+const hasRealEvidence = a => hasEvidence(a) && !(a.Q?.weakMatch && !a.Q?.genericOnly)
 function judge(c, a) {
   switch (c.want) {
     case 'noEvidence': return !hasEvidence(a)
-    case 'evidence': return hasEvidence(a)
+    case 'evidence': return hasRealEvidence(a)
     case 'relation': return !!a.relation &&
       (!c.subj || a.relation.subject === c.subj) &&
       (!c.dir || a.relation.kind === 'pair' || a.relation.lead === (c.dir === 'up' ? 'serves' : 'served'))

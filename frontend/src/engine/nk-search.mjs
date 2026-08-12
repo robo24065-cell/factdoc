@@ -444,6 +444,12 @@ export function search(ix, q, { limit = 40, ov } = {}) {
     if (Q.topics.some(t => r.topic === t || r.topic.startsWith(t + '.'))) s *= 1.5
     if (Q.tokens.some(t => r.entities?.includes(t))) s *= 1.25
     if (Q.wantsStat) s *= (r.kind === 'stat' ? 1.9 : r.kind === 'event' ? 0.65 : 1)
+    /* ★ 수치 주장을 검증하려면 **통계**가 있어야 한다. "3만명씩 온다며"는 보도자료가 아니라
+       입국현황 통계에 대조해야 답이 나온다. wantsStat 은 '몇 명이야' 같은 질문형만 잡고
+       주장형(Q.numeric)은 놓쳤다 — 그래서 통계가 38위로 밀려 checkNumeric(상위 30위)의
+       사정권 밖으로 나갔다(포털동향 42,788건 추가로 IDF 가 흔들리며 드러난 결함).
+       주장형은 event 를 깎지 않는다 — 사건에 대한 수치 주장일 수도 있기 때문이다. */
+    else if (Q.numeric && r.kind === 'stat') s *= 1.9
     // 시간창 반영 — 창 안이면 가산, 밖이면 감산 (검색어가 아니라 필터 신호)
     if (r.occurredOn) {
       const inFrom = !Q.win.from || r.occurredOn >= Q.win.from
@@ -842,9 +848,17 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
   const { Q, hits: rawHits } = ov?.searched ?? search(ix, q, { limit: 300, ov })
   /* ★ 리랭킹 결과 반영 — BM25 가 낱말로 찾아 온 것을 뜻으로 걸러낸 결과다.
      점수가 매겨지지 않은 후보는 건드리지 않는다(LLM 이 일부만 답해도 무너지지 않게). */
-  const hits = ov?.scores
-    ? rawHits.filter(h => (ov.scores.get(h.r.id) ?? 9) >= JUDGE_KEEP_MIN)
-    : rawHits
+  let hits = rawHits
+  if (ov?.scores) {
+    const keep = rawHits.filter(h => (ov.scores.get(h.r.id) ?? 9) >= JUDGE_KEEP_MIN)
+    /* ★ 전부 지워지면 리랭킹을 통째로 무시한다.
+       "북한 요즘 뭐함" 에서 실제로 12건 전부 1점을 받아 빈손이 됐다. 심사 자체는 틀리지 않았다 —
+       특정 사실을 콕 집지 않은 질문이라 '주제만 겹친다'가 맞다. 다만 **그 결론이 빈손이면 안 된다.**
+       자료는 실제로 있고, 이 서비스가 갈아엎은 실패가 바로 '확인이 어렵습니다'로 도망치는 것이다.
+       정밀도를 올리려다 재현율을 0으로 만드는 것은 개선이 아니다.
+       이때는 규칙 순위를 그대로 쓰고, 약한 매칭 표시(weakMatch)가 정직함을 대신 책임진다. */
+    hits = keep.length ? keep : rawHits
+  }
   const tn = topicNotice(Q)
   /* 관계 답변은 검색 결과를 **밀어내지 않고 덧붙는다.** 관계 말투가 아니거나
      그래프에 없는 사람이면 null 이라 기존 동작이 그대로 유지된다.

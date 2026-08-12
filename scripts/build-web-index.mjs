@@ -15,12 +15,21 @@ const ST_MAX = 800          // 잘린 뒷부분에서 살릴 검색용 어휘 �
 
 const d = JSON.parse(fs.readFileSync(IN, 'utf8'))
 
-/* ★ 웹 인덱스에서 제외할 데이터셋 — 브라우저가 받는 파일이다. 무한정 키울 수 없다.
-   nkinfoTrend(북한정보포털 동향)는 8,000건인데 날짜 필드가 없어 as-of 배지를 못 단다.
-   검색 가치 대비 부피가 커서 웹에서는 빼고 전체 인덱스(Supabase 적재용)에만 남긴다.
-   실측: 포함 시 gzip 0.9MB → 5.39MB. 제외하면 브라우저 부담이 사라진다. */
-const WEB_EXCLUDE = new Set(['nkinfoTrend'])
-const kept = d.records.filter(r => !WEB_EXCLUDE.has(r.datasetId))
+/* ★ 포털동향(nkinfoTrend)은 **별도 파일**로 나눈다.
+   전에는 웹에서 통째로 뺐다. 그래서 화면의 '공식 기록'이 22,902건이었는데,
+   실제 보유량은 API 원본만 51,561건이다 — 사용자가 "이거밖에 없어?"라고 물은 지점이다.
+
+   부피가 문제였지 가치가 없어서가 아니었다. Cloudflare 상한은 **파일당** 25MiB 이므로
+   나누면 실을 수 있다(이미 measures 를 그렇게 나눠 놨다).
+   실측: 본문 150자로 자르면 42,813건이 22.2MB(상한의 89%), gzip 4.2MB.
+   병렬로 받으므로 체감 비용은 gzip 크기다.
+
+   날짜 필드가 없어 as-of 배지를 레코드 단위로 못 다는 것은 그대로다 —
+   데이터셋 단위 기준일로 표시된다. */
+const TREND_KEY = 'nkinfoTrend'
+const TREND_BODY_MAX = 150       // 이 값이 곧 파일 크기다. 올리면 상한을 넘는다(240자 → 105%).
+const trendRecs = d.records.filter(r => r.datasetId === TREND_KEY)
+const kept = d.records.filter(r => r.datasetId !== TREND_KEY)
 const keptIds = new Set(kept.map(r => r.id))
 d.records = kept
 d.measures = d.measures.filter(m => keptIds.has(m.recordId))
@@ -98,9 +107,41 @@ fs.writeFileSync(MEASURES_OUT, JSON.stringify({ measures }), 'utf8')
 /* 관계망 — 세 번째 파일. 0.19MB 라 상한과는 무관하지만 같은 가드를 통과시킨다.
    별도 파일인 이유: 관계망은 문서 인덱스와 갱신 주기가 다르다(동향 재수집 때만 바뀐다).
    못 받아도 검색은 그대로 돌아야 하므로 화면에서도 실패를 허용한다. */
+/* 포털동향 별도 파일 — 화면·검색에 쓸 최소 필드만 담는다.
+   sourceName 을 함께 실어야 근거 카드가 출처를 표시할 수 있다. */
+const TREND_OUT = OUT.replace(/nk-index\.json$/, 'nk-trend.json')
+/* 42,813건이 **같은 값을 반복**한다 — datasetId·kind·sourceName·asOf·freshness 는
+   전부 동일하고, sourceUrl 은 번호만 다른 같은 주소다. 레코드마다 넣으면
+   28.3MB(상한의 113%)가 되어 배포가 거부된다(가드가 실제로 잡았다).
+   공통값은 defaults 에 한 번만 두고, URL 은 번호만 남긴다. 화면이 받을 때 되돌린다. */
+const URL_RE = /trendMngNo=(\d+)/
+const trendDs = d.datasets[TREND_KEY] || {}
+const trendPack = {
+  defaults: {
+    datasetId: TREND_KEY, kind: 'event',
+    sourceName: trendDs.name ?? null,
+    asOf: trendDs.asOf ?? null, coverageEnd: trendDs.coverageEnd ?? null,
+    freshness: trendDs.freshness ?? null, frozenReason: trendDs.frozenReason ?? null,
+    urlTemplate: 'https://nkinfo.unikorea.go.kr/nkp/trend/view.do?trendMngNo={pk}&menuId=MENU_395',
+  },
+  /* 배열의 배열로 실어 키 이름 반복도 없앤다: [id, topic, title, body, pk] */
+  cols: ['id', 'topic', 'title', 'body', 'pk'],
+  rows: trendRecs.map(r => {
+    const b = String(r.body || '')
+    return [
+      r.id, r.topic,
+      r.title,
+      b.length > TREND_BODY_MAX ? b.slice(0, TREND_BODY_MAX) + '…' : b,
+      Number((String(r.sourceUrl || '').match(URL_RE) || [])[1]) || 0,
+    ]
+  }),
+}
+fs.writeFileSync(TREND_OUT, JSON.stringify(trendPack), 'utf8')
+console.log(`포털동향 ${trendPack.rows.length.toLocaleString()}건 → ${path.basename(TREND_OUT)}`)
+
 const GRAPH_SRC = path.resolve('북한자료-api/nk-graph.json')
 const GRAPH_OUT = OUT.replace(/nk-index\.json$/, 'nk-graph.json')
-const shipped = [OUT, MEASURES_OUT]
+const shipped = [OUT, MEASURES_OUT, TREND_OUT]
 if (fs.existsSync(GRAPH_SRC)) {
   const g = JSON.parse(fs.readFileSync(GRAPH_SRC, 'utf8'))
   fs.writeFileSync(GRAPH_OUT, JSON.stringify(g), 'utf8')

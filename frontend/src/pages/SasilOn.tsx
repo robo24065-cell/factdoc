@@ -554,6 +554,16 @@ function summarize(a: NkAnswer): string | null {
        이때 아래 자료는 '근거'가 아니라 '참고'다. 그렇다고 빈손으로 돌려보내지는 않는다 —
        그게 이 프로젝트가 갈아엎은 그 실패다. 무엇을 못 찾았는지만 정직하게 밝힌다.
        ※ Q.unmatched 는 '뭐함/어떰/무서워' 같은 어미 파편이 섞여 화면에 인용하지 않는다. */
+    /* ★ 두 경우를 갈라 말한다. 지금까지 같은 문구를 썼는데 뜻이 다르다.
+       genericOnly — 사용자가 **주제를 안 지정했다**("북한 요즘 뭐함"). 못 찾은 게 아니다.
+         "핵심어를 찾지 못했다"고 하면 답이 있는데도 실패처럼 읽힌다.
+       weakMatch  — 지정은 했는데 **코퍼스에 없다**("북한방사능"). 이때는 못 찾은 게 맞다. */
+    /* ⚠ 엔진 정의상 weakMatch = genericOnly || (…) 다. 즉 genericOnly 면 weakMatch 도 참이다.
+       `genericOnly && !weakMatch` 로 쓰면 영원히 거짓이 된다(실제로 그렇게 썼다가 안 먹었다).
+       **순서로** 가른다 — 주제 미지정이 먼저, 그다음이 '지정했는데 없음'. */
+    if (a.Q?.genericOnly)
+      return `특정 주제를 지정하지 않으셔서, 관련 있는 최근 공식 기록을 보여 드립니다 — ` +
+             `${ds0}의 「${title0}」입니다.${more}`
     if (a.Q?.weakMatch ?? a.Q?.genericOnly)
       return `질문의 핵심어에 걸리는 공식 자료를 찾지 못했습니다. 아래는 근거가 아니라 참고 자료입니다 — ` +
              `가장 가까운 기록은 ${ds0}의 「${title0}」입니다.`
@@ -942,7 +952,9 @@ function Headline({
             {refOnly
               ? (a.relation
                 ? '문서 근거는 없습니다 — 동향에 기록된 수행·동행 관계를 집계해 답했습니다'
-                : '질문의 핵심어에 걸린 공식 자료는 없습니다')
+                : a.Q?.genericOnly
+                  ? '주제를 좁히면 더 정확히 찾아 드립니다'
+                  : '질문의 핵심어에 걸린 공식 자료는 없습니다')
               : lm.sub}
           </p>
           {tn?.since && (
@@ -1585,8 +1597,31 @@ export default function SasilOn() {
     /* 관계망은 **없어도 되는 것**이다 — 못 받으면 관계 답변만 꺼지고 검색은 그대로 돈다.
        그래서 셋 중 이것만 실패를 삼킨다. 있으면 되고 없으면 마는 축이다. */
     const grabOpt = (u: string) => grab(u).catch(() => null)
-    Promise.all([grab('/nk-index.json'), grab('/nk-measures.json'), grabOpt('/nk-graph.json')])
-      .then(([idx, m, g]) => { if (alive) setIx(buildIndex({ ...idx, measures: m.measures ?? [], graph: g })) })
+    /* 포털동향 42,788건은 같은 값을 반복하므로 열 단위로 압축해 실려 온다
+       ([id, topic, title, body, pk] + 공통값 defaults). 여기서 되펼친다.
+       레코드마다 다 넣으면 28.3MB 로 Cloudflare 자산 상한(25MiB)을 넘어 배포가 거부된다. */
+    const expandTrend = (p: any) => {
+      if (!p?.rows?.length) return []
+      const d = p.defaults ?? {}
+      return p.rows.map((r: any[]) => ({
+        id: r[0], topic: r[1], title: r[2], body: r[3],
+        datasetId: d.datasetId, kind: d.kind, sourceName: d.sourceName,
+        asOf: d.asOf, coverageEnd: d.coverageEnd,
+        freshness: d.freshness, frozenReason: d.frozenReason ?? null,
+        occurredOn: null,
+        sourceUrl: r[4] ? String(d.urlTemplate).replace('{pk}', String(r[4])) : null,
+      }))
+    }
+    Promise.all([grab('/nk-index.json'), grab('/nk-measures.json'),
+      grabOpt('/nk-graph.json'), grabOpt('/nk-trend.json')])
+      .then(([idx, m, g, tr]) => {
+        if (!alive) return
+        setIx(buildIndex({
+          ...idx,
+          records: [...(idx.records ?? []), ...expandTrend(tr)],
+          measures: m.measures ?? [], graph: g,
+        }))
+      })
       .catch(e => { if (alive) setErr(e?.message ?? '인덱스를 불러오지 못했습니다.') })
     return () => { alive = false }
   }, [])
