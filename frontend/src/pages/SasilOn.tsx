@@ -1972,8 +1972,13 @@ export default function SasilOn() {
                       {refOnly ? `참고 자료 ${groups.length}종 (근거 아님)` : `이 답변의 근거 ${groups.length}종`}
                     </h2>
                     {refOnly ? (
+                      /* 주제를 안 지정한 것과, 지정했는데 없는 것을 갈라 말한다.
+                         같은 문구를 쓰면 "북한 요즘 뭐함" 처럼 자료가 있는 질문에도
+                         '못 찾았다'고 말하게 된다. 헤드라인·상태줄과 같은 규칙이다. */
                       <p className="mt-0.5 text-sm text-slate-500">
-                        질문의 핵심어가 공식 자료에 걸리지 않아, 주제만 같은 자료를 참고용으로 보여 드립니다.
+                        {a.Q?.genericOnly
+                          ? '주제를 지정하지 않으셔서, 관련 있는 자료를 참고용으로 보여 드립니다.'
+                          : '질문의 핵심어가 공식 자료에 걸리지 않아, 주제만 같은 자료를 참고용으로 보여 드립니다.'}
                       </p>
                     ) : tracks.length >= 2 ? (
                       <p className="mt-0.5 text-sm text-slate-500">번호는 위 ‘근거 시점 지도’의 번호와 같습니다.</p>
