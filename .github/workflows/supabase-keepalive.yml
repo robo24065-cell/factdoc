@@ -1,0 +1,51 @@
+# Supabase 무료 티어 자동정지 방지
+#
+# 왜 필요한가: 무료 프로젝트는 **7일 무활동이면 자동 일시정지**된다.
+#   실제로 이번에 정지된 상태를 만나 "삭제됐다"고 오진한 적이 있다
+#   (DNS EAI_AGAIN + pooler tenant not found + 토큰 401 — 셋 다 정지와 삭제를 구분 못 한다).
+#   심사 기간(2026-08-31~09-03)에 정지되면 데모가 죽는다. 그 위험을 없앤다.
+#
+# 무엇을 하는가: 하루 한 번 REST 로 실제 테이블을 1행 읽는다.
+#   단순 HTTP 요청이 아니라 **Postgres 까지 닿아야** 활동으로 계산된다.
+#
+# 필요한 저장소 시크릿 2개 (Settings → Secrets and variables → Actions):
+#   SUPABASE_URL              예: https://xxxx.supabase.co     ← api.txt 의 SUPABASE_URL
+#   SUPABASE_PUBLISHABLE_KEY  sb_publishable_...               ← api.txt 의 SUPABASE_PUBLISHABLE_KEY
+#   둘 다 api.txt 에 있다. publishable 키는 프론트 번들에 이미 들어가는 공개 키지만,
+#   "키 값은 깃헙에 올리지 않는다"는 원칙에 따라 파일에 적지 않고 시크릿으로 받는다.
+
+name: supabase-keepalive
+
+on:
+  schedule:
+    - cron: '17 3 * * *'    # 매일 12:17 KST (03:17 UTC) — 정시를 피해 혼잡 회피
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Supabase 깨우기
+        env:
+          URL: ${{ secrets.SUPABASE_URL }}
+          KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+        run: |
+          if [ -z "$URL" ] || [ -z "$KEY" ]; then
+            echo "::error::시크릿 SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY 가 없습니다."
+            echo "Settings → Secrets and variables → Actions 에서 등록하세요 (값은 api.txt 에 있습니다)."
+            exit 1
+          fi
+          # 정지 상태면 첫 요청이 깨우는 데 시간이 걸린다 — 넉넉히 재시도한다
+          for i in 1 2 3 4 5; do
+            code=$(curl -s -o /tmp/out -w '%{http_code}' -m 60 \
+              -H "apikey: $KEY" -H "Authorization: Bearer $KEY" \
+              "$URL/rest/v1/dataset?select=id&limit=1") || code=000
+            echo "시도 $i → HTTP $code"
+            case "$code" in
+              200|206) echo "깨어 있음: $(head -c 120 /tmp/out)"; exit 0 ;;
+              401|403) echo "::warning::인증 거부($code) — 키는 유효하나 RLS 로 막혔을 수 있음. DB 는 깨어남"; exit 0 ;;
+            esac
+            sleep 30
+          done
+          echo "::error::5회 시도 후에도 응답 없음 — 프로젝트 상태를 대시보드에서 확인하세요"
+          exit 1

@@ -222,7 +222,9 @@ export function parseQuery(q, ov = {}) {
 
   const wantsStat = STAT_Q.test(body)
   const norm = ov.norm || normalizeByRule(body)
-  return { raw: q, tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
+  /* 생사·신상 질의 — 인물 데이터셋이 답을 갖고 있는 유형 */
+  const personAsk = /죽었|사망|살아\s*있|생존|숨졌|사망설|건강|나이|몇\s*살|누구(야|니|인가)|직책|무슨\s*일\s*해/.test(q)
+  return { raw: q, personAsk, tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
     listIntent: listIntent || norm.intent === 'timeline', wantCount,
     askedYear: (time.slot === 'year' && !win.future) ? String(time.year) : null,
     needsLLMTime: needsLLM(time) }
@@ -385,6 +387,10 @@ export function search(ix, q, { limit = 40, ov } = {}) {
        searchPriority 100 을 모든 질의에 적용하면 2,709건이 코퍼스 전체를 점거한다
        (실측: 적재 직후 eval 48→44, wild 75→69. '이산가족 상봉 아직도 하나' 가 회담 자료를 잃었다).
        주장 표지가 있을 때만 앞세우고, 그 밖에는 뒤로 물린다. */
+    /* ★ 인물의 생사·직책을 물으면 답은 인물 카드에 있다.
+       '김정은 죽었니' 가 「여맹대회 기념촬영」을 헤드라인으로 내놓던 자리다 —
+       정작 답('사망 기록 없음')은 근거 2번에 묻혀 있었다. */
+    if (Q.personAsk && r.kind === 'entity') s *= 6
     if (r.kind === 'briefing') {
       const isClaim = Q.norm?.intent === 'claim_check' ||
         /다며|다던데|라는데|사실이니|사실인가|맞아|맞나|아니야|진짜|헛소문|가짜/.test(String(Q.raw ?? ''))

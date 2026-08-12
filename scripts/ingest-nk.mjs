@@ -39,10 +39,24 @@ function readApi(ds) {
   return { items: j.items || [], meta: j._meta || {} }
 }
 
+/* ★ 원본 CSV 의 따옴표를 신뢰하면 안 된다.
+   실측: 남북관계연표.csv 는 여는 따옴표가 " (U+0022) 인데 닫는 것은 ” (U+201D) 인 행이 12개 있다.
+   그래서 6016행에서 열린 인용이 7448행에서야 닫히고, **그 사이 1,431행이 한 셀로 삼켜진다**.
+   결과: 2016~2019년 연표가 통째로 0건이었다 — 남북정상회담 3회·평창올림픽·판문점선언이 있는 해다.
+
+   구조로 방어한다: 한 줄이 'YYYY/MM/DD,' 또는 'YYYY-MM-DD,' 로 시작하면 그건 새 레코드다.
+   데이터가 어떻게 망가져 있든 이 사실은 변하지 않는다. 인용 상태를 강제 종료한다. */
+const ROW_START = /^\d{4}[-/.]\d{1,2}[-/.]\d{1,2}\s*,/
+
 function parseCSV(text) {
   const rows = []; let row = [], cur = '', q = false
   for (let i = 0; i < text.length; i++) {
     const c = text[i]
+    // 인용 안이라도, 줄 첫머리가 날짜면 앞 인용이 안 닫힌 것으로 보고 행을 끊는다
+    if (q && (i === 0 || text[i - 1] === '\n') && ROW_START.test(text.slice(i, i + 14))) {
+      q = false
+      row.push(cur); rows.push(row); row = []; cur = ''
+    }
     if (q) { if (c === '"') { if (text[i + 1] === '"') { cur += '"'; i++ } else q = false } else cur += c }
     else if (c === '"') q = true
     else if (c === ',') { row.push(cur); cur = '' }

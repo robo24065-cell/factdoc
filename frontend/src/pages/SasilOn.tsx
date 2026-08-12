@@ -454,6 +454,24 @@ function summarize(a: NkAnswer): string | null {
     return `관련 공식 기록 ${nf(a.available ?? shown)}건 중 최신 ${nf(shown)}건을 시간순으로 정리했습니다.`
   }
 
+  /* ★ 인물의 생사를 물었으면 인물 카드가 답이다. 통일부 인물 정보는 사망 기록을 갖고 있다(83명 등재).
+     '사망 기록 없음'은 '살아 있다'는 단정이 아니라 '통일부 자료에 사망 기록이 없다'는 사실이고,
+     그 자료의 기준일까지만 유효하다 — 그 둘을 한 문장에 같이 담는다. */
+  if (a.Q?.personAsk) {
+    const ent = (a.groups ?? []).flatMap(g => g.hits ?? [])
+      .map(h => h.r).find(r => r.kind === 'entity')
+    if (ent) {
+      const b = clean(ent.body)
+      const died = b.match(/사망:\s*([^·]+)/)
+      const pos = (b.match(/직책:\s*([^·]+)/) || [])[1]?.trim().replace(/^사망\s*/, '')
+      const asof = ymKo(ent.coverageEnd || ent.asOf)
+      return died
+        ? `${ent.title}${pos ? `(${pos})` : ''}은 통일부 인물 정보에 사망일이 ${died[1].trim()}로 기록돼 있습니다.`
+        : `통일부 인물 정보에 ${ent.title}의 사망 기록은 없습니다 — ${asof} 기준입니다. ` +
+          `없다는 확인이지 이후를 보장하는 것은 아닙니다.`
+    }
+  }
+
   /* 여기까지 왔다면 구체적인 답이 없다.
      "개성공단 아직 하냐" 처럼 종료 공지 자체가 답인 경우가 여기다 —
      '근거 N건을 찾았습니다' 같은 무내용 문장보다 종료 공지가 훨씬 나은 답이다. */
