@@ -95,8 +95,23 @@ delete web.measures
 fs.writeFileSync(OUT, JSON.stringify(web), 'utf8')
 fs.writeFileSync(MEASURES_OUT, JSON.stringify({ measures }), 'utf8')
 
+/* 관계망 — 세 번째 파일. 0.19MB 라 상한과는 무관하지만 같은 가드를 통과시킨다.
+   별도 파일인 이유: 관계망은 문서 인덱스와 갱신 주기가 다르다(동향 재수집 때만 바뀐다).
+   못 받아도 검색은 그대로 돌아야 하므로 화면에서도 실패를 허용한다. */
+const GRAPH_SRC = path.resolve('북한자료-api/nk-graph.json')
+const GRAPH_OUT = OUT.replace(/nk-index\.json$/, 'nk-graph.json')
+const shipped = [OUT, MEASURES_OUT]
+if (fs.existsSync(GRAPH_SRC)) {
+  const g = JSON.parse(fs.readFileSync(GRAPH_SRC, 'utf8'))
+  fs.writeFileSync(GRAPH_OUT, JSON.stringify(g), 'utf8')
+  shipped.push(GRAPH_OUT)
+  console.log(`관계망 노드 ${g.nodes.length.toLocaleString()} · 간선 ${g.edges.length.toLocaleString()}`)
+} else {
+  console.log('⚠ 관계망 없음 — node scripts/build-nk-graph.mjs 를 먼저 돌리면 관계 답변이 켜진다')
+}
+
 const LIMIT = 26214400
-for (const f of [OUT, MEASURES_OUT]) {
+for (const f of shipped) {
   const b = fs.statSync(f).size
   const pct = (b / LIMIT * 100).toFixed(1)
   console.log(`${b > LIMIT ? '🚨 상한 초과' : '  '} ${path.basename(f).padEnd(18)} ${(b / 1048576).toFixed(2)} MB (상한의 ${pct}%)`)

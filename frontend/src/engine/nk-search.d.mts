@@ -15,13 +15,14 @@ export interface NkRecord {
 }
 export interface Notice { level: 'live' | 'stale' | 'frozen'; gapDays: number; text: string }
 export interface NkAnswer {
-  level: 'timeline' | 'frozen_answer' | 'dated_answer' | 'stale_answer' | 'no_evidence'
+  /* relation_answer: 문서 근거는 0건인데 관계망이 답할 수 있는 경우 */
+  level: 'timeline' | 'frozen_answer' | 'dated_answer' | 'stale_answer' | 'no_evidence' | 'relation_answer'
   Q: any
   topicNotice?: { topic: string; state: string; since: string; text: string } | null
   groups?: Array<{ dsKey: string; ds: NkDataset; hits: Array<{ r: NkRecord; score: number }>; notice: Notice }>
   items?: Array<{ r: NkRecord; ds: NkDataset; notice: Notice }>
   sources?: NkDataset[]
-  agg?: any; numeric?: any; related?: any
+  agg?: any; numeric?: any; related?: any; relation?: any
   totalHits?: number; available?: number; widened?: boolean
   llmUsed?: string[]
 }

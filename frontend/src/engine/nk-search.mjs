@@ -7,6 +7,7 @@
 import { extractTime, timeWindow, needsLLM } from './nk-time.mjs'
 import { normalizeByRule } from './nk-normalize.mjs'
 import { TOPIC_STATUS, CUMULATIVE } from '../../../scripts/nk-catalog.mjs'
+import { buildGraph, relationAnswer } from './nk-relation.mjs'
 
 // ── 토크나이저 ──────────────────────────────────────────────
 const STOP = new Set(['그리고','에서','으로','인가','인가요','뭐야','뭔가','얼마','어떻게','있나','있나요',
@@ -190,8 +191,11 @@ export function buildIndex(data) {
     if (!dimRows.has(k)) dimRows.set(k, [])
     dimRows.get(k).push({ m, rec })
   }
+  /* 관계망 — 문서 랭킹으로는 못 푸는 축. data.graph 가 없으면 조용히 비활성이다
+     (그래프 파일을 못 받아도 검색은 그대로 돌아야 한다). */
+  const gx = buildGraph(data.graph)
   return { data, docs, df, titleDf, N, avg, inv, mByRec, measureDatasets, vocByChar,
-    periodicMetrics, dimRows }
+    periodicMetrics, dimRows, gx }
 }
 
 function bm25(ix, weighted) {
@@ -834,7 +838,12 @@ export function topicNotice(Q) {
 export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
   const { Q, hits } = search(ix, q, { limit: 300, ov })
   const tn = topicNotice(Q)
-  if (!hits.length) return { level: 'no_evidence', Q, groups: [], numeric: null, topicNotice: tn }
+  /* 관계 답변은 검색 결과를 **밀어내지 않고 덧붙는다.** 관계 말투가 아니거나
+     그래프에 없는 사람이면 null 이라 기존 동작이 그대로 유지된다.
+     근거가 0건이어도 관계는 답할 수 있다 — 문서가 아니라 집계이기 때문이다. */
+  const relation = relationAnswer(ix.gx, q)
+  if (!hits.length) return { level: relation ? 'relation_answer' : 'no_evidence',
+    Q, groups: [], numeric: null, topicNotice: tn, relation }
 
   // ── 연혁 모드: 시간순 나열 ────────────────────────────────
   if (Q.listIntent) {
@@ -853,7 +862,7 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
       .map(k => ix.data.datasets[k])
     return { level: 'timeline', Q, items, sources, widened, topicNotice: tn,
       requested: N, available: pool.length, totalHits: hits.length,
-      groups: [], numeric: null, lookup: null }
+      groups: [], numeric: null, lookup: null, relation }
   }
 
   // ① 변별 토큰을 실제로 담은 문서만 근거 자격. ② 그것도 없으면(변별 토큰 자체가 없는 질의)
@@ -888,7 +897,7 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
     level: anyFrozen ? 'frozen_answer' : anyLive ? 'dated_answer' : 'stale_answer',
     Q, topicNotice: tn, groups: out, numeric: checkNumeric(ix, Q, hits),
     agg: aggregate(ix, Q, hits),
-    related: lookupNumeric(ix, Q, hits), totalHits: hits.length,
+    related: lookupNumeric(ix, Q, hits), totalHits: hits.length, relation,
   }
 }
 

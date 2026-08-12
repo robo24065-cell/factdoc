@@ -167,4 +167,24 @@ export const WILD = [
   { q: '탈북민 숫자 알려줘', domain: true, mustNumber: true },
   { q: '탈북민 얼마나 넘어왔어', domain: true, mustNumber: true },
   { q: '북한이탈주민 남녀 각각 몇명', domain: true, mustNumber: true },
+
+  /* ── 관계망 ────────────────────────────────────────────────
+     사람이 실제로 치는 형태로만 쓴다. '수행 기록을 집계해 줘' 같은 유도형은 넣지 않는다.
+     방향이 핵심이다 — '측근'은 그를 수행한 사람이고, '누구 수행했나'는 그가 수행한 대상이다.
+     같은 데이터로 두 질문의 답이 서로 반대여야 한다. */
+  { q: '장성택 누구랑 다녔어', domain: true, expectRelation: true, relationTop: '김정은' },
+  { q: '김정은 측근 누구', domain: true, expectRelation: true, relationTop: '최룡해' },
+  { q: '황병서 누구 수행했나', domain: true, expectRelation: true, relationTop: '김정은' },
+  { q: '김여정 누구랑 같이 다녀', domain: true, expectRelation: true },
+  { q: '최룡해랑 장성택 무슨 사이', domain: true, expectRelation: true },
+  { q: '김정은 옆에 누가 있어', domain: true, expectRelation: true },
+  // 과잉주장 감시 — 인물 이름이 있어도 관계를 묻지 않으면 관계 카드를 붙이면 안 된다
+  { q: '김정은 생일 언제야', domain: true, noRelation: true },
+  { q: '장성택 언제 죽었어', domain: true, noRelation: true },
+  { q: '김여정 직책이 뭐야', domain: true, noRelation: true },
+  /* ★ '누구'만으로는 관계가 아니다 — 정체를 묻는 질문이다.
+     이 세 줄이 무너지면 "김여정 누구임"에 수행 명단이 붙는다(실제로 그랬다). */
+  { q: '김여정 누구임', domain: true, noRelation: true },
+  { q: '김정은 누구야', domain: true, noRelation: true },
+  { q: '최룡해 누구', domain: true, noRelation: true },
 ]

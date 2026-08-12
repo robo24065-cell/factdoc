@@ -420,6 +420,43 @@ function aggSentence(g: AggT): string {
   return `${cond}${josa(name, '은/는')} ${cum} ${val}${u}입니다.`
 }
 
+/* 관계 답변의 요지 한 문장.
+   순서가 의미를 만든다 — '누구를 수행했나'(윗선)를 먼저, '누가 수행했나'(아랫선)를 뒤에.
+   상위 3명까지만 문장에 넣는다. 나머지는 카드가 보여 준다. */
+function relSentence(rel: RelationT): string | null {
+  const top3 = (l: RelLink[]) => l.slice(0, 3).map(x => `${x.name} ${nf(x.w)}회`).join(' · ')
+  if (rel.kind === 'pair') {
+    const a = rel.subject, b = rel.other
+    if (rel.subjectServes)
+      return `통일부 동향에 ${josa(a, '이/가')} ${josa(b, '을/를')} 수행한 기록이 ${nf(rel.subjectServes.w)}건 있습니다.`
+    if (rel.subjectServed)
+      return `통일부 동향에 ${josa(b, '이/가')} ${josa(a, '을/를')} 수행한 기록이 ${nf(rel.subjectServed.w)}건 있습니다.`
+    /* 직접 접점이 없어도 '같은 사람을 수행했다'가 답이다 — 없다고 말하면 있는 사실을 지운다 */
+    if (rel.shared?.length) {
+      const s = rel.shared.slice(0, 2)
+        .map(x => `${x.name}(${a} ${nf(x.a)}회 · ${b} ${nf(x.b)}회)`).join(', ')
+      return `두 사람이 서로를 수행한 기록은 없습니다. 다만 같은 인물을 수행한 기록이 있습니다 — ${s}.`
+    }
+    const n = rel.met?.w ?? rel.with?.w
+    return n ? `통일부 동향에 두 사람이 함께 기록된 것이 ${nf(n)}건 있습니다.` : null
+  }
+  /* 직책은 이름 **앞**에 둔다 — "김정은(조선노동당 총비서)는" 처럼 조사가 괄호 끝 음절에
+     붙는 사고를 막는다. 한국어 어순으로도 '조선노동당 총비서 김정은은'이 자연스럽다. */
+  const head = `${rel.pos ? rel.pos + ' ' : ''}${josa(rel.subject, '은/는')} `
+    + `통일부 동향 ${nf(rel.records)}건에 등장합니다.`
+  /* ★ 어느 쪽이 답인지는 기록량이 정한다.
+     '김정은 측근 누구'는 그가 수행한 대상이 아니라 **그를 수행한 사람**을 묻는다.
+     김정은은 수행받음 2,380 / 수행함 71 이라 많은 쪽을 고르면 저절로 맞는다. */
+  if (rel.servedTotal >= rel.servesTotal && rel.served.length)
+    return `${head} ${josa(rel.subject, '을/를')} 수행한 기록은 ${top3(rel.served)} 순으로 많습니다.`
+  if (rel.serves.length)
+    return `${head} ${josa(rel.subject, '이/가')} 수행한 기록은 ${top3(rel.serves)} 순으로 많습니다.`
+  if (rel.served.length)
+    return `${head} ${josa(rel.subject, '을/를')} 수행한 기록은 ${top3(rel.served)} 순으로 많습니다.`
+  if (rel.met.length) return `${head} 접견·회담으로 함께 기록된 인물은 ${top3(rel.met)} 순입니다.`
+  return head
+}
+
 /* ── 요지 한 문장 — 화면 최대 활자가 될 문장을 만든다 ───────────
    주제 종료 공지(topicNotice)는 '맥락'이지 '답'이 아니다.
    "개성공단에 기업 500개나 있었다던데" 에 종료 공지부터 들이밀면 물어본 것에 답하지 않은 셈이다.
@@ -471,6 +508,13 @@ function summarize(a: NkAnswer): string | null {
           `없다는 확인이지 이후를 보장하는 것은 아닙니다.`
     }
   }
+
+  /* ★ 관계를 물었으면 관계가 답이다. 문서 검색이 빈손이어도 여기서 답이 나온다 —
+     "장성택 누구랑 다녔어"에 '자료를 찾지 못했습니다'라고 해놓고 바로 아래에서
+     수행 기록을 나열하면 화면이 스스로와 모순된다.
+     순서상 수치·집계·연혁·생사 확인보다는 뒤다(그쪽이 더 구체적인 답이다). */
+  const rel = a.relation as RelationT | null | undefined
+  if (rel) { const s = relSentence(rel); if (s) return s }
 
   /* 여기까지 왔다면 구체적인 답이 없다.
      "개성공단 아직 하냐" 처럼 종료 공지 자체가 답인 경우가 여기다 —
@@ -875,7 +919,13 @@ function Headline({
           </h2>
           {/* 참고 자료뿐일 때 '근거에 포함되어 있습니다'는 헤드라인과 모순된다 */}
           <p className={`mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
-            {refOnly ? '질문의 핵심어에 걸린 공식 자료는 없습니다' : lm.sub}
+            {/* 관계망이 답한 경우, 문서를 못 찾았다는 말만 하면 화면이 스스로와 모순된다.
+                문서 근거가 없는 것은 사실이므로 지우지 않고, 무엇으로 답했는지를 함께 밝힌다. */}
+            {refOnly
+              ? (a.relation
+                ? '문서 근거는 없습니다 — 동향에 기록된 수행·동행 관계를 집계해 답했습니다'
+                : '질문의 핵심어에 걸린 공식 자료는 없습니다')
+              : lm.sub}
           </p>
           {tn?.since && (
             <p className="mt-1.5 text-[11px] tabular-nums text-slate-500">
@@ -1052,6 +1102,134 @@ function RelatedCard({
       </div>
       <div className="mt-3"><AsOfBanner notice={notice} verbose={verbose} /></div>
       <SourceLine ds={r.dataset} no={no} />
+    </Block>
+  )
+}
+
+/* ══════════════════════ 관계망 ══════════════════════
+   "장성택 누구랑 다녔어" 는 문서 랭킹으로 못 푸는 질문이다 — 문서가 아니라 사람 목록을 원한다.
+   근거는 추정이 아니라 통일부가 동향 제목에 적어 놓은 수행·동행 기록 10,917건의 집계다.
+   **방향이 곧 서열이다**: 수행받기만 하면 위, 수행만 하면 아래. */
+type RelLink = { name: string; w: number; span?: { from: string; to: string; n: number } | null }
+type RelSource = { name: string; provider: string; note: string }
+/* 두 모양은 필드가 겹치되 개수가 다르다 — 인물 조회는 목록, 쌍 조회는 단건이다.
+   판별 유니온으로 두어야 met 이 배열인지 단건인지 컴파일러가 갈라 준다. */
+type RelationPerson = {
+  kind: 'person'
+  subject: string
+  pos: string | null
+  records: number
+  serves: RelLink[]
+  served: RelLink[]
+  met: RelLink[]
+  with: RelLink[]
+  servesTotal: number
+  servedTotal: number
+  rank: 'top' | 'staff' | 'mid' | null
+  span: { from: string; to: string } | null
+  source: RelSource
+}
+type RelationPair = {
+  kind: 'pair'
+  subject: string
+  other: string
+  subjectServes: RelLink | null
+  subjectServed: RelLink | null
+  met: RelLink | null
+  with: RelLink | null
+  /* 서로를 수행한 적은 없지만 같은 사람을 수행한 경우 — a/b 는 각자의 횟수 */
+  shared?: Array<{ name: string; a: number; b: number }>
+  source: RelSource
+}
+type RelationT = RelationPerson | RelationPair
+
+const RANK_TEXT: Record<string, string> = {
+  top: '수행을 받기만 하는 위치입니다',
+  staff: '수행하는 쪽입니다',
+  mid: '수행과 피수행이 모두 기록돼 있습니다',
+}
+
+function PeopleRow({ label, hint, list }: { label: string; hint: string; list: RelLink[] }) {
+  if (!list.length) return null
+  return (
+    <div className="mt-3">
+      <p className={`text-sm text-slate-500 ${PROSE}`}>
+        {label} <span className="text-slate-400">— {hint}</span>
+      </p>
+      <ul className="mt-1.5 flex flex-wrap gap-1.5">
+        {list.map(x => (
+          <li key={x.name}
+            className="rounded-lg bg-slate-100 px-2.5 py-1 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100">
+            {x.name}
+            <span className="ml-1.5 tabular-nums text-xs text-slate-500">{x.w}회</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  )
+}
+
+function RelationCard({ rel, no }: { rel: RelationT; no?: number }) {
+  if (rel.kind === 'pair') {
+    const a = rel.subject, b = rel.other ?? ''
+    const lines: string[] = []
+    if (rel.subjectServes) lines.push(`${a}이(가) ${b}을(를) 수행한 기록 ${rel.subjectServes.w}건`)
+    if (rel.subjectServed) lines.push(`${b}이(가) ${a}을(를) 수행한 기록 ${rel.subjectServed.w}건`)
+    if (rel.met) lines.push(`접견·회담 등으로 함께 기록된 것 ${rel.met.w}건`)
+    if (rel.with) lines.push(`같은 기록에 함께 등장한 것 ${rel.with.w}건`)
+    const shared = rel.shared ?? []
+    if (!lines.length && shared.length) lines.push('두 사람이 서로를 수행한 기록은 없습니다.')
+    return (
+      <Block tag="관계" tone="blue" icon="🔗" title={`${a} · ${b} — 동향에 기록된 접점`} no={no}>
+        <ul className={`space-y-1 text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+          {lines.map(t => <li key={t}>· {t}</li>)}
+        </ul>
+        {/* 직접 접점이 없을 때의 진짜 답 — 같은 윗선을 모셨다는 사실 */}
+        {shared.length > 0 && (
+          <div className="mt-3">
+            <p className={`text-sm text-slate-500 ${PROSE}`}>
+              둘 다 수행한 인물 <span className="text-slate-400">— 공통의 윗선</span>
+            </p>
+            <ul className="mt-1.5 space-y-1">
+              {shared.map(x => (
+                <li key={x.name}
+                  className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-sm text-slate-800 dark:bg-slate-800 dark:text-slate-100">
+                  {x.name}
+                  <span className="ml-2 tabular-nums text-xs text-slate-500">
+                    {a} {nf(x.a)}회 · {b} {nf(x.b)}회
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        <p className={`mt-3 text-sm leading-relaxed text-slate-500 ${PROSE}`}>{rel.source.note}</p>
+        <p className="mt-2 text-[11px] text-slate-400">출처 · {rel.source.provider} 「{rel.source.name}」</p>
+      </Block>
+    )
+  }
+
+  const rank = rel.rank ? RANK_TEXT[rel.rank] : null
+  return (
+    <Block
+      tag="관계"
+      tone="blue"
+      icon="🔗"
+      title={`${rel.subject} — 동향에 함께 기록된 사람들`}
+      sub={rel.pos ?? null}
+      no={no}
+    >
+      <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+        동향 {nf(rel.records ?? 0)}건에 등장합니다.
+        {rank ? ` 수행 기록으로 보면 ${rank}.` : ''}
+      </p>
+      {/* 순서가 중요하다 — 이 사람이 수행한 대상(위)이 먼저, 이 사람을 수행한 사람(아래)이 뒤 */}
+      <PeopleRow label="이 사람이 수행한 대상" hint="윗선" list={rel.serves ?? []} />
+      <PeopleRow label="이 사람을 수행한 사람" hint="아랫선" list={rel.served ?? []} />
+      <PeopleRow label="접견·회담" hint="대등한 자리" list={rel.met ?? []} />
+      <PeopleRow label="같은 기록에 함께" hint="동시 등장" list={rel.with ?? []} />
+      <p className={`mt-3 text-sm leading-relaxed text-slate-500 ${PROSE}`}>{rel.source.note}</p>
+      <p className="mt-2 text-[11px] text-slate-400">출처 · {rel.source.provider} 「{rel.source.name}」</p>
     </Block>
   )
 }
@@ -1386,8 +1564,11 @@ export default function SasilOn() {
        병렬로 받아 합친다. measures 는 gzip 0.29MB 라 체감 비용이 거의 없다. */
     const grab = (u: string) =>
       fetch(u).then(r => { if (!r.ok) throw new Error(`${u} 로드 실패 (${r.status})`); return r.json() })
-    Promise.all([grab('/nk-index.json'), grab('/nk-measures.json')])
-      .then(([idx, m]) => { if (alive) setIx(buildIndex({ ...idx, measures: m.measures ?? [] })) })
+    /* 관계망은 **없어도 되는 것**이다 — 못 받으면 관계 답변만 꺼지고 검색은 그대로 돈다.
+       그래서 셋 중 이것만 실패를 삼킨다. 있으면 되고 없으면 마는 축이다. */
+    const grabOpt = (u: string) => grab(u).catch(() => null)
+    Promise.all([grab('/nk-index.json'), grab('/nk-measures.json'), grabOpt('/nk-graph.json')])
+      .then(([idx, m, g]) => { if (alive) setIx(buildIndex({ ...idx, measures: m.measures ?? [], graph: g })) })
       .catch(e => { if (alive) setErr(e?.message ?? '인덱스를 불러오지 못했습니다.') })
     return () => { alive = false }
   }, [])
@@ -1408,6 +1589,7 @@ export default function SasilOn() {
   const numeric = (a?.numeric ?? null) as NumericT | null
   const related = (a?.related ?? null) as LookupT | null
   const agg = (a?.agg ?? null) as AggT | null
+  const relation = (a?.relation ?? null) as RelationT | null
   const askedAt = a?.Q?.askedAt
 
   /* 답변이 사용한 자료를 하나의 시간축 위로 모은다. 번호 = 근거 카드 번호 */
@@ -1688,6 +1870,9 @@ export default function SasilOn() {
                     verbose={verboseSlots.has('related')}
                   />
                 )}
+
+                {/* ⑤-b 관계망 — 근거가 0건이어도 답할 수 있는 유일한 축이다 */}
+                {relation && <RelationCard rel={relation} />}
 
                 {/* ⑥ 집계·분포 */}
                 {agg && (

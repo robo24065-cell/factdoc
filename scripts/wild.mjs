@@ -7,6 +7,11 @@ import { WILD } from './wild-set.mjs'
 
 const V = process.argv.includes('--v')
 const data = JSON.parse(fs.readFileSync('frontend/src/data/nk-index.json', 'utf8'))
+/* 관계망도 함께 싣는다 — 안 실으면 관계 답변이 조용히 꺼진 채로 전부 통과해 버린다.
+   없으면 경고하고 계속한다(관계 케이스만 실패하고 나머지는 그대로 돈다). */
+const GP = '북한자료-api/nk-graph.json'
+if (fs.existsSync(GP)) data.graph = JSON.parse(fs.readFileSync(GP, 'utf8'))
+else console.log('⚠ 관계망 없음 — node scripts/build-nk-graph.mjs 를 먼저 돌리세요')
 const ix = buildIndex(data)
 
 const VERDICT_WORDS = ['거짓입니다', '허위입니다', '사실입니다', '틀렸습니다', '맞습니다']
@@ -56,6 +61,23 @@ for (const c of WILD) {
   if (c.mustEvidenceAny && r.hasAnswer && !c.mustEvidenceAny.some(w => r.text.includes(w)))
     fails.push(`근거에 ${c.mustEvidenceAny.join('/')} 없음`)
   if (c.expectGenericOnly && !a.Q?.genericOnly) fails.push('변별신호 없음을 못 알아챔')
+
+  /* ── 관계망 ────────────────────────────────────────────────
+     양방향으로 감시한다. expectRelation 은 '관계를 물었으면 답해야 한다'(과잉회피 감시),
+     noRelation 은 '관계를 안 물었으면 관계 카드를 들이밀지 마라'(과잉주장 감시).
+     relationTop 은 방향까지 본다 — '측근'은 그가 수행한 대상이 아니라 그를 수행한 사람이다. */
+  if (c.expectRelation && !a.relation) fails.push('관계를 물었는데 관계망이 답하지 않음')
+  if (c.noRelation && a.relation) fails.push(`관계를 안 물었는데 관계 카드(${a.relation.subject})`)
+  if (c.relationTop) {
+    const R = a.relation
+    if (!R) fails.push('관계 없음')
+    else {
+      const side = (R.servedTotal ?? 0) >= (R.servesTotal ?? 0) ? R.served : R.serves
+      const names = (side || []).map(x => x.name)
+      if (!names.slice(0, 3).includes(c.relationTop))
+        fails.push(`관계 상위에 ${c.relationTop} 없음(${names.slice(0, 3).join(',') || '비어있음'})`)
+    }
+  }
   /* ── 시간 정합성 ────────────────────────────────────────
      as-of 원칙은 근거(groups)에만 걸려 있었고 집계(agg)에는 없었다.
      그 구멍은 정답 문자열로는 안 잡힌다 — 값은 늘 맞고 '시점'만 틀리기 때문이다. */
