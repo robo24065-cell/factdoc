@@ -230,6 +230,16 @@ const JOBS = {
     date: () => null,
     run: () => sweep(`${B}/nkword/getNkword`, {}, 'lexicon'),
   },
+  /* 남북한 언어비교 — "안녕하세요 북한말로?" 에 답할 **유일한** 자료다.
+     스키마가 koword(남) ↔ nkword(북) 한 쌍이라 대응어가 구조적으로 들어 있다.
+     (북한 용어사전 lexicon 은 word+설명뿐이라 남→북 대응이 없다 — 그래서 둘 다 필요하다)
+     2026-08-12 재확인: resultCode 0 · totalCount 22,192. 이전의 db_error 는 복구됐다. */
+  wordCmp: {
+    name: '남북한 언어비교', endpoint: `${B}/nskwordcmp/getNskwordCmp`, fragile: true,
+    pk: r => (r.koword || r.nkword ? `${r.koword || ''}|${r.nkword || ''}` : null),
+    date: () => null,
+    run: () => sweep(`${B}/nskwordcmp/getNskwordCmp`, {}, 'wordCmp'),
+  },
 }
 
 function trendJob(key, cl, name, back) {

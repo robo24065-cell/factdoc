@@ -139,9 +139,23 @@ const trendPack = {
 fs.writeFileSync(TREND_OUT, JSON.stringify(trendPack), 'utf8')
 console.log(`포털동향 ${trendPack.rows.length.toLocaleString()}건 → ${path.basename(TREND_OUT)}`)
 
+/* 어휘 사전 — 낱말 질문 전용. 문서 인덱스와 성격이 달라 파일도 따로 간다.
+   못 받아도 검색은 그대로 돌고, 그때는 미연동 안내로 되돌아간다. */
+const LEX_SRC = path.resolve('북한자료-api/nk-lexicon.json')
+const LEX_OUT = OUT.replace(/nk-index\.json$/, 'nk-lexicon.json')
+let lexShipped = null
+if (fs.existsSync(LEX_SRC)) {
+  const lx = JSON.parse(fs.readFileSync(LEX_SRC, 'utf8'))
+  fs.writeFileSync(LEX_OUT, JSON.stringify(lx), 'utf8')
+  lexShipped = LEX_OUT
+  console.log(`어휘 대응어 ${lx.pairs.length.toLocaleString()}쌍 · 뜻풀이 ${lx.terms.length.toLocaleString()}건 → ${path.basename(LEX_OUT)}`)
+} else {
+  console.log('⚠ 어휘 사전 없음 — node scripts/build-nk-lexicon.mjs 를 먼저 돌리면 낱말 답변이 켜진다')
+}
+
 const GRAPH_SRC = path.resolve('북한자료-api/nk-graph.json')
 const GRAPH_OUT = OUT.replace(/nk-index\.json$/, 'nk-graph.json')
-const shipped = [OUT, MEASURES_OUT, TREND_OUT]
+const shipped = [OUT, MEASURES_OUT, TREND_OUT, ...(lexShipped ? [lexShipped] : [])]
 if (fs.existsSync(GRAPH_SRC)) {
   const g = JSON.parse(fs.readFileSync(GRAPH_SRC, 'utf8'))
   fs.writeFileSync(GRAPH_OUT, JSON.stringify(g), 'utf8')

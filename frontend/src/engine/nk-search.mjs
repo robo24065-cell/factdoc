@@ -9,6 +9,7 @@ import { normalizeByRule } from './nk-normalize.mjs'
 import { TOPIC_STATUS, CUMULATIVE, pendingSourceFor } from '../../../scripts/nk-catalog.mjs'
 import { buildGraph, relationAnswer } from './nk-relation.mjs'
 import { candidatesOf, KEEP_MIN as JUDGE_KEEP_MIN } from './nk-judge.mjs'
+import { buildLexicon, lexiconAnswer } from './nk-lexicon.mjs'
 
 // ── 토크나이저 ──────────────────────────────────────────────
 const STOP = new Set(['그리고','에서','으로','인가','인가요','뭐야','뭔가','얼마','어떻게','있나','있나요',
@@ -195,8 +196,11 @@ export function buildIndex(data) {
   /* 관계망 — 문서 랭킹으로는 못 푸는 축. data.graph 가 없으면 조용히 비활성이다
      (그래프 파일을 못 받아도 검색은 그대로 돌아야 한다). */
   const gx = buildGraph(data.graph)
+  /* 어휘 사전 — 낱말 질문은 문서 랭킹으로 풀 수 없다(동음이의어).
+     없으면 조용히 비활성이고, 그때는 미연동 안내로 되돌아간다. */
+  const lx = buildLexicon(data.lexicon)
   return { data, docs, df, titleDf, N, avg, inv, mByRec, measureDatasets, vocByChar,
-    periodicMetrics, dimRows, gx }
+    periodicMetrics, dimRows, gx, lx }
 }
 
 function bm25(ix, weighted) {
@@ -867,8 +871,12 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
      "장성택 상관이 누구야"·"김정은 오른팔" 처럼 내가 정규식에 넣지 않은 표현이
      실제로는 훨씬 많기 때문이다(실측: 내가 안 쓴 표현 23종 중 규칙은 12종만 잡았다). */
   const relation = relationAnswer(ix.gx, q, { intent: ov?.intent })
-  if (!hits.length) return { level: relation ? 'relation_answer' : 'no_evidence',
-    Q, groups: [], numeric: null, topicNotice: tn, relation }
+  /* 어휘 답변은 **문서와 무관하게** 성립한다 — 사전을 보는 것이지 문서를 찾는 게 아니다.
+     그래서 적중 0건 경로보다 먼저 계산해 두고, 아래 두 반환 모두에서 쓴다. */
+  const lexicon = lexiconAnswer(ix.lx, q, { intent: ov?.intent })
+  if (!hits.length) return {
+    level: lexicon ? 'lexicon_answer' : relation ? 'relation_answer' : 'no_evidence',
+    Q, groups: [], numeric: null, topicNotice: tn, relation, lexicon }
 
   /* ★ 준비된 데이터셋 중 어느 것도 답할 수 없는 질문 유형이면, 문서를 근거로 올리지 않는다.
      어휘 질문이 그렇다 — 코퍼스에 남↔북 대응어가 0건이라 무엇을 찾아도 답이 아니다.
@@ -878,6 +886,14 @@ export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
   /* 규칙(어휘 정규식)이 1차, LLM 의도분류가 우선. 규칙이 못 잡는 표현이 실제로 많다 —
      "오징어를 북에서는 뭐라 그러나", "이거 북한식으로 하면" 같은 것들이다.
      의도가 lexicon 이면 어휘 자료의 미연동 안내로 보낸다(그 자료가 답할 질문이므로). */
+  /* ★ 어휘 답변이 먼저다. 사전을 실었으면 "자료가 없다"고 말할 이유가 없다.
+     찾았으면 대응어를, 없으면 **없다는 사실을** 답한다 — 둘 다 이 계층이 책임진다.
+     문서 근거는 붙이지 않는다. 낱말 질문에 문서를 들이밀면 「인민의 안녕」 사고가 재발한다. */
+  if (lexicon) {
+    return { level: 'lexicon_answer', Q, topicNotice: tn, lexicon, relation,
+      groups: [], numeric: null, agg: null, related: null, totalHits: hits.length }
+  }
+
   const pending = pendingSourceFor(q) ??
     (ov?.intent?.type === 'lexicon' ? pendingSourceFor('북한말') : null)
   if (pending?.exclusive) {

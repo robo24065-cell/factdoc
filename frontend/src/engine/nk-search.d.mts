@@ -19,13 +19,13 @@ export interface NkAnswer {
      pending_only: 준비된 데이터셋 중 어느 것도 이 질문 유형에 답할 수 없는 경우
                    (어휘 질문 등) — 문서를 근거로 올리지 않고 미연동 안내를 답으로 낸다 */
   level: 'timeline' | 'frozen_answer' | 'dated_answer' | 'stale_answer' | 'no_evidence'
-    | 'relation_answer' | 'pending_only'
+    | 'relation_answer' | 'pending_only' | 'lexicon_answer'
   Q: any
   topicNotice?: { topic: string; state: string; since: string; text: string } | null
   groups?: Array<{ dsKey: string; ds: NkDataset; hits: Array<{ r: NkRecord; score: number }>; notice: Notice }>
   items?: Array<{ r: NkRecord; ds: NkDataset; notice: Notice }>
   sources?: NkDataset[]
-  agg?: any; numeric?: any; related?: any; relation?: any
+  agg?: any; numeric?: any; related?: any; relation?: any; lexicon?: any
   /* 미연동 자료 안내 — { key, name, url, exclusive, note } */
   pending?: { key: string; name: string; url: string | null; exclusive: boolean; note: string | null } | null
   totalHits?: number; available?: number; widened?: boolean

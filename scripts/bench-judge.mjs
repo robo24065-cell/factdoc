@@ -32,6 +32,8 @@ LLM.setKeys(keys)
 const data = JSON.parse(fs.readFileSync('frontend/src/data/nk-index.json', 'utf8'))
 const GP = '북한자료-api/nk-graph.json'
 if (fs.existsSync(GP)) data.graph = JSON.parse(fs.readFileSync(GP, 'utf8'))
+const LP = '북한자료-api/nk-lexicon.json'
+if (fs.existsSync(LP)) data.lexicon = JSON.parse(fs.readFileSync(LP, 'utf8'))
 const ix = buildIndex(data)
 
 /* ── 질문 세트 ──────────────────────────────────────────────

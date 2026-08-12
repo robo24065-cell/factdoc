@@ -240,6 +240,10 @@ const LEVEL_META: Record<string, LevelMeta> = {
   },
   /* 아직 연동하지 못한 자료가 답할 질문 — "없다"가 아니라 "우리가 아직 못 가져왔다"다.
      둘을 같은 문구로 말하면 통일부에 있는 자료를 없다고 말하는 셈이 된다. */
+  lexicon_answer: {
+    tone: 'blue', icon: '🗣', label: '남북 대응어 사전으로 답변',
+    sub: '통일부 「남북한 언어비교」 자료를 직접 조회했습니다',
+  },
   pending_only: {
     tone: 'blue', icon: '🔌', label: '연동 대기 자료가 답할 질문',
     sub: '통일부에 자료가 있으나 아직 싣지 못했습니다 — 지금은 확인해 드릴 수 없습니다',
@@ -518,6 +522,25 @@ function summarize(a: NkAnswer): string | null {
         : `통일부 인물 정보에 ${ent.title}의 사망 기록은 없습니다 — ${asof} 기준입니다. ` +
           `없다는 확인이지 이후를 보장하는 것은 아닙니다.`
     }
+  }
+
+  /* ★ 낱말을 물었으면 사전이 답이다. 찾았든 못 찾았든 이 계층이 답을 책임진다. */
+  const lex = a.lexicon as LexiconT | null | undefined
+  if (lex) {
+    if (lex.kind === 'found') {
+      const ws = lex.words ?? []
+      const side = lex.dir === 'toNK' ? '북한에서는' : '남한에서는'
+      if (ws.length) {
+        /* 조사를 괄호로 얼버무리지 않는다 — josa() 가 받침을 보고 고른다.
+           마지막 낱말에만 '(이)라고'가 붙으므로 그 낱말 기준으로 판정한다. */
+        const list = ws.join(', ')
+        const last = ws[ws.length - 1]
+        return `${side} ${josa(`‘${lex.word}’`, '을/를')} ${list}${hasJong(last) ? '이라고' : '라고'} 합니다.`
+      }
+      if (lex.term?.def) return `‘${lex.word}’ — ${lex.term.def}`
+    }
+    return `통일부 「남북한 언어비교」 자료에 ‘${lex.word}’는 등재돼 있지 않습니다. `
+      + `남북이 같은 말을 쓰거나, 아직 수록되지 않은 낱말입니다.`
   }
 
   /* ★ 준비된 자료 중 어느 것도 답할 수 없는 질문 유형 — 어휘 질문이 그렇다.
@@ -1136,6 +1159,82 @@ function RelatedCard({
   )
 }
 
+/* ══════════════════════ 어휘 (남북 대응어) ══════════════════════
+   낱말 하나를 묻는 질문은 문서 랭킹으로 풀 수 없다 — "안녕하세요를 북한말로?"가
+   「인민의 안녕」에 걸린 사고가 그 증거다. 사전을 직접 본다.
+   ★ 없으면 없다고 말한다. 비슷한 낱말을 답인 척 내놓지 않는다. */
+type LexSource = { pairs?: { name: string; provider: string; url?: string }
+  terms?: { name: string; provider: string; url?: string } } | null
+type LexiconT = {
+  kind: 'found' | 'missing'
+  word: string
+  dir: 'toNK' | 'toKO'
+  words?: string[]
+  term?: { def: string; cat: string } | null
+  near?: Array<[string, string]>
+  source: LexSource
+}
+
+function LexiconCard({ lex }: { lex: LexiconT }) {
+  const toNK = lex.dir === 'toNK'
+  const srcName = lex.source?.pairs?.name ?? '남북한 언어비교'
+  const provider = lex.source?.pairs?.provider ?? '통일부'
+
+  if (lex.kind === 'found') {
+    return (
+      <Block tag="어휘" tone="blue" icon="🗣"
+        title={`‘${lex.word}’ — ${toNK ? '북한에서 쓰는 말' : '남한에서 쓰는 말'}`}>
+        {!!lex.words?.length && (
+          <ul className="flex flex-wrap gap-2">
+            {lex.words.map(w => (
+              <li key={w}
+                className="rounded-xl bg-slate-100 px-3 py-1.5 text-lg text-slate-900 dark:bg-slate-800 dark:text-white">
+                {w}
+              </li>
+            ))}
+          </ul>
+        )}
+        {lex.term?.def && (
+          <p className={`mt-3 rounded-xl bg-slate-50 p-3 text-base leading-relaxed text-slate-800 dark:bg-slate-800/50 dark:text-slate-100 ${PROSE}`}>
+            {lex.term.def}
+            {lex.term.cat && <span className="ml-1 text-xs text-slate-400">({lex.term.cat})</span>}
+          </p>
+        )}
+        <p className={`mt-3 text-sm leading-relaxed text-slate-500 ${PROSE}`}>
+          통일부가 공개한 남북 대응어 목록에 등재된 표기입니다. 실제 쓰임은 지역·세대에 따라 다를 수 있습니다.
+        </p>
+        <p className="mt-2 text-[11px] text-slate-400">출처 · {provider} 「{srcName}」</p>
+      </Block>
+    )
+  }
+
+  return (
+    <Block tag="어휘" tone="slate" icon="🗣" title={`‘${lex.word}’는 대응어 목록에 없습니다`}>
+      <p className={`text-base leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>
+        통일부 「{srcName}」 자료에서 ‘{lex.word}’에 해당하는 항목을 찾지 못했습니다.
+        <strong className="font-medium"> 남북이 같은 말을 쓰거나</strong>, 아직 이 자료에 수록되지 않은 낱말입니다.
+      </p>
+      {/* 비슷한 낱말은 **답이 아니다.** 그렇게 표시한다 — 여기서 얼버무리면 없는 걸 있다고 하는 것이다 */}
+      {!!lex.near?.length && (
+        <div className="mt-3">
+          <p className={`text-sm text-slate-500 ${PROSE}`}>
+            혹시 이 낱말을 찾으셨나요 <span className="text-slate-400">— 답이 아니라 비슷한 표제어입니다</span>
+          </p>
+          <ul className="mt-1.5 flex flex-wrap gap-1.5">
+            {lex.near.map(([ko, nk]) => (
+              <li key={ko}
+                className="rounded-lg bg-slate-100 px-2.5 py-1 text-sm text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                {ko} <span className="text-slate-400">→</span> {nk}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="mt-3 text-[11px] text-slate-400">출처 · {provider} 「{srcName}」</p>
+    </Block>
+  )
+}
+
 /* ══════════════════════ 관계망 ══════════════════════
    "장성택 누구랑 다녔어" 는 문서 랭킹으로 못 푸는 질문이다 — 문서가 아니라 사람 목록을 원한다.
    근거는 추정이 아니라 통일부가 동향 제목에 적어 놓은 수행·동행 기록 10,917건의 집계다.
@@ -1613,13 +1712,13 @@ export default function SasilOn() {
       }))
     }
     Promise.all([grab('/nk-index.json'), grab('/nk-measures.json'),
-      grabOpt('/nk-graph.json'), grabOpt('/nk-trend.json')])
-      .then(([idx, m, g, tr]) => {
+      grabOpt('/nk-graph.json'), grabOpt('/nk-trend.json'), grabOpt('/nk-lexicon.json')])
+      .then(([idx, m, g, tr, lex]) => {
         if (!alive) return
         setIx(buildIndex({
           ...idx,
           records: [...(idx.records ?? []), ...expandTrend(tr)],
-          measures: m.measures ?? [], graph: g,
+          measures: m.measures ?? [], graph: g, lexicon: lex,
         }))
       })
       .catch(e => { if (alive) setErr(e?.message ?? '인덱스를 불러오지 못했습니다.') })
@@ -1643,6 +1742,7 @@ export default function SasilOn() {
   const related = (a?.related ?? null) as LookupT | null
   const agg = (a?.agg ?? null) as AggT | null
   const relation = (a?.relation ?? null) as RelationT | null
+  const lexicon = (a?.lexicon ?? null) as LexiconT | null
   const askedAt = a?.Q?.askedAt
 
   /* 답변이 사용한 자료를 하나의 시간축 위로 모은다. 번호 = 근거 카드 번호 */
@@ -1923,6 +2023,9 @@ export default function SasilOn() {
                     verbose={verboseSlots.has('related')}
                   />
                 )}
+
+                {/* ⑤-a 어휘 — 낱말 질문은 문서가 아니라 사전이 답한다 */}
+                {lexicon && <LexiconCard lex={lexicon} />}
 
                 {/* ⑤-b 관계망 — 근거가 0건이어도 답할 수 있는 유일한 축이다 */}
                 {relation && <RelationCard rel={relation} />}

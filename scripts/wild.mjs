@@ -12,6 +12,9 @@ const data = JSON.parse(fs.readFileSync('frontend/src/data/nk-index.json', 'utf8
 const GP = '북한자료-api/nk-graph.json'
 if (fs.existsSync(GP)) data.graph = JSON.parse(fs.readFileSync(GP, 'utf8'))
 else console.log('⚠ 관계망 없음 — node scripts/build-nk-graph.mjs 를 먼저 돌리세요')
+/* 어휘 사전도 함께 — 안 실으면 낱말 질문이 '사전 없음' 경로로만 돌아 실제 동작을 못 잰다. */
+const LP = '북한자료-api/nk-lexicon.json'
+if (fs.existsSync(LP)) data.lexicon = JSON.parse(fs.readFileSync(LP, 'utf8'))
 const ix = buildIndex(data)
 
 const VERDICT_WORDS = ['거짓입니다', '허위입니다', '사실입니다', '틀렸습니다', '맞습니다']

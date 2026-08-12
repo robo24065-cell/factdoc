@@ -223,17 +223,29 @@ export const DATASETS = {
         + '날짜가 필수 파라미터인 이 API 로는 영구 도달 불가',
     url: 'https://www.data.go.kr/data/15131895/openapi.do' },   // ★ 15079225 는 통합검색 문서였다
 
-  lexicon: { ...API, status: 'pending',
+  /* 2026-08-12 오후 재확인: 백엔드 복구됨. resultCode 0 · totalCount 177,684.
+     오전의 db_error 는 제공기관 쪽 일시 장애였다 — 죽었다고 단정하지 말고 다시 두드릴 것. */
+  lexicon: { ...API, status: 'ready',
     name: '북한 용어사전', topic: 'nk.culture',
     endpoint: 'https://apis.data.go.kr/1250000/nkword/getNkword',   // ★ 미확인 → 확정
     params: { pageNo: 1, numOfRows: 100 },
     file: 'lexicon.json', parser: 'lexicon', incrementalBy: 'full',
     asOf: null, coverageEnd: null, freshness: 'stale', searchPriority: 40,
-    pendingReason: '제공기관 백엔드 db_error (2026-08-12 실측, 파라미터 13종·재시도 12회 전부 동일). 엔드포인트는 확정됨',
-    note: '★ 질의 정규화·entity_alias 전용 — 검색 근거로 인용하지 않는다. '
-        + '스키마가 word+descript 뿐이라 남→북 대응어가 구조적으로 없다. '
-        + '남북관계지식사전(15129686, 233건)·북한지식사전(15129687, 273건)은 XLS 파일로 지금도 받을 수 있다',
+    note: '★ 검색 근거로 인용하지 않는다 — 어휘 계층(nk-lexicon.mjs)이 뜻풀이 답변에 쓴다. '
+        + '스키마가 word+설명뿐이라 남→북 대응어가 없다. 대응어는 wordCmp 가 담당한다',
     url: 'https://www.data.go.kr/data/15151324/openapi.do' },
+
+  /* ★ "안녕하세요 북한말로?" 에 답할 유일한 자료. koword(남) ↔ nkword(북) 쌍이다.
+     2026-08-12 수집 21,985건(중복·시험데이터 제외 후 21,982쌍).
+     검색 근거가 아니라 **어휘 계층 전용**이다 — 문서 랭킹에 섞으면 동음이의어 사고가 난다. */
+  wordCmp: { ...API, status: 'ready',
+    name: '남북한 언어비교', topic: 'nk.culture',
+    endpoint: 'https://apis.data.go.kr/1250000/nskwordcmp/getNskwordCmp',
+    params: { pageNo: 1, numOfRows: 100 },
+    file: 'wordCmp.json', parser: 'wordCmp', incrementalBy: 'full',
+    asOf: null, coverageEnd: null, freshness: 'stale', searchPriority: 40,
+    note: '★ 어휘 계층 전용 — 검색 근거로 인용하지 않는다. 남북 대응어 사전',
+    url: 'https://www.data.go.kr/data/15151340/openapi.do' },
 }
 
 /* ★ 아직 못 실은 자료가 답할 질문들 — "없다"와 "우리가 아직 못 가져왔다"는 다르다.
