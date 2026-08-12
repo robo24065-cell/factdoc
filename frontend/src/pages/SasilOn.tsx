@@ -1458,6 +1458,17 @@ function AggCard({
   )
 }
 
+/* 'N분 전' — 실시간성은 숫자로 보여야 믿긴다. 화면에 언제 갱신됐는지 항상 표시한다. */
+function ago(iso?: string | null): string {
+  if (!iso) return ''
+  const m = Math.round((Date.now() - new Date(iso).getTime()) / 60000)
+  if (!Number.isFinite(m) || m < 0) return ''
+  if (m < 1) return '방금'
+  if (m < 60) return `${m}분 전`
+  const h = Math.round(m / 60)
+  return h < 24 ? `${h}시간 전` : `${Math.round(h / 24)}일 전`
+}
+
 /* ══════════════════════ 원문 링크 ══════════════════════
    지금까지 출처 링크가 **데이터셋 페이지**(data.go.kr 의 API 문서)로만 갔다.
    사용자가 원하는 건 "그 글이 실제로 적힌 페이지"다.
@@ -1704,6 +1715,9 @@ function GroupCard({ g, no, verbose, refOnly = false }: { g: Group; no: number; 
 
 export default function SasilOn() {
   const [ix, setIx] = useState<any>(null)
+  /* 오늘의 이슈 — 뉴스는 **근거가 아니라 검증 대상**이다. 답변에 인용하지 않고,
+     '지금 도는 주장'을 보여주고 우리 공식자료로 되묻는 입구로만 쓴다. */
+  const [issues, setIssues] = useState<any>(null)
   const [q, setQ] = useState('')
   const [a, setA] = useState<NkAnswer | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -1742,6 +1756,7 @@ export default function SasilOn() {
         sourceUrl: r[4] ? String(d.urlTemplate).replace('{pk}', String(r[4])) : null,
       }))
     }
+    grabOpt('/nk-issues.json').then(j => { if (alive && j?.issues?.length) setIssues(j) })
     Promise.all([grab('/nk-index.json'), grab('/nk-measures.json'),
       grabOpt('/nk-graph.json'), grabOpt('/nk-trend.json'), grabOpt('/nk-lexicon.json')])
       .then(([idx, m, g, tr, lex]) => {
@@ -1957,6 +1972,69 @@ export default function SasilOn() {
               </button>
             ))}
           </div>
+
+          {!a && issues?.fresh?.length > 0 && (
+            <section className={`mt-5 ${CARD} p-4`} aria-label="실시간 속보">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" aria-hidden="true" />
+                  실시간 속보
+                </h2>
+                <p className="text-[11px] tabular-nums text-slate-400">{ago(issues.builtAt)} 갱신</p>
+              </div>
+              <ul className="mt-2 space-y-1">
+                {issues.fresh.slice(0, 6).map((it: any, i: number) => (
+                  <li key={i} className="flex items-baseline gap-2">
+                    <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-rose-500">
+                      {ago(it.at)}
+                    </span>
+                    <button
+                      type="button"
+                      disabled={!ix}
+                      onClick={() => pick(it.ask)}
+                      className={`min-w-0 flex-1 truncate rounded text-left text-sm text-slate-800 hover:underline disabled:opacity-40 dark:text-slate-100 ${FOCUS}`}
+                    >
+                      {it.title}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+
+          {!a && issues?.issues?.length > 0 && (
+            <section className={`mt-4 ${CARD} p-4`} aria-label="최근 북한·통일 이슈">
+              <div className="flex flex-wrap items-baseline justify-between gap-2">
+                <h2 className="text-sm font-medium text-slate-900 dark:text-white">
+                  <span aria-hidden="true">📰 </span>많이 다뤄진 이야기
+                </h2>
+                <p className="text-[11px] text-slate-400">
+                  최근 {issues.windowHours}시간 · 기사 {nf(issues.stats?.kept ?? 0)}건에서 추림
+                </p>
+              </div>
+              <p className={`mt-1 text-xs leading-relaxed text-slate-500 ${PROSE}`}>
+                뉴스는 <strong className="font-medium">근거가 아니라 확인할 대상</strong>입니다.
+                눌러 보면 통일부 공식 자료로 대조해 드립니다.
+              </p>
+              <ul className="mt-3 space-y-1.5">
+                {issues.issues.slice(0, 6).map((it: any, i: number) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      disabled={!ix}
+                      onClick={() => pick(it.ask)}
+                      className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition active:scale-[0.99] disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 ${FOCUS}`}
+                    >
+                      <span className="text-sm text-slate-800 dark:text-slate-100">{it.title}</span>
+                      <span className="ml-2 whitespace-nowrap text-[11px] tabular-nums text-slate-400">
+                        기사 {it.n}건
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
 
           {!a && stats && (
             <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">

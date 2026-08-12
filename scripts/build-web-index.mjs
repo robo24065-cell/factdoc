@@ -169,9 +169,25 @@ if (fs.existsSync(LEX_SRC)) {
   console.log('⚠ 어휘 사전 없음 — node scripts/build-nk-lexicon.mjs 를 먼저 돌리면 낱말 답변이 켜진다')
 }
 
+/* 오늘의 이슈 — 뉴스는 **검증 대상**이라 코퍼스에 섞지 않고 따로 싣는다.
+   화면에서 '지금 도는 주장'으로 보여주고, 누르면 우리 공식자료로 되묻는 입구가 된다. */
+const ISSUES_SRC = path.resolve('북한자료-api/nk-issues.json')
+const ISSUES_OUT = OUT.replace(/nk-index\.json$/, 'nk-issues.json')
+let issuesShipped = null
+if (fs.existsSync(ISSUES_SRC)) {
+  const j = JSON.parse(fs.readFileSync(ISSUES_SRC, 'utf8'))
+  fs.writeFileSync(ISSUES_OUT, JSON.stringify(j), 'utf8')
+  issuesShipped = ISSUES_OUT
+  const age = ((Date.now() - new Date(j.builtAt)) / 3600000).toFixed(1)
+  console.log(`오늘의 이슈 ${j.issues.length}개 (수집 ${age}시간 전, 리랭커 ${j.llmFiltered ? '적용' : '미적용'}) → ${path.basename(ISSUES_OUT)}`)
+} else {
+  console.log('⚠ 이슈 없음 — node scripts/nk-issue-radar.mjs 를 먼저 돌리면 실시간 이슈가 켜진다')
+}
+
 const GRAPH_SRC = path.resolve('북한자료-api/nk-graph.json')
 const GRAPH_OUT = OUT.replace(/nk-index\.json$/, 'nk-graph.json')
-const shipped = [OUT, MEASURES_OUT, TREND_OUT, ...(lexShipped ? [lexShipped] : [])]
+const shipped = [OUT, MEASURES_OUT, TREND_OUT,
+  ...(lexShipped ? [lexShipped] : []), ...(issuesShipped ? [issuesShipped] : [])]
 if (fs.existsSync(GRAPH_SRC)) {
   const g = JSON.parse(fs.readFileSync(GRAPH_SRC, 'utf8'))
   fs.writeFileSync(GRAPH_OUT, JSON.stringify(g), 'utf8')

@@ -8,6 +8,8 @@
    ⚠ 직접 파싱하지 말 것 — api.txt 의 값은 큰따옴표로 감싸여 있고(NCP_ID="…"),
      따옴표째 헤더에 넣으면 게이트웨이가 401 "Authentication information are missing" 을 준다.
      실측 2026-08-13: 이것 때문에 키가 죽은 줄 알고 한참 헤맸다. loadEnv 가 따옴표를 벗긴다. */
+import fs from 'node:fs'
+import path from 'node:path'
 import { loadEnv } from './nk-env.mjs'
 loadEnv()
 const ID = process.env.NCP_ID, SECRET = process.env.NCP_SECRET
@@ -214,3 +216,109 @@ dropped.slice(0, 12).forEach(d => console.log(`  (${d.reason}) ${d.title.slice(0
 
 console.log('\n[유효 판정 샘플 8건 — 필터 근거]')
 kept.slice(0, 8).forEach(d => console.log(`  (${d.reason}) ${d.title.slice(0, 55)}`))
+
+/* ─────────────────────────────────────────────────────────────
+   7. 산출물 저장
+   지금까지 이 스크립트는 **콘솔에만** 찍고 끝났다 — 제품과 연결된 적이 없다.
+   그래서 "실시간 핫이슈" 같은 화면이 아예 없었다.
+
+   ★ 뉴스는 근거가 아니라 **검증 대상**이다(CLAUDE.md §3a — verdict_citation 은
+     record 만 FK 로 받고 record.kind 에 'news' 가 없다).
+     그러니 코퍼스에 섞지 않고 별도 파일로 둔다. 화면에서는 '지금 도는 주장'으로만 쓰고,
+     누르면 우리 공식자료로 되묻는 입구가 된다 — 그게 이 서비스가 할 일이다.
+   ───────────────────────────────────────────────────────────── */
+/* ★ 어휘 필터로는 못 거르는 것들이 남는다 — 낱말은 맞고 뜻이 다른 경우다.
+   실측: 배우 '김정은'(탁재훈 이상형) 11건, '김희철 태극기 논란' 30건(키워드가 '이산가족'),
+   '추미애 경기지사' 22건, '피지컬AI 포럼' 18건(키워드가 '통일부').
+   TOP 8 중 4건이 노이즈였다 — 정밀도 50%.
+   같은 문제를 검색 쪽에서 리랭커로 풀었으니(52%→100%) 여기도 같은 것을 쓴다.
+   LLM 은 **고르기만 한다** — 이슈를 만들거나 요약하지 않는다. */
+async function llmFilter(list) {
+  try {
+    const L = await import('../frontend/src/engine/nk-llm.mjs')
+    const keys = String(process.env.GEMINI_API_KEYS || '').split(',').map(s => s.trim()).filter(Boolean)
+    if (!keys.length) {
+      const raw = fs.readFileSync(path.resolve('.gemini-keys.tmp.json'), 'utf8')
+      const j = JSON.parse(raw)
+      keys.push(...(Array.isArray(j) ? j : (j.keys || Object.values(j).flat())))
+    }
+    if (!keys.length) return null
+    L.setKeys(keys)
+    const items = list.map((c, i) => ({ i, t: c.rep.title.slice(0, 80) }))
+    const sc = await L.rerankWithLLM(
+      '이 기사가 북한·통일·남북관계 분야의 이슈인가? 동명이인이나 낱말만 겹치는 것은 0점.', items)
+    return sc
+  } catch { return null }   // 실패하면 규칙 결과 그대로 — 레이더가 멈추면 안 된다
+}
+
+const OUT = path.resolve('북한자료-api/nk-issues.json')
+/* 이슈를 우리 검색으로 되물을 질의를 만든다.
+   제목을 그대로 넣으면 매체 수식어('[단독]', '…종합')가 섞여 검색이 흐려진다.
+   레이더가 이미 매칭한 키워드가 가장 깨끗한 질의다. */
+const askOf = c => {
+  const core = c.kw.filter(k => k.length >= 3).slice(0, 2)
+  return core.length ? core.join(' ') : c.kw[0] || c.rep.title.slice(0, 20)
+}
+/* 상위 12개만 심사한다 — 리랭커의 후보 상한이자 비용 상한이다.
+   그 아래는 클러스터가 작아(2~3건) 어차피 화면에 안 나간다. */
+const head = clusters.slice(0, 12)
+const scores = await llmFilter(head)
+let final = clusters
+if (scores) {
+  const drop = head.filter((_, i) => (scores.get(i) ?? 3) < 2)
+  const keepSet = new Set(head.filter((_, i) => (scores.get(i) ?? 3) >= 2))
+  final = [...head.filter(c => keepSet.has(c)), ...clusters.slice(12)]
+  console.log(`\n🤖 리랭커: 상위 12개 중 ${drop.length}개 제외`)
+  drop.forEach(c => console.log(`   ✗ [${c.size}건] ${c.rep.title.slice(0, 52)}`))
+} else {
+  console.log('\n🤖 리랭커 미적용 (키 없음 또는 호출 실패) — 규칙 결과 그대로')
+}
+
+/* ★ '실시간'과 '이슈'는 다른 것이다 — 실측으로 확인했다.
+     최근 1시간  고유    1건 → 군집 불가
+     최근 3시간  고유   44건 → 2건 이상 군집이 2개뿐
+     최근 24시간 고유 1,484건 → 2건 이상 군집 79개
+   같은 사건이 여러 매체로 퍼지는 데 몇 시간이 걸리기 때문이다.
+   그래서 **이슈는 넓은 창(군집), 속보는 좁은 창(군집 없이 원문 그대로)** 로 나눈다.
+   실시간성은 창의 길이가 아니라 **갱신 주기**가 만든다(워크플로 cron 참조). */
+const FRESH_H = 3
+const freshCut = Date.now() - FRESH_H * 3600 * 1000
+const freshRaw = kept.filter(d => d.ts >= freshCut).sort((a, b) => b.ts - a.ts).slice(0, 12)
+/* 속보도 리랭커를 태운다 — 군집을 안 거치므로 어휘 필터만으로는 더 샌다.
+   실측: 태우기 전 12건 중 4건이 노이즈였다(중동전·3x3 대표팀·배우 김정은·국제환경상 공고). */
+const freshScores = freshRaw.length ? await llmFilter(freshRaw.map(d => ({ rep: d, kw: [] }))) : null
+const fresh = freshScores
+  ? freshRaw.filter((_, i) => (freshScores.get(i) ?? 3) >= 2)
+  : freshRaw
+if (freshScores) console.log(`🤖 속보 ${freshRaw.length}건 → ${fresh.length}건 (리랭커)`)
+
+const payload = {
+  builtAt: new Date().toISOString(),
+  windowHours: HOURS,
+  freshHours: FRESH_H,
+  llmFiltered: !!scores,
+  /* 방금 들어온 기사 — 군집을 만들지 않는다. 묶을 만큼 쌓이지 않았기 때문이다.
+     제목 그대로 보여주고, 우리 자료로 되물을 질의는 매칭 키워드에서 뽑는다. */
+  fresh: fresh.map(d => ({
+    title: d.title,
+    at: new Date(d.ts).toISOString(),
+    url: d.url,
+    ask: [...d.kw].filter(k => k.length >= 3).slice(0, 2).join(' ') || [...d.kw][0] || '',
+  })),
+  stats: {
+    calls, rawInWindow, unique: all.length, dropped: dropped.length, kept: kept.length,
+    clusters: clusters.length, multi: clusters.filter(c => c.size >= 2).length,
+  },
+  issues: final.slice(0, Math.max(TOPN, 20)).map(c => ({
+    n: c.size,
+    title: c.rep.title,
+    ask: askOf(c),
+    kw: c.kw.slice(0, 6),
+    at: new Date(c.rep.ts).toISOString(),
+    url: c.rep.url,
+    also: c.docs.slice(1, 4).map(d => d.title),
+  })),
+}
+fs.mkdirSync(path.dirname(OUT), { recursive: true })
+fs.writeFileSync(OUT, JSON.stringify(payload), 'utf8')
+console.log(`\n✓ 이슈 ${payload.issues.length}개 저장 → ${OUT}`)
