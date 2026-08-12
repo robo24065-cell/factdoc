@@ -132,4 +132,39 @@ export const WILD = [
   { q: '남북교역 규모가 어느 정도야', domain: true },
   { q: '금강산 관광객 지금 얼마나 가', domain: true, expectTopic: 'econ.kumgang' },
   { q: '개성공단에 기업 500개나 있었다던데', domain: true, expectTopic: 'econ.kaesong' },
+  // ── 무관 집계 감시 ────────────────────────────────────────
+  /* 코퍼스에서 dims 를 가진 measure 는 defectorAge·defectorOrigin 60건뿐이다(실측).
+     그 중 한 칸만 상위 40위에 들어오면 질문이 무엇이든 누적 33,501명이 만들어졌다.
+     '탈북민 X' 는 한국어에서 가장 흔한 질의형이고, 실측 340건 중 331건이 이 수치를 요지로 내놓았다.
+     정답을 못 박지 않는다 — '이 수치가 요지가 되면 안 된다'만 건다(카드로는 남아도 통과). */
+  { q: '탈북민 재입북', domain: true, mustDemoteNumber: true },
+  { q: '탈북했다 월북한 사례', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 자살률', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 결혼', domain: true, mustDemoteNumber: true },
+  { q: '북한이탈주민 이혼', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 주거 통계', domain: true, mustDemoteNumber: true },
+  /* ★ 수량 단서가 붙으면 우회된다 — 1차 패치(asksQuantity)와 D1 안이 정확히 여기서 샜다.
+     '몇/얼마나/통계/현황' 은 intent 게이트를 켜서 관련성 판정을 건너뛰게 만든다. */
+  { q: '탈북민 재입북 몇 명이야', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 범죄율 얼마나 돼', domain: true, mustDemoteNumber: true },
+  { q: '북한이탈주민 국적 현황', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 자녀 학교 몇 명이야', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 의료 지원 얼마나 돼', domain: true, mustDemoteNumber: true },
+  /* 코퍼스에 답이 있는데(정착현황 12행: 생계급여 수급률 2008 54.8 → 2019 23.8)
+     입국 누계로 답하던 질의. 수치를 내리는 것만으로는 절반이다 — 근거가 생계·취업에 닿아야 한다. */
+  { q: '탈북민은 뭐먹고 사니', domain: true, mustDemoteNumber: true,
+    mustEvidenceAny: ['취업', '생계', '정착', '일자리'] },
+  { q: '탈북민 뭐 해서 먹고 살아', domain: true, mustDemoteNumber: true },
+  { q: '탈북민 생계급여 받는 사람 몇 명', domain: true, mustDemoteNumber: true },
+
+  // ── 과잉회피 감시 (위 관련성 문턱이 절대 삼켜서는 안 되는 것들) ──
+  /* 관련성 문턱은 '설명되지 않는 낱말이 있으면 내린다'이므로 열거에서 빠진 의문 표현이
+     전부 '잔여어'가 된다. 사람이 실제로 치는 표현으로 그 구멍을 감시한다. */
+  { q: '탈북민 인원 얼마나 돼', domain: true, mustNumber: true },
+  { q: '탈북민 규모 알려줘', domain: true, mustNumber: true },
+  { q: '탈북민 총 몇명이나 왔어', domain: true, mustNumber: true },
+  { q: '탈북민이 몇 명인가요', domain: true, mustNumber: true },
+  { q: '탈북민 숫자 알려줘', domain: true, mustNumber: true },
+  { q: '탈북민 얼마나 넘어왔어', domain: true, mustNumber: true },
+  { q: '북한이탈주민 남녀 각각 몇명', domain: true, mustNumber: true },
 ]

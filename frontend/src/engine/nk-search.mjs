@@ -64,7 +64,6 @@ const SYN = {
   '강제북송': ['북송', '송환', '강제송환'],
   '넘겼': ['송환', '북송'],
   '귀순': ['탈북', '북한이탈주민', '월남'],
-  '월북': ['월경', '넘어간'],
 
   // 식량·기아 — '굶는다'가 공문서의 '식량난·아사'에 닿지 않았다 (코퍼스: 식량 71 · 아사 9 · 식량난 8)
   '굶는': ['식량난', '식량', '아사', '기아'],
@@ -73,6 +72,29 @@ const SYN = {
   '식량난': ['식량', '아사', '기아', '식량지원'],
   '기아': ['식량난', '아사', '식량'],
   '배고': ['식량난', '식량'],
+
+  // ★ 삶의 조건 — 사용자는 '뭐먹고 사니'로 묻고 공문서는 '생계급여·취업'으로 쓴다
+  '뭐먹고': ['생계', '생계급여', '취업', '소득', '일자리'],
+  '먹고사': ['생계', '생계급여', '취업', '소득'],
+  '먹고': ['생계', '생계급여', '취업', '소득'],
+  '사니': ['생계', '정착', '생활'],
+  '벌어': ['소득', '임금', '취업'],
+  '생계': ['생계급여', '수급', '소득', '취업', '자립'],
+  '직업': ['취업', '일자리', '직업훈련', '고용'],
+  '취업': ['일자리', '고용', '직업', '자립'],
+  '일자리': ['취업', '고용'],
+  '소득': ['임금', '생계급여'],
+
+  // ★ 입국 서술어 — '넘어왔어'가 지표명 '입국현황'에 닿지 않아 요지를 잃던 자리
+  '넘어와': ['입국', '북한이탈주민', '탈북'],
+  '넘어왔': ['입국', '북한이탈주민', '탈북'],
+  '넘어온': ['입국', '북한이탈주민', '탈북'],
+  '넘어옴': ['입국', '북한이탈주민', '탈북'],
+
+  // ★ 사건 어휘 — '재입북'(df 1)은 '재입북자'(df 2)에, '월북한'(df 2)은 '월북'(df 4)에 닿지 못한다
+  '재입북': ['재입북자', '월북', '입북'],
+  '월북': ['월북자', '재입북자', '월경', '넘어간'],
+  '월북한': ['월북', '월북자', '재입북자'],
 }
 // 어간 접두 매칭용 — 긴 것부터 검사해 '돌려보냈' 이 '돌려보내' 보다 먼저 걸리게 한다
 const SYN_STEMS = Object.keys(SYN).filter(k => k.length >= 2).sort((a, b) => b.length - a.length)
@@ -155,7 +177,21 @@ export function buildIndex(data) {
     const d = data.records.find(r => r.id === rid)
     if (d) measureDatasets.add(d.datasetId)
   }
-  return { data, docs, df, titleDf, N, avg, inv, mByRec, measureDatasets, vocByChar, periodicMetrics }
+  /* ★ 차원(dims)을 가진 measure 를 데이터셋+지표로 미리 묶는다. 코퍼스 전체 60건뿐이다(실측).
+     합계를 랭킹(hits.slice(0,40))에서 모으면 40위에 못 든 행이 빠져 합계가 조용히 잘린다 —
+     같은 지표 '북한이탈주민 입국현황'에 33,501 · 32,171 · 24,243 · 14,609 · 1,295 가
+     질문 문장에 따라 나오던 자리(실측 7종). */
+  const recById = new Map(data.records.map(r => [r.id, r]))
+  const dimRows = new Map()
+  for (const m of data.measures || []) {
+    if (!m.dims) continue
+    const rec = recById.get(m.recordId); if (!rec) continue
+    const k = rec.datasetId + '::' + m.metric
+    if (!dimRows.has(k)) dimRows.set(k, [])
+    dimRows.get(k).push({ m, rec })
+  }
+  return { data, docs, df, titleDf, N, avg, inv, mByRec, measureDatasets, vocByChar,
+    periodicMetrics, dimRows }
 }
 
 function bm25(ix, weighted) {
@@ -583,6 +619,85 @@ export function lookupNumeric(ix, Q, hits) {
 // ── 집계·분해 ───────────────────────────────────────────────
 // "몇 명" → 성별=전체 합계 / "여자가 몇 명" → 성별=여 합계
 // "나이 많은 사람이 더 많다며" → 연령대 분포
+/* ── 질문의 '문법' ─────────────────────────────────────────
+   무엇을 찾을지가 아니라 어떻게 묻는지를 나타내는 어휘. 닫힌 낱말집합 + 어미/어두 규칙이다.
+   ★ 부분문자열 매칭을 쓰면 안 된다 — '적십자'가 '적'에, '명절'이 '명'에, '게임'이 '임'에 걸린다.
+     실측: 비앵커 정규식은 제목 내용어(titleDf>=3) 8,770종 중 434종(4.9%)을 문법어로 삼켰다
+     (적십자사·남북적십자회담·군사적·평화적·명단·명령…). 앵커드는 78종(0.9%). */
+const ASK_WORDS = new Set([
+  '몇', '얼마', '규모', '정도', '어느', '어디', '누가', '누구', '무엇', '뭐', '왜', '어떤', '어때', '언제',
+  '통계', '현황', '수치', '추이', '평균', '합계', '총계', '비율', '분포', '구성',
+  '목록', '나열', '리스트', '자료', '데이터',
+  '제일', '가장', '최다', '최대', '최소', '최고', '최저', '중에', '각각', '대비', '비교', '차이',
+  '명', '분', '사람', '인원', '건수', '개수', '가지', '차례', '숫자', '갯수', '사실', '진짜',
+])
+const ASK_RE = [
+  /^(몇|얼마|어느|어디|어떻|어때)/,
+  /^(많|적은|적나|작은|높|낮|중에|각각|대비|비교|차이)/,
+  /^(제일|가장|최다|최대|최소|최고|최저)([은는이가을를의도만로]|으로)?$/,
+  /^(명|분|사람|인원|건수|개수|가지|차례|숫자|갯수)(수|들)?([은는이가을를의도만]|이야|이나|인|인가|인지|씩)?$/,
+  /^(있|없)/,
+  /^(알려|보여|주세|나열|정리)/,
+  /(다며|다던데|라는데|맞아|맞나|카더라|한다며)$/,
+  /(입니까|인가요|나요|가요|세요|이야|이니|이냐|되나|줘|셈)$/,
+]
+
+/* ★ 잔여 초점 — 이 지표의 어휘로도, 질문 문법으로도, 정규화기가 이미 소비한 규칙으로도
+   설명되지 않고 남는 낱말. 남으면 이 지표는 이 질문의 답이 아니다.
+   '탈북민'과 '탈북민 재입북'은 토큰 수가 둘 다 2개라 안 갈리고, hits 순위로도 안 갈린다.
+   갈라주는 것은 어휘뿐이다 — 이 데이터셋은 '재입북'을 말한 적이 없다. */
+function residualFocus(ix, Q, n, metric, dsKey, pool, dimName) {
+  // ① 지표가 스스로 말하는 어휘 — 손으로 쓰지 않고 데이터에서 만든다
+  const own = new Set()
+  const add = s => { for (const t of tokenize(String(s || ''))) own.add(t) }
+  add(metric); add(ix.data.datasets[dsKey]?.name); add(dimName)
+  for (const r of pool) {
+    add(r.rec.title)
+    for (const [k, v] of Object.entries(r.m.dims || {})) { add(k); add(v) }
+  }
+  // ② 이 토큰이 지표 어휘에 닿는가 — 부분문자열 + SYN 다리('탈북민'→'북한이탈주민')
+  const reach = t0 => {
+    /* 조사형('북한에서')은 확장 씨앗이 아니라 아무 다리도 못 놓는다 — 절단형도 함께 본다 */
+    for (const t of new Set([t0, t0.replace(JOSA, '')])) {
+      for (const o of own) if (o.length >= 2 && (t.includes(o) || o.includes(t))) return true
+      const cand = new Set([t, ...(SYN[t] || [])])
+      /* 어간이 토큰의 접두인 경우(넘어왔어→넘어왔)와 토큰이 어간의 접두인 경우(넘어→넘어왔) 둘 다.
+         후자는 decomp 가 잘라낸 조각이 다리를 못 찾던 자리다. */
+      for (const k of SYN_STEMS) if (t.length >= 2 && (t.startsWith(k) || k.startsWith(t)))
+        { cand.add(k); for (const v of SYN[k]) cand.add(v) }
+      for (const c of cand) for (const o of own)
+        if (o.length >= 2 && (c.includes(o) || o.includes(c))) return true
+    }
+    return false
+  }
+  const bridged = new Set(Q.tokens.filter(reach))
+
+  // ③ 정규화기가 이미 소비한 어휘 (성별·차원·집계 규칙이 걸어간 자리)
+  const consumed = []
+  if (n.dims?.성별 || n.dimensionAsked === '성별') consumed.push(/여자|여성|남자|남성|성별|남녀/)
+  if (n.dimensionAsked === '연령대') consumed.push(/나이|연령|고령|젊|어린|노인/)
+  if (n.dimensionAsked === '출신지역') consumed.push(/출신|지역|고향/)
+  if (n.dimensionAsked === '직업') consumed.push(/직업/)
+  if (n.aggregate !== 'none') consumed.push(/총|전체|합|모두|통틀어|최신|마지막|현재|경향/)
+  /* nk-normalize 의 PERSON_HINT 가 '사람 수 질의'로 이미 읽어낸 표현은 초점이 아니다.
+     '탈북민 총 몇명이나 왔어' 의 '왔어' 가 잔여어로 남아 요지를 잃던 자리. */
+  if (n.unitFamily === 'person') consumed.push(/넘어|들어온|들어와|왔|와서|오신|입국|인원/)
+  const grammar = t => ASK_WORDS.has(t) || ASK_WORDS.has(t.replace(JOSA, '')) ||
+    ASK_RE.some(re => re.test(t)) || consumed.some(re => re.test(t))
+
+  // ④ 잔여 초점
+  const explained = [...bridged, ...Q.tokens.filter(grammar)]
+  /* 이미 설명된 토큰을 품고 있는 조각은 독립 초점이 아니다 —
+     '북한 사람'을 붙여 만든 색인어 '북한사람'이 잔여어로 남던 자리(search 의 joined 복원 산물). */
+  const known = Q.tokens.filter(t => ix.df.has(t) && !bridged.has(t) && !grammar(t) &&
+    !explained.some(e => e !== t && e.length >= 2 && t.includes(e)))
+  /* 색인이 모르는 낱말('자살률')도 이 지표가 답하지 못하는 것이다. df 필터로는 안 보인다. */
+  const unknown = Q.tokens.filter(t => !ix.df.has(t) && !grammar(t) &&
+    !explained.some(e => e.length >= 2 && (t.includes(e) || e.includes(t))) &&
+    !Q.tokens.some(o => o !== t && ix.df.has(o) && o.length >= 2 && t.includes(o)))
+  return [...new Set([...known, ...unknown])]
+}
+
 export function aggregate(ix, Q, hits) {
   const n = Q.norm
   const rows = []
@@ -604,6 +719,16 @@ export function aggregate(ix, Q, hits) {
     .sort((a, b) => (carries(b) - carries(a)) || aff(b) - aff(a))[0]
   if (n.dimensionAsked && !carries(metric)) return null
   let pool = rows.filter(r => r.m.metric === metric)
+
+  /* ★ 합계는 랭킹의 함수가 아니다. 지표가 정해진 뒤에는 그 지표를 가진 행 '전부'를 색인에서 모은다.
+     관련성 판정(아래 residualFocus)과 행 수집을 같은 창(hits.slice)으로 겸하면
+     문턱을 조일 때마다 합계가 같이 잘린다. 두 축을 분리한다. */
+  if (ix.dimRows) {
+    const full = []
+    for (const k of new Set(pool.map(r => r.rec.datasetId)))
+      for (const row of ix.dimRows.get(k + '::' + metric) || []) full.push(row)
+    if (full.length) pool = full
+  }
 
   // 성별 필터 — 지정 없으면 '전체'만 사용해 중복합산 방지
   const g = n.dims?.성별 || '전체'
@@ -630,16 +755,20 @@ export function aggregate(ix, Q, hits) {
   }
   const basis = dated.length ? 'periodic' : 'snapshot'
   const dsKey = pool[0].rec.datasetId
-  /* 수량을 묻지 않은 질문인가. 숫자를 지우지는 않는다 — 요지(헤드라인)에서만 내린다.
-     '탈북했다 다시 월북한다던데' 에 누적 33,501명이 헤드라인으로 나가던 자리다.
-     단서 둘: ① 질의가 사실상 주어 하나뿐이면('탈북민') 요청한 것으로 본다
-              — 이 단서가 없으면 wild-set 의 '탈북민' 이 헤드라인을 잃는다(실측).
-             ② 미래 질의는 '아직 없습니다'가 곧 답이므로 내리지 않는다. */
-  const bareSubject = Q.tokens.length <= 2
-  const unsolicited = !bareSubject && !Q.win.future && !Q.isQuant && !Q.numeric && !Q.wantsStat &&
-    n.intent !== 'lookup' && n.aggregate === 'none' && !n.dimensionAsked
+  const dimName = n.dimensionAsked ||
+    Object.keys(pool[0]?.m.dims || {}).find(k => k !== '성별') || null
+  /* ★ 집계가 '요지'가 될 자격은 질의의 형태가 아니라 관련성으로 정한다. 숫자를 지우지는 않는다 —
+     카드로 남기고 요지(헤드라인)에서만 내린다.
+     1차 패치(asksQuantity)는 '수량을 원하는가'를 물어 '탈북민 재입북 몇 명이야'를 통과시켰고,
+     2차 패치(bareSubject=토큰 2개 이하)는 '탈북민 자살률'·'탈북민 결혼'을 통과시켰다.
+     실측: 이 코퍼스에서 dims 를 가진 measure 는 defectorAge·defectorOrigin 60건뿐이라,
+     그 중 한 칸만 상위 40위에 들어오면 질문이 무엇이든 33,501 이 만들어진다.
+     면제 둘: ① 미래 질의는 '아직 발생하지 않았습니다'가 곧 답이다.
+              ② 수치 주장 대조(numeric)는 checkNumeric 이 요지를 소유하므로 무해하다. */
+  const residual = residualFocus(ix, Q, n, metric, dsKey, pool, dimName)
+  const unsolicited = residual.length > 0 && !Q.win.future && !Q.numeric
   const scope = { windowLabel: Q.win.askedLabel || Q.win.label, timeScoped, outOfWindow, basis,
-    unsolicited, future: !!Q.win.future, targetYear: Q.time.year ?? null,
+    unsolicited, residual, future: !!Q.win.future, targetYear: Q.time.year ?? null,
     /* hasPeriodic=false 여야만 '기간별로 나뉘어 있지 않습니다'라고 단정할 수 있다.
        true 면 '해당 기간 자료는 확인되지 않습니다'(모른다)로 물러선다. stale/frozen 과 같은 문법. */
     hasPeriodic: !!ix.periodicMetrics?.has(dsKey + '::' + metric),
@@ -648,8 +777,6 @@ export function aggregate(ix, Q, hits) {
       pool[0].rec.coverageEnd || pool[0].rec.asOf || null }
 
   const unit = pool[0]?.m.unit || null
-  const dimName = n.dimensionAsked ||
-    Object.keys(pool[0]?.m.dims || {}).find(k => k !== '성별') || null
 
   // 분포
   if (n.aggregate === 'distribution' && dimName) {

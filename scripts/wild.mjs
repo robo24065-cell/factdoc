@@ -97,4 +97,26 @@ console.log('═'.repeat(74))
 const dom = rows.filter(x => x.c.domain)
 console.log(`도메인 내 ${dom.length}건 중 응답 ${dom.filter(x => x.r?.hasAnswer).length}건`)
 console.log(`출처 누락 ${rows.filter(x => x.r?.hasAnswer && !x.r.hasSource).length}건 · 시점 누락 ${rows.filter(x => x.r?.hasAnswer && !x.r.hasAsOf).length}건`)
-process.exitCode = pass === rows.length ? 0 : 1
+/* ── 집계 안정성 (질의 교차 불변식) ─────────────────────────
+   같은 지표·같은 성별필터의 합계는 질문 문장이 달라져도 같아야 한다.
+   합계를 랭킹 창(hits.slice(0,40))에서 모으면 40위에 못 든 행이 빠져 조용히 잘린다 —
+   실측(수정 전): '탈북민 건강 어때' 24,243 · '탈북했다 월북한 사례' 14,609 · '탈북민 교육' 1,295.
+   값은 늘 '있고' 시점 고지도 붙으므로 개별 단언으로는 영원히 안 잡힌다. */
+const sums = new Map()
+for (const x of rows) {
+  const g = x.a?.agg
+  if (!g || g.mode === 'distribution' || g.sum == null) continue
+  const k = `${g.metric}|${g.genderFilter}`
+  if (!sums.has(k)) sums.set(k, new Map())
+  const m = sums.get(k)
+  if (!m.has(g.sum)) m.set(g.sum, [])
+  m.get(g.sum).push(x.c.q)
+}
+const unstable = [...sums].filter(([, m]) => m.size > 1)
+for (const [k, m] of unstable) {
+  console.log(`✗ 같은 지표에 서로 다른 합계 — ${k}`)
+  for (const [v, qs] of [...m].sort((a, b) => b[1].length - a[1].length))
+    console.log(`    ${v} ← ${qs.slice(0, 4).join(' / ')}`)
+}
+console.log(`집계 안정성 : 불안정 지표 ${unstable.length}종`)
+process.exitCode = (pass === rows.length && !unstable.length) ? 0 : 1
