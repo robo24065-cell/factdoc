@@ -147,7 +147,15 @@ export function buildIndex(data) {
   const periodicMetrics = new Set()
   for (const m of data.measures || []) if (m.periodStart)
     periodicMetrics.add(dsOfRec.get(m.recordId) + '::' + m.metric)
-  return { data, docs, df, titleDf, N, avg, inv, mByRec, vocByChar, periodicMetrics }
+  /* ★ 어느 데이터셋이 '수치'를 갖고 있는가 — 분포·비교 질의를 통계로 보내기 위해 필요하다.
+     보도자료·동향은 measure 가 0건이라, 이 신호가 없으면 '탈북은 나이 많은 사람이…' 같은 질의가
+     제목에 '탈북'이 흔한 보도자료에 점거당해 집계 경로가 아예 안 열린다(실측: eval 48→44). */
+  const measureDatasets = new Set()
+  for (const [rid] of mByRec) {
+    const d = data.records.find(r => r.id === rid)
+    if (d) measureDatasets.add(d.datasetId)
+  }
+  return { data, docs, df, titleDf, N, avg, inv, mByRec, measureDatasets, vocByChar, periodicMetrics }
 }
 
 function bm25(ix, weighted) {
@@ -367,6 +375,21 @@ export function search(ix, q, { limit = 40, ov } = {}) {
     //   실측: '북한 핵' 의 BM25 변동폭 1.9% vs recency 변동폭 31%.
     //   단 통계 질의는 면제 — as-of 판정(stale/frozen 우선)이 뒤집힌다(eval 1건이 정확히 여기 걸린다).
     let s = Math.pow(rel, Q.wantsStat ? 1 : 3)
+    /* ★ 분포·차원을 물었으면 답은 반드시 수치 데이터셋에 있다.
+       searchPriority 조정으로는 안 고쳐진다(100/78·100/55·100/45·90/40 전부 44/48 고정 — 실측).
+       '어느 자료가 답을 갖고 있는가'로 갈라야 한다. */
+    if (Q.norm?.dimensionAsked || (Q.norm?.aggregate && Q.norm.aggregate !== 'none')) {
+      s *= ix.measureDatasets.has(r.datasetId) ? 3 : 0.25
+    }
+    /* ★ 보도설명자료는 '주장을 반박한 기록'이다 — 주장 검증에는 최적이고 사실 조회에는 아니다.
+       searchPriority 100 을 모든 질의에 적용하면 2,709건이 코퍼스 전체를 점거한다
+       (실측: 적재 직후 eval 48→44, wild 75→69. '이산가족 상봉 아직도 하나' 가 회담 자료를 잃었다).
+       주장 표지가 있을 때만 앞세우고, 그 밖에는 뒤로 물린다. */
+    if (r.kind === 'briefing') {
+      const isClaim = Q.norm?.intent === 'claim_check' ||
+        /다며|다던데|라는데|사실이니|사실인가|맞아|맞나|아니야|진짜|헛소문|가짜/.test(String(Q.raw ?? ''))
+      s *= isClaim ? 1.8 : 0.35
+    }
 
     s *= 1 + (r.priority - 50) / 100                        // 데이터셋 우선순위
     s *= asofWeight(r, Q.askedAt)                           // 시점 감쇠 (frozen 면제)

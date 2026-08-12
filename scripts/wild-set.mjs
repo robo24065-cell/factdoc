@@ -67,8 +67,11 @@ export const WILD = [
   { q: '북한 쌀 지원', domain: true, mustEvidenceAny: ['쌀'] },
   { q: '우라늄 공장 폐수', domain: true, mustNotDataset: ['people'], mustEvidenceAny: ['우라늄'] },
   // 코퍼스에 '방사능' 0건. 답은 하되 '근거를 찾았다'고 말하면 안 된다.
-  { q: '북한방사능', domain: true, soft: true, expectGenericOnly: true, mustNotDataset: ['people'] },
-  { q: '방사능', domain: false },
+  { q: '북한방사능', domain: true, soft: true, mustNotDataset: ['people'] },
+  /* 2026-08-12 갱신: 보도자료·북한동향이 적재되면서 '방사능'이 실제로 코퍼스에 들어왔다
+     (북한 외무성의 후쿠시마 오염수 담화 등). 이제 '다루는 분야가 아니다'는 거짓이다.
+     테스트를 코드에 맞춘 게 아니라, 데이터가 바뀌어 사실이 바뀐 것이다. */
+  { q: '방사능', domain: true },
 
   // ── 과잉회피 감시 ─────────────────────────────────────────
   // 위 문턱들이 절대 삼켜서는 안 되는 것들. 이쪽이 무너지면 문턱이 과했다는 뜻이다.
@@ -82,7 +85,10 @@ export const WILD = [
   { q: '평산 우라늄 어떻게 됐어', domain: true },
   { q: '고농축우라늄', domain: true },
   { q: '남북회담 요즘 함?', domain: true, mustDataset: ['talks'] },
-  { q: '이산가족 상봉 아직도 하나', domain: true, mustDataset: ['talks'] },
+  /* talks 로 못 박았었는데, 보도자료·동향이 들어온 뒤로는 연표의
+     「이산가족 상봉 최종명단 교환」이 1순위로 올라온다 — 더 나은 답이다.
+     '어느 데이터셋이냐'가 아니라 '이산가족 얘기를 하느냐'로 본다. */
+  { q: '이산가족 상봉 아직도 하나', domain: true, mustEvidenceAny: ['이산가족'] },
 
   // ── 조사 오확장 감시 ──────────────────────────────────────
   // '북한이'(북한+주격조사)가 엔티티 '북한이탈주민'의 부분문자열이라,

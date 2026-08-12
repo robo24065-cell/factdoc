@@ -60,7 +60,9 @@ for (const c of WILD) {
      as-of 원칙은 근거(groups)에만 걸려 있었고 집계(agg)에는 없었다.
      그 구멍은 정답 문자열로는 안 잡힌다 — 값은 늘 맞고 '시점'만 틀리기 때문이다. */
   if (c.mustNumber && !(a.agg && !a.agg.unsolicited)) fails.push('가진 수치가 요지에서 사라짐')
-  if (c.mustDemoteNumber && !(a.agg && a.agg.unsolicited)) fails.push('묻지 않은 수치가 요지로 올라감')
+  /* 수치가 '내려간' 것뿐 아니라 '아예 없는' 것도 통과다 — 원래 요구는
+     '묻지 않은 수치를 요지로 올리지 마라'이지 '수치를 만들어놓고 내려라'가 아니다. */
+  if (c.mustDemoteNumber && a.agg && !a.agg.unsolicited) fails.push('묻지 않은 수치가 요지로 올라감')
   if (c.mustOutOfWindow && !(a.agg && a.agg.outOfWindow)) fails.push('물어본 시점의 값이 아닌데 표식 없음')
   if (c.mustNotOutOfWindow && a.agg?.outOfWindow) fails.push('창 안인데 창 밖으로 표시')
   if (c.mustFuture && !(a.Q?.win?.future && a.agg?.future)) fails.push('미래 시점을 과거로 처리')

@@ -28,6 +28,7 @@ export const TOPICS = {
 }
 
 const MOU = { provider: '통일부', origin: 'file', status: 'ready' }
+const API = { provider: '통일부', origin: 'api', kind: 'api' }
 
 // 주제 자체가 종료·중단된 경우 — 데이터셋과 무관하게 상단에 고지한다.
 // "개성공단 근로자 수"처럼 우리 통계에 없는 항목을 물어도 '지금은 없다'가 먼저 나가야 한다.
@@ -125,62 +126,115 @@ export const DATASETS = {
   culturalCoop:statDs('통일부_사회문화협력사업 승인내역_20181231.csv', '사회문화협력사업 승인내역', 'ik.exchange', '2018-12-31'),
 
   // ══════════════════════════════════════════════════════════
-  // API 복구 대기 — 엔드포인트·파서를 미리 정의해 둔다.
-  // 서버가 살아나면 status를 'ready'로 바꾸는 것만으로 파이프라인에 편입된다.
+  // API 수집분 — scripts/fetch-mou-api.mjs → 북한자료-api/<key>.json
+  //
+  // asOf/coverageEnd 는 여기 적힌 값이 '사람이 확인한 기준선'이다.
+  // ingest 는 수집 파일의 _meta 가 더 최신일 때만 앞으로 민다(autoCoverage). 뒤로는 절대 안 민다.
+  // 금강산처럼 사람이 수동 확정한 항목에는 autoCoverage 를 주지 않는다.
   // ══════════════════════════════════════════════════════════
-  briefing: { provider: '통일부', origin: 'api', status: 'pending',
+  briefing: { ...API, status: 'ready',
     name: '통일부 보도자료·보도설명자료', topic: 'gov.briefing',
     endpoint: 'https://apis.data.go.kr/1250000/nesdta/getNesdta',
-    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100, type: 'json' },
-    incrementalBy: 'bgng_ymd',            // 마지막 수집일+1부터
-    kind: 'api', parser: 'briefing',
-    asOf: null, coverageEnd: null,        // 수집 시 갱신
-    freshness: 'live', updateCycle: '일 1회',
-    searchPriority: 100,                  // ★ 최우선 — 판정 시드
-    note: '#사실은 이렇습니다의 원천. 정부가 특정 보도의 특정 주장을 부인·정정한 공식 기록',
+    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'briefing.json', parser: 'briefing', incrementalBy: 'bgng_ymd',
+    asOf: '2026-08-12', coverageStart: '2010-01-05', coverageEnd: '2025-10-24',
+    autoCoverage: true, freshness: 'stale', updateCycle: '원본 게시판 기준 일 1회',
+    searchPriority: 100,
+    note: 'API 피드가 2025-10-24 에서 원본과 끊겼다(갭 292일). 원본 게시판에는 2026-08 자료까지 게시 중 '
+        + '— 이후는 부존재가 아니라 미수집이다',
     url: 'https://www.data.go.kr/data/15079284/openapi.do' },
 
-  trend: { provider: '통일부', origin: 'api', status: 'pending',
-    name: '북한 동향(일일·주간·월간)', topic: 'nk',
+  // trend 를 3개로 쪼갠 이유: coverageEnd 가 서로 다르다.
+  // 한 덩어리면 월간이 항상 최대 38일 과대평가된다(7/8 게시 = 6월분) = as-of 모델 정면 위반.
+  trendDaily: { ...API, status: 'ready',
+    name: '일일 북한동향', topic: 'nk',
     endpoint: 'https://apis.data.go.kr/1250000/trend/getTrend',
     params: { cl: 'ARGUMENT_DAIL', bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
-    incrementalBy: 'bgng_ymd', kind: 'api', parser: 'trend',
-    asOf: null, coverageEnd: null, freshness: 'live', updateCycle: '일 1회',
-    searchPriority: 85, url: 'https://www.data.go.kr/data/15079311/openapi.do' },
+    file: 'trendDaily.json', parser: 'trendDaily', incrementalBy: 'bgng_ymd',
+    asOf: '2026-08-12', coverageStart: '2021-11-21', coverageEnd: '2026-08-11',
+    autoCoverage: true, freshness: 'live', updateCycle: '일 1회', searchPriority: 85,
+    note: '일일동향은 2021-11-21 이전이 제공되지 않는다 — 그 이전 질문엔 "없다"가 아니라 "미제공"이라고 답해야 한다',
+    url: 'https://www.data.go.kr/data/15079311/openapi.do' },
 
-  accord: { provider: '통일부', origin: 'api', status: 'pending',
+  trendWeekly: { ...API, status: 'ready',
+    name: '주간 북한동향', topic: 'nk',
+    endpoint: 'https://apis.data.go.kr/1250000/trend/getTrend',
+    params: { cl: 'ARGUMENT_WIK', bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'trendWeekly.json', parser: 'trendPeriodical', incrementalBy: 'bgng_ymd',
+    asOf: '2026-08-12', coverageStart: '1991-01-01', coverageEnd: '2026-08-02',
+    autoCoverage: true, freshness: 'live', updateCycle: '주 1회', searchPriority: 55,
+    note: '본문이 없다 — 실체는 hwpx/hwp/pdf 첨부다. 제목·기간만 색인된다',
+    url: 'https://www.data.go.kr/data/15079311/openapi.do' },
+
+  trendMonthly: { ...API, status: 'ready',
+    name: '월간 북한동향', topic: 'nk',
+    endpoint: 'https://apis.data.go.kr/1250000/trend/getTrend',
+    params: { cl: 'ARGUMENT_MNTHNG', bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'trendMonthly.json', parser: 'trendPeriodical', incrementalBy: 'bgng_ymd',
+    asOf: '2026-08-12', coverageStart: '2006-01-31', coverageEnd: '2026-06-30',
+    autoCoverage: true, freshness: 'live', updateCycle: '월 1회', searchPriority: 55,
+    note: '본문 없음(hwpx 첨부). coverageEnd 는 게시일이 아니라 다루는 달의 말일이다',
+    url: 'https://www.data.go.kr/data/15079311/openapi.do' },
+
+  // ★ 엔드포인트 정정: nkinfo/getNkinfo 는 존재하지 않는 경로였다(게이트웨이가 rc=11 로 되돌려 오진 유발).
+  //   진짜 통합검색은 search/getSearch 이고 문서는 15079225 다.
+  nkinfoTrend: { ...API, status: 'ready',
+    name: '북한정보포털 동향', topic: 'nk',
+    endpoint: 'https://apis.data.go.kr/1250000/search/getSearch',
+    params: { cl: '동향', thema: '1~5', pageNo: 1, numOfRows: 100 },
+    file: 'nkinfoTrend.json', parser: 'nkinfoTrend', incrementalBy: 'full',
+    asOf: '2026-08-12', coverageEnd: '2026-08-11', autoCoverage: true,
+    freshness: 'live', updateCycle: '일 1회', searchPriority: 45,
+    ingestLimit: 8000,      // ★ 6.3만건 전량은 웹 인덱스에 못 싣는다 — 최신 id 우선 상한. 원본은 전량 보관
+    note: '★ 본문은 통일부의 판정이 아니라 북한 매체 주장의 채록이다. 화면에 반드시 그렇게 표기할 것. '
+        + '레코드에 날짜 필드가 없어 occurredOn 이 null 이다',
+    url: 'https://www.data.go.kr/data/15079225/openapi.do' },
+
+  nkinfoOverview: { ...API, status: 'ready',
+    name: '북한개황(포털)', topic: 'nk',
+    endpoint: 'https://apis.data.go.kr/1250000/search/getSearch',
+    params: { cl: '개황', thema: '1~5', pageNo: 1, numOfRows: 100 },
+    file: 'nkinfoOverview.json', parser: 'nkinfoOverview', incrementalBy: 'full',
+    asOf: '2026-08-12', coverageEnd: '2025-05-31', autoCoverage: true,
+    freshness: 'stale', searchPriority: 55, perRecordAsOf: true,
+    note: '★ as-of 가 레코드마다 다르다(2023.7 / 2024.8 / 2025.5 작성분 혼재). '
+        + '데이터셋 하나에 기준일 하나를 붙이면 2023년 문서가 최신인 척하게 된다',
+    url: 'https://www.data.go.kr/data/15079225/openapi.do' },
+
+  // ── 아직 못 가져온 것 ───────────────────────────────────────
+  // 2026-08-12 실측: 둘 다 HTTP 200 + {"resultCode":"2","resultMsg":"db_error"}.
+  // 인증·파라미터 문제가 아니다(같은 키로 briefing/trend/search 는 정상). 제공기관 백엔드 DB 장애다.
+  accord: { ...API, status: 'pending',
     name: '남북합의서', topic: 'ik.accord',
     endpoint: 'https://apis.data.go.kr/1250000/nktalkmng/getNktalkmng',
-    params: { pageNo: 1, numOfRows: 100, type: 'json' },
-    incrementalBy: 'full', kind: 'api', parser: 'accord',
-    asOf: null, coverageEnd: null, freshness: 'stale',
-    searchPriority: 90, url: 'https://www.data.go.kr/data/15079225/openapi.do' },
+    params: { bgng_ymd: 'YYYYMMDD', end_ymd: 'YYYYMMDD', pageNo: 1, numOfRows: 100 },
+    file: 'accord.json', parser: 'accord', incrementalBy: 'full',
+    asOf: null, coverageEnd: '2018-09-19',    // 원본(남북회담본부)에서 확인한 최신 합의일
+    freshness: 'stale', searchPriority: 90,
+    pendingReason: '제공기관 백엔드 db_error (2026-08-12 실측). 같은 URL 이 0건→504→db_error 로 오락가락한다',
+    note: '원본 시스템 기준 남북합의서 168 + 공동보도문 90 = 258건. 회담일자가 없는 6건은 '
+        + '날짜가 필수 파라미터인 이 API 로는 영구 도달 불가',
+    url: 'https://www.data.go.kr/data/15131895/openapi.do' },   // ★ 15079225 는 통합검색 문서였다
 
-  nkinfo: { provider: '통일부', origin: 'api', status: 'pending',
-    name: '북한정보포털 통합검색', topic: 'nk',
-    endpoint: 'https://apis.data.go.kr/1250000/nkinfo/getNkinfo',
-    params: { pageNo: 1, numOfRows: 100 }, incrementalBy: 'full',
-    kind: 'api', parser: 'generic', asOf: null, coverageEnd: null,
-    freshness: 'stale', searchPriority: 60 },
-
-  // 엔드포인트 미확인 — 페이지에서 확보 후 endpoint만 채우면 됨
-  lexicon: { provider: '통일부', origin: 'api', status: 'pending',
-    name: '북한 용어사전 / 남북한 언어비교', topic: 'nk.culture',
-    endpoint: null, kind: 'api', parser: 'lexicon',
+  lexicon: { ...API, status: 'pending',
+    name: '북한 용어사전', topic: 'nk.culture',
+    endpoint: 'https://apis.data.go.kr/1250000/nkword/getNkword',   // ★ 미확인 → 확정
+    params: { pageNo: 1, numOfRows: 100 },
+    file: 'lexicon.json', parser: 'lexicon', incrementalBy: 'full',
     asOf: null, coverageEnd: null, freshness: 'stale', searchPriority: 40,
-    note: '★ 질의 정규화 전용 — 검색 근거가 아니라 entity_alias 적재용',
+    pendingReason: '제공기관 백엔드 db_error (2026-08-12 실측, 파라미터 13종·재시도 12회 전부 동일). 엔드포인트는 확정됨',
+    note: '★ 질의 정규화·entity_alias 전용 — 검색 근거로 인용하지 않는다. '
+        + '스키마가 word+descript 뿐이라 남→북 대응어가 구조적으로 없다. '
+        + '남북관계지식사전(15129686, 233건)·북한지식사전(15129687, 273건)은 XLS 파일로 지금도 받을 수 있다',
     url: 'https://www.data.go.kr/data/15151324/openapi.do' },
 }
 
 /* ★ 아직 못 실은 자료가 답할 질문들 — "없다"와 "우리가 아직 못 가져왔다"는 다르다.
-   통일부에 실제로 있는 자료인데 API 가 죽어 연동을 못 한 것이라면 그렇게 말해야 한다.
-   "안녕하세요 북한말로?" 는 「남북한 언어비교」가 답할 질문이지 자료가 없는 질문이 아니다.
-   PENDING 5종이 ready 로 바뀌면 이 안내는 자동으로 사라진다(아래 pendingSourceFor 참조). */
+   ready 가 되면 pendingSourceFor 가 자동으로 걸러내므로 여기서 지울 필요는 없다.
+   (briefing·trend 는 2026-08-12 수집 성공으로 ready — 그래서 목록에서 뺐다) */
 export const PENDING_HINTS = {
-  lexicon:  /북한말|북한어|북한식|말로\s*(뭐|어떻게)|문화어|사투리|용어|어휘|낱말|단어|표현|무슨\s*뜻|뜻이\s*(뭐|무엇)|어떻게\s*말|뭐라고\s*(해|하나|불러)/,
-  briefing: /사실은\s*이렇|보도설명|해명|반박|정정보도|가짜뉴스|허위\s*보도|사실이\s*아니/,
-  accord:   /합의서|합의문|공동선언|공동성명|판문점\s*선언|기본합의서/,
-  trend:    /일일\s*동향|주간\s*동향|월간\s*동향|동향\s*보고/,
+  lexicon: /북한말|북한어|북한식|말로\s*(뭐|어떻게)|문화어|사투리|용어|어휘|낱말|단어|표현|무슨\s*뜻|뜻이\s*(뭐|무엇)|어떻게\s*말|뭐라고\s*(해|하나|불러)/,
+  accord:  /합의서|합의문|공동선언|공동성명|판문점\s*선언|기본합의서/,
 }
 
 /** 질의가 '아직 못 실은 자료'의 영역인지 — 맞으면 그 데이터셋을 알려준다 */
@@ -189,7 +243,7 @@ export function pendingSourceFor(q, datasets = DATASETS) {
   for (const [key, re] of Object.entries(PENDING_HINTS)) {
     const ds = datasets[key]
     if (ds?.status === 'pending' && re.test(text)) {
-      return { key, name: ds.name, url: ds.url || null, note: ds.note || null }
+      return { key, name: ds.name, url: ds.url || null, note: ds.pendingReason || ds.note || null }
     }
   }
   return null

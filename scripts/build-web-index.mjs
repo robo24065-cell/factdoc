@@ -15,6 +15,16 @@ const ST_MAX = 800          // 잘린 뒷부분에서 살릴 검색용 어휘 �
 
 const d = JSON.parse(fs.readFileSync(IN, 'utf8'))
 
+/* ★ 웹 인덱스에서 제외할 데이터셋 — 브라우저가 받는 파일이다. 무한정 키울 수 없다.
+   nkinfoTrend(북한정보포털 동향)는 8,000건인데 날짜 필드가 없어 as-of 배지를 못 단다.
+   검색 가치 대비 부피가 커서 웹에서는 빼고 전체 인덱스(Supabase 적재용)에만 남긴다.
+   실측: 포함 시 gzip 0.9MB → 5.39MB. 제외하면 브라우저 부담이 사라진다. */
+const WEB_EXCLUDE = new Set(['nkinfoTrend'])
+const kept = d.records.filter(r => !WEB_EXCLUDE.has(r.datasetId))
+const keptIds = new Set(kept.map(r => r.id))
+d.records = kept
+d.measures = d.measures.filter(m => keptIds.has(m.recordId))
+
 // 전체 코퍼스 df — 상한에 걸릴 때 희소한 어휘부터 남긴다 (변별력 우선)
 const df = new Map()
 for (const r of d.records)
