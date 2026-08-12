@@ -39,6 +39,12 @@ const SHOTS = [
   { name: '13-변별신호없음',     q: '북한방사능',                           dev: DESKTOP, dark: false },
   { name: '14-미연동자료안내',   q: '안녕하세요 북한말로?',                 dev: DESKTOP, dark: false },
   { name: '15-오타',             q: '개성쥬악',                             dev: DESKTOP, dark: false },
+  /* 관계망 — 기획서 §2-2 의 근거 화면.
+     두 장을 쌍으로 찍는다. 같은 데이터인데 질문의 방향에 따라 답이 뒤집히는 것이 요점이다:
+     '누구랑 다녔나' → 그가 수행한 대상(윗선) · '측근이 누구' → 그를 수행한 사람(아랫선). */
+  { name: '16-관계망-수행한대상',  q: '장성택 누구랑 다녔어',                dev: DESKTOP, dark: false },
+  { name: '17-관계망-측근',        q: '김정은 측근 누구',                    dev: DESKTOP, dark: false },
+  { name: '18-관계망-공통윗선',    q: '최룡해랑 장성택 무슨 사이',           dev: DESKTOP, dark: false },
   { name: '08-모바일-종료된사안', q: '개성공단 아직 하냐',                  dev: MOBILE,  dark: false },
   { name: '09-모바일-분포',      q: '탈북은 나이 많은 사람이 더 많이 한다며', dev: MOBILE,  dark: false },
   { name: '10-종료된사안-다크',  q: '개성공단 아직 하냐',                  dev: DESKTOP, dark: true  },

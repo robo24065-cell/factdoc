@@ -9,6 +9,7 @@
 
 import { validateNormalized } from './nk-normalize.mjs'
 import { TIME_SLOTS } from './nk-time.mjs'
+import { validateScores, validateIntent } from './nk-judge.mjs'
 
 const ENDPOINT = '/api/llm'
 const TIMEOUT = 6000            // 이 시간을 넘기면 규칙 결과로 답한다. 사용자를 기다리게 하지 않는다.
@@ -38,16 +39,16 @@ export async function probe() {
 
 export function hasKeys() { return available === true }
 
-async function call(kind, q) {
+async function call(kind, q, items) {
   if (available !== true) return null
-  const key = kind + ':' + q
+  const key = kind + ':' + q + (items ? '|' + items.map(x => x.i + ':' + x.t).join('|') : '')
   if (cache.has(key)) return cache.get(key)
   let out = null
   try {
     const r = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ kind, q }),
+      body: JSON.stringify(items ? { kind, q, items } : { kind, q }),
       signal: AbortSignal.timeout(TIMEOUT),
     })
     if (r.ok) out = (await r.json())?.result ?? null
@@ -76,4 +77,16 @@ export async function timeWithLLM(q, ruleTime) {
   return okYear && okRange ? t : ruleTime
 }
 
-export const llmAdapter = { hasKeys, normalizeWithLLM, timeWithLLM }
+// ── 리랭킹 — 검색이 찾은 후보가 **정말 이 질문의 답인지** 심사한다 ──
+export async function rerankWithLLM(q, items) {
+  if (!items?.length) return null
+  const raw = await call('rerank', q, items.map(x => ({ i: x.i, t: x.t })))
+  return validateScores(raw, items.length)            // 스키마 밖이면 null → 규칙 순위 유지
+}
+
+// ── 의도 분류 — 표현이 아니라 뜻을 본다 ─────────────────────
+export async function intentWithLLM(q) {
+  return validateIntent(await call('intent', q))
+}
+
+export const llmAdapter = { hasKeys, normalizeWithLLM, timeWithLLM, rerankWithLLM, intentWithLLM }

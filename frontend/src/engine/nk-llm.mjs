@@ -8,9 +8,16 @@
 
 import { QUERY_SCHEMA, LLM_NORMALIZE_PROMPT, validateNormalized } from './nk-normalize.mjs'
 import { LLM_TIME_PROMPT, TIME_SLOTS } from './nk-time.mjs'
+import { RERANK_PROMPT, INTENT_PROMPT, RERANK_MAX, TITLE_MAX,
+         validateScores, validateIntent } from './nk-judge.mjs'
 
-// 슬롯 분류는 단순 작업 — 저지연 모델 우선, 쿼터 소진 시 다음 모델로
-const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
+/* 저지연 모델 우선, 쿼터 소진 시 다음 모델로.
+   ⚠ 2026-08-12 실측: 기존 폴백 2종(gemini-2.0-flash-lite, gemini-2.0-flash)이
+     **404 — 모델 없어짐** 이었다. 3단계 폴백이 사실은 1단계였고,
+     gemini-2.5-flash 쿼터가 차는 순간 LLM 계층이 통째로 죽었다(벤치 27/27 → 16/27).
+     아래는 같은 날 실제로 200 을 받은 모델만 남긴 것이다.
+     lite 를 앞에 두는 이유: 이 작업(분류·심사)에 큰 모델이 필요 없고 쿼터가 넉넉하다. */
+const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
 const ENDPOINT = (m, k) => `https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(k)}`
 
 let KEYS = [], rr = 0
@@ -23,22 +30,30 @@ export function cacheSize() { return cache.size }
 
 async function callGemini(system, user, { timeoutMs = 8000 } = {}) {
   if (!KEYS.length) return null
-  const body = {
+  const mk = thinking => ({
     systemInstruction: { parts: [{ text: system }] },
     contents: [{ role: 'user', parts: [{ text: user }] }],
     generationConfig: {
       temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 800,
-      // 2.5 계열은 기본 사고가 켜져 토큰을 소진한다 — 슬롯 분류엔 불필요
-      thinkingConfig: { thinkingBudget: 0 },
+      // 2.5 계열은 기본 사고가 켜져 토큰을 소진한다 — 분류·심사엔 불필요
+      ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
     },
-  }
-  // 모델 × 키 조합으로 재시도 (429는 다음 모델/키로)
+  })
+  /* 모델 × 키 조합으로 재시도. 429(쿼터)는 다음 조합으로 넘긴다.
+     400 은 대개 **그 모델이 이 인자를 안 받는다**는 뜻이라(실측: gemini-3.6-flash 가
+     thinkingConfig 를 거부) 같은 모델에 인자를 빼고 한 번 더 던진다.
+     모델 라인업은 계속 바뀐다 — 인자 하나 때문에 폴백이 통째로 끊기지 않게 한다. */
   for (const m of MODELS) {
     for (let k = 0; k < Math.min(2, KEYS.length); k++) {
       try {
-        const r = await fetch(ENDPOINT(m, nextKey()), {
+        const key = nextKey()
+        let r = await fetch(ENDPOINT(m, key), {
           method: 'POST', headers: { 'content-type': 'application/json' },
-          body: JSON.stringify(body), signal: AbortSignal.timeout(timeoutMs),
+          body: JSON.stringify(mk(true)), signal: AbortSignal.timeout(timeoutMs),
+        })
+        if (r.status === 400) r = await fetch(ENDPOINT(m, key), {
+          method: 'POST', headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(mk(false)), signal: AbortSignal.timeout(timeoutMs),
         })
         if (r.status === 429) continue
         if (!r.ok) continue
@@ -80,5 +95,32 @@ export async function timeWithLLM(q, ruleTime) {
   cache.set(key, out)
   return out
 }
+
+/* ── 리랭킹 ────────────────────────────────────────────────
+   BM25 가 낱말로 찾아 온 후보가 **정말 이 질문의 답인지** 뜻으로 심사한다.
+   프롬프트는 프록시(frontend/functions/api/llm.js)와 **같은 상수**를 쓴다 —
+   두 경로가 다른 프롬프트로 갈리면 로컬 평가 결과가 배포본을 대변하지 못한다. */
+export async function rerankWithLLM(q, items) {
+  if (!items?.length) return null
+  const list = items.slice(0, RERANK_MAX)
+    .map(x => `${x.i}. ${String(x.t).replace(/\s+/g, ' ').slice(0, TITLE_MAX)}`).join('\n')
+  const key = 'r:' + q + '|' + list
+  if (cache.has(key)) return cache.get(key)
+  const raw = await callGemini(RERANK_PROMPT, `질문: ${q}\n\n후보:\n${list}`)
+  const out = validateScores(raw, items.length)
+  cache.set(key, out)
+  return out
+}
+
+// ── 의도 분류 — 말투가 아니라 뜻을 본다 ─────────────────────
+export async function intentWithLLM(q) {
+  const key = 'i:' + q
+  if (cache.has(key)) return cache.get(key)
+  const out = validateIntent(await callGemini(INTENT_PROMPT, q))
+  cache.set(key, out)
+  return out
+}
+
+export const llmAdapter = { hasKeys, normalizeWithLLM, timeWithLLM, rerankWithLLM, intentWithLLM }
 
 export { QUERY_SCHEMA }

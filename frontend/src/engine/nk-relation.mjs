@@ -68,10 +68,15 @@ export function personsIn(gx, q) {
  * 관계 답변. 관계를 묻는 말투가 아니거나 아는 인물이 없으면 null 을 돌려준다
  * — 검색 결과를 밀어내지 않기 위해서다(이 계층은 **덧붙이는** 축이다).
  */
-export function relationAnswer(gx, q, { limit = 8 } = {}) {
+export function relationAnswer(gx, q, { limit = 8, intent = null } = {}) {
   if (!gx?.n) return null
   const s = String(q || '')
-  if (!REL_ASK.test(s)) return null
+  /* 관계 질문인지 판정 — 규칙(말투 정규식)이 1차, LLM 의도분류가 우선한다.
+     정규식은 내가 떠올린 표현만 잡는다. 실측: 뜻이 같은 표현 23종 중 12종(52%)만 잡았고
+     "상관이 누구야"·"오른팔"·"심복"·"윗선"·"모신 사람"·"밑에 누가"를 전부 놓쳤다.
+     표현을 나열해 따라잡는 방식은 수렴하지 않는다 — 뜻으로 판정해야 한다. */
+  const isRelation = intent ? intent.type === 'relation' : REL_ASK.test(s)
+  if (!isRelation) return null
   const names = personsIn(gx, s)
   if (!names.length) return null
 
@@ -118,6 +123,12 @@ export function relationAnswer(gx, q, { limit = 8 } = {}) {
     servedTotal: sum(p.served),
     /* 위계 판정 — 근거가 얇으면 단정하지 않는다 */
     rank: rankOf(sum(p.serves), sum(p.served)),
+    /* 어느 쪽을 먼저 말할지 — 의도분류가 방향을 주면 그것을 따른다.
+       "상관이 누구야"(up) 와 "측근이 누구야"(down) 는 같은 사람에 대해 정반대를 묻는다.
+       방향이 없으면 기록이 많은 쪽을 고른다(김정은은 수행받음이 압도적이라 저절로 맞는다). */
+    lead: intent?.direction === 'up' ? 'serves'
+      : intent?.direction === 'down' ? 'served'
+        : (sum(p.served) >= sum(p.serves) ? 'served' : 'serves'),
     span: p.first && p.last ? { from: p.first, to: p.last } : null,
     source: SOURCE,
   }

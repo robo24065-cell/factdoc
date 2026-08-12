@@ -231,19 +231,31 @@ export const DATASETS = {
 
 /* ★ 아직 못 실은 자료가 답할 질문들 — "없다"와 "우리가 아직 못 가져왔다"는 다르다.
    ready 가 되면 pendingSourceFor 가 자동으로 걸러내므로 여기서 지울 필요는 없다.
-   (briefing·trend 는 2026-08-12 수집 성공으로 ready — 그래서 목록에서 뺐다) */
+   (briefing·trend 는 2026-08-12 수집 성공으로 ready — 그래서 목록에서 뺐다)
+
+   `exclusive` 는 "준비된 데이터셋 중 이 질문에 **부분적으로라도** 답할 수 있는 것이 있는가"다.
+   - lexicon(어휘) — 없다. 코퍼스에 남↔북 대응어 자료가 0건이다. 따라서 문서를 아무리
+     찾아도 답이 될 수 없다. **실측 사고**: "안녕하세요 북한말로?" 가 「인민의 **안녕**」에
+     걸려 자강력제일주의 선전문을 "확인된 가장 가까운 공식 기록"이라고 내놓았다.
+     안녕(인사)과 안녕(평안)은 다른 말인데 토큰이 같아서 벌어진 일이다.
+     이런 질문은 문서를 근거로 올리면 안 된다 — 없는 것을 아는 척하는 것이다.
+   - accord(합의서) — 있다. 연표·보도자료가 판문점선언·기본합의서를 실제로 다룬다.
+     그래서 안내는 띄우되 문서 근거는 그대로 살린다. */
 export const PENDING_HINTS = {
-  lexicon: /북한말|북한어|북한식|말로\s*(뭐|어떻게)|문화어|사투리|용어|어휘|낱말|단어|표현|무슨\s*뜻|뜻이\s*(뭐|무엇)|어떻게\s*말|뭐라고\s*(해|하나|불러)/,
-  accord:  /합의서|합의문|공동선언|공동성명|판문점\s*선언|기본합의서/,
+  lexicon: { exclusive: true,
+    re: /북한말|북한어|북한식|말로\s*(뭐|어떻게)|문화어|사투리|용어|어휘|낱말|단어|표현|무슨\s*뜻|뜻이\s*(뭐|무엇)|어떻게\s*말|뭐라고\s*(해|하나|하니|하냐|불러|부르)/ },
+  accord: { exclusive: false,
+    re: /합의서|합의문|공동선언|공동성명|판문점\s*선언|기본합의서/ },
 }
 
 /** 질의가 '아직 못 실은 자료'의 영역인지 — 맞으면 그 데이터셋을 알려준다 */
 export function pendingSourceFor(q, datasets = DATASETS) {
   const text = String(q || '')
-  for (const [key, re] of Object.entries(PENDING_HINTS)) {
+  for (const [key, h] of Object.entries(PENDING_HINTS)) {
     const ds = datasets[key]
-    if (ds?.status === 'pending' && re.test(text)) {
-      return { key, name: ds.name, url: ds.url || null, note: ds.pendingReason || ds.note || null }
+    if (ds?.status === 'pending' && h.re.test(text)) {
+      return { key, name: ds.name, url: ds.url || null, exclusive: !!h.exclusive,
+        note: ds.pendingReason || ds.note || null }
     }
   }
   return null

@@ -19,10 +19,28 @@
 
 import { LLM_NORMALIZE_PROMPT } from '../../src/engine/nk-normalize.mjs'
 import { LLM_TIME_PROMPT } from '../../src/engine/nk-time.mjs'
+import { RERANK_PROMPT, INTENT_PROMPT, RERANK_MAX, TITLE_MAX } from '../../src/engine/nk-judge.mjs'
 
-const MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash-lite', 'gemini-2.0-flash']
+/* ⚠ 2026-08-12 실측: 이전 폴백 2종(gemini-2.0-flash-lite / gemini-2.0-flash)이
+   **404 — 모델 없어짐** 이었다. 3단계처럼 보였지만 사실상 1단계였고,
+   gemini-2.5-flash 쿼터가 차는 순간 LLM 계층이 통째로 죽었다.
+   아래는 같은 날 200 을 확인한 모델만 남긴 것이다. lite 를 앞에 둔다 — 분류·심사에
+   큰 모델이 필요 없고 쿼터가 넉넉하다. 모델 라인업은 계속 바뀌므로 주기적으로 확인할 것. */
+const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.5-flash', 'gemini-2.5-flash']
 const Q_MAX = 200                     // 질의 길이 상한 — 프롬프트 주입·비용 폭주 방지
-const PROMPTS = { normalize: LLM_NORMALIZE_PROMPT, time: LLM_TIME_PROMPT }
+const PROMPTS = {
+  normalize: LLM_NORMALIZE_PROMPT, time: LLM_TIME_PROMPT,
+  rerank: RERANK_PROMPT, intent: INTENT_PROMPT,
+}
+/* rerank 만 후보 목록을 함께 받는다. 그래도 이 엔드포인트가 범용 LLM 중계기가 되지는 않는다 —
+   출력 스키마가 번호와 0~3 점수뿐이라 자유 문장을 꺼낼 문법이 없다.
+   그 위에 개수·길이 상한을 걸어 비용도 묶는다. */
+function itemsText(items) {
+  if (!Array.isArray(items) || !items.length) return null
+  return items.slice(0, RERANK_MAX)
+    .map((x, n) => `${Number.isInteger(x?.i) ? x.i : n}. ${String(x?.t ?? '').replace(/\s+/g, ' ').slice(0, TITLE_MAX)}`)
+    .join('\n')
+}
 
 const json = (body, status = 200) => new Response(JSON.stringify(body), {
   status,
@@ -48,25 +66,34 @@ export async function onRequestPost({ request, env }) {
   if (!PROMPTS[kind]) return json({ error: 'bad_kind' }, 400)
   if (!q) return json({ error: 'empty_q' }, 400)
 
-  const payload = {
+  let user = q
+  if (kind === 'rerank') {
+    const list = itemsText(body?.items)
+    if (!list) return json({ error: 'no_items' }, 400)
+    user = `질문: ${q}\n\n후보:\n${list}`
+  }
+
+  const payload = thinking => ({
     systemInstruction: { parts: [{ text: PROMPTS[kind] }] },
-    contents: [{ role: 'user', parts: [{ text: q }] }],
+    contents: [{ role: 'user', parts: [{ text: user }] }],
     generationConfig: {
       temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 800,
-      thinkingConfig: { thinkingBudget: 0 },   // 슬롯 분류에 사고 토큰은 낭비다
+      // 분류·심사에 사고 토큰은 낭비다. 다만 이 인자를 거부하는 모델이 있어 400 이면 뺀다.
+      ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
     },
-  }
+  })
 
   // 모델 × 키 조합으로 재시도 — 429/과부하는 다음 조합으로 넘긴다
   let rr = Math.floor(Math.random() * keys.length)
   for (const model of MODELS) {
     for (let i = 0; i < Math.min(3, keys.length); i++) {
       const key = keys[(rr++) % keys.length]
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`
+      const post = b => fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(b) })
       try {
-        const r = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`,
-          { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(payload) },
-        )
+        let r = await post(payload(true))
+        // 400 = 이 모델이 인자를 안 받는다는 뜻인 경우가 많다 — 인자를 빼고 한 번 더
+        if (r.status === 400) r = await post(payload(false))
         if (!r.ok) continue
         const j = await r.json()
         if (j?.candidates?.[0]?.finishReason === 'MAX_TOKENS') continue

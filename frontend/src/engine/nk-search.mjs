@@ -6,8 +6,9 @@
 
 import { extractTime, timeWindow, needsLLM } from './nk-time.mjs'
 import { normalizeByRule } from './nk-normalize.mjs'
-import { TOPIC_STATUS, CUMULATIVE } from '../../../scripts/nk-catalog.mjs'
+import { TOPIC_STATUS, CUMULATIVE, pendingSourceFor } from '../../../scripts/nk-catalog.mjs'
 import { buildGraph, relationAnswer } from './nk-relation.mjs'
+import { candidatesOf, KEEP_MIN as JUDGE_KEEP_MIN } from './nk-judge.mjs'
 
 // ── 토크나이저 ──────────────────────────────────────────────
 const STOP = new Set(['그리고','에서','으로','인가','인가요','뭐야','뭔가','얼마','어떻게','있나','있나요',
@@ -836,14 +837,39 @@ export function topicNotice(Q) {
 }
 
 export function answer(ix, q, { groups = 3, perGroup = 3, ov } = {}) {
-  const { Q, hits } = search(ix, q, { limit: 300, ov })
+  /* ov.searched 가 있으면 검색을 다시 하지 않는다 — answerAsync 가 리랭킹을 위해
+     이미 한 번 돌렸기 때문이다. 없으면 지금 돌린다(동기 경로는 그대로다). */
+  const { Q, hits: rawHits } = ov?.searched ?? search(ix, q, { limit: 300, ov })
+  /* ★ 리랭킹 결과 반영 — BM25 가 낱말로 찾아 온 것을 뜻으로 걸러낸 결과다.
+     점수가 매겨지지 않은 후보는 건드리지 않는다(LLM 이 일부만 답해도 무너지지 않게). */
+  const hits = ov?.scores
+    ? rawHits.filter(h => (ov.scores.get(h.r.id) ?? 9) >= JUDGE_KEEP_MIN)
+    : rawHits
   const tn = topicNotice(Q)
   /* 관계 답변은 검색 결과를 **밀어내지 않고 덧붙는다.** 관계 말투가 아니거나
      그래프에 없는 사람이면 null 이라 기존 동작이 그대로 유지된다.
      근거가 0건이어도 관계는 답할 수 있다 — 문서가 아니라 집계이기 때문이다. */
-  const relation = relationAnswer(ix.gx, q)
+  /* 관계 답변. 규칙(말투 정규식)이 1차이고, LLM 의도분류가 있으면 그것이 우선한다 —
+     "장성택 상관이 누구야"·"김정은 오른팔" 처럼 내가 정규식에 넣지 않은 표현이
+     실제로는 훨씬 많기 때문이다(실측: 내가 안 쓴 표현 23종 중 규칙은 12종만 잡았다). */
+  const relation = relationAnswer(ix.gx, q, { intent: ov?.intent })
   if (!hits.length) return { level: relation ? 'relation_answer' : 'no_evidence',
     Q, groups: [], numeric: null, topicNotice: tn, relation }
+
+  /* ★ 준비된 데이터셋 중 어느 것도 답할 수 없는 질문 유형이면, 문서를 근거로 올리지 않는다.
+     어휘 질문이 그렇다 — 코퍼스에 남↔북 대응어가 0건이라 무엇을 찾아도 답이 아니다.
+     실측 사고: "안녕하세요 북한말로?" → 「인민의 **안녕**」에 걸려 자강력제일주의 선전문을
+     "확인된 가장 가까운 공식 기록"으로 제시했다. 동음이의어를 근거로 둔갑시킨 것이다.
+     문서는 버리지 않고 참고로 남기되(refOnly), **답이라고 말하지 않는다.** */
+  /* 규칙(어휘 정규식)이 1차, LLM 의도분류가 우선. 규칙이 못 잡는 표현이 실제로 많다 —
+     "오징어를 북에서는 뭐라 그러나", "이거 북한식으로 하면" 같은 것들이다.
+     의도가 lexicon 이면 어휘 자료의 미연동 안내로 보낸다(그 자료가 답할 질문이므로). */
+  const pending = pendingSourceFor(q) ??
+    (ov?.intent?.type === 'lexicon' ? pendingSourceFor('북한말') : null)
+  if (pending?.exclusive) {
+    return { level: 'pending_only', Q, topicNotice: tn, pending, relation,
+      groups: [], numeric: null, agg: null, related: null, totalHits: hits.length }
+  }
 
   // ── 연혁 모드: 시간순 나열 ────────────────────────────────
   if (Q.listIntent) {
@@ -921,6 +947,32 @@ export async function answerAsync(ix, q, opts = {}) {
       jobs.push(llm.normalizeWithLLM(q, baseNorm).then(n => { if (n?.resolvedBy === 'llm') { ov.norm = n; used.push('norm') } }))
     if (jobs.length) await Promise.allSettled(jobs)
   }
+
+  /* ── 리랭킹·의도분류 ────────────────────────────────────────
+     표준 RAG 파이프라인의 빠져 있던 단계다: 검색(재현율) → **리랭킹(정밀도)** → 조립.
+     BM25 는 낱말만 맞춘다. "안녕하세요를 북한말로?" 가 「인민의 안녕」에 걸리는 것은
+     어휘 매칭의 원리적 한계지 버그가 아니다 — 뜻을 보는 단계가 있어야 걸러진다.
+
+     두 호출을 **병렬로** 던진다. 의도분류는 질문만 보고, 리랭킹은 규칙이 이미 만든
+     후보만 본다 — 서로를 기다릴 이유가 없다. 그래서 지연은 2회분이 아니라 1회분이다.
+     둘 다 실패하면 ov 가 비고, answer() 는 지금까지와 똑같이 동작한다(원칙 ④). */
+  if (llm?.hasKeys?.() && (llm.rerankWithLLM || llm.intentWithLLM)) {
+    const searched = search(ix, q, { limit: 300, ov })
+    ov.searched = searched
+    const cands = candidatesOf(searched.hits)
+    const [intent, scores] = await Promise.all([
+      llm.intentWithLLM?.(q).catch(() => null) ?? null,
+      cands.length ? (llm.rerankWithLLM?.(q, cands).catch(() => null) ?? null) : null,
+    ])
+    if (intent) { ov.intent = intent; used.push('intent') }
+    if (scores) {
+      // 후보 번호 → 레코드 id 로 옮겨 담는다. answer() 는 id 로만 판단한다.
+      const byId = new Map()
+      for (const c of cands) { const s = scores.get(c.i); if (s !== undefined) byId.set(c.hit.r.id, s) }
+      if (byId.size) { ov.scores = byId; used.push('rerank') }
+    }
+  }
+
   const a = answer(ix, q, { ...opts, ov })
   a.llmUsed = used
   return a

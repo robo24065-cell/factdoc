@@ -509,6 +509,13 @@ function summarize(a: NkAnswer): string | null {
     }
   }
 
+  /* ★ 준비된 자료 중 어느 것도 답할 수 없는 질문 유형 — 어휘 질문이 그렇다.
+     이때 문서를 근거로 들이밀면 「인민의 안녕」으로 "안녕하세요"에 답하는 꼴이 된다.
+     "모른다"가 아니라 "이 자료가 오면 답할 수 있다"까지 말해 주는 것이 이 서비스의 몫이다. */
+  if (a.level === 'pending_only' && a.pending)
+    return `이 질문에 답하려면 「${a.pending.name}」 자료가 필요합니다. `
+      + `아직 연동하지 못해, 지금은 확인해 드릴 수 없습니다.`
+
   /* ★ 관계를 물었으면 관계가 답이다. 문서 검색이 빈손이어도 여기서 답이 나온다 —
      "장성택 누구랑 다녔어"에 '자료를 찾지 못했습니다'라고 해놓고 바로 아래에서
      수행 기록을 나열하면 화면이 스스로와 모순된다.
@@ -1887,8 +1894,9 @@ export default function SasilOn() {
                 {/* ⑦ 연혁 */}
                 {a.level === 'timeline' && <TimelineCard a={a} />}
 
-                {/* 아직 연동하지 못한 자료가 답할 질문 — 못 찾았을 때만 알린다 */}
-                {pendingSource && (refOnly || a.level === 'no_evidence') && (
+                {/* 아직 연동하지 못한 자료가 답할 질문 — 못 찾았을 때만 알린다.
+                    pending_only 는 엔진이 "준비된 자료로는 답할 수 없다"고 판정한 경우다. */}
+                {pendingSource && (refOnly || a.level === 'no_evidence' || a.level === 'pending_only') && (
                   <Block tag="안내" tone="blue" icon="🔌"
                     title={`이 질문은 「${pendingSource.name}」 자료가 답할 수 있습니다`}
                     sub="통일부에 있는 자료이지만 아직 싣지 못했습니다">

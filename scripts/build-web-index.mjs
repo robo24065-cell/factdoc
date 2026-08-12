@@ -76,7 +76,7 @@ const web = {
      카탈로그가 단일 진실 소스로 남고, 프론트는 정의를 복제하지 않는다. */
   pendingHints: Object.fromEntries(Object.entries(PENDING_HINTS)
     .filter(([k]) => d.datasets[k]?.status === 'pending')
-    .map(([k, re]) => [k, { re: re.source,
+    .map(([k, h]) => [k, { re: h.re.source, exclusive: !!h.exclusive,
       name: d.datasets[k].name, url: d.datasets[k].url || null }])),
 }
 
