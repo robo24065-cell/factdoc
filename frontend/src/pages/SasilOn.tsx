@@ -1381,9 +1381,13 @@ export default function SasilOn() {
 
   useEffect(() => {
     let alive = true
-    fetch('/nk-index.json')
-      .then(r => { if (!r.ok) throw new Error(`인덱스 로드 실패 (${r.status})`); return r.json() })
-      .then(d => { if (alive) setIx(buildIndex(d)) })
+    /* 인덱스가 두 파일로 나뉘어 있다 — Cloudflare Pages 자산 상한이 25 MiB 라
+       한 덩어리로는 배포가 거부되고 이전 버전이 조용히 서빙된다(실제로 그렇게 됐었다).
+       병렬로 받아 합친다. measures 는 gzip 0.29MB 라 체감 비용이 거의 없다. */
+    const grab = (u: string) =>
+      fetch(u).then(r => { if (!r.ok) throw new Error(`${u} 로드 실패 (${r.status})`); return r.json() })
+    Promise.all([grab('/nk-index.json'), grab('/nk-measures.json')])
+      .then(([idx, m]) => { if (alive) setIx(buildIndex({ ...idx, measures: m.measures ?? [] })) })
       .catch(e => { if (alive) setErr(e?.message ?? '인덱스를 불러오지 못했습니다.') })
     return () => { alive = false }
   }, [])

@@ -81,12 +81,36 @@ const web = {
 }
 
 fs.mkdirSync(path.dirname(OUT), { recursive: true })
+
+/* ★ Cloudflare Pages 는 **자산 하나당 25 MiB(26,214,400 B)** 가 상한이다.
+   합쳐 쓰면 26,463,741 B 로 249KB 초과 → 그 자산만 배포가 거부되고
+   Cloudflare 가 조용히 이전 버전을 계속 서빙한다. 실제로 그렇게 됐다 —
+   연표 1,464건 복구분이 라이브에 반영되지 않았고 2016~2019년이 0건인 채로 돌고 있었다.
+   총 전송량이 문제가 아니라 '파일 하나의 크기'가 문제이므로 두 파일로 나눈다.
+   measures 6.28MB 는 gzip 으로는 0.29MB 라 병렬로 받으면 체감 비용이 거의 없다. */
+const MEASURES_OUT = OUT.replace(/nk-index\.json$/, 'nk-measures.json')
+const measures = web.measures
+delete web.measures
+
 fs.writeFileSync(OUT, JSON.stringify(web), 'utf8')
+fs.writeFileSync(MEASURES_OUT, JSON.stringify({ measures }), 'utf8')
+
+const LIMIT = 26214400
+for (const f of [OUT, MEASURES_OUT]) {
+  const b = fs.statSync(f).size
+  const pct = (b / LIMIT * 100).toFixed(1)
+  console.log(`${b > LIMIT ? '🚨 상한 초과' : '  '} ${path.basename(f).padEnd(18)} ${(b / 1048576).toFixed(2)} MB (상한의 ${pct}%)`)
+  if (b > LIMIT) {
+    console.error(`
+배포가 거부된다. Cloudflare Pages 자산 상한은 25 MiB 다.`)
+    process.exitCode = 1
+  }
+}
 
 const before = fs.statSync(IN).size / 1048576
 const after = fs.statSync(OUT).size / 1048576
 console.log(`원본 ${before.toFixed(1)} MB → 웹 ${after.toFixed(1)} MB  (${((1 - after / before) * 100).toFixed(0)}% 절감)`)
-console.log(`레코드 ${web.records.length.toLocaleString()} · 수치 ${web.measures.length.toLocaleString()} · 엔티티 ${web.entities.length}`)
+console.log(`레코드 ${web.records.length.toLocaleString()} · 수치 ${measures.length.toLocaleString()}(별도 파일) · 엔티티 ${web.entities.length}`)
 console.log(`출력 ${OUT}`)
 const raw = fs.readFileSync(OUT)
 const MB = n => (n / 1048576).toFixed(2) + ' MB'
