@@ -510,8 +510,14 @@ function summarize(a: NkAnswer): string | null {
      '사망 기록 없음'은 '살아 있다'는 단정이 아니라 '통일부 자료에 사망 기록이 없다'는 사실이고,
      그 자료의 기준일까지만 유효하다 — 그 둘을 한 문장에 같이 담는다. */
   if (a.Q?.personAsk) {
-    const ent = (a.groups ?? []).flatMap(g => g.hits ?? [])
-      .map(h => h.r).find(r => r.kind === 'entity')
+    /* ★ **질문이 지목한 사람**의 카드여야 한다. 아무 엔티티나 집으면 안 된다.
+       실측 사고 2026-08-13: "김정은 사망" 에 리성국(직책란이 '사망'인 별개 인물)의
+       사망 기록을 헤드라인으로 내놓았다. '사망' 토큰이 721명 전원의 본문에 들어 있어
+       엉뚱한 인물이 근거에 섞였고, 여기서 그 첫 번째를 그냥 집었기 때문이다.
+       질문에 이름이 나오지 않은 인물 카드는 이 질문의 답이 아니다. */
+    const raw = String(a.Q?.raw ?? '')
+    const ents = (a.groups ?? []).flatMap(g => g.hits ?? []).map(h => h.r).filter(r => r.kind === 'entity')
+    const ent = ents.find(r => r.title && raw.includes(r.title))
     if (ent) {
       const b = clean(ent.body)
       const died = b.match(/사망:\s*([^·]+)/)
@@ -1963,7 +1969,14 @@ export default function SasilOn() {
   }, [ix, q])
 
   /* 변별 어휘가 하나도 안 걸린 질의 — 아래 자료는 근거가 아니라 참고다 */
-  const refOnly = !!(a?.Q?.weakMatch ?? a?.Q?.genericOnly) && groups.length > 0
+  /* ★ 생사·신상을 물었고 **그 사람의 카드가 근거에 있으면** 그것은 참고가 아니라 답이다.
+     "김정은 죽었냐" 는 변별 토큰이 없어(김정은은 코퍼스에 흔하고 '죽었냐'는 없다)
+     genericOnly 로 잡히는데, 그렇다고 인물 카드를 '근거 아님'으로 깎으면
+     정작 답을 찾아 놓고 못 찾은 척하는 셈이다(실측 2026-08-13). */
+  const namedPerson = !!a?.Q?.personAsk && groups
+    .flatMap(g => g.hits ?? [])
+    .some(h => h.r.kind === 'entity' && h.r.title && String(a?.Q?.raw ?? '').includes(h.r.title))
+  const refOnly = !namedPerson && !!(a?.Q?.weakMatch ?? a?.Q?.genericOnly) && groups.length > 0
   const headText =
     summary ??
     (outOfDomain

@@ -103,10 +103,11 @@ export function validateIntent(raw) {
 }
 
 /* ── 후보 만들기 ────────────────────────────────────────────
-   제목만 보낸다. 본문을 보내면 토큰이 폭증하고, 제목이 이 코퍼스에서 가장 변별적이다
-   (통일부 채록 제목은 「누가·무엇을·어떻게」가 한 줄에 다 들어 있다). */
+   기본은 제목이다 — 통일부 채록 제목은 「누가·무엇을·어떻게」가 한 줄에 다 들어 있어
+   이 코퍼스에서 가장 변별적이다. 다만 제목만으로는 심사가 불가능한 레코드가 있어서
+   **종류와 본문 앞부분을 함께** 보낸다(아래 candidatesOf 주석 참조). */
 export const RERANK_MAX = 12          // 후보 수 상한 — 지연·비용의 상한이기도 하다
-export const TITLE_MAX = 80
+export const TITLE_MAX = 130   // 종류·본문 앞부분을 함께 보내려면 80 자로는 모자란다
 
 export function candidatesOf(hits, { max = RERANK_MAX } = {}) {
   const seen = new Set()
@@ -115,8 +116,21 @@ export function candidatesOf(hits, { max = RERANK_MAX } = {}) {
     if (out.length >= max) break
     if (seen.has(h.r.id)) continue
     seen.add(h.r.id)
-    const t = String(h.r.title || '').replace(/\s+/g, ' ').trim().slice(0, TITLE_MAX)
+    let t = String(h.r.title || '').replace(/\s+/g, ' ').trim()
     if (!t) continue
+    /* ★ 제목만 보내면 심사가 불가능한 레코드가 있다.
+       인물 카드의 제목은 그냥 "김정은" 이라, 리랭커는 그게 **사망 여부를 담은 인물 정보**인지
+       스쳐 지나간 언급인지 구분할 수 없다. 실측 사고 2026-08-13:
+       "김정은 사망" 질의에서 인물 카드가 1점을 받아 탈락했고, 화면에는 엉뚱하게
+       리성국(직책란이 '사망'인 별개 인물)이 답으로 나왔다.
+       레코드가 **무엇인지**를 함께 보낸다 — 종류와 앞부분 본문. */
+    const kind = h.r.kind === 'entity' ? '인물정보'
+      : h.r.kind === 'stat' ? '통계'
+        : h.r.kind === 'doc' ? '문서' : null
+    const body = String(h.r.body || '').replace(/\s+/g, ' ').trim()
+    if (kind) t = `[${kind}] ${t}`
+    if (body) t = `${t} — ${body}`
+    t = t.slice(0, TITLE_MAX)
     out.push({ i: out.length, t, hit: h })
   }
   return out
