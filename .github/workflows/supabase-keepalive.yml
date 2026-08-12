@@ -10,7 +10,7 @@
 #
 # 필요한 저장소 시크릿 2개 (Settings → Secrets and variables → Actions):
 #   SUPABASE_URL              예: https://xxxx.supabase.co     ← api.txt 의 SUPABASE_URL
-#   SUPABASE_PUBLISHABLE_KEY  sb_publishable_...               ← api.txt 의 SUPABASE_PUBLISHABLE_KEY
+#   SUPABASE_PUBLISHABLE_KEY                                   ← api.txt 의 SUPABASE_PUBLISHABLE_KEY 값 그대로
 #   둘 다 api.txt 에 있다. publishable 키는 프론트 번들에 이미 들어가는 공개 키지만,
 #   "키 값은 깃헙에 올리지 않는다"는 원칙에 따라 파일에 적지 않고 시크릿으로 받는다.
 
