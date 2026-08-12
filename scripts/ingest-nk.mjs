@@ -470,11 +470,19 @@ const writtenAt = cn => {
 const pubYear = f => { const m = String(f || '').match(/(20\d{2})/); return m ? `${m[1]}-12-31` : null }
 
 /** 동향 본문에서 하위 주제를 가른다 — API 가 주는 thema 가 없는 trend 용 */
+/* 주제 라벨. **trendDaily 한 곳에서만 쓴다** — 다른 동향은 API 가 주는 thema 필드
+   (통일부 자체 분류)를 그대로 쓴다. 우리 추측보다 그쪽이 낫다.
+
+   ⚠ '당' 을 맨몸으로 매칭하면 담당·당국·해당·평양의사당이 전부 정치로 간다.
+     실측: trendDaily 4,225건 중 21건(0.5%)이 그렇게 잘못 갔다.
+     노동당을 가리키는 실제 표기만 남긴다 — 조사·수식이 붙은 형태까지 포함해야
+     "당의 정책적 요구", "당 일군", "당9기" 같은 진짜 언급을 놓치지 않는다. */
+const PARTY = /노동당|로동당|당중앙|당 중앙|당대회|당 대회|당대표|당원|입당|당정|당위원회|당 위원회|당비서|당 비서|여당|야당|당[의은는이가을를과와]\s|당\s*\d+기|당\s+[가-힣]{2}/
 function nkTopic(t) {
   if (/미사일|발사|포격|훈련|군사|핵실험|무력|국방|병력/.test(t)) return 'nk.military'
   if (/경제|무역|생산|공장|농업|시장|수출|건설/.test(t)) return 'nk.economy'
   if (/외교|방문|회담|중국|러시아|미국|일본|대사/.test(t)) return 'nk.foreign'
-  if (/당|위원회|최고인민회의|총비서|정치|간부/.test(t)) return 'nk.politics'
+  if (PARTY.test(t) || /위원회|최고인민회의|총비서|정치|간부/.test(t)) return 'nk.politics'
   return 'nk'
 }
 // '생산액(10000달러)' → metric '생산액' / unit '만달러'
