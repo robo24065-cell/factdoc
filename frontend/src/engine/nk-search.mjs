@@ -296,8 +296,25 @@ export function parseQuery(q, ov = {}) {
   const norm = ov.norm || normalizeByRule(body)
   /* 생사·신상 질의 — 인물 데이터셋이 답을 갖고 있는 유형 */
   const personAsk = /죽었|사망|살아\s*있|생존|숨졌|사망설|건강|나이|몇\s*살|누구(야|니|인가)|직책|무슨\s*일\s*해/.test(q)
-  return { raw: q, personAsk, tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm, wantsStat,
-    listIntent: listIntent || norm.intent === 'timeline', wantCount,
+
+  /* ★ 질문 유형 라우팅 — LLM 의도분류를 랭킹 축으로 쓴다.
+     지금까지 분류기는 8종을 내놓는데 relation·lexicon 둘만 쓰고 6종을 버렸다.
+     실측(실사용 질의 105건): 규칙이 정한 유형과 LLM 유형이 **47건(45%) 어긋난다.**
+       fact→status 12 · fact→other 10 · fact→quantity 6 · fact→person 6 · fact→relation 6
+     특히 "개성공단 아직 하냐"·"금강산 가는거 되냐"·"이산가족 상봉 아직도 하나" 는
+     규칙이 전부 fact 로 보는데 실제로는 **status(지금도 하나?)** 다 —
+     as-of 3상태 모델이 정확히 답해야 할 유형인데 그 신호를 못 받고 있었다.
+
+     ⚠ **켜기만 한다. 끄지 않는다.** 분류기가 틀렸을 때 기존에 통과하던 답을
+       빼앗지 않기 위해서다. 규칙이 켠 것은 그대로 두고 LLM 이 추가로 켠다. */
+  const li = ov.intent?.type
+  return { raw: q,
+    personAsk: personAsk || li === 'person',
+    statusAsk: li === 'status',          // '지금도 하나?' — 최종 관측·종료 공지를 앞세운다
+    intentType: li || null,
+    tokens, topics, askedAt, time, win, numeric, isQuant, askedUnit, norm,
+    wantsStat: wantsStat || li === 'quantity',
+    listIntent: listIntent || norm.intent === 'timeline' || li === 'timeline', wantCount,
     askedYear: (time.slot === 'year' && !win.future) ? String(time.year) : null,
     needsLLMTime: needsLLM(time) }
 }
@@ -490,7 +507,10 @@ export function search(ix, q, { limit = 40, ov } = {}) {
 
     s *= 1 + (r.priority - 50) / 100                        // 데이터셋 우선순위
     s *= asofWeight(r, Q.askedAt)                           // 시점 감쇠 (frozen 면제)
-    if (r.isLatestInDataset) s *= 1.6                       // ★ 최종 시점 레코드 우선
+    /* ★ 최종 시점 레코드 우선. '지금도 하나?'(status)를 물었으면 더 세게 —
+       그 질문의 답은 **가장 마지막에 관측된 것**이지 아무 시점의 기록이 아니다.
+       "개성공단 아직 하냐"·"금강산 가는거 되냐"가 그 유형이다(실측 12건). */
+    if (r.isLatestInDataset) s *= Q.statusAsk ? 2.6 : 1.6
     if (Q.topics.some(t => r.topic === t || r.topic.startsWith(t + '.'))) s *= 1.5
     if (Q.tokens.some(t => r.entities?.includes(t))) s *= 1.25
     if (Q.wantsStat) s *= (r.kind === 'stat' ? 1.9 : r.kind === 'event' ? 0.65 : 1)

@@ -870,6 +870,77 @@ function TrackMap({ tracks }: { tracks: Track[] }) {
   )
 }
 
+/* 실시간 속보 · 많이 다뤄진 이야기.
+   데스크톱에서는 우측 레일 맨 위(자료 기준일 안내 위)에, 모바일에서는 본문 흐름에 둔다.
+   같은 컴포넌트를 두 자리에서 쓰되 바깥에서 lg:hidden / hidden lg:block 으로 가른다. */
+function NewsRail({ issues, ix, pick }: { issues: any; ix: any; pick: (q: string) => void }) {
+  const fresh = issues?.fresh ?? []
+  const list = issues?.issues ?? []
+  if (!fresh.length && !list.length) return null
+  return (
+    <div className="space-y-4">
+      {fresh.length > 0 && (
+        <section className={`${CARD} p-4`} aria-label="실시간 속보">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium text-slate-900 dark:text-white">
+              <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" aria-hidden="true" />
+              실시간 속보
+            </h2>
+            <p className="text-[11px] tabular-nums text-slate-400">{ago(issues.builtAt)} 갱신</p>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {fresh.slice(0, 6).map((it: any, i: number) => (
+              <li key={i} className="flex items-baseline gap-2">
+                <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-rose-500">{ago(it.at)}</span>
+                <button
+                  type="button"
+                  disabled={!ix}
+                  onClick={() => pick(it.ask)}
+                  className={`min-w-0 flex-1 truncate rounded text-left text-sm text-slate-800 hover:underline disabled:opacity-40 dark:text-slate-100 ${FOCUS}`}
+                >
+                  {it.title}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {list.length > 0 && (
+        <section className={`${CARD} p-4`} aria-label="최근 북한·통일 이슈">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-medium text-slate-900 dark:text-white">
+              <span aria-hidden="true">📰 </span>많이 다뤄진 이야기
+            </h2>
+            <p className="text-[11px] text-slate-400">
+              최근 {issues.windowHours}시간 · 기사 {nf(issues.stats?.kept ?? 0)}건
+            </p>
+          </div>
+          <p className={`mt-1 text-xs leading-relaxed text-slate-500 ${PROSE}`}>
+            뉴스는 <strong className="font-medium">근거가 아니라 확인할 대상</strong>입니다.
+            눌러 보면 통일부 공식 자료로 대조해 드립니다.
+          </p>
+          <ul className="mt-3 space-y-1.5">
+            {list.slice(0, 6).map((it: any, i: number) => (
+              <li key={i}>
+                <button
+                  type="button"
+                  disabled={!ix}
+                  onClick={() => pick(it.ask)}
+                  className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition active:scale-[0.99] disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 ${FOCUS}`}
+                >
+                  <span className="text-sm text-slate-800 dark:text-slate-100">{it.title}</span>
+                  <span className="ml-2 whitespace-nowrap text-[11px] tabular-nums text-slate-400">기사 {it.n}건</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+    </div>
+  )
+}
+
 /* 검색 전 안내 / 데스크톱 레일 기본 카드 */
 function LegendCard() {
   return (
@@ -1973,67 +2044,11 @@ export default function SasilOn() {
             ))}
           </div>
 
-          {!a && issues?.fresh?.length > 0 && (
-            <section className={`mt-5 ${CARD} p-4`} aria-label="실시간 속보">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-sm font-medium text-slate-900 dark:text-white">
-                  <span className="mr-1 inline-block h-2 w-2 animate-pulse rounded-full bg-rose-500" aria-hidden="true" />
-                  실시간 속보
-                </h2>
-                <p className="text-[11px] tabular-nums text-slate-400">{ago(issues.builtAt)} 갱신</p>
-              </div>
-              <ul className="mt-2 space-y-1">
-                {issues.fresh.slice(0, 6).map((it: any, i: number) => (
-                  <li key={i} className="flex items-baseline gap-2">
-                    <span className="w-14 shrink-0 text-right text-[11px] tabular-nums text-rose-500">
-                      {ago(it.at)}
-                    </span>
-                    <button
-                      type="button"
-                      disabled={!ix}
-                      onClick={() => pick(it.ask)}
-                      className={`min-w-0 flex-1 truncate rounded text-left text-sm text-slate-800 hover:underline disabled:opacity-40 dark:text-slate-100 ${FOCUS}`}
-                    >
-                      {it.title}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-
-          {!a && issues?.issues?.length > 0 && (
-            <section className={`mt-4 ${CARD} p-4`} aria-label="최근 북한·통일 이슈">
-              <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <h2 className="text-sm font-medium text-slate-900 dark:text-white">
-                  <span aria-hidden="true">📰 </span>많이 다뤄진 이야기
-                </h2>
-                <p className="text-[11px] text-slate-400">
-                  최근 {issues.windowHours}시간 · 기사 {nf(issues.stats?.kept ?? 0)}건에서 추림
-                </p>
-              </div>
-              <p className={`mt-1 text-xs leading-relaxed text-slate-500 ${PROSE}`}>
-                뉴스는 <strong className="font-medium">근거가 아니라 확인할 대상</strong>입니다.
-                눌러 보면 통일부 공식 자료로 대조해 드립니다.
-              </p>
-              <ul className="mt-3 space-y-1.5">
-                {issues.issues.slice(0, 6).map((it: any, i: number) => (
-                  <li key={i}>
-                    <button
-                      type="button"
-                      disabled={!ix}
-                      onClick={() => pick(it.ask)}
-                      className={`w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-left transition active:scale-[0.99] disabled:opacity-40 dark:border-slate-700 dark:bg-slate-900 ${FOCUS}`}
-                    >
-                      <span className="text-sm text-slate-800 dark:text-slate-100">{it.title}</span>
-                      <span className="ml-2 whitespace-nowrap text-[11px] tabular-nums text-slate-400">
-                        기사 {it.n}건
-                      </span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </section>
+          {/* 모바일: 뉴스는 본문 흐름에 둔다. 데스크톱에서는 우측 레일로 올라간다(아래 aside). */}
+          {!a && (
+            <div className="lg:hidden">
+              <NewsRail issues={issues} ix={ix} pick={pick} />
+            </div>
           )}
 
           {!a && stats && (
@@ -2220,6 +2235,8 @@ export default function SasilOn() {
 
         {/* ══ 데스크톱 우측 레일 ══ */}
         <aside className="mt-8 hidden space-y-5 lg:sticky lg:top-24 lg:mt-1 lg:block" aria-label="이 답변의 자료 요약">
+          {/* 뉴스가 맨 위 — '지금 도는 이야기'가 먼저 보이고, 기준일 설명은 그 아래 */}
+          {!a && <NewsRail issues={issues} ix={ix} pick={pick} />}
           <LegendCard />
           {tracks.length > 0 && <SourceRail tracks={tracks} />}
         </aside>
