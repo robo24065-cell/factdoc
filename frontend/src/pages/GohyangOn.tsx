@@ -17,7 +17,7 @@ import { asOfNotice, type NkRecord, type Notice } from '../engine/nk-search.mjs'
      기상 관측(NOAA GSOD)      2025-08-24
      탈북민 재북 출신지        2020-03-31
      이산가족 연표(CSV)        2021-12-16
-     개성공단 / 금강산          🔒 종료 확정
+     개성공단 / 금강산           종료 확정
 
    화면 원칙은 SasilOn.tsx 와 같다.
    ① emerald/amber/violet 은 as-of 3상태 전용색 (정보=blue, 중립=slate)
@@ -120,7 +120,7 @@ type ProjData = {
 }
 
 /* 후손 세대 — 제4차 실태조사(2024)의 후손 문항.
-   ★ 이 데이터의 성격을 화면이 반드시 밝혀야 한다: 후손 본인에게 물은 게 아니라
+    이 데이터의 성격을 화면이 반드시 밝혀야 한다: 후손 본인에게 물은 게 아니라
      **자손이 있는 1세대 4,042명이 자기 자손을 평가한** 값이다. */
 type DescGap = {
   id: string; title: string
@@ -165,35 +165,35 @@ const CARD = SURFACE.card
 const PROSE = T_PROSE
 
 /* 색의 역할을 다시 정했다.
-   ★ as-of 3상태(jade/ember/seal)만 **기능색**이고, 나머지는 전부 종이·먹색이다.
+    as-of 3상태(jade/ember/seal)만 **기능색**이고, 나머지는 전부 종이·먹색이다.
      예전에는 정보 카드까지 파랑이라 화면 전체가 파랗고, 정작 중요한
      '이 자료가 언제 것인가'가 묻혔다. 중립을 늘려서 기능색이 눈에 들어오게 한다. */
 const TONE: Record<Tone, { band: string; accent: string; text: string; soft: string; chip: string }> = {
   emerald: {
     band: ASOF.live.band, accent: ASOF.live.bar,
-    text: ASOF.live.text, soft: 'bg-[#f2faf7] dark:bg-[#0b2721]',
+    text: ASOF.live.text, soft: 'bg-[#f4faf7] dark:bg-[#0f231a]',
     chip: ASOF.live.chip,
   },
   amber: {
     band: ASOF.stale.band, accent: ASOF.stale.bar,
-    text: ASOF.stale.text, soft: 'bg-[#fdf7ec] dark:bg-[#2b1d0d]',
+    text: ASOF.stale.text, soft: 'bg-[#fdf8ee] dark:bg-[#241a0a]',
     chip: ASOF.stale.chip,
   },
   violet: {
     band: ASOF.frozen.band, accent: ASOF.frozen.bar,
-    text: ASOF.frozen.text, soft: 'bg-[#f7f2fb] dark:bg-[#1e142a]',
+    text: ASOF.frozen.text, soft: 'bg-[#f6f4fb] dark:bg-[#181428]',
     chip: ASOF.frozen.chip,
   },
   // 정보 계열 — 파랑을 버리고 종이/먹으로 간다
   blue: {
-    band: 'bg-[#f4efe6] dark:bg-[#161d26]', accent: 'bg-[#1c1917] dark:bg-[#e8edf3]',
-    text: TEXT.ink, soft: 'bg-[#faf7f2] dark:bg-[#121821]',
-    chip: 'bg-[#efe7d9] text-[#57534e] ring-1 ring-[#e0d6c7] dark:bg-[#1c242e] dark:text-[#9aa7b5] dark:ring-[#2a333f]',
+    band: 'bg-[#f5f7fa] dark:bg-[#14181e]', accent: 'bg-[#1a4e9c] dark:bg-[#7aa9e8]',
+    text: TEXT.ink, soft: 'bg-[#f9fafc] dark:bg-[#14181e]',
+    chip: 'bg-[#eef3fb] text-[#1a4e9c] ring-1 ring-[#cfdcef] dark:bg-[#16202c] dark:text-[#7aa9e8] dark:ring-[#27364a]',
   },
   slate: {
-    band: 'bg-[#f4efe6] dark:bg-[#161d26]', accent: 'bg-[#c9bba6] dark:bg-[#3a4552]',
-    text: TEXT.soft, soft: 'bg-[#faf7f2] dark:bg-[#121821]',
-    chip: 'bg-[#efe7d9] text-[#57534e] ring-1 ring-[#e0d6c7] dark:bg-[#1c242e] dark:text-[#9aa7b5] dark:ring-[#2a333f]',
+    band: 'bg-[#f5f7fa] dark:bg-[#14181e]', accent: 'bg-[#b6bcc5] dark:bg-[#39414c]',
+    text: TEXT.soft, soft: 'bg-[#f9fafc] dark:bg-[#14181e]',
+    chip: 'bg-[#eef1f5] text-[#555555] ring-1 ring-[#dcdfe4] dark:bg-[#1a1f26] dark:text-[#a4acb6] dark:ring-[#2a2f36]',
   },
 }
 
@@ -203,17 +203,17 @@ const AS_OF: Record<Level, { tone: Tone; icon: string; label: string; verb: stri
   live: {
     tone: 'emerald', icon: ASOF.live.glyph, label: ASOF.live.label,
     verb: '현재 시점까지 확인되는 자료입니다.',
-    edge: 'border-l-[3px] border-solid border-[#0f6b5c] dark:border-[#4fd1b5]',
+    edge: 'border-l-[3px] border-solid border-[#136c43] dark:border-[#5fc99a]',
   },
   stale: {
     tone: 'amber', icon: ASOF.stale.glyph, label: ASOF.stale.label,
     verb: '이 시점 이후의 상황은 확인되지 않았습니다. 아래 값은 당시의 값이며 현재 값이 아닙니다. — 없다는 뜻이 아니라 모른다는 뜻입니다.',
-    edge: 'border-l-[3px] border-dashed border-[#c8811f] dark:border-[#f0b45f]',
+    edge: 'border-l-[3px] border-dashed border-[#b06a00] dark:border-[#e3ac5b]',
   },
   frozen: {
     tone: 'violet', icon: ASOF.frozen.glyph, label: ASOF.frozen.label,
     verb: '활동 자체가 종료되어 이 시점 이후의 데이터는 존재하지 않습니다. 아래 값이 확정된 최종값입니다.',
-    edge: 'border-l-[3px] border-double border-[#6d3f8f] dark:border-[#c39bea]',
+    edge: 'border-l-[3px] border-double border-[#4a3f7a] dark:border-[#a99ce0]',
   },
 }
 
@@ -222,20 +222,20 @@ const AS_OF: Record<Level, { tone: Tone; icon: string; label: string; verb: stri
    종이색 → 먹색으로 어두워지는 한 계열이라 "짙을수록 크다"가 설명 없이 읽히고,
    무채색으로 떨어뜨려도 밝기가 단조 증가해 색맹·흑백에서도 순서가 남는다. */
 const CHORO = [
-  'fill-[#efe8dd] dark:fill-[#161d26]',   // 0 — 해당 축에 집계 항목 없음
-  'fill-[#e3d3bd] dark:fill-[#26333f]',
-  'fill-[#cdb391] dark:fill-[#35485a]',
-  'fill-[#b08e68] dark:fill-[#456075]',
-  'fill-[#8c6b48] dark:fill-[#587a92]',
-  'fill-[#5f4630] dark:fill-[#6f9ab4]',
+  'fill-[#f0f1f3] dark:fill-[#181c22]',   // 0 — 해당 축에 집계 항목 없음
+  'fill-[#cfdcef] dark:fill-[#1d2937]',
+  'fill-[#a8c2e2] dark:fill-[#27384d]',
+  'fill-[#7ba1d2] dark:fill-[#345170]',
+  'fill-[#4b79bb] dark:fill-[#456f9b]',
+  'fill-[#1a4e9c] dark:fill-[#5b8dc7]',
 ]
 const CHORO_SWATCH = [
-  'bg-[#efe8dd] dark:bg-[#161d26]',
-  'bg-[#e3d3bd] dark:bg-[#26333f]',
-  'bg-[#cdb391] dark:bg-[#35485a]',
-  'bg-[#b08e68] dark:bg-[#456075]',
-  'bg-[#8c6b48] dark:bg-[#587a92]',
-  'bg-[#5f4630] dark:bg-[#6f9ab4]',
+  'bg-[#f0f1f3] dark:bg-[#181c22]',
+  'bg-[#cfdcef] dark:bg-[#1d2937]',
+  'bg-[#a8c2e2] dark:bg-[#27384d]',
+  'bg-[#7ba1d2] dark:bg-[#345170]',
+  'bg-[#4b79bb] dark:bg-[#456f9b]',
+  'bg-[#1a4e9c] dark:bg-[#5b8dc7]',
 ]
 
 const PACK = '/gohyang'
@@ -348,20 +348,20 @@ function ClauseTag({ children }: { children: ReactNode }) {
   )
 }
 
-function Block({ tag, tone, icon, title, sub, children }: {
-  tag: string; tone: Tone; icon: string; title: string; sub?: string | null; children: ReactNode
+/* 구획 — 정부 누리집의 관용 표현을 따른다: 분류 라벨 + 남색 세로 막대 + 제목.
+   그림 아이콘은 쓰지 않는다(§토큰 제약 ①). 위계는 활자 굵기와 선으로만 만든다. */
+function Block({ tag, tone, title, sub, children }: {
+  tag: string; tone: Tone; title: string; sub?: string | null; children: ReactNode
 }) {
   const T = TONE[tone]
   return (
     <section className={`overflow-hidden ${CARD}`}>
-      <div className={`flex items-start gap-2.5 p-4 ${T.band}`}>
+      <div className={`flex items-start gap-2.5 border-b p-4 ${SURFACE.hair} ${T.band}`}>
         <ClauseTag>{tag}</ClauseTag>
-        <div className={`h-10 w-1.5 shrink-0 rounded-full ${T.accent}`} aria-hidden="true" />
+        <div className={`h-9 w-[3px] shrink-0 ${T.accent}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
-          <h2 className={`text-base font-semibold leading-snug ${PROSE} ${T.text}`}>
-            <span aria-hidden="true">{icon}</span> {title}
-          </h2>
-          {sub && <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>{sub}</p>}
+          <h2 className={`${TYPE.h2} ${PROSE} ${T.text}`}>{title}</h2>
+          {sub && <p className={`mt-1 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>{sub}</p>}
         </div>
       </div>
       <div className="p-4">{children}</div>
@@ -674,8 +674,7 @@ function NkMapView({
 
       {/* 범례 — 무엇으로 칠했는지, 그 값이 언제 것인지 */}
       <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1.5 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
-        <span className={`text-[11px] font-medium text-slate-600 dark:text-slate-300 ${PROSE}`}>
-          색 = {metric}
+        <span className={`text-[11px] font-medium text-slate-600 dark:text-slate-300 ${PROSE}`}>색 = {metric}
         </span>
         <span className="flex items-center gap-1" aria-hidden="true">
           <span className="text-[11px] tabular-nums text-slate-400">0</span>
@@ -702,7 +701,7 @@ function NkMapView({
    그래서 **Open-Meteo** 를 쓴다 — 키·로그인·신청 없이 익명 호출이 되고,
    13개 지역을 한 번의 요청으로 받는다(실측 1.2초 · 7.7KB).
 
-   ★ 빌드에 굽지 않고 **브라우저가 직접** 부른다. 기상은 빌드 시점의 값을 저장하는 순간
+    빌드에 굽지 않고 **브라우저가 직접** 부른다. 기상은 빌드 시점의 값을 저장하는 순간
      그 자체로 stale 이 되는 유일한 계열이라, as-of 를 지키는 방법이 '실시간'이다.
      네트워크가 죽으면 조용히 감추고 NOAA 최종 관측만 남긴다(LLM 4원칙 ④와 같은 태도). */
 
@@ -802,8 +801,7 @@ function LiveWeatherRows({ names }: { names: string[] }) {
           </li>
         ))}
       </ul>
-      <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
-        고향을 눈으로 볼 수는 없어도, <b className="font-medium">오늘 그곳이 더운지 추운지는 알 수 있습니다.</b>
+      <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>고향을 눈으로 볼 수는 없어도, <b className="font-medium">오늘 그곳이 더운지 추운지는 알 수 있습니다.</b>
         {' '}이 값만은 저장하지 않고 화면을 열 때마다 새로 받습니다.
       </p>
       <p className="mt-1.5">
@@ -863,8 +861,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
   if (!p) {
     return (
       <div className={`${CARD} p-4`}>
-        <p className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>
-          선택한 구역에 연결된 지역 데이터가 없습니다.
+        <p className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>선택한 구역에 연결된 지역 데이터가 없습니다.
         </p>
       </div>
     )
@@ -903,18 +900,16 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             type="button"
             onClick={onClose}
             className={`shrink-0 rounded-lg border border-slate-200 px-2 py-1 text-[11px] text-slate-500 dark:border-slate-700 ${FOCUS}`}
-          >
-            닫기
+          >닫기
           </button>
         </div>
         {p.note && (
-          <p className={`mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}>
-            <span aria-hidden="true">ℹ️ </span>{p.note}
+          <p className={`mt-2 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}>{p.note}
           </p>
         )}
       </div>
 
-      {/* ── 🔒 종료 공지가 있으면 무엇보다 먼저 ──
+      {/* ──  종료 공지가 있으면 무엇보다 먼저 ──
           주제 단위 frozen 은 데이터셋 단위보다 우선한다. 통계가 없어서가 아니라
           '활동이 끝나서 없다'는 것을 먼저 말해야 한다. */}
       {p.frozen.map(f => {
@@ -938,7 +933,6 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       <Block
         tag="관측"
         tone="slate"
-        icon="🌡"
         title="최근 확인된 기상 관측"
         sub={`실시간 관측 + NOAA 관측지점 ${p.weather.length}곳`}
       >
@@ -961,8 +955,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
                   </span>
                   <span className="shrink-0 text-right">
                     <b className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">{nf1(w.tempC)}℃</b>
-                    <span className="ml-1 text-[11px] tabular-nums text-slate-400">
-                      최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}
+                    <span className="ml-1 text-[11px] tabular-nums text-slate-400">최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}
                     </span>
                   </span>
                 </li>
@@ -986,7 +979,6 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       <Block
         tag="이산가족"
         tone="blue"
-        icon="🏠"
         title="이 지역이 고향인 생존 신청자"
         sub={p.isanKey ? `이산가족 출신지 축 「${p.isanKey.name}」 기준` : '대응하는 출신지 항목이 없습니다'}
       >
@@ -1001,44 +993,37 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               <AsOfLine n={isanNotice} verbose />
             </div>
             <p className="mt-1.5">
-              <span className="text-[11px] text-slate-400">
-                통일부 「{isan.latest.title}」 ({isan.latest.postedAt} 게시) ·{' '}
+              <span className="text-[11px] text-slate-400">통일부 「{isan.latest.title}」 ({isan.latest.postedAt} 게시) ·{' '}
               </span>
               <OutLink href={isan.latest.attachment}>공표 원문(HWP)</OutLink>
               <span className="text-[11px] text-slate-400"> · </span>
               <OutLink href={isan.latest.boardUrl}>게시판 {nf(isan.latest.boardTotalPosts)}건</OutLink>
             </p>
 
-            {/* ★ 같은 통계인데 채널이 둘이고 기준일이 9개월 다르다 — 이 화면이 보여주려는 것 */}
+            {/*  같은 통계인데 채널이 둘이고 기준일이 9개월 다르다 — 이 화면이 보여주려는 것 */}
             {monthlyRows.length > 1 && (
               <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
-                <p className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>
-                  월별 추이 — 공공데이터포털 등록현황 CSV
+                <p className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>월별 추이 — 공공데이터포털 등록현황 CSV
                 </p>
                 <Spark rows={monthlyRows} label={`${p.isanKey?.name ?? p.title} 출신 생존자`} />
                 <div className="mt-2">
                   <AsOfLine n={csvNotice} />
                 </div>
-                <p className={`mt-1.5 rounded-lg bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 ${PROSE}`}>
-                  <span aria-hidden="true">⚠ </span>
-                  위 <b className="font-semibold">{nf(originEntry.n)}명({ymKo(isan.latest.asOf)})</b>과 이 그래프의 마지막 값
+                <p className={`mt-1.5 rounded-lg bg-amber-50 p-2 text-[11px] leading-relaxed text-amber-900 dark:bg-amber-950/30 dark:text-amber-100 ${PROSE}`}>위 <b className="font-semibold">{nf(originEntry.n)}명({ymKo(isan.latest.asOf)})</b>과 이 그래프의 마지막 값
                   <b className="font-semibold"> {nf(monthlyRows.at(-1)?.v)}명({ymKo(csvAsOf)})</b>은
                   <b className="font-semibold"> 같은 통계의 서로 다른 공표 채널</b>입니다.
                   파일데이터(포털)가 게시판 공표보다 {gapText(Math.round((new Date(isan.latest.asOf).getTime() - new Date(csvAsOf).getTime()) / 864e5))} 뒤처져 있어
                   두 값을 한 문장에 섞어 쓰면 기준일이 깨집니다.
                 </p>
                 <p className="mt-1.5">
-                  <span className="text-[11px] text-slate-400">
-                    출처 {isan.sources[0]?.name} · 자료 기준일 {isan.sources[0]?.asOf} ·{' '}
+                  <span className="text-[11px] text-slate-400">출처 {isan.sources[0]?.name} · 자료 기준일 {isan.sources[0]?.asOf} ·{' '}
                   </span>
                   <OutLink href={isan.sources[0]?.landing}>원본 데이터</OutLink>
                 </p>
               </div>
             )}
 
-            <p className={`mt-3 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}>
-              <span aria-hidden="true">ℹ️ </span>
-              이산가족 출신지는 <b className="font-medium">광복 당시 구행정구역</b> 7종으로만 공표됩니다.
+            <p className={`mt-3 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}>이산가족 출신지는 <b className="font-medium">광복 당시 구행정구역</b> 7종으로만 공표됩니다.
               {p.kind === 'modern' && (() => {
                 const names = membersOf({ mode: 'old', id: p.isanKey!.key }, pack.region).join('·')
                 return ` 그래서 현행 ${names}${josa(names, '은', '는')} 같은 값(${p.isanKey!.name})을 공유합니다.`
@@ -1050,14 +1035,13 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             </p>
           </>
         ) : (
-          <p className={`text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
-            이산가족 출신지 공표 항목에 이 구역에 대응하는 분류가 없습니다.
+          <p className={`text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>이산가족 출신지 공표 항목에 이 구역에 대응하는 분류가 없습니다.
           </p>
         )}
       </Block>
 
       {/* ── 탈북민 재북 출신지 ── */}
-      <Block tag="탈북민" tone="blue" icon="👥" title="이 지역이 재북 출신지인 탈북민" sub="입국 누적 인원">
+      <Block tag="탈북민" tone="blue" title="이 지역이 재북 출신지인 탈북민" sub="입국 누적 인원">
         {p.defector && defNotice ? (
           <>
             <p className="text-3xl font-semibold tabular-nums text-slate-900 dark:text-white">
@@ -1080,8 +1064,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             </p>
           </>
         ) : (
-          <p className={`text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
-            공표 출신지 13개 축에 이 지역 항목이 없습니다{p.title === '라선' ? ' (역사적으로 함경북도에 포함됩니다)' : ''}.
+          <p className={`text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>공표 출신지 13개 축에 이 지역 항목이 없습니다{p.title === '라선' ? ' (역사적으로 함경북도에 포함됩니다)' : ''}.
             없다는 뜻이 아니라 <b className="font-medium">이 분류로는 집계되지 않았다</b>는 뜻입니다.
           </p>
         )}
@@ -1091,7 +1074,6 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       <Block
         tag="기록"
         tone="blue"
-        icon="🗓"
         title="이 지역의 공식 기록"
         sub={`통일부 자료에서 이 지역이 언급된 건수`}
       >
@@ -1108,8 +1090,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
 
         {p.events.length > 0 ? (
           <>
-            <p className={`mt-4 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>
-              최근 사건 (최신순 · 상위 {nf(p.events.length)}건 수록)
+            <p className={`mt-4 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>최근 사건 (최신순 · 상위 {nf(p.events.length)}건 수록)
             </p>
             <ol className="relative mt-2 ml-1 space-y-3 border-l border-slate-200 pl-4 dark:border-slate-700">
               {events.map((e, i) => (
@@ -1130,35 +1111,29 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               </button>
             )}
             {p.eventsTotal > p.events.length && (
-              <p className={`mt-2 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
-                전체 {nf(p.eventsTotal)}건 중 최신 {nf(p.events.length)}건만 이 화면에 수록돼 있습니다.
+              <p className={`mt-2 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>전체 {nf(p.eventsTotal)}건 중 최신 {nf(p.events.length)}건만 이 화면에 수록돼 있습니다.
                 나머지는 사실은ON 검색에서 확인할 수 있습니다.
               </p>
             )}
           </>
         ) : (
-          <p className={`mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
-            날짜가 확인되는 연표 기록이 없습니다.
+          <p className={`mt-3 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>날짜가 확인되는 연표 기록이 없습니다.
           </p>
         )}
 
         <div className="mt-4 space-y-1 border-t border-slate-100 pt-2.5 dark:border-slate-800">
-          <p className="text-[11px] text-slate-400">
-            <span aria-hidden="true">📎 </span>연표·보도자료 —{' '}
+          <p className="text-[11px] text-slate-400">연표·보도자료 —{' '}
             <OutLink href="https://www.data.go.kr/data/15090949/fileData.do">공공데이터포털</OutLink>
           </p>
-          <p className="text-[11px] text-slate-400">
-            <span aria-hidden="true">📎 </span>동향·북한개황 —{' '}
+          <p className="text-[11px] text-slate-400">동향·북한개황 —{' '}
             <OutLink href="https://nkinfo.unikorea.go.kr">북한정보포털</OutLink>
           </p>
-          <p className={`mt-1 leading-relaxed text-[11px] text-slate-400 ${PROSE}`}>
-            지역 귀속은 지역명·도시명 문자열 매칭 결과입니다. {pack.region.meta.matching.caveats[0]}
+          <p className={`mt-1 leading-relaxed text-[11px] text-slate-400 ${PROSE}`}>지역 귀속은 지역명·도시명 문자열 매칭 결과입니다. {pack.region.meta.matching.caveats[0]}
           </p>
         </div>
 
         <p className="mt-3">
-          <Link to={`/factcheck?q=${encodeURIComponent(p.title.replace(/\(구\)$/, ''))}`} className={`inline-flex items-center gap-1 rounded text-sm font-medium text-blue-700 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}>
-            사실은ON에서 「{p.title}」 검색하기 →
+          <Link to={`/factcheck?q=${encodeURIComponent(p.title.replace(/\(구\)$/, ''))}`} className={`inline-flex items-center gap-1 rounded text-sm font-medium text-blue-700 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}>사실은ON에서 「{p.title}」 검색하기 →
           </Link>
         </p>
       </Block>
@@ -1169,7 +1144,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
 /* ══════════════════════ 소멸 시계 ══════════════════════
    실측(2017-07~2025-08 등록현황 CSV 98개월 + 2026-03~05 공표 HWP 3개월)과
    추계(2026~2050)를 한 축 위에 올린다.
-   ★ 추계는 통일부 공표 통계가 아니라 이 시제품의 계산 결과다 — 선 모양·배지·각주 3중으로 구분한다. */
+    추계는 통일부 공표 통계가 아니라 이 시제품의 계산 결과다 — 선 모양·배지·각주 3중으로 구분한다. */
 
 function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
   const W = 960, H = 340
@@ -1212,14 +1187,12 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
         <ClauseTag>추계</ClauseTag>
         <div className="min-w-0 flex-1">
           <h2 className={`text-base font-semibold leading-snug text-slate-900 dark:text-white ${PROSE}`}>
-            <span aria-hidden="true">⏳</span> 소멸 시계 — 고향을 기억하는 사람이 남아 있는 시간
+            <span aria-hidden="true"></span> 소멸 시계 — 고향을 기억하는 사람이 남아 있는 시간
           </h2>
-          <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>
-            실측 {nf(isan.monthly.length)}개월(2017~2025) + 공표 3개월(2026) 위에 생잔 추계를 얹은 것입니다.
+          <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>실측 {nf(isan.monthly.length)}개월(2017~2025) + 공표 3개월(2026) 위에 생잔 추계를 얹은 것입니다.
           </p>
         </div>
-        <span className="ml-auto shrink-0 self-center rounded-full border border-slate-300 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:border-slate-600 dark:text-slate-400">
-          공식 통계 아님 · 계산 결과
+        <span className="ml-auto shrink-0 self-center rounded-full border border-slate-300 px-2 py-0.5 text-[11px] font-semibold text-slate-500 dark:border-slate-600 dark:text-slate-400">공식 통계 아님 · 계산 결과
         </span>
       </div>
 
@@ -1293,16 +1266,13 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
         {/* 범례 */}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="2.5" /></svg>
-            실측 — 등록현황 CSV (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
+            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="2.5" /></svg>실측 — 등록현황 CSV (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-blue-700 dark:fill-blue-300" /></svg>
-            실측 — 공표 HWP 3개월 (2026.3~5)
+            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-blue-700 dark:fill-blue-300" /></svg>실측 — 공표 HWP 3개월 (2026.3~5)
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-slate-500" strokeWidth="2" strokeDasharray="7 5" /></svg>
-            추계 범위 (생명표 원값 ~ 실측 교정)
+            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-slate-500" strokeWidth="2" strokeDasharray="7 5" /></svg>추계 범위 (생명표 원값 ~ 실측 교정)
           </span>
         </div>
 
@@ -1327,8 +1297,7 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
             아래쪽 선: {proj.method.scenarios.expected} · {proj.milestoneRange.note}
           </p>
           <details className="mt-2">
-            <summary className={`cursor-pointer list-none text-[11px] font-medium text-blue-600 dark:text-blue-400 [&::-webkit-details-marker]:hidden ${FOCUS}`}>
-              가정 {proj.assumptions.length}가지 전부 보기 ▾
+            <summary className={`cursor-pointer list-none text-[11px] font-medium text-blue-600 dark:text-blue-400 [&::-webkit-details-marker]:hidden ${FOCUS}`}>가정 {proj.assumptions.length}가지 전부 보기 ▾
             </summary>
             <ul className="mt-1.5 space-y-1">
               {proj.assumptions.map((a, i) => (
@@ -1336,16 +1305,12 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
               ))}
             </ul>
           </details>
-          <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
-            <span aria-hidden="true">📎 </span>
-            생명표: {proj.sources[0]?.name} (표 {proj.lifeTable.tblId} · {proj.lifeTable.year}년 · 최종수정 {proj.lifeTable.published}) ·{' '}
+          <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>생명표: {proj.sources[0]?.name} (표 {proj.lifeTable.tblId} · {proj.lifeTable.year}년 · 최종수정 {proj.lifeTable.published}) ·{' '}
             <OutLink href={proj.sources[0]?.url}>원본 데이터</OutLink>
             {' · '}기준 인원: 통일부 이산가족 신청 현황 {proj.headline.asOf} ·{' '}
             <OutLink href={isan.latest.attachment}>공표 원문</OutLink>
           </p>
-          <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}>
-            <span aria-hidden="true">⚠ </span>
-            <b className="font-medium">이 곡선의 미래 구간은 통일부가 발표한 값이 아니라 본 시제품이 계산한 추계</b>입니다.
+          <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}><b className="font-medium">이 곡선의 미래 구간은 통일부가 발표한 값이 아니라 본 시제품이 계산한 추계</b>입니다.
             {proj.headline.note}
           </p>
         </div>
@@ -1366,7 +1331,7 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
      · 유전자검사 사업은 2025년부터 2~3세대 후손을 대상에 넣었다(사후 가족관계 확인 목적)
    즉 정책은 이미 후손을 향해 있는데, 후손이 접속할 화면이 없다.
 
-   ★ 데이터 정직성 — 후손 문항은 **후손 본인 조사가 아니다.**
+    데이터 정직성 — 후손 문항은 **후손 본인 조사가 아니다.**
      자손이 있는 1세대 4,042명이 자기 자손을 평가한 값이다. 화면에 그대로 밝힌다.
      그 한계를 감추면 이 층 전체가 근거를 잃는다. */
 
@@ -1380,7 +1345,7 @@ function GapBar({ g }: { g: DescGap }) {
     <li className={`border-b py-3.5 last:border-0 ${SURFACE.hair}`}>
       <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{g.title}</p>
       <div className="mt-2.5 space-y-1.5">
-        {([[g.a, 'bg-[#0f6b5c] dark:bg-[#4fd1b5]', '◆'], [g.b, 'bg-[#a89880] dark:bg-[#4a5666]', '◇']] as const).map(([row, color], i) => (
+        {([[g.a, 'bg-[#1a4e9c] dark:bg-[#7aa9e8]', '◆'], [g.b, 'bg-[#b6bcc5] dark:bg-[#39414c]', '◇']] as const).map(([row, color], i) => (
           <div key={i} className="flex items-center gap-2.5">
             <span className={`w-14 shrink-0 text-right ${TYPE.figureSm} ${TEXT.ink}`} style={{ fontSize: '1.0625rem' }}>
               {nf1(row.pct)}%
@@ -1392,11 +1357,11 @@ function GapBar({ g }: { g: DescGap }) {
         ))}
       </div>
       <div className="mt-2 space-y-0.5">
-        <p className={`${TYPE.cap} ${TEXT.jade} ${PROSE}`}>◆ {g.a.label}</p>
+        <p className={`${TYPE.cap} ${TEXT.blue} ${PROSE}`}>◆ {g.a.label}</p>
         <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>◇ {g.b.label}</p>
       </div>
-      <p className={`mt-2 rounded-xl border-l-[3px] border-[#0f6b5c] bg-[#f2faf7] px-3 py-2 ${TYPE.cap} ${TEXT.soft} dark:border-[#4fd1b5] dark:bg-[#0b2721] ${PROSE}`}>
-        <b className={`font-semibold tabular-nums ${TEXT.jade}`}>{g.gapPp > 0 ? '+' : ''}{nf1(g.gapPp)}%p</b> — {g.reading}
+      <p className={`mt-2 rounded-xl border-l-[3px] border-[#1a4e9c] bg-[#eef3fb] px-3 py-2 ${TYPE.cap} ${TEXT.soft} dark:border-[#7aa9e8] dark:bg-[#16202c] ${PROSE}`}>
+        <b className={`font-semibold tabular-nums ${TEXT.blue}`}>{g.gapPp > 0 ? '+' : ''}{nf1(g.gapPp)}%p</b> — {g.reading}
       </p>
     </li>
   )
@@ -1411,7 +1376,6 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
     <Block
       tag="후손"
       tone="blue"
-      icon="🌉"
       title="후손 다리 — 1세대가 떠난 뒤 이 기록은 누구의 것인가"
       sub={`${desc.survey.name} · 심층 ${nf(desc.survey.bases.deep)}명 (${desc.survey.publishedAt} 공표)`}
     >
@@ -1421,7 +1385,7 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
           1세대 사후, 자손 세대끼리 교류하기를 바라는가
         </p>
         <div className="mt-3 grid grid-cols-2 gap-4">
-          {([['이산 1세대', x.gen1, TEXT.faint], ['후손 세대', x.descendants, TEXT.jade]] as const).map(([label, v, cls]) => (
+          {([['이산 1세대', x.gen1, TEXT.faint], ['후손 세대', x.descendants, TEXT.blue]] as const).map(([label, v, cls]) => (
             <div key={label}>
               <p className={`${TYPE.cap} ${TEXT.faint}`}>{label}</p>
               <p className={`mt-0.5 ${TYPE.figureSm} ${cls}`}>{nf1(v)}%</p>
@@ -1429,7 +1393,7 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
           ))}
         </div>
         <p className={`mt-3 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
-          {x.note}(<b className={`font-semibold tabular-nums ${TEXT.jade}`}>{nf1(x.descendants - x.gen1)}%p</b> 차이).
+          {x.note}(<b className={`font-semibold tabular-nums ${TEXT.blue}`}>{nf1(x.descendants - x.gen1)}%p</b> 차이).
           {' '}<b className={`font-semibold ${TEXT.ink}`}>문제는 후손의 무관심이 아닙니다</b> — 이어받을 수단이 없는 것입니다.
         </p>
       </div>
@@ -1442,13 +1406,12 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
 
       {/* ── 통일부 조사가 요구한 사업 ── */}
       <div className={`mt-4 ${SURFACE.card} p-4`}>
-        <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>
-          이산가족이 1순위로 요청한 사업
+        <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>이산가족이 1순위로 요청한 사업
         </p>
         <ul className="mt-2 space-y-1.5">
           {desc.recordPrograms.기록및공감대.map((r, i) => (
             <li key={r.label} className="flex items-baseline gap-2">
-              <span className={`w-14 shrink-0 text-right text-[1.0625rem] font-semibold tabular-nums ${i === 0 ? TEXT.jade : TEXT.faint}`}>
+              <span className={`w-14 shrink-0 text-right text-[1.0625rem] font-semibold tabular-nums ${i === 0 ? TEXT.blue : TEXT.faint}`}>
                 {nf1(r.pct)}%
               </span>
               <span className={`${TYPE.sub} ${i === 0 ? 'font-medium ' + TEXT.ink : TEXT.soft} ${PROSE}`}>
@@ -1469,18 +1432,16 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
 
       {/* ── 규모 ── */}
       <div className={`mt-3 ${SURFACE.inset} p-4`}>
-        <p className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>
-          이건 <b className="font-semibold tabular-nums">{nf(alive)}명</b>의 문제가 아닙니다.
+        <p className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>이건 <b className="font-semibold tabular-nums">{nf(alive)}명</b>의 문제가 아닙니다.
           {' '}1세대 누계 {nf(desc.scale.gen1Cumulative)}명 중 {nf1(desc.scale.withDescendantsRate)}%가 자손을 두었으니,
           {' '}<b className="font-semibold">{desc.scale.estimate.phrase}</b>입니다.
         </p>
         <button
           type="button"
           onClick={() => setOpenAssume(v => !v)}
-          className={`mt-2.5 ${TYPE.cap} font-medium underline decoration-dotted underline-offset-2 ${TEXT.jade} ${FOCUS}`}
+          className={`mt-2.5 ${TYPE.cap} font-medium underline decoration-dotted underline-offset-2 ${TEXT.blue} ${FOCUS}`}
           aria-expanded={openAssume}
-        >
-          이 추정의 가정 {desc.scale.assumptions.length}가지 {openAssume ? '접기 ▴' : '보기 ▾'}
+        >이 추정의 가정 {desc.scale.assumptions.length}가지 {openAssume ? '접기 ▴' : '보기 ▾'}
         </button>
         {openAssume && (
           <ul className="mt-2 space-y-1">
@@ -1489,14 +1450,13 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
             ))}
           </ul>
         )}
-        <p className={`mt-3 ${TYPE.cap} ${TEXT.ember} ${PROSE}`}>
-          <span aria-hidden="true">⚠ </span>후손 규모는 <b className="font-medium">공표값이 아니라 추정</b>입니다. 범위로만 읽어야 합니다.
+        <p className={`mt-3 ${TYPE.cap} ${TEXT.stale} ${PROSE}`}>후손 규모는 <b className="font-medium">공표값이 아니라 추정</b>입니다. 범위로만 읽어야 합니다.
         </p>
       </div>
 
       {/* ── 데이터 한계 — 감추면 이 층이 무너진다 ── */}
       <div className={`mt-3 rounded-xl border ${ASOF.stale.edge} ${ASOF.stale.band} p-4`}>
-        <p className={`${TYPE.eyebrow} ${TEXT.ember} ${PROSE}`}>이 수치를 읽을 때 반드시 알아야 할 것</p>
+        <p className={`${TYPE.eyebrow} ${TEXT.stale} ${PROSE}`}>이 수치를 읽을 때 반드시 알아야 할 것</p>
         <ul className="mt-1 space-y-1">
           {desc.caveats.map((c, i) => (
             <li key={i} className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>· {c}</li>
@@ -1579,8 +1539,7 @@ export default function GohyangOn() {
   if (err) {
     return (
       <div className={`${CARD} p-6`}>
-        <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
-          <span aria-hidden="true">📭 </span>지도 데이터를 불러오지 못했습니다.
+        <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>지도 데이터를 불러오지 못했습니다.
         </p>
         <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{err}</p>
         <p className={`mt-1.5 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
@@ -1593,8 +1552,7 @@ export default function GohyangOn() {
   if (!pack) {
     return (
       <p className="flex items-center gap-2 py-20 text-sm text-slate-500">
-        <span aria-hidden="true" className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />
-        지도·지역 자료를 불러오는 중…
+        <span aria-hidden="true" className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-300 border-t-slate-500" />지도·지역 자료를 불러오는 중…
       </p>
     )
   }
@@ -1608,11 +1566,10 @@ export default function GohyangOn() {
       <header className={PROSE}>
         <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>통일부 공공데이터 · 이산가족과 고향</p>
 
-        <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>
-          고향을 기억하는 사람이<br className="hidden sm:block" />
+        <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>고향을 기억하는 사람이<br className="hidden sm:block" />
           {' '}
           <span className="whitespace-nowrap">
-            <span className={`${TYPE.figure} ${TEXT.ember} align-baseline`}>
+            <span className={`${TYPE.figure} ${TEXT.stale} align-baseline`}>
               {nf(pack.isan.latest.overview.cumulative.alive)}
             </span>
             <span className={`ml-1 ${TYPE.h2} ${TEXT.ink}`}>명</span>
@@ -1625,20 +1582,16 @@ export default function GohyangOn() {
           평균 나이는 <b className={`font-semibold ${TEXT.ink}`}>{nf1(pack.isan.monthly.at(-1)?.avgAge)}세</b>이고,
           {' '}추계로는 <b className={`font-semibold ${TEXT.ink}`}>{pack.proj.milestoneRange.below10000}년</b>에 1만 명을 밑돕니다.
         </p>
-        <p className={`mt-1.5 max-w-2xl ${TYPE.sub} ${TEXT.faint}`}>
-          아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
+        <p className={`mt-1.5 max-w-2xl ${TYPE.sub} ${TEXT.faint}`}>아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
           네 계열의 기준일이 서로 다르며, 그 차이를 숨기지 않고 함께 표시합니다.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <Link to="/factcheck" className={BTN.primary}>
-            <span aria-hidden="true">💬</span> 지도에 없는 것은 물어보세요
+          <Link to="/factcheck" className={BTN.primary}>지도에 없는 것은 물어보세요
           </Link>
-          <a href="#extinction" className={BTN.ghost}>
-            소멸 시계 보기 <span aria-hidden="true">↓</span>
+          <a href="#extinction" className={BTN.ghost}>소멸 시계 보기 <span aria-hidden="true">↓</span>
           </a>
-          <a href="#descendant" className={BTN.ghost}>
-            후손 다리 <span aria-hidden="true">↓</span>
+          <a href="#descendant" className={BTN.ghost}>후손 다리 <span aria-hidden="true">↓</span>
           </a>
         </div>
       </header>
@@ -1675,21 +1628,16 @@ export default function GohyangOn() {
             <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-800">
               <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
                 {mode === 'old' ? (
-                  <>
-                    <span aria-hidden="true">ℹ️ </span>
-                    구역 안의 가는 선은 <b className="font-medium">현행 도 경계</b>입니다 — 구행정구역 폴리곤이 따로 없어 현행 구역을 묶어 근사한 것입니다.
+                  <>구역 안의 가는 선은 <b className="font-medium">현행 도 경계</b>입니다 — 구행정구역 폴리곤이 따로 없어 현행 구역을 묶어 근사한 것입니다.
                     {' '}미수복경기는 개성 위치의 <b className="font-medium">원형 마커</b>로 대신했습니다(별도 지오메트리 없음). {pack.map.crosswalk.note}
                   </>
                 ) : (
-                  <>
-                    <span aria-hidden="true">ℹ️ </span>
-                    남포·개성은 이 지오메트리 판본에 별도 폴리곤이 없어 <b className="font-medium">도시 점</b>으로 표시했습니다(각각 평안남도·황해북도 폴리곤에 포함).
+                  <>남포·개성은 이 지오메트리 판본에 별도 폴리곤이 없어 <b className="font-medium">도시 점</b>으로 표시했습니다(각각 평안남도·황해북도 폴리곤에 포함).
                     {' '}검은 점은 주요 도시이며, 누르면 소속 지역이 열립니다.
                   </>
                 )}
               </p>
-              <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
-                <span aria-hidden="true">📎 </span>지도 지오메트리 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
+              <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>지도 지오메트리 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
                 <OutLink href={pack.map.sources[0]?.url}>원본 데이터</OutLink>
               </p>
             </div>
@@ -1702,14 +1650,11 @@ export default function GohyangOn() {
             <RegionPanel pack={pack} sel={sel} onClose={() => setSel(null)} />
           ) : (
             <div className={`${CARD} p-4`}>
-              <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
-                <span aria-hidden="true">👆 </span>지역을 선택하세요
+              <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>지역을 선택하세요
               </p>
-              <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>
-                지도에서 지역을 누르면 이 자리에 그 지역의 이산가족·탈북민·공식 기록·기상 관측이 기준일과 함께 표시됩니다.
+              <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>지도에서 지역을 누르면 이 자리에 그 지역의 이산가족·탈북민·공식 기록·기상 관측이 기준일과 함께 표시됩니다.
               </p>
-              <p className={`mt-4 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>
-                이산가족 생존 신청자가 많은 고향 ({ymKo(pack.isan.latest.asOf)} 기준)
+              <p className={`mt-4 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>이산가족 생존 신청자가 많은 고향 ({ymKo(pack.isan.latest.asOf)} 기준)
               </p>
               <ul className="mt-2 space-y-1.5">
                 {topOld.map(o => (
@@ -1750,11 +1695,9 @@ export default function GohyangOn() {
         <div className="flex items-start gap-2.5 border-b border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
           <ClauseTag>출처</ClauseTag>
           <div className="min-w-0 flex-1">
-            <h2 className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>
-              <span aria-hidden="true">📚</span> 이 화면이 쓴 자료와 각각의 기준일
+            <h2 className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>이 화면이 쓴 자료와 각각의 기준일
             </h2>
-            <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>
-              기준일이 최대 6년 넘게 벌어져 있습니다. 한 화면에 있다고 같은 시점의 값이 아닙니다.
+            <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>기준일이 최대 6년 넘게 벌어져 있습니다. 한 화면에 있다고 같은 시점의 값이 아닙니다.
             </p>
           </div>
         </div>
@@ -1784,8 +1727,7 @@ export default function GohyangOn() {
           })}
         </div>
         <div className="border-t border-slate-100 p-3 dark:border-slate-800">
-          <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
-            데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt}.
+          <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt}.
             북한 관련 정보 특성상 공식자료에 수록되지 않은 사실이 존재할 수 있습니다.
           </p>
         </div>
