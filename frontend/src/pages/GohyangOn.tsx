@@ -155,74 +155,87 @@ type Sel = { mode: 'modern'; key: string } | { mode: 'old'; id: string }
 
 /* ══════════════════════ 상수 (SasilOn 과 같은 팔레트) ══════════════════════ */
 
-const FOCUS =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-50 dark:focus-visible:ring-offset-slate-950'
-const CARD = 'rounded-2xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900'
-const PROSE = 'break-keep break-words'
+/* 팔레트·활자는 theme/gohyang.ts 가 단일 진실 소스다.
+   아래는 이 화면이 쓰는 이름으로 옮겨 붙인 얇은 층이다 —
+   기존 JSX 수백 곳을 건드리지 않고 껍데기만 갈아입히려고 이렇게 둔다. */
+import { SURFACE, TYPE, TEXT, ASOF, PROSE as T_PROSE, FOCUS as T_FOCUS, BTN, josa } from '../theme/gohyang'
 
+const FOCUS = T_FOCUS
+const CARD = SURFACE.card
+const PROSE = T_PROSE
+
+/* 색의 역할을 다시 정했다.
+   ★ as-of 3상태(jade/ember/seal)만 **기능색**이고, 나머지는 전부 종이·먹색이다.
+     예전에는 정보 카드까지 파랑이라 화면 전체가 파랗고, 정작 중요한
+     '이 자료가 언제 것인가'가 묻혔다. 중립을 늘려서 기능색이 눈에 들어오게 한다. */
 const TONE: Record<Tone, { band: string; accent: string; text: string; soft: string; chip: string }> = {
   emerald: {
-    band: 'bg-emerald-50 dark:bg-emerald-950/30', accent: 'bg-emerald-500',
-    text: 'text-emerald-800 dark:text-emerald-200', soft: 'bg-emerald-50/70 dark:bg-emerald-950/20',
-    chip: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200',
+    band: ASOF.live.band, accent: ASOF.live.bar,
+    text: ASOF.live.text, soft: 'bg-[#f2faf7] dark:bg-[#0b2721]',
+    chip: ASOF.live.chip,
   },
   amber: {
-    band: 'bg-amber-50 dark:bg-amber-950/30', accent: 'bg-amber-500',
-    text: 'text-amber-800 dark:text-amber-200', soft: 'bg-amber-50/70 dark:bg-amber-950/20',
-    chip: 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200',
+    band: ASOF.stale.band, accent: ASOF.stale.bar,
+    text: ASOF.stale.text, soft: 'bg-[#fdf7ec] dark:bg-[#2b1d0d]',
+    chip: ASOF.stale.chip,
   },
   violet: {
-    band: 'bg-violet-50 dark:bg-violet-950/30', accent: 'bg-violet-600',
-    text: 'text-violet-800 dark:text-violet-200', soft: 'bg-violet-50/70 dark:bg-violet-950/20',
-    chip: 'bg-violet-100 text-violet-900 dark:bg-violet-950/50 dark:text-violet-200',
+    band: ASOF.frozen.band, accent: ASOF.frozen.bar,
+    text: ASOF.frozen.text, soft: 'bg-[#f7f2fb] dark:bg-[#1e142a]',
+    chip: ASOF.frozen.chip,
   },
+  // 정보 계열 — 파랑을 버리고 종이/먹으로 간다
   blue: {
-    band: 'bg-blue-50 dark:bg-blue-950/30', accent: 'bg-blue-500',
-    text: 'text-blue-800 dark:text-blue-200', soft: 'bg-blue-50/60 dark:bg-blue-950/20',
-    chip: 'bg-blue-100 text-blue-800 dark:bg-blue-950/50 dark:text-blue-200',
+    band: 'bg-[#f4efe6] dark:bg-[#161d26]', accent: 'bg-[#1c1917] dark:bg-[#e8edf3]',
+    text: TEXT.ink, soft: 'bg-[#faf7f2] dark:bg-[#121821]',
+    chip: 'bg-[#efe7d9] text-[#57534e] ring-1 ring-[#e0d6c7] dark:bg-[#1c242e] dark:text-[#9aa7b5] dark:ring-[#2a333f]',
   },
   slate: {
-    band: 'bg-slate-100 dark:bg-slate-800', accent: 'bg-slate-400',
-    text: 'text-slate-800 dark:text-slate-100', soft: 'bg-slate-50 dark:bg-slate-800/50',
-    chip: 'bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-200',
+    band: 'bg-[#f4efe6] dark:bg-[#161d26]', accent: 'bg-[#c9bba6] dark:bg-[#3a4552]',
+    text: TEXT.soft, soft: 'bg-[#faf7f2] dark:bg-[#121821]',
+    chip: 'bg-[#efe7d9] text-[#57534e] ring-1 ring-[#e0d6c7] dark:bg-[#1c242e] dark:text-[#9aa7b5] dark:ring-[#2a333f]',
   },
 }
 
+/* as-of 3상태 — 색·도형·라벨 3중 부호화. 이모지 대신 도형 글리프를 쓴다:
+   이모지는 기기마다 모양이 달라지고 흑백 인쇄에서 뭉개진다. */
 const AS_OF: Record<Level, { tone: Tone; icon: string; label: string; verb: string; edge: string }> = {
   live: {
-    tone: 'emerald', icon: '🟢', label: '최신',
+    tone: 'emerald', icon: ASOF.live.glyph, label: ASOF.live.label,
     verb: '현재 시점까지 확인되는 자료입니다.',
-    edge: 'border-l-4 border-solid border-emerald-500',
+    edge: 'border-l-[3px] border-solid border-[#0f6b5c] dark:border-[#4fd1b5]',
   },
   stale: {
-    tone: 'amber', icon: '🟡', label: '이후 미확인',
+    tone: 'amber', icon: ASOF.stale.glyph, label: ASOF.stale.label,
     verb: '이 시점 이후의 상황은 확인되지 않았습니다. 아래 값은 당시의 값이며 현재 값이 아닙니다. — 없다는 뜻이 아니라 모른다는 뜻입니다.',
-    edge: 'border-l-4 border-dashed border-amber-500',
+    edge: 'border-l-[3px] border-dashed border-[#c8811f] dark:border-[#f0b45f]',
   },
   frozen: {
-    tone: 'violet', icon: '🔒', label: '데이터 종료',
+    tone: 'violet', icon: ASOF.frozen.glyph, label: ASOF.frozen.label,
     verb: '활동 자체가 종료되어 이 시점 이후의 데이터는 존재하지 않습니다. 아래 값이 확정된 최종값입니다.',
-    edge: 'border-l-4 border-double border-violet-600',
+    edge: 'border-l-[3px] border-double border-[#6d3f8f] dark:border-[#c39bea]',
   },
 }
 
 /* 단계별 채색 — Tailwind 는 소스에 **문자 그대로** 있는 클래스만 생성한다.
-   `fill-blue-${n}` 같은 동적 조합은 빌드에서 사라지므로 정적 문자열 표로 둔다. */
+   `fill-[${hex}]` 같은 동적 조합은 빌드에서 사라지므로 정적 문자열 표로 둔다.
+   종이색 → 먹색으로 어두워지는 한 계열이라 "짙을수록 크다"가 설명 없이 읽히고,
+   무채색으로 떨어뜨려도 밝기가 단조 증가해 색맹·흑백에서도 순서가 남는다. */
 const CHORO = [
-  'fill-slate-100 dark:fill-slate-800',   // 0 — 해당 축에 집계 항목 없음
-  'fill-blue-100 dark:fill-blue-950',
-  'fill-blue-200 dark:fill-blue-900',
-  'fill-blue-300 dark:fill-blue-800',
-  'fill-blue-400 dark:fill-blue-700',
-  'fill-blue-600 dark:fill-blue-500',
+  'fill-[#efe8dd] dark:fill-[#161d26]',   // 0 — 해당 축에 집계 항목 없음
+  'fill-[#e3d3bd] dark:fill-[#26333f]',
+  'fill-[#cdb391] dark:fill-[#35485a]',
+  'fill-[#b08e68] dark:fill-[#456075]',
+  'fill-[#8c6b48] dark:fill-[#587a92]',
+  'fill-[#5f4630] dark:fill-[#6f9ab4]',
 ]
 const CHORO_SWATCH = [
-  'bg-slate-100 dark:bg-slate-800',
-  'bg-blue-100 dark:bg-blue-950',
-  'bg-blue-200 dark:bg-blue-900',
-  'bg-blue-300 dark:bg-blue-800',
-  'bg-blue-400 dark:bg-blue-700',
-  'bg-blue-600 dark:bg-blue-500',
+  'bg-[#efe8dd] dark:bg-[#161d26]',
+  'bg-[#e3d3bd] dark:bg-[#26333f]',
+  'bg-[#cdb391] dark:bg-[#35485a]',
+  'bg-[#b08e68] dark:bg-[#456075]',
+  'bg-[#8c6b48] dark:bg-[#587a92]',
+  'bg-[#5f4630] dark:bg-[#6f9ab4]',
 ]
 
 const PACK = '/gohyang'
@@ -255,17 +268,8 @@ function gapText(days?: number | null): string {
   if (y <= 0) return `${Math.max(1, mo)}개월`
   return mo >= 1 ? `${y}년 ${mo}개월` : `${y}년`
 }
-/* 원자료 정제 — 연표 제목에 전각 쉼표(U+FF0C)가 그대로 들어 있다 */
-/* 조사 — 받침 유무로 은/는·이/가·을/를 을 고른다.
-   "현행 개성는" 처럼 틀린 조사가 나왔다(실측). 지역명이 데이터에서 오므로
-   문장에 그대로 붙이면 반드시 어긋난다. 한글 음절은 (코드−0xAC00)%28 이 0 이면 받침이 없다. */
-function josa(word: string, withT: string, withoutT: string): string {
-  const last = word.trim().slice(-1)
-  const c = last.charCodeAt(0)
-  if (Number.isNaN(c) || c < 0xac00 || c > 0xd7a3) return withoutT   // 한글이 아니면 개음절 취급
-  return (c - 0xac00) % 28 === 0 ? withoutT : withT
-}
-
+/* 원자료 정제 — 연표 제목에 전각 쉼표(U+FF0C)가 그대로 들어 있다
+   (조사 처리 josa() 는 theme/gohyang.ts 에 있다 — 화면 전체가 같은 규칙을 쓴다) */
 function clean(s?: string | null): string {
   return String(s ?? '')
     .replace(/，/g, ', ').replace(/．/g, '. ')
@@ -1328,7 +1332,7 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
             </summary>
             <ul className="mt-1.5 space-y-1">
               {proj.assumptions.map((a, i) => (
-                <li key={i} className={`text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>· {a}</li>
+                <li key={i} className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>· {a}</li>
               ))}
             </ul>
           </details>
@@ -1369,27 +1373,30 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
 function GapBar({ g }: { g: DescGap }) {
   const hi = Math.max(g.a.pct, g.b.pct)
   const w = (v: number) => `${Math.max(2, (v / Math.max(hi, 1)) * 100)}%`
+  /* 두 막대는 **같은 축**에서 길이로 비교돼야 의미가 생긴다.
+     위(a)는 청록 = 하고 싶다는 쪽, 아래(b)는 먹색 = 실제 쪽.
+     색만으로 가르지 않고 라벨에 같은 도형을 붙여 흑백에서도 짝이 보이게 한다. */
   return (
-    <li className="border-b border-slate-100 py-3 last:border-0 dark:border-slate-800">
-      <p className={`text-sm font-semibold text-slate-800 dark:text-slate-100 ${PROSE}`}>{g.title}</p>
-      <div className="mt-2 space-y-1.5">
-        {([[g.a, 'bg-blue-600'], [g.b, 'bg-slate-300 dark:bg-slate-600']] as const).map(([row, color], i) => (
-          <div key={i} className="flex items-center gap-2">
-            <span className="w-12 shrink-0 text-right text-sm font-semibold tabular-nums text-slate-900 dark:text-white">
+    <li className={`border-b py-3.5 last:border-0 ${SURFACE.hair}`}>
+      <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{g.title}</p>
+      <div className="mt-2.5 space-y-1.5">
+        {([[g.a, 'bg-[#0f6b5c] dark:bg-[#4fd1b5]', '◆'], [g.b, 'bg-[#a89880] dark:bg-[#4a5666]', '◇']] as const).map(([row, color], i) => (
+          <div key={i} className="flex items-center gap-2.5">
+            <span className={`w-14 shrink-0 text-right ${TYPE.figureSm} ${TEXT.ink}`} style={{ fontSize: '1.0625rem' }}>
               {nf1(row.pct)}%
             </span>
-            <span className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+            <span className={`h-3 min-w-0 flex-1 overflow-hidden rounded-full ${SURFACE.inset}`}>
               <span className={`block h-full rounded-full ${color}`} style={{ width: w(row.pct) }} />
             </span>
           </div>
         ))}
       </div>
-      <div className="mt-1.5 space-y-0.5">
-        <p className={`text-[11px] leading-relaxed text-blue-700 dark:text-blue-400 ${PROSE}`}>■ {g.a.label}</p>
-        <p className={`text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>■ {g.b.label}</p>
+      <div className="mt-2 space-y-0.5">
+        <p className={`${TYPE.cap} ${TEXT.jade} ${PROSE}`}>◆ {g.a.label}</p>
+        <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>◇ {g.b.label}</p>
       </div>
-      <p className={`mt-1.5 rounded-lg bg-blue-50 p-2 text-[11px] leading-relaxed text-blue-900 dark:bg-blue-950/30 dark:text-blue-200 ${PROSE}`}>
-        <b className="font-semibold tabular-nums">{g.gapPp > 0 ? '+' : ''}{nf1(g.gapPp)}%p</b> — {g.reading}
+      <p className={`mt-2 rounded-xl border-l-[3px] border-[#0f6b5c] bg-[#f2faf7] px-3 py-2 ${TYPE.cap} ${TEXT.soft} dark:border-[#4fd1b5] dark:bg-[#0b2721] ${PROSE}`}>
+        <b className={`font-semibold tabular-nums ${TEXT.jade}`}>{g.gapPp > 0 ? '+' : ''}{nf1(g.gapPp)}%p</b> — {g.reading}
       </p>
     </li>
   )
@@ -1409,48 +1416,48 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
       sub={`${desc.survey.name} · 심층 ${nf(desc.survey.bases.deep)}명 (${desc.survey.publishedAt} 공표)`}
     >
       {/* ── 반전: 후손이 1세대보다 더 원한다 ── */}
-      <div className="rounded-xl border border-blue-200 bg-blue-50/60 p-3 dark:border-blue-900/50 dark:bg-blue-950/20">
-        <p className={`text-sm font-semibold text-blue-900 dark:text-blue-200 ${PROSE}`}>
+      <div className={`${SURFACE.slab} p-4`}>
+        <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>
           1세대 사후, 자손 세대끼리 교류하기를 바라는가
         </p>
-        <div className="mt-2 grid grid-cols-2 gap-3">
-          {([['이산 1세대', x.gen1, 'text-slate-700 dark:text-slate-200'], ['후손 세대', x.descendants, 'text-blue-700 dark:text-blue-300']] as const).map(([label, v, cls]) => (
+        <div className="mt-3 grid grid-cols-2 gap-4">
+          {([['이산 1세대', x.gen1, TEXT.faint], ['후손 세대', x.descendants, TEXT.jade]] as const).map(([label, v, cls]) => (
             <div key={label}>
-              <p className="text-[11px] text-slate-500">{label}</p>
-              <p className={`text-2xl font-semibold tabular-nums ${cls}`}>{nf1(v)}%</p>
+              <p className={`${TYPE.cap} ${TEXT.faint}`}>{label}</p>
+              <p className={`mt-0.5 ${TYPE.figureSm} ${cls}`}>{nf1(v)}%</p>
             </div>
           ))}
         </div>
-        <p className={`mt-2 text-[11px] leading-relaxed text-blue-900 dark:text-blue-200 ${PROSE}`}>
-          {x.note}(<b className="font-semibold tabular-nums">{nf1(x.descendants - x.gen1)}%p</b> 차이).
-          {' '}<b className="font-semibold">문제는 후손의 무관심이 아닙니다</b> — 이어받을 수단이 없는 것입니다.
+        <p className={`mt-3 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
+          {x.note}(<b className={`font-semibold tabular-nums ${TEXT.jade}`}>{nf1(x.descendants - x.gen1)}%p</b> 차이).
+          {' '}<b className={`font-semibold ${TEXT.ink}`}>문제는 후손의 무관심이 아닙니다</b> — 이어받을 수단이 없는 것입니다.
         </p>
       </div>
 
       {/* ── 간극 3종 ── */}
-      <p className={`mt-4 text-[11px] font-semibold tracking-wide text-slate-500 ${PROSE}`}>세대 간극 3종</p>
+      <p className={`mt-5 ${TYPE.eyebrow} ${TEXT.faint} ${PROSE}`}>세대 간극 3종</p>
       <ul className="mt-1">
         {desc.gaps.map(g => <GapBar key={g.id} g={g} />)}
       </ul>
 
       {/* ── 통일부 조사가 요구한 사업 ── */}
-      <div className="mt-4 rounded-xl border border-slate-200 p-3 dark:border-slate-800">
-        <p className={`text-sm font-semibold text-slate-800 dark:text-slate-100 ${PROSE}`}>
+      <div className={`mt-4 ${SURFACE.card} p-4`}>
+        <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>
           이산가족이 1순위로 요청한 사업
         </p>
         <ul className="mt-2 space-y-1.5">
           {desc.recordPrograms.기록및공감대.map((r, i) => (
             <li key={r.label} className="flex items-baseline gap-2">
-              <span className={`w-11 shrink-0 text-right text-sm font-semibold tabular-nums ${i === 0 ? 'text-blue-700 dark:text-blue-400' : 'text-slate-400'}`}>
+              <span className={`w-14 shrink-0 text-right text-[1.0625rem] font-semibold tabular-nums ${i === 0 ? TEXT.jade : TEXT.faint}`}>
                 {nf1(r.pct)}%
               </span>
-              <span className={`text-sm leading-relaxed ${i === 0 ? 'font-medium text-slate-800 dark:text-slate-100' : 'text-slate-500'} ${PROSE}`}>
+              <span className={`${TYPE.sub} ${i === 0 ? 'font-medium ' + TEXT.ink : TEXT.soft} ${PROSE}`}>
                 {r.label}
               </span>
             </li>
           ))}
         </ul>
-        <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
+        <p className={`mt-3 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
           {(() => {
             const w = desc.recordPrograms.위로사업[1]
             if (!w) return null
@@ -1461,8 +1468,8 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
       </div>
 
       {/* ── 규모 ── */}
-      <div className="mt-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-800/50">
-        <p className={`text-sm text-slate-700 dark:text-slate-200 ${PROSE}`}>
+      <div className={`mt-3 ${SURFACE.inset} p-4`}>
+        <p className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>
           이건 <b className="font-semibold tabular-nums">{nf(alive)}명</b>의 문제가 아닙니다.
           {' '}1세대 누계 {nf(desc.scale.gen1Cumulative)}명 중 {nf1(desc.scale.withDescendantsRate)}%가 자손을 두었으니,
           {' '}<b className="font-semibold">{desc.scale.estimate.phrase}</b>입니다.
@@ -1470,7 +1477,7 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
         <button
           type="button"
           onClick={() => setOpenAssume(v => !v)}
-          className={`mt-2 text-[11px] font-medium text-blue-700 underline decoration-dotted dark:text-blue-400 ${FOCUS}`}
+          className={`mt-2.5 ${TYPE.cap} font-medium underline decoration-dotted underline-offset-2 ${TEXT.jade} ${FOCUS}`}
           aria-expanded={openAssume}
         >
           이 추정의 가정 {desc.scale.assumptions.length}가지 {openAssume ? '접기 ▴' : '보기 ▾'}
@@ -1478,31 +1485,31 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
         {openAssume && (
           <ul className="mt-2 space-y-1">
             {desc.scale.assumptions.map((a, i) => (
-              <li key={i} className={`text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>· {a}</li>
+              <li key={i} className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>· {a}</li>
             ))}
           </ul>
         )}
-        <p className={`mt-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400 ${PROSE}`}>
+        <p className={`mt-3 ${TYPE.cap} ${TEXT.ember} ${PROSE}`}>
           <span aria-hidden="true">⚠ </span>후손 규모는 <b className="font-medium">공표값이 아니라 추정</b>입니다. 범위로만 읽어야 합니다.
         </p>
       </div>
 
       {/* ── 데이터 한계 — 감추면 이 층이 무너진다 ── */}
-      <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50/60 p-3 dark:border-amber-900/50 dark:bg-amber-950/20">
-        <p className={`text-[11px] font-semibold ${TONE.amber.text} ${PROSE}`}>이 수치를 읽을 때 반드시 알아야 할 것</p>
+      <div className={`mt-3 rounded-xl border ${ASOF.stale.edge} ${ASOF.stale.band} p-4`}>
+        <p className={`${TYPE.eyebrow} ${TEXT.ember} ${PROSE}`}>이 수치를 읽을 때 반드시 알아야 할 것</p>
         <ul className="mt-1 space-y-1">
           {desc.caveats.map((c, i) => (
-            <li key={i} className={`text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>· {c}</li>
+            <li key={i} className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>· {c}</li>
           ))}
         </ul>
       </div>
 
       <p className="mt-3">
-        <span className="text-[11px] text-slate-400">출처 {desc.sources[0]?.name} · </span>
+        <span className={`${TYPE.cap} ${TEXT.faint}`}>출처 {desc.sources[0]?.name} · </span>
         <OutLink href={desc.sources[0]?.url}>보도자료 원문</OutLink>
         {desc.sources[1]?.url && (
           <>
-            <span className="text-[11px] text-slate-400"> · </span>
+            <span className={`${TYPE.cap} ${TEXT.faint}`}> · </span>
             <OutLink href={desc.sources[1].url}>요약자료(인포그래픽)</OutLink>
           </>
         )}
@@ -1594,26 +1601,46 @@ export default function GohyangOn() {
 
   return (
     <div className="pb-4">
+      {/* ── 표제 ──
+          예전 머리글은 기능 설명("지도 위에서 읽는 자료의 기준일")으로 시작했다.
+          그건 만든 사람의 관심사다. 화면을 여는 사람에게 먼저 와야 하는 것은
+          **남은 사람이 몇 명인가**다. 수치를 주인공으로 올린다. */}
       <header className={PROSE}>
-        <p className="text-xs font-semibold tracking-wide text-blue-700 dark:text-blue-400">
-          통일부 공공데이터 기반 지역 대시보드
-        </p>
-        <h1 className="mt-2 text-2xl font-semibold leading-snug text-slate-900 dark:text-white">
-          고향<span className="text-blue-700 dark:text-blue-400">ON</span> — 지도 위에서 읽는 <span className="text-blue-700 dark:text-blue-400">자료의 기준일</span>
+        <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>통일부 공공데이터 · 이산가족과 고향</p>
+
+        <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>
+          고향을 기억하는 사람이<br className="hidden sm:block" />
+          {' '}
+          <span className="whitespace-nowrap">
+            <span className={`${TYPE.figure} ${TEXT.ember} align-baseline`}>
+              {nf(pack.isan.latest.overview.cumulative.alive)}
+            </span>
+            <span className={`ml-1 ${TYPE.h2} ${TEXT.ink}`}>명</span>
+          </span>
+          {' '}남았습니다
         </h1>
-        <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-          한 지역을 누르면 이산가족·탈북민·공식 기록·기상 관측이 한 화면에 모입니다.
-          네 계열의 <b className="font-semibold text-slate-800 dark:text-slate-100">기준일이 서로 다르며</b>, 그 차이를 숨기지 않고 함께 표시합니다.
+
+        <p className={`mt-3 max-w-2xl ${TYPE.body} ${TEXT.soft}`}>
+          {ymKo(pack.isan.latest.asOf)} 기준 이산가족 생존 신청자 수입니다.
+          평균 나이는 <b className={`font-semibold ${TEXT.ink}`}>{nf1(pack.isan.monthly.at(-1)?.avgAge)}세</b>이고,
+          {' '}추계로는 <b className={`font-semibold ${TEXT.ink}`}>{pack.proj.milestoneRange.below10000}년</b>에 1만 명을 밑돕니다.
         </p>
-        {/* 팩트체커로 가는 길 — 지도에서 답이 안 나오는 질문은 문장으로 물어야 한다 */}
-        <Link
-          to="/factcheck"
-          className={`mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-blue-50 px-3 py-1.5 text-sm font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 ${FOCUS}`}
-        >
-          <span aria-hidden="true">💬</span>
-          지도에 없는 것은 <b className="font-semibold">사실은ON 팩트체커</b>에 물어보세요
-          <span aria-hidden="true">→</span>
-        </Link>
+        <p className={`mt-1.5 max-w-2xl ${TYPE.sub} ${TEXT.faint}`}>
+          아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
+          네 계열의 기준일이 서로 다르며, 그 차이를 숨기지 않고 함께 표시합니다.
+        </p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Link to="/factcheck" className={BTN.primary}>
+            <span aria-hidden="true">💬</span> 지도에 없는 것은 물어보세요
+          </Link>
+          <a href="#extinction" className={BTN.ghost}>
+            소멸 시계 보기 <span aria-hidden="true">↓</span>
+          </a>
+          <a href="#descendant" className={BTN.ghost}>
+            후손 다리 <span aria-hidden="true">↓</span>
+          </a>
+        </div>
       </header>
 
       {/* ── 지도 + 패널 ── */}
@@ -1708,13 +1735,13 @@ export default function GohyangOn() {
       </div>
 
       {/* ── 소멸 시계 (지도 아래, 전폭) ── */}
-      <div className="mt-6">
+      <div id="extinction" className="mt-8 scroll-mt-24">
         <ExtinctionClock isan={pack.isan} proj={pack.proj} />
       </div>
 
       {/* ── 후손 다리 — 소멸 시계 바로 뒤에 온다.
              "언제까지 남아 있는가" 다음 질문이 "그 다음은 누구인가"이기 때문이다. */}
-      <div className="mt-6">
+      <div id="descendant" className="mt-8 scroll-mt-24">
         <DescendantBridge desc={pack.desc} isan={pack.isan} />
       </div>
 

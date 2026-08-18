@@ -1,59 +1,59 @@
 import { Suspense } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import FontScale from '../components/FontScale'
+import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN } from '../theme/gohyang'
 
-/* 두 화면을 오갈 길 — 이게 없어서 지도 화면에 들어갈 방법이 아예 없었다.
-   고향ON 이 메인이고, 팩트체커는 그 옆에 둔다. 예전 주소 /gohyang 도 메인과 같은 화면이라
-   두 경로 모두에서 '고향ON' 이 선택된 것으로 보여야 한다. */
+/* 고향ON 껍데기 — 기록보관소의 종이 위에 놓인 화면.
+   ㆍ상단 고지는 지우지 않는다. 이 서비스가 통일부 공식 서비스가 아니라는 사실을
+     화면 어디에서도 오해할 수 없게 두는 것이 이 프로젝트의 규약이다.
+   ㆍ내비게이션이 곧 접근 경로다. 없애면 지도 화면에 들어갈 길이 사라진다. */
+
 const NAV = [
-  { to: '/', label: '고향ON', sub: '지도·소멸시계·후손', alsoActiveOn: '/gohyang' },
-  { to: '/factcheck', label: '사실은ON 팩트체커', sub: '물어보기' },
+  { to: '/', label: '고향ON', hint: '지도 · 소멸시계 · 후손', alias: '/gohyang' },
+  { to: '/factcheck', label: '팩트체커', hint: '물어보기' },
 ] as const
 
 function Nav() {
+  const { pathname } = useLocation()
   return (
-    <nav aria-label="주요 화면" className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
-      {NAV.map(item => (
-        <NavLink
-          key={item.to}
-          to={item.to}
-          end={item.to === '/'}
-          className={({ isActive }) => {
-            const active =
-              isActive ||
-              ('alsoActiveOn' in item && item.alsoActiveOn === window.location.pathname)
-            return `rounded-lg px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
-              active
-                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
-                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
-            }`
-          }}
-        >
-          <span className="whitespace-nowrap">{item.label}</span>
-        </NavLink>
-      ))}
+    <nav aria-label="주요 화면" className="flex items-center gap-0.5 rounded-full border border-[#e6ddd0] bg-white/70 p-0.5 dark:border-[#242d38] dark:bg-[#141b23]/70">
+      {NAV.map(item => {
+        const active = pathname === item.to || ('alias' in item && pathname === item.alias)
+        return (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            end={item.to === '/'}
+            title={item.hint}
+            aria-current={active ? 'page' : undefined}
+            className={`${BTN.seg} ${active ? BTN.segOn : BTN.segOff} ${FOCUS}`}
+          >
+            <span className="whitespace-nowrap">{item.label}</span>
+          </NavLink>
+        )
+      })}
     </nav>
   )
 }
 
 export default function SasilOnLayout() {
   return (
-    <div className="min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-950">
-      {/* 기관 고지 — 이 서비스가 무엇이고 무엇이 아닌지 먼저 밝힌다 */}
-      <div className="bg-slate-900 dark:bg-black">
-        <p className="mx-auto max-w-2xl px-4 py-1.5 text-[11px] leading-relaxed text-slate-300 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+    <div className={`min-h-screen overflow-x-clip ${SURFACE.page}`}>
+      {/* 기관 고지 — 무엇이고 무엇이 아닌지 먼저 밝힌다 */}
+      <div className="bg-[#1c1917] dark:bg-black">
+        <p className={`mx-auto max-w-2xl px-4 py-2 ${TYPE.cap} text-[#b8b0a6] lg:max-w-6xl lg:px-6 xl:max-w-7xl ${PROSE}`}>
           2026년 통일부 공공데이터 활용 공모전 출품 시제품 · 통일부 공식 서비스가 아니며,
           표시되는 모든 값은 공개된 통일부 데이터를 그대로 대조한 결과입니다.
         </p>
       </div>
 
-      <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
-          <div className="flex min-w-0 items-baseline gap-2">
-            <span className="text-lg font-medium text-slate-900 dark:text-white">
-              고향<span className="text-blue-700 dark:text-blue-400">ON</span>
+      <header className={`sticky top-0 z-20 border-b ${SURFACE.hair} bg-[#faf7f2]/85 backdrop-blur-md dark:bg-[#0d1117]/85`}>
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-x-4 gap-y-2 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+          <div className="flex min-w-0 items-baseline gap-2.5">
+            <span className={`text-[1.0625rem] font-semibold tracking-[-0.01em] ${TEXT.ink}`}>
+              고향<span className={TEXT.jade}>ON</span>
             </span>
-            <span className="hidden truncate text-xs text-slate-500 sm:inline">
+            <span className={`hidden truncate ${TYPE.cap} ${TEXT.faint} sm:inline`}>
               통일부 공공데이터로 읽는 이산가족과 고향
             </span>
           </div>
@@ -64,14 +64,21 @@ export default function SasilOnLayout() {
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-2xl px-4 pb-12 pt-4 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
-        <Suspense fallback={<div className="py-20 text-center text-sm text-slate-400">불러오는 중…</div>}>
+      <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-5 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+        <Suspense
+          fallback={
+            <p className={`flex items-center gap-2 py-24 ${TYPE.sub} ${TEXT.faint}`}>
+              <span aria-hidden="true" className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-[#d8cebe] border-t-[#8a8279]" />
+              불러오는 중…
+            </p>
+          }
+        >
           <Outlet />
         </Suspense>
       </main>
 
-      <footer className="mx-auto w-full max-w-2xl px-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] lg:max-w-6xl lg:px-6 xl:max-w-7xl">
-        <p className="break-keep border-t border-slate-100 pt-4 text-[11px] leading-relaxed text-slate-400 dark:border-slate-800">
+      <footer className="mx-auto w-full max-w-2xl px-4 pb-[calc(2rem+env(safe-area-inset-bottom))] lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+        <p className={`border-t pt-5 ${SURFACE.hair} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
           자료 출처: 통일부 공공데이터 · 본 화면은 아이디어 기획 부문 출품작의 실현가능성 검증용 시제품입니다.
         </p>
       </footer>
