@@ -79,7 +79,7 @@ function PoorQueuePanel() {
                   {it.userReason && <p className="text-[11px] font-medium text-rose-600 dark:text-rose-300">🙋 사용자 불만 사유: {it.userReason}</p>}
                   <p className="mt-0.5 text-[11px] font-medium text-amber-700 dark:text-amber-300">🤖 AI 검토: {it.aiReason || '—'}</p>
                   <pre className="mt-2 max-h-72 overflow-y-auto whitespace-pre-wrap break-words text-[11px] leading-relaxed text-slate-600 dark:text-slate-300">{it.snapshot || '(스냅샷 없음)'}</pre>
-                  <Link to={`/?q=${encodeURIComponent(it.claim)}`} className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</Link>
+                  <Link to={`/factcheck?q=${encodeURIComponent(it.claim)}`} className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</Link>
                 </div>
               )}
             </li>
@@ -350,7 +350,7 @@ function NaverRadarPanel() {
       <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
         {/* 2줄 레이아웃 — 1줄: 이름+증감%(이름 항상 우선), 2줄: 카테고리+반응형 스파크라인. 어느 폭에서도 이름 안 잘림 */}
         {rows.map((r) => (
-          <Link key={r.name} to={`/?q=${encodeURIComponent(`${r.name} 효능이 있나요`)}`} target="_blank"
+          <Link key={r.name} to={`/factcheck?q=${encodeURIComponent(`${r.name} 효능이 있나요`)}`} target="_blank"
             className="block rounded-xl border border-slate-100 p-2.5 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
             <div className="flex items-baseline gap-2">
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-slate-700 dark:text-slate-200">{r.name}</span>

@@ -72,7 +72,7 @@ export default function Forecast() {
                       </div>
                       {/* 액션 */}
                       <div className="mt-3 flex flex-wrap gap-2">
-                        <Link to={`/?q=${encodeURIComponent(`${r.name}에 좋은 민간요법이 있나요`)}`} className="rounded-lg bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white active:scale-95">관련 가짜정보 검증하기</Link>
+                        <Link to={`/factcheck?q=${encodeURIComponent(`${r.name}에 좋은 민간요법이 있나요`)}`} className="rounded-lg bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white active:scale-95">관련 가짜정보 검증하기</Link>
                         <button onClick={() => copy(r.name)} className="rounded-lg bg-amber-300 px-3 py-2 text-[13px] font-semibold text-amber-900 active:scale-95">{copied === r.name ? '✓ 복사됨 — 붙여넣어 공유' : '📤 공유 카드 복사'}</button>
                         <Link to={`/disease/${encodeURIComponent(r.name)}`} className="rounded-lg border border-slate-200 px-3 py-2 text-[13px] font-medium text-slate-600 dark:border-slate-700 dark:text-slate-300">질병 정보 →</Link>
                       </div>

@@ -5,8 +5,10 @@ import './index.css'
 import ConsumerLayout from './layouts/ConsumerLayout'
 import SasilOnLayout from './layouts/SasilOnLayout'
 import AdminLayout from './layouts/AdminLayout'
-import SasilOn from './pages/SasilOn'
+import GohyangOn from './pages/GohyangOn'
 
+// 팩트체커는 부속 화면이 됐다(지연로딩) — 검색 인덱스 13.5MB 를 첫 화면 비용에 얹지 않는다
+const SasilOn = lazy(() => import('./pages/SasilOn'))
 // 사용자(지연로딩)
 const Home = lazy(() => import('./pages/Home'))
 const Trending = lazy(() => import('./pages/Trending'))
@@ -25,9 +27,14 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* 사실은ON — 전용 레이아웃 (레거시 탭 없음) */}
+        {/* 고향ON — 이제 이쪽이 메인이다.
+            지도·소멸시계·후손 다리가 서비스의 얼굴이고, 팩트체커는 그 안의 한 기능으로 들어간다.
+            (/gohyang 은 예전 주소 — 공유된 링크가 깨지지 않게 같은 화면으로 남겨 둔다) */}
         <Route element={<SasilOnLayout />}>
-          <Route index element={<SasilOn />} />
+          <Route index element={<GohyangOn />} />
+          <Route path="gohyang" element={<GohyangOn />} />
+          {/* 사실은ON 팩트체커 — 사이드 화면 */}
+          <Route path="factcheck" element={<SasilOn />} />
         </Route>
         {/* 레거시 FactDoc — 그대로 보존 */}
         <Route element={<ConsumerLayout />}>

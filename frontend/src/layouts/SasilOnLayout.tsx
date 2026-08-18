@@ -1,6 +1,40 @@
 import { Suspense } from 'react'
-import { Outlet } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import FontScale from '../components/FontScale'
+
+/* 두 화면을 오갈 길 — 이게 없어서 지도 화면에 들어갈 방법이 아예 없었다.
+   고향ON 이 메인이고, 팩트체커는 그 옆에 둔다. 예전 주소 /gohyang 도 메인과 같은 화면이라
+   두 경로 모두에서 '고향ON' 이 선택된 것으로 보여야 한다. */
+const NAV = [
+  { to: '/', label: '고향ON', sub: '지도·소멸시계·후손', alsoActiveOn: '/gohyang' },
+  { to: '/factcheck', label: '사실은ON 팩트체커', sub: '물어보기' },
+] as const
+
+function Nav() {
+  return (
+    <nav aria-label="주요 화면" className="flex rounded-xl bg-slate-100 p-1 dark:bg-slate-800">
+      {NAV.map(item => (
+        <NavLink
+          key={item.to}
+          to={item.to}
+          end={item.to === '/'}
+          className={({ isActive }) => {
+            const active =
+              isActive ||
+              ('alsoActiveOn' in item && item.alsoActiveOn === window.location.pathname)
+            return `rounded-lg px-2.5 py-1.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600 ${
+              active
+                ? 'bg-white text-slate-900 shadow-sm dark:bg-slate-900 dark:text-white'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`
+          }}
+        >
+          <span className="whitespace-nowrap">{item.label}</span>
+        </NavLink>
+      ))}
+    </nav>
+  )
+}
 
 export default function SasilOnLayout() {
   return (
@@ -14,16 +48,19 @@ export default function SasilOnLayout() {
       </div>
 
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+        <div className="mx-auto flex max-w-2xl flex-wrap items-center justify-between gap-x-3 gap-y-2 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
           <div className="flex min-w-0 items-baseline gap-2">
             <span className="text-lg font-medium text-slate-900 dark:text-white">
-              사실은<span className="text-blue-700 dark:text-blue-400">ON</span>
+              고향<span className="text-blue-700 dark:text-blue-400">ON</span>
             </span>
             <span className="hidden truncate text-xs text-slate-500 sm:inline">
-              통일부 공공데이터 팩트체커
+              통일부 공공데이터로 읽는 이산가족과 고향
             </span>
           </div>
-          <FontScale />
+          <div className="flex items-center gap-2">
+            <Nav />
+            <FontScale />
+          </div>
         </div>
       </header>
 

@@ -99,7 +99,7 @@ export default function Disease() {
               <h2 className="text-sm font-medium text-slate-700 dark:text-slate-200">⚠️ 이 질병 관련 가짜정보</h2>
               <div className="mt-2 space-y-2">
                 {fakes.map((f, i) => (
-                  <Link key={i} to={`/?q=${encodeURIComponent(f.claim)}`}
+                  <Link key={i} to={`/factcheck?q=${encodeURIComponent(f.claim)}`}
                     className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
                     <span className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium ${f.verdict === 'false' ? 'bg-rose-50 text-rose-600 dark:bg-rose-950/40' : 'bg-amber-50 text-amber-600 dark:bg-amber-950/40'}`}>
                       {f.verdict === 'false' ? '허위' : '과장'}

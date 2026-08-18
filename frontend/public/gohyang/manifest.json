@@ -1,0 +1,184 @@
+{
+  "builtAt": "2026-08-15",
+  "note": "고향ON(/gohyang) 지도 대시보드가 fetch 하는 데이터 팩. 원본 JSON을 가공 없이 그대로 복사한 것이며, 조인·집계는 화면에서 수행한다.",
+  "sources": [
+    {
+      "file": "map.json",
+      "role": "북한 광역 행정구역 SVG 지오메트리 + 구행정구역 crosswalk",
+      "builtAt": "2026-08-15",
+      "upstream": [
+        {
+          "name": "Natural Earth 1:10m Admin 1 – States, Provinces (martynafford GeoJSON)",
+          "url": "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/10m/cultural/ne_10m_admin_1_states_provinces.json",
+          "license": "Public Domain (Natural Earth)"
+        },
+        {
+          "name": "주요 도시 좌표",
+          "url": null,
+          "license": null
+        }
+      ]
+    },
+    {
+      "file": "region.json",
+      "role": "지역별 연표·보도·동향·개황 건수, 탈북민 출신지, NOAA 최신 관측",
+      "builtAt": "2026-08-15",
+      "asOf": {
+        "기록": "2026-08-11",
+        "탈북민출신지": "2020-03-31",
+        "기상관측": "2025-08-24"
+      },
+      "upstream": [
+        {
+          "name": "통합 인덱스(nk-index.json) — 남북관계연표·통일부 보도자료·북한이탈주민 재북 출신지역별 현황",
+          "url": "https://www.data.go.kr/data/15090949/fileData.do",
+          "asOf": null
+        },
+        {
+          "name": "북한정보포털 동향",
+          "url": "https://nkinfo.unikorea.go.kr",
+          "asOf": "2026-08-12"
+        },
+        {
+          "name": "북한개황(포털)",
+          "url": "https://nkinfo.unikorea.go.kr",
+          "asOf": "2026-08-12"
+        },
+        {
+          "name": "NOAA ISD 지점이력(CTRY=KN 현행 지점)",
+          "url": "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv",
+          "asOf": null
+        },
+        {
+          "name": "NOAA GSOD 일별 요약(지점별 최신 관측일 1행)",
+          "url": "https://www.ncei.noaa.gov/data/global-summary-of-the-day/access/{year}/{USAF}{WBAN}.csv",
+          "asOf": null
+        },
+        {
+          "name": "구행정구역 crosswalk(이산가족 출신지 축 대응)",
+          "url": "frontend/src/data/nk-map.json",
+          "asOf": null
+        }
+      ]
+    },
+    {
+      "file": "isan.json",
+      "role": "이산가족 등록 월별 98개월 + 최신 공표(신청현황·교류현황) + 연표",
+      "builtAt": "2026-08-15",
+      "asOf": {
+        "월별CSV": "2025-08-31",
+        "신청현황HWP": "2026-05-31",
+        "교류현황HWP": "2026-05-31",
+        "연표CSV": "2021-12-16"
+      },
+      "upstream": [
+        {
+          "name": "통일부_이산가족찾기 등록현황 월별 통계 정보",
+          "url": "https://www.data.go.kr/data/15034465/fileData.do",
+          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "asOf": "2025-08-31"
+        },
+        {
+          "name": "이산가족 신청 현황(월별 공표 HWP) — 최신 3건",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
+          "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
+          "asOf": "2026-05-31"
+        },
+        {
+          "name": "이산가족 교류 현황(월별 공표 HWP) — 최신 1건",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list_exc.do?mid=SM00000129",
+          "org": "통일부 이산가족정보통합시스템",
+          "asOf": "2026-05-31"
+        },
+        {
+          "name": "통일부_남북이산가족 관련 연표",
+          "url": "https://www.data.go.kr/data/15129679/fileData.do",
+          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "asOf": "2021-12-16"
+        }
+      ]
+    },
+    {
+      "file": "projection.json",
+      "role": "이산가족 생존자 소멸 추계(2026~2050) — 본 시제품의 계산 결과",
+      "builtAt": "2026-08-15",
+      "asOf": "2026-05-31",
+      "upstream": [
+        {
+          "name": "통계청 완전생명표(1세별) 2024년 — 성·연령별 사망확률(qx)·정지인구(Lx)",
+          "url": "https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1B42",
+          "org": "통계청(KOSIS)",
+          "asOf": "2024"
+        },
+        {
+          "name": "이산가족 신청 현황(’26.5.31.) — 생존자 연령 5구간·성별",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
+          "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
+          "asOf": "2026-05-31"
+        },
+        {
+          "name": "통일부_이산가족찾기 등록현황 월별 통계 정보 (검증·교정용 실측)",
+          "url": "https://www.data.go.kr/data/15034465/fileData.do",
+          "org": "공공데이터포털(data.go.kr) — 통일부 제공 파일데이터",
+          "asOf": "2025-08-31"
+        }
+      ],
+      "caution": "추계는 통일부 공표 통계가 아니라 본 시제품의 계산 결과다. 화면에서 반드시 그렇게 표시할 것."
+    },
+    {
+      "file": "descendant.json",
+      "role": "후손 세대 — 제4차 실태조사의 후손 문항·기록사업 선호도·세대 간극 3종",
+      "builtAt": "2026-08-19",
+      "asOf": "2025-01-24",
+      "upstream": [
+        {
+          "name": "2024년 제4차 남북 이산가족 실태조사 — 보도자료(본문)",
+          "url": "https://www.korea.kr/common/download.do?fileId=198036055&tblKey=GMN",
+          "asOf": "2025-01-24"
+        },
+        {
+          "name": "2024년 제4차 남북 이산가족 실태조사 — 주요결과 요약자료(인포그래픽)",
+          "url": "https://www.korea.kr/common/download.do?fileId=198036056&tblKey=GMN",
+          "asOf": "2025-01-24"
+        },
+        {
+          "name": "통일부 이산가족 유전자검사 사업(2025년 남북협력기금 안건)",
+          "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_current",
+          "asOf": "2025"
+        }
+      ],
+      "caution": "요약자료가 이미지 PDF라 이 수치는 사람이 판독해 옮긴 값이다. 조사 회차가 바뀌면 손으로 갱신할 것."
+    }
+  ],
+  "files": [
+    {
+      "name": "map.json",
+      "from": "frontend/src/data/nk-map.json",
+      "bytes": 58349
+    },
+    {
+      "name": "region.json",
+      "from": "북한자료-api/nk-region.json",
+      "bytes": 66706
+    },
+    {
+      "name": "isan.json",
+      "from": "북한자료-api/isan.json",
+      "bytes": 303324
+    },
+    {
+      "name": "projection.json",
+      "from": "북한자료-api/isan-projection.json",
+      "bytes": 33072
+    },
+    {
+      "name": "descendant.json",
+      "from": "북한자료-api/isan-descendant.json",
+      "bytes": 8097
+    }
+  ],
+  "limits": {
+    "perFileBytes": 26214400,
+    "note": "Cloudflare Pages 자산 상한"
+  }
+}

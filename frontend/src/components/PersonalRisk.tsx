@@ -74,7 +74,7 @@ export default function PersonalRisk({ age, sex }: { age: number; sex: 'M' | 'F'
               <p className="text-[13px] font-semibold text-rose-800 dark:text-rose-200">🚨 {label} 있다면 특히 조심할 가짜정보</p>
               <ul className="mt-1.5 space-y-1.5">
                 {rumors.slice(0, 3).map((rm, i) => { const d = dangerOf(rm); return (
-                  <li key={i} className="flex items-start gap-2 text-[13px] text-rose-900/90 dark:text-rose-100/90"><span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${d.tone}`}>위험 {d.level}</span><span className="flex-1">“{rm}”</span><Link to={`/?q=${encodeURIComponent(rm)}`} className="shrink-0 text-xs text-blue-600">검증 →</Link></li>
+                  <li key={i} className="flex items-start gap-2 text-[13px] text-rose-900/90 dark:text-rose-100/90"><span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-bold ${d.tone}`}>위험 {d.level}</span><span className="flex-1">“{rm}”</span><Link to={`/factcheck?q=${encodeURIComponent(rm)}`} className="shrink-0 text-xs text-blue-600">검증 →</Link></li>
                 ) })}
               </ul>
             </div>

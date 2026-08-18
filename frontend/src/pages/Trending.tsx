@@ -120,7 +120,7 @@ export default function Trending() {
         <h2 className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${topDz.length > 0 ? 'mt-7' : ''}`}>⚠️ 이런 가짜정보 조심하세요</h2>
         <div className="mt-2 space-y-2">
           {fakeRows.map((f, i) => (
-            <Link key={f.q} to={`/?q=${encodeURIComponent(f.q)}`}
+            <Link key={f.q} to={`/factcheck?q=${encodeURIComponent(f.q)}`}
               className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-800 dark:bg-slate-900">
               <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-500 dark:bg-slate-800">{i + 1}</span>
               <span className="flex-1 text-sm text-slate-800 dark:text-slate-100">{f.label}</span>

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
+import { Link } from 'react-router-dom'
 // @ts-expect-error — 순수 JS 어댑터 (프록시 경유, 키를 만지지 않는다)
 import { llmAdapter, probe as probeLLM } from '../engine/nk-llm-proxy.mjs'
 import {
@@ -2003,6 +2004,14 @@ export default function SasilOn() {
             <p className="mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300">
               모든 답변에 <b className="font-semibold text-slate-800 dark:text-slate-100">그 자료가 언제까지 확인된 것인지</b>를 함께 표시합니다.
             </p>
+            {/* 메인(지도)으로 돌아가는 길 */}
+            <Link
+              to="/"
+              className={`mt-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 ${FOCUS}`}
+            >
+              <span aria-hidden="true">🗺</span> 고향ON — 지도로 보기
+              <span aria-hidden="true">→</span>
+            </Link>
           </header>
 
           <form

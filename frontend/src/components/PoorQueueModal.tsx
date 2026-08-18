@@ -139,7 +139,7 @@ export default function PoorQueueModal({ items, onClose, onChanged }: { items: P
                         <p className="mt-0.5 text-xs font-medium text-amber-700 dark:text-amber-300">🤖 AI 검토: {it.aiReason || '—'}</p>
                         <p className="mt-1 text-[11px] text-slate-400">판정: {it.verdict || '—'} · 일시: {it.ts ? new Date(it.ts).toLocaleString('ko-KR') : '—'}</p>
                         <pre className="mt-2 max-h-80 overflow-y-auto whitespace-pre-wrap break-words rounded-lg bg-slate-50 p-3 text-[11px] leading-relaxed text-slate-600 dark:bg-slate-800/50 dark:text-slate-300">{it.snapshot || '(스냅샷 없음)'}</pre>
-                        <a href={`/?q=${encodeURIComponent(it.claim)}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</a>
+                        <a href={`/factcheck?q=${encodeURIComponent(it.claim)}`} target="_blank" rel="noreferrer" className="mt-2 inline-block text-[11px] font-medium text-blue-600 dark:text-blue-400">이 질문 다시 검증해보기 →</a>
                       </div>
                     )}
                   </li>

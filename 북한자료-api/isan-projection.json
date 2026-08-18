@@ -1,0 +1,1138 @@
+{
+  "builtAt": "2026-08-15",
+  "sources": [
+    {
+      "name": "통계청 완전생명표(1세별) 2024년 — 성·연령별 사망확률(qx)·정지인구(Lx)",
+      "org": "통계청(KOSIS)",
+      "orgId": "101",
+      "tblId": "DT_1B42",
+      "usedYear": "2024",
+      "lastChanged": "2025-12-01",
+      "items": {
+        "qxMale": "T15",
+        "qxFemale": "T25",
+        "LxMale": "T13",
+        "LxFemale": "T23"
+      },
+      "url": "https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1B42",
+      "api": "https://kosis.kr/openapi/Param/statisticsParameterData.do (KOSIS OpenAPI, apiKey 별도)",
+      "rowsReceived": 404,
+      "accessedAt": "2026-08-15"
+    },
+    {
+      "name": "이산가족 신청 현황(’26.5.31.) — 생존자 연령 5구간·성별",
+      "asOf": "2026-05-31",
+      "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
+      "localFile": "북한자료/2026년 5월 이산가족 신청 현황(홈페이지).pdf",
+      "via": "북한자료-api/isan.json (HWP 원표 파싱) — 하드코딩 입력과 실측 대조 완료"
+    },
+    {
+      "name": "통일부_이산가족찾기 등록현황 월별 통계 정보 (검증·교정용 실측)",
+      "asOf": "2025-08-31",
+      "org": "공공데이터포털(data.go.kr) — 통일부 제공 파일데이터",
+      "url": "https://www.data.go.kr/data/15034465/fileData.do",
+      "localFile": "북한자료/자료집/통일부_이산가족찾기 등록현황 월별 통계 정보_20250831.csv",
+      "span": "2017-07-31 ~ 2025-08-31 (98개월)",
+      "loadedVia": "isan.json"
+    }
+  ],
+  "headline": {
+    "asOf": "2026-05-31",
+    "survivors": 33272,
+    "note": "생명표 원값 시나리오와 실측 교정 시나리오의 범위로 읽어야 한다. 단일 수치로 단정하지 말 것.",
+    "survivors2030": "22,172~24,544",
+    "survivors2040": "8,316~10,167",
+    "below10000Year": "2038~2041"
+  },
+  "method": {
+    "summary": "성·연령별 코호트에 완전생명표 사망확률(qx)을 매년 적용하는 단순 생잔(生殘) 추계. 신규 유입 없음(실측으로 미미함 확인). 연나이→만나이 보정 적용, 실측 교정계수 시나리오 병기.",
+    "steps": [
+      "연령 5구간을 단일 연령으로 배분: 80-89·70-79·60-69 균등, 59세이하→50~59세 균등 가정",
+      "90세이상은 완전생명표 정지인구(Lx) 비례로 90~99세 배분 — 지수감소 근사(연비 남 0.74·여 0.80), 100세+ 초기인원 0",
+      "남녀 비율 60.9% : 39.1%를 모든 구간에 동일 적용",
+      "★ 연나이→만나이 보정: 공표 연령 a의 만나이는 [a-1,a] 균등 → qx를 만나이 a-0.5에서 로그선형 보간(=√(qx(a-1)·qx(a))). 근거는 validation.ageConvention의 1월 톱니 실측",
+      "매년 5/31 기준 코호트에 1년 사망확률을 적용해 생존 기대값 산출, 2026→2050 반복(마일스톤 탐색은 2080까지)",
+      "100세 이상 qx는 지수 외삽 qx(a)=min(0.95, qx99·g^(a-99)), g남=1.0902·g여=1.1094 (표의 100세이상 qx=1은 개방구간 정의값이라 미사용)",
+      "★ 교정 시나리오: 위 qx에 실측 교정계수 k=0.7306를 곱한 병렬 추계(expectedCalibrated). k는 공표 사망자 누계 증분에서 산출한 실측값"
+    ],
+    "scenarios": {
+      "expected": "생명표 원값 — 전국 평균 사망률을 그대로 적용. 감소가 빠른 쪽(하한 생존자).",
+      "expectedCalibrated": "실측 교정 — 등록 생존자 집단의 기록된 사망률(생명표의 73.1%)을 반영. 감소가 느린 쪽(상한 생존자)."
+    }
+  },
+  "assumptions": [
+    "신규 등록 유입 무시 — 실측 최근 24개월 월 중앙값 +10.0명(연 0.34%), 최신 공표(2026-03-31·2026-04-30·2026-05-31) 기준 월 9명(연 0.32%) — 사망률의 수십 분의 1이라 무시해도 결과가 바뀌지 않는다",
+    "59세이하(1,816명)는 50~59세 균등분포로 가정 — 실제 하한 불명(민감도: sensitivity 표의 ageOffset 행으로 간접 확인)",
+    "90세이상(11,431명)은 90~99세에 생명표 정지인구(Lx) 비례 배분, 100세 이상 초기 인원 0으로 가정 — 균등배분 대안은 sensitivity의 dist90plus=uniform",
+    "남녀 비율(남 60.9%)을 전 연령 구간에 동일 적용 — 구간별 실제 성비는 미공표",
+    "사망확률은 2024년 완전생명표를 전 기간 고정 적용 — 미래 사망률 개선(수명 연장) 미반영 → 감소 속도 과대추정 방향",
+    "공표 연령은 연나이로 판정(1월 톱니 실측)했고 만나이 -0.5 보정을 적용했다. 다만 월별 CSV의 공표 평균연령(2025-08 83.02세)은 공표 연령분포에서 계산되는 평균(81.6~82.4세)과 1~2세 차이가 있다 — 두 공표계열의 연령체계가 완전히 같다고 단정할 수 없어 sensitivity에 ageOffset 0/-0.5/-1.0/-1.5를 모두 실었다",
+    "이산가족 생존자 집단의 사망률 = 전국 평균이라는 가정은 실측과 어긋난다 — 교정계수 k로 정량화해 병렬 시나리오로 제시(원값 시나리오도 그대로 보존)",
+    "생존자 감소 실측치에는 사망 신고·확인 지연이 섞여 있어 실측 사망률이 실제 사망보다 낮게(느리게) 기록될 수 있음 — 진실은 두 시나리오 사이"
+  ],
+  "input": {
+    "asOf": "2026-05-31",
+    "total": 33272,
+    "male": 20269,
+    "female": 13003,
+    "ageBins": [
+      {
+        "bin": "90세이상",
+        "n": 11431
+      },
+      {
+        "bin": "80-89세",
+        "n": 11057
+      },
+      {
+        "bin": "70-79세",
+        "n": 5661
+      },
+      {
+        "bin": "60-69세",
+        "n": 3307
+      },
+      {
+        "bin": "59세이하",
+        "n": 1816
+      }
+    ],
+    "ageBasis": "연나이(공표 원문) — 모델 내부에서 만나이 -0.5 보정",
+    "crossCheck": {
+      "checked": true,
+      "source": "isan.json (통일부 공표 HWP 파싱)",
+      "asOf": "2026-05-31",
+      "result": "5구간·총계·성별 전부 일치"
+    },
+    "note": "통일부 「이산가족 신청 현황(’26.5.31.)」 원문과 대조 확인된 값"
+  },
+  "lifeTable": {
+    "year": "2024",
+    "tblId": "DT_1B42",
+    "published": "2025-12-01",
+    "betaLogSlopePerYear": {
+      "male": 0.1133,
+      "female": 0.1388
+    },
+    "qxAgeStart": 50,
+    "qxMale": [
+      0.00284,
+      0.00309,
+      0.00335,
+      0.00365,
+      0.004,
+      0.00439,
+      0.00477,
+      0.00513,
+      0.00553,
+      0.00596,
+      0.00645,
+      0.00699,
+      0.00759,
+      0.00819,
+      0.00878,
+      0.00941,
+      0.0102,
+      0.01117,
+      0.01229,
+      0.01364,
+      0.01523,
+      0.01705,
+      0.0191,
+      0.0212,
+      0.0236,
+      0.02609,
+      0.02895,
+      0.03224,
+      0.03632,
+      0.04188,
+      0.0487,
+      0.05645,
+      0.06476,
+      0.07352,
+      0.08355,
+      0.09463,
+      0.10678,
+      0.12003,
+      0.13441,
+      0.14993,
+      0.16661,
+      0.18444,
+      0.2034,
+      0.22346,
+      0.24455,
+      0.26662,
+      0.28957,
+      0.3133,
+      0.33768,
+      0.36256
+    ],
+    "qxFemale": [
+      0.00136,
+      0.00146,
+      0.00155,
+      0.00162,
+      0.00168,
+      0.00174,
+      0.00183,
+      0.00194,
+      0.00207,
+      0.00218,
+      0.0023,
+      0.00247,
+      0.0027,
+      0.00299,
+      0.00328,
+      0.00355,
+      0.00386,
+      0.00423,
+      0.00471,
+      0.00531,
+      0.00599,
+      0.00678,
+      0.0077,
+      0.00876,
+      0.01008,
+      0.01156,
+      0.01335,
+      0.01547,
+      0.01812,
+      0.02152,
+      0.02558,
+      0.0303,
+      0.03585,
+      0.04217,
+      0.04959,
+      0.05787,
+      0.0672,
+      0.07764,
+      0.08924,
+      0.10206,
+      0.11613,
+      0.13147,
+      0.14809,
+      0.16596,
+      0.18505,
+      0.20529,
+      0.2266,
+      0.24885,
+      0.2719,
+      0.29559
+    ]
+  },
+  "byYear": [
+    {
+      "year": 2026,
+      "asOf": "2026-05-31",
+      "expected": 33272,
+      "male": 20269,
+      "female": 13003,
+      "age90plus": 11431,
+      "share90plusPct": 34.4,
+      "avgAge": 82,
+      "expectedCalibrated": 33272,
+      "age90plusCalibrated": 11431
+    },
+    {
+      "year": 2027,
+      "asOf": "2027-05-31",
+      "expected": 30165,
+      "male": 18135,
+      "female": 12030,
+      "age90plus": 10254,
+      "share90plusPct": 34,
+      "avgAge": 82.1,
+      "expectedCalibrated": 31002,
+      "age90plusCalibrated": 10869
+    },
+    {
+      "year": 2028,
+      "asOf": "2028-05-31",
+      "expected": 27271,
+      "male": 16183,
+      "female": 11088,
+      "age90plus": 9093,
+      "share90plusPct": 33.3,
+      "avgAge": 82.2,
+      "expectedCalibrated": 28777,
+      "age90plusCalibrated": 10218
+    },
+    {
+      "year": 2029,
+      "asOf": "2029-05-31",
+      "expected": 24605,
+      "male": 14417,
+      "female": 10188,
+      "age90plus": 7999,
+      "share90plusPct": 32.5,
+      "avgAge": 82.2,
+      "expectedCalibrated": 26618,
+      "age90plusCalibrated": 9520
+    },
+    {
+      "year": 2030,
+      "asOf": "2030-05-31",
+      "expected": 22172,
+      "male": 12837,
+      "female": 9335,
+      "age90plus": 7003,
+      "share90plusPct": 31.6,
+      "avgAge": 82.2,
+      "expectedCalibrated": 24544,
+      "age90plusCalibrated": 8810
+    },
+    {
+      "year": 2031,
+      "asOf": "2031-05-31",
+      "expected": 19973,
+      "male": 11434,
+      "female": 8539,
+      "age90plus": 6124,
+      "share90plusPct": 30.7,
+      "avgAge": 82.2,
+      "expectedCalibrated": 22571,
+      "age90plusCalibrated": 8114
+    },
+    {
+      "year": 2032,
+      "asOf": "2032-05-31",
+      "expected": 18000,
+      "male": 10199,
+      "female": 7801,
+      "age90plus": 5368,
+      "share90plusPct": 29.8,
+      "avgAge": 82.1,
+      "expectedCalibrated": 20712,
+      "age90plusCalibrated": 7455
+    },
+    {
+      "year": 2033,
+      "asOf": "2033-05-31",
+      "expected": 16240,
+      "male": 9115,
+      "female": 7125,
+      "age90plus": 4734,
+      "share90plusPct": 29.1,
+      "avgAge": 82,
+      "expectedCalibrated": 18974,
+      "age90plusCalibrated": 6847
+    },
+    {
+      "year": 2034,
+      "asOf": "2034-05-31",
+      "expected": 14675,
+      "male": 8169,
+      "female": 6506,
+      "age90plus": 4213,
+      "share90plusPct": 28.7,
+      "avgAge": 81.9,
+      "expectedCalibrated": 17362,
+      "age90plusCalibrated": 6300
+    },
+    {
+      "year": 2035,
+      "asOf": "2035-05-31",
+      "expected": 13286,
+      "male": 7341,
+      "female": 5945,
+      "age90plus": 3793,
+      "share90plusPct": 28.5,
+      "avgAge": 81.9,
+      "expectedCalibrated": 15876,
+      "age90plusCalibrated": 5819
+    },
+    {
+      "year": 2036,
+      "asOf": "2036-05-31",
+      "expected": 12053,
+      "male": 6616,
+      "female": 5437,
+      "age90plus": 3459,
+      "share90plusPct": 28.7,
+      "avgAge": 81.8,
+      "expectedCalibrated": 14513,
+      "age90plusCalibrated": 5403
+    },
+    {
+      "year": 2037,
+      "asOf": "2037-05-31",
+      "expected": 10956,
+      "male": 5979,
+      "female": 4977,
+      "age90plus": 2954,
+      "share90plusPct": 27,
+      "avgAge": 81.8,
+      "expectedCalibrated": 13268,
+      "age90plusCalibrated": 4747
+    },
+    {
+      "year": 2038,
+      "asOf": "2038-05-31",
+      "expected": 9978,
+      "male": 5416,
+      "female": 4562,
+      "age90plus": 2545,
+      "share90plusPct": 25.5,
+      "avgAge": 81.9,
+      "expectedCalibrated": 12134,
+      "age90plusCalibrated": 4186
+    },
+    {
+      "year": 2039,
+      "asOf": "2039-05-31",
+      "expected": 9103,
+      "male": 4917,
+      "female": 4186,
+      "age90plus": 2218,
+      "share90plusPct": 24.4,
+      "avgAge": 81.9,
+      "expectedCalibrated": 11103,
+      "age90plusCalibrated": 3713
+    },
+    {
+      "year": 2040,
+      "asOf": "2040-05-31",
+      "expected": 8316,
+      "male": 4471,
+      "female": 3845,
+      "age90plus": 1960,
+      "share90plusPct": 23.6,
+      "avgAge": 82.1,
+      "expectedCalibrated": 10167,
+      "age90plusCalibrated": 3318
+    },
+    {
+      "year": 2041,
+      "asOf": "2041-05-31",
+      "expected": 7605,
+      "male": 4071,
+      "female": 3534,
+      "age90plus": 1757,
+      "share90plusPct": 23.1,
+      "avgAge": 82.2,
+      "expectedCalibrated": 9318,
+      "age90plusCalibrated": 2993
+    },
+    {
+      "year": 2042,
+      "asOf": "2042-05-31",
+      "expected": 6959,
+      "male": 3708,
+      "female": 3251,
+      "age90plus": 1599,
+      "share90plusPct": 23,
+      "avgAge": 82.4,
+      "expectedCalibrated": 8545,
+      "age90plusCalibrated": 2729
+    },
+    {
+      "year": 2043,
+      "asOf": "2043-05-31",
+      "expected": 6370,
+      "male": 3379,
+      "female": 2991,
+      "age90plus": 1478,
+      "share90plusPct": 23.2,
+      "avgAge": 82.6,
+      "expectedCalibrated": 7840,
+      "age90plusCalibrated": 2516
+    },
+    {
+      "year": 2044,
+      "asOf": "2044-05-31",
+      "expected": 5831,
+      "male": 3079,
+      "female": 2752,
+      "age90plus": 1385,
+      "share90plusPct": 23.8,
+      "avgAge": 82.9,
+      "expectedCalibrated": 7195,
+      "age90plusCalibrated": 2346
+    },
+    {
+      "year": 2045,
+      "asOf": "2045-05-31",
+      "expected": 5334,
+      "male": 2802,
+      "female": 2532,
+      "age90plus": 1315,
+      "share90plusPct": 24.7,
+      "avgAge": 83.2,
+      "expectedCalibrated": 6603,
+      "age90plusCalibrated": 2212
+    },
+    {
+      "year": 2046,
+      "asOf": "2046-05-31",
+      "expected": 4875,
+      "male": 2548,
+      "female": 2327,
+      "age90plus": 1262,
+      "share90plusPct": 25.9,
+      "avgAge": 83.5,
+      "expectedCalibrated": 6058,
+      "age90plusCalibrated": 2106
+    },
+    {
+      "year": 2047,
+      "asOf": "2047-05-31",
+      "expected": 4450,
+      "male": 2314,
+      "female": 2136,
+      "age90plus": 1132,
+      "share90plusPct": 25.4,
+      "avgAge": 83.8,
+      "expectedCalibrated": 5553,
+      "age90plusCalibrated": 1907
+    },
+    {
+      "year": 2048,
+      "asOf": "2048-05-31",
+      "expected": 4056,
+      "male": 2096,
+      "female": 1960,
+      "age90plus": 1025,
+      "share90plusPct": 25.3,
+      "avgAge": 84.1,
+      "expectedCalibrated": 5086,
+      "age90plusCalibrated": 1738
+    },
+    {
+      "year": 2049,
+      "asOf": "2049-05-31",
+      "expected": 3690,
+      "male": 1895,
+      "female": 1795,
+      "age90plus": 937,
+      "share90plusPct": 25.4,
+      "avgAge": 84.5,
+      "expectedCalibrated": 4652,
+      "age90plusCalibrated": 1596
+    },
+    {
+      "year": 2050,
+      "asOf": "2050-05-31",
+      "expected": 3350,
+      "male": 1709,
+      "female": 1641,
+      "age90plus": 866,
+      "share90plusPct": 25.8,
+      "avgAge": 84.9,
+      "expectedCalibrated": 4250,
+      "age90plusCalibrated": 1478
+    }
+  ],
+  "milestones": {
+    "below20000": 2031,
+    "below10000": 2038,
+    "below5000": 2046,
+    "below1000": 2061
+  },
+  "milestonesCalibrated": {
+    "below20000": 2033,
+    "below10000": 2041,
+    "below5000": 2049,
+    "below1000": 2063
+  },
+  "milestoneRange": {
+    "note": "생명표 원값(빠른 쪽) ~ 실측 교정(느린 쪽) 범위. 발표·기획서에는 이 범위를 쓰는 것이 정직하다.",
+    "below20000": "2031~2033",
+    "below10000": "2038~2041",
+    "below5000": "2046~2049",
+    "below1000": "2061~2063"
+  },
+  "validation": {
+    "ageConvention": {
+      "what": "공표 연령이 만나이가 아니라 연나이(1/1 일괄 +1)임을 월별 avgAge 계단으로 실측 확인",
+      "januaryJumps": [
+        0.87,
+        0.94,
+        0.96,
+        0.96,
+        0.94,
+        0.91,
+        0.91,
+        0.89
+      ],
+      "januaryMeanJump": 0.922,
+      "otherMonthsMeanDelta": -0.058,
+      "verdict": "연나이 확정 — 1월에만 계단 상승, 그 외 달은 사망 선택효과로 완만히 하락",
+      "appliedOffset": -0.5,
+      "effect": "공표 연나이 a → 만나이 기대값 a-0.5. qx 로그기울기 β(남 0.113·여 0.139)에서 사망확률 약 5.5%(남) 하향"
+    },
+    "calibration": {
+      "what": "공표 연령분포가 있는 최근 구간에서 실측 사망자 수 vs 모델 기대 사망자 수 → 교정계수 k",
+      "why": "연나이 체계에서는 이 구간 안에 연령구간 이동이 없어(1/1에만 +1) 시작 연령분포가 그대로 유지된다 — 연령차 없이 대조 가능한 유일한 창",
+      "window": {
+        "from": "2026-03-31",
+        "to": "2026-05-31",
+        "months": 2,
+        "startSurvivors": 33644,
+        "startAgeBins": [
+          {
+            "label": "90세이상",
+            "n": 11711
+          },
+          {
+            "label": "89-80세",
+            "n": 11145
+          },
+          {
+            "label": "79-70세",
+            "n": 5673
+          },
+          {
+            "label": "69-60세",
+            "n": 3303
+          },
+          {
+            "label": "59세이하",
+            "n": 1812
+          }
+        ]
+      },
+      "observedDeaths": 386,
+      "modelExpectedAnnualDeaths": 3166.1,
+      "seasonality": {
+        "calendarMonths": [
+          4,
+          5
+        ],
+        "basedOnFullYears": 7,
+        "chosen": "median",
+        "note": "월별 사망 점유율. 공표 사망자 누계에 행정 일괄정리 이상치가 있어 평균은 왜곡된다 → 중앙값 기반을 중심값으로 채택",
+        "byVariant": {
+          "median": {
+            "shareOfAnnualDeaths": 0.1669,
+            "modelExpectedWindowDeaths": 528.3,
+            "k": 0.7306
+          },
+          "mean": {
+            "shareOfAnnualDeaths": 0.2027,
+            "modelExpectedWindowDeaths": 641.7,
+            "k": 0.6016
+          },
+          "uniform": {
+            "shareOfAnnualDeaths": 0.1667,
+            "modelExpectedWindowDeaths": 527.7,
+            "k": 0.7315
+          }
+        },
+        "outliersExcludedByMedian": [
+          {
+            "month": "2018-04",
+            "deaths": 1164,
+            "monthMedian": 259,
+            "ratio": 4.49
+          }
+        ]
+      },
+      "modelExpectedWindowDeaths": 528.3,
+      "k": 0.7306,
+      "kRange": [
+        0.6016,
+        0.7315
+      ],
+      "equivalentAgeOffsetYears": -2.55,
+      "interpretation": "등록 생존자 집단의 '기록된' 사망률이 전국 생명표의 73.1% 수준. 생명표 대비 26.9% 낮으며 연령으로 환산하면 약 2.5세 젊은 집단에 해당. 원인 후보: (a) 사망 신고·확인 지연(가족이 신고해야 반영), (b) 공표 연령체계와 생명표 연령체계의 잔여 불일치, (c) 등록 유지 집단의 선택효과. 어느 쪽인지 외부에서 특정 불가 → 보정 시나리오로 병기하고 원값 시나리오도 함께 남긴다."
+    },
+    "recentWindow": {
+      "what": "실측 최근 12개월 사망률(공표 사망자 누계 증분) vs 모델 1차연도 사망률 — 연령구조가 가장 가까운 대조",
+      "actual": {
+        "from": "2024-08-31",
+        "to": "2025-08-31",
+        "startSurvivors": 37806,
+        "deaths": 2826,
+        "deathRatePct": 7.48,
+        "netDeclinePct": 6.6,
+        "newRegistrations": 331
+      },
+      "model": {
+        "year1DeathRatePct": 9.34,
+        "year1DeathRateCalibratedPct": 6.82
+      },
+      "errorPp": 1.86,
+      "errorRelPct": 24.8,
+      "errorRelCalibratedPct": -8.8,
+      "caveat": "실측 창 시작(2024-08-31) 집단은 모델 기준(2026-05)보다 1.8년 젊다 — 모델 사망률이 다소 높게 나오는 방향이 자연스럽다. 교정계수 k는 이 연령차가 없는 2026년 창에서 산출했다"
+    },
+    "deathRateSeries": {
+      "what": "12개월 이동창 실측 사망률(사망자 누계 증분 ÷ 창 시작 생존자) — 모델이 재현해야 할 실측 곡선",
+      "note": "실측 사망률은 집단 고령화에도 최근 5년 7.5~7.8%에서 정체 — 생명표대로면 매년 상승해야 한다. 이 정체 자체가 기록 지연·미신고를 시사한다",
+      "annual": [
+        {
+          "from": "2018-08-31",
+          "to": "2019-08-31",
+          "startSurvivors": 56707,
+          "startAvgAge": 80.82,
+          "deaths": 3513,
+          "deathRatePct": 6.2,
+          "netDeclinePct": 5.1
+        },
+        {
+          "from": "2019-08-31",
+          "to": "2020-08-31",
+          "startSurvivors": 53815,
+          "startAvgAge": 81.26,
+          "deaths": 3321,
+          "deathRatePct": 6.17,
+          "netDeclinePct": 6.09
+        },
+        {
+          "from": "2020-08-31",
+          "to": "2021-08-31",
+          "startSurvivors": 50539,
+          "startAvgAge": 81.73,
+          "deaths": 3354,
+          "deathRatePct": 6.64,
+          "netDeclinePct": 6.37
+        },
+        {
+          "from": "2021-08-31",
+          "to": "2022-08-31",
+          "startSurvivors": 47318,
+          "startAvgAge": 82.15,
+          "deaths": 3696,
+          "deathRatePct": 7.81,
+          "netDeclinePct": 7.55
+        },
+        {
+          "from": "2022-08-31",
+          "to": "2023-08-31",
+          "startSurvivors": 43746,
+          "startAvgAge": 82.4,
+          "deaths": 3369,
+          "deathRatePct": 7.7,
+          "netDeclinePct": 7.63
+        },
+        {
+          "from": "2023-08-31",
+          "to": "2024-08-31",
+          "startSurvivors": 40408,
+          "startAvgAge": 82.69,
+          "deaths": 3075,
+          "deathRatePct": 7.61,
+          "netDeclinePct": 6.44
+        },
+        {
+          "from": "2024-08-31",
+          "to": "2025-08-31",
+          "startSurvivors": 37806,
+          "startAvgAge": 82.86,
+          "deaths": 2826,
+          "deathRatePct": 7.48,
+          "netDeclinePct": 6.6
+        }
+      ]
+    },
+    "seasonality": {
+      "what": "월별 사망 점유율 실측(완전 역년) — 짧은 교정창을 연율화할 때 계절 편향 제거에 사용",
+      "fullYearsUsed": 7,
+      "shareByMonth": [
+        {
+          "month": 1,
+          "shareMedian": 0.0907,
+          "shareMean": 0.0927,
+          "medianDeaths": 307,
+          "years": 7
+        },
+        {
+          "month": 2,
+          "shareMedian": 0.0948,
+          "shareMean": 0.0926,
+          "medianDeaths": 321,
+          "years": 7
+        },
+        {
+          "month": 3,
+          "shareMedian": 0.0868,
+          "shareMean": 0.0858,
+          "medianDeaths": 294,
+          "years": 7
+        },
+        {
+          "month": 4,
+          "shareMedian": 0.0765,
+          "shareMean": 0.115,
+          "medianDeaths": 259,
+          "years": 7
+        },
+        {
+          "month": 5,
+          "shareMedian": 0.0904,
+          "shareMean": 0.0876,
+          "medianDeaths": 306,
+          "years": 7
+        },
+        {
+          "month": 6,
+          "shareMedian": 0.0653,
+          "shareMean": 0.0625,
+          "medianDeaths": 221,
+          "years": 7
+        },
+        {
+          "month": 7,
+          "shareMedian": 0.0738,
+          "shareMean": 0.0738,
+          "medianDeaths": 250,
+          "years": 7
+        },
+        {
+          "month": 8,
+          "shareMedian": 0.0836,
+          "shareMean": 0.0772,
+          "medianDeaths": 283,
+          "years": 7
+        },
+        {
+          "month": 9,
+          "shareMedian": 0.0797,
+          "shareMean": 0.0732,
+          "medianDeaths": 270,
+          "years": 7
+        },
+        {
+          "month": 10,
+          "shareMedian": 0.0927,
+          "shareMean": 0.0781,
+          "medianDeaths": 314,
+          "years": 7
+        },
+        {
+          "month": 11,
+          "shareMedian": 0.0803,
+          "shareMean": 0.0819,
+          "medianDeaths": 272,
+          "years": 7
+        },
+        {
+          "month": 12,
+          "shareMedian": 0.0854,
+          "shareMean": 0.0796,
+          "medianDeaths": 289,
+          "years": 7
+        }
+      ],
+      "outliers": [
+        {
+          "month": "2018-04",
+          "deaths": 1164,
+          "monthMedian": 259,
+          "ratio": 4.49
+        }
+      ],
+      "outlierNote": "중앙값의 2배를 넘는 달 = 행정 일괄정리로 추정. 평균 기반 계절성은 이 값에 끌려가므로 교정에는 중앙값을 쓴다"
+    },
+    "longWindow": {
+      "what": "실측 월별 감소율(2017-07-31→2025-08-31, 97개월)과 모델 동일 길이 창(2026-05 기준→97개월) 연환산 대조",
+      "actual": {
+        "from": {
+          "date": "2017-07-31",
+          "survivors": 60130
+        },
+        "to": {
+          "date": "2025-08-31",
+          "survivors": 35311
+        },
+        "months": 97,
+        "annualNetDeclinePct": 6.37
+      },
+      "actualGrossOfInflow": {
+        "what": "신규 등록 유입을 제거한 사망만의 연환산 감소율 — 모델과 정의가 같은 비교축",
+        "span": "2017-09-30 ~ 2025-08-31",
+        "months": 95,
+        "deaths": 27652,
+        "inflow": 3257,
+        "annualDeclinePct": 7.56
+      },
+      "model": {
+        "annualDeclinePct": 9.72,
+        "annualDeclineCalibratedPct": 7.82
+      },
+      "errorPpVsNet": 3.35,
+      "errorRelPctVsNet": 52.6,
+      "errorPpVsGross": 2.17,
+      "errorRelPctVsGross": 28.7,
+      "errorRelPctVsGrossCalibrated": 3.4,
+      "caveat": "실측 창(2017~25)의 집단은 모델 기준 시점(2026)보다 젊었다 — 모델 감소율이 높게 나오는 방향이 자연스러움. 연령차가 없는 대조는 validation.calibration을 볼 것"
+    },
+    "newRegistrations": {
+      "what": "신규 등록 유입이 무시 가능함을 실측으로 확인 — Δ(생존+누계사망) 월별",
+      "span": "2017-09-30 ~ 2025-08-31",
+      "monthlyAvgLast24": 33.5,
+      "monthlyMedianLast24": 10,
+      "shareOfSurvivorsPctPerMonth": 0.028,
+      "annualisedPctByMean": 1.14,
+      "annualisedPctByMedian": 0.34,
+      "latestPublished": {
+        "source": "통일부 신청현황 공표(HWP) 전월대비 신청자 증감",
+        "months": [
+          {
+            "asOf": "2026-03-31",
+            "newApplicants": 13
+          },
+          {
+            "asOf": "2026-04-30",
+            "newApplicants": 4
+          },
+          {
+            "asOf": "2026-05-31",
+            "newApplicants": 10
+          }
+        ],
+        "monthlyAvg": 9,
+        "annualisedPctOfSurvivors": 0.32
+      },
+      "verdict": "최신 공표 기준 월 9명(연 0.32%) — 사망률(연 9.34%/실측 7.48%)의 수십 분의 1. 유입 무시 가정은 실측으로 정당화된다",
+      "caveat": "CSV 기간의 평균은 행정 일괄정리 달에 끌려간다 → 중앙값과 최신 공표치를 함께 본다"
+    },
+    "avgAgeCheck": {
+      "what": "모델 초기 평균연령(공표 연령분포 기반) vs 공표 평균연령 — 두 공표계열의 연령체계 정합성 점검",
+      "modelInitialAvgAge": 81.98,
+      "publishedAvgAge": {
+        "date": "2025-08-31",
+        "value": 83.02
+      },
+      "gapYears": 1.04,
+      "finding": "공표 연령분포에서 계산한 평균(구간 중앙값 기준)과 공표 평균연령 열이 1~2세 어긋난다. 어느 쪽이 만나이/연나이/세는나이인지 원자료에 명시가 없어 외부에서 특정 불가 → 해결하지 않고 sensitivity의 ageOffset으로 영향 범위를 공개한다",
+      "modelDeadAvgAgeYear1": 90.3
+    }
+  },
+  "sensitivity": {
+    "what": "가정을 흔들었을 때 마일스톤이 얼마나 움직이는지 — 이 표가 단일 수치 단정을 막는다",
+    "columns": "ageOffset(연나이→만나이 보정), dist90plus(90+ 배분), k(실측 교정계수), 연도별 생존자, 마일스톤",
+    "baseCase": {
+      "ageOffset": -0.5,
+      "dist90plus": "Lx",
+      "k": 1
+    },
+    "grid": [
+      {
+        "ageOffset": 0,
+        "dist90plus": "Lx",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 9.86,
+        "y2030": 21725,
+        "y2040": 8009,
+        "y2050": 3196,
+        "below20000": 2031,
+        "below10000": 2038,
+        "below5000": 2046,
+        "below1000": 2060
+      },
+      {
+        "ageOffset": 0,
+        "dist90plus": "Lx",
+        "k": 0.6921,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24547,
+        "y2040": 10156,
+        "y2050": 4237,
+        "below20000": 2033,
+        "below10000": 2041,
+        "below5000": 2049,
+        "below1000": 2063
+      },
+      {
+        "ageOffset": 0,
+        "dist90plus": "uniform",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 11.18,
+        "y2030": 20965,
+        "y2040": 7993,
+        "y2050": 3196,
+        "below20000": 2031,
+        "below10000": 2038,
+        "below5000": 2046,
+        "below1000": 2060
+      },
+      {
+        "ageOffset": 0,
+        "dist90plus": "uniform",
+        "k": 0.6098,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24709,
+        "y2040": 10872,
+        "y2050": 4659,
+        "below20000": 2033,
+        "below10000": 2042,
+        "below5000": 2050,
+        "below1000": 2064
+      },
+      {
+        "ageOffset": -0.5,
+        "dist90plus": "Lx",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 9.34,
+        "y2030": 22172,
+        "y2040": 8316,
+        "y2050": 3350,
+        "below20000": 2031,
+        "below10000": 2038,
+        "below5000": 2046,
+        "below1000": 2061
+      },
+      {
+        "ageOffset": -0.5,
+        "dist90plus": "Lx",
+        "k": 0.7306,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24544,
+        "y2040": 10167,
+        "y2050": 4250,
+        "below20000": 2033,
+        "below10000": 2041,
+        "below5000": 2049,
+        "below1000": 2063
+      },
+      {
+        "ageOffset": -0.5,
+        "dist90plus": "uniform",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 10.63,
+        "y2030": 21400,
+        "y2040": 8294,
+        "y2050": 3350,
+        "below20000": 2031,
+        "below10000": 2038,
+        "below5000": 2046,
+        "below1000": 2061
+      },
+      {
+        "ageOffset": -0.5,
+        "dist90plus": "uniform",
+        "k": 0.6414,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24718,
+        "y2040": 10905,
+        "y2050": 4681,
+        "below20000": 2033,
+        "below10000": 2042,
+        "below5000": 2050,
+        "below1000": 2064
+      },
+      {
+        "ageOffset": -1,
+        "dist90plus": "Lx",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 8.85,
+        "y2030": 22607,
+        "y2040": 8630,
+        "y2050": 3507,
+        "below20000": 2032,
+        "below10000": 2039,
+        "below5000": 2047,
+        "below1000": 2061
+      },
+      {
+        "ageOffset": -1,
+        "dist90plus": "Lx",
+        "k": 0.7712,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24541,
+        "y2040": 10179,
+        "y2050": 4262,
+        "below20000": 2033,
+        "below10000": 2041,
+        "below5000": 2049,
+        "below1000": 2063
+      },
+      {
+        "ageOffset": -1,
+        "dist90plus": "uniform",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 10.11,
+        "y2030": 21825,
+        "y2040": 8602,
+        "y2050": 3507,
+        "below20000": 2031,
+        "below10000": 2039,
+        "below5000": 2047,
+        "below1000": 2061
+      },
+      {
+        "ageOffset": -1,
+        "dist90plus": "uniform",
+        "k": 0.6746,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24726,
+        "y2040": 10937,
+        "y2050": 4704,
+        "below20000": 2033,
+        "below10000": 2042,
+        "below5000": 2050,
+        "below1000": 2064
+      },
+      {
+        "ageOffset": -1.5,
+        "dist90plus": "Lx",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 8.36,
+        "y2030": 23042,
+        "y2040": 8956,
+        "y2050": 3670,
+        "below20000": 2032,
+        "below10000": 2039,
+        "below5000": 2047,
+        "below1000": 2062
+      },
+      {
+        "ageOffset": -1.5,
+        "dist90plus": "Lx",
+        "k": 0.8155,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24537,
+        "y2040": 10186,
+        "y2050": 4270,
+        "below20000": 2033,
+        "below10000": 2041,
+        "below5000": 2049,
+        "below1000": 2063
+      },
+      {
+        "ageOffset": -1.5,
+        "dist90plus": "uniform",
+        "k": 1,
+        "calibrated": false,
+        "year1DeclinePct": 9.59,
+        "y2030": 22249,
+        "y2040": 8920,
+        "y2050": 3670,
+        "below20000": 2032,
+        "below10000": 2039,
+        "below5000": 2047,
+        "below1000": 2062
+      },
+      {
+        "ageOffset": -1.5,
+        "dist90plus": "uniform",
+        "k": 0.7107,
+        "calibrated": true,
+        "year1DeclinePct": 6.82,
+        "y2030": 24730,
+        "y2040": 10965,
+        "y2050": 4723,
+        "below20000": 2033,
+        "below10000": 2042,
+        "below5000": 2050,
+        "below1000": 2065
+      }
+    ]
+  }
+}

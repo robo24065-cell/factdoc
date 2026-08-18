@@ -95,7 +95,7 @@ function EarlyWarning() {
                 🔎 네이버 검색 신호: 관련어 <b>{naver.name}</b> 최근 검색 {naver.surgePct > 0 ? '▲' : ''}{naver.surgePct}% — 발생·검색이 함께 움직이는지 모니터링.
               </p>
             )}
-            <Link to={`/?q=${encodeURIComponent(`${cur.name}에 좋은 민간요법이 있나요`)}`} target="_blank" className="mt-3 inline-block rounded-lg bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white">관련 가짜정보 직접 검증 →</Link>
+            <Link to={`/factcheck?q=${encodeURIComponent(`${cur.name}에 좋은 민간요법이 있나요`)}`} target="_blank" className="mt-3 inline-block rounded-lg bg-blue-600 px-3 py-2 text-[13px] font-semibold text-white">관련 가짜정보 직접 검증 →</Link>
             <p className="mt-2 text-[11px] text-slate-400">‘2주 뒤 폭증’류 리드타임은 급증추세 외삽 휴리스틱입니다(과거 시계열 학습은 발전가능성).</p>
           </Panel>
 
@@ -155,7 +155,7 @@ function MilitaryCohort() {
       <Panel title="🛡 군 특화 괴담 팩트체크" desc="군·가족 사이 빈출 괴담을 엔진으로 검증(클릭 시 판정·근거체인)" badge="실데이터">
         <div className="grid gap-2.5 sm:grid-cols-2">
           {MILITARY_CLAIMS.map((c) => (
-            <Link key={c} to={`/?q=${encodeURIComponent(c)}`} target="_blank"
+            <Link key={c} to={`/factcheck?q=${encodeURIComponent(c)}`} target="_blank"
               className="flex items-start gap-2 rounded-xl border border-slate-200 p-3 transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50">
               <span className="mt-0.5 shrink-0 rounded bg-rose-100 px-1.5 py-0.5 text-[10px] font-semibold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">괴담</span>
               <span className="flex-1 text-[13px] leading-relaxed text-slate-700 dark:text-slate-200">“{c}”</span>
