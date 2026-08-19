@@ -16,7 +16,7 @@ export default function ConsumerLayout() {
     <div className="min-h-screen overflow-x-clip bg-slate-50 dark:bg-slate-950">
       <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/90 backdrop-blur dark:border-slate-800 dark:bg-slate-900/90">
         <div className="mx-auto flex max-w-2xl items-center justify-between px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
-          <span className="text-lg font-medium text-slate-900 dark:text-white">FactDoc</span>
+          <span className="text-lg font-medium text-slate-900 dark:text-white">고향잇기</span>
           <div className="flex items-center gap-2">
             {/* 데스크톱: 상단 네비 */}
             <nav className="hidden gap-1 lg:flex">

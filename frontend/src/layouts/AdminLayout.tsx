@@ -54,7 +54,7 @@ export default function AdminLayout() {
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-3 px-4 py-3">
           <div className="flex shrink-0 items-center gap-2">
             <ShieldIcon className="h-5 w-5 text-slate-500" />
-            <span className="font-medium text-slate-900 dark:text-white">FactDoc 관리자</span>
+            <span className="font-medium text-slate-900 dark:text-white">고향잇기 관리자</span>
           </div>
           {/* 모바일: 줄바꿈 대신 가로 스크롤(탭 5개+이상이면 자연스럽게) */}
           <div className="flex min-w-0 items-center gap-1 overflow-x-auto whitespace-nowrap [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
