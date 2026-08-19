@@ -1610,6 +1610,105 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
    추계(2026~2050)를 한 축 위에 올린다.
     추계는 통일부 공표 통계가 아니라 이 시제품의 계산 결과다 — 선 모양·배지·각주 3중으로 구분한다. */
 
+/* ══════════════════════ 값이 보이는 추이 그래프 ══════════════════════
+   "그래프가 모형만 보여주고 이 지점이 몇 명인지 모르겠다"는 지적(실측 2026-08-19)의 답.
+
+   데스크톱 호버와 모바일 터치를 **한 코드로** 처리한다 — Pointer Events 는 마우스·터치·펜을
+   같은 이벤트로 준다. 따로 만들면 한쪽이 반드시 낡는다.
+   · 손가락/커서를 올린 지점에서 가장 가까운 실제 관측점을 찾아 세로선·점·말풍선을 띄운다.
+   · 터치 중에는 세로 스크롤을 막는다(touch-action: none) — 안 막으면 화면이 같이 밀린다.
+   · 키보드 ←→ 로도 움직인다. 포인터가 없는 사람에게도 값이 닿아야 한다.
+   · 손을 떼면 **마지막 실측값**으로 돌아간다. 아무것도 안 한 상태에서도 숫자가 하나는 보이게. */
+type Pt = { t: number; v: number; label: string; kind: 'real' | 'proj' }
+
+function TrendChart({
+  pts, yMax, x0, x1, height = 190, unit = '명', ariaLabel,
+}: {
+  pts: Pt[]; yMax: number; x0: number; x1: number
+  height?: number; unit?: string; ariaLabel: string
+}) {
+  const W = 640, H = height
+  const PAD = { l: 10, r: 10, t: 14, b: 26 }
+  const svgRef = useRef<SVGSVGElement>(null)
+  const lastReal = useMemo(() => {
+    for (let i = pts.length - 1; i >= 0; i--) if (pts[i].kind === 'real') return i
+    return pts.length - 1
+  }, [pts])
+  const [cur, setCur] = useState<number>(lastReal)
+  const [active, setActive] = useState(false)
+  useEffect(() => { setCur(lastReal) }, [lastReal])
+
+  const px = (t: number) => PAD.l + ((t - x0) / (x1 - x0)) * (W - PAD.l - PAD.r)
+  const py = (v: number) => H - PAD.b - (v / yMax) * (H - PAD.t - PAD.b)
+
+  const pathOf = (kind: Pt['kind']) => {
+    const seg = pts.filter(p => p.kind === kind)
+    return seg.map((p, i) => `${i ? 'L' : 'M'}${px(p.t).toFixed(1)},${py(p.v).toFixed(1)}`).join(' ')
+  }
+
+  /* 화면 좌표 → 가장 가까운 관측점. viewBox 를 쓰므로 화면 폭으로 환산해야 한다. */
+  const pick = (clientX: number) => {
+    const r = svgRef.current?.getBoundingClientRect()
+    if (!r || !r.width) return
+    const vx = ((clientX - r.left) / r.width) * W
+    let best = 0, bd = Infinity
+    pts.forEach((p, i) => { const d = Math.abs(px(p.t) - vx); if (d < bd) { bd = d; best = i } })
+    setCur(best)
+  }
+
+  const c = pts[cur]
+  const cx = c ? px(c.t) : 0
+  const cy = c ? py(c.v) : 0
+  const boxW = 132, boxH = 40
+  const boxX = Math.min(Math.max(cx - boxW / 2, 2), W - boxW - 2)
+  const boxY = cy - boxH - 10 < PAD.t ? cy + 12 : cy - boxH - 10
+
+  return (
+    <div>
+      <svg
+        ref={svgRef}
+        viewBox={`0 0 ${W} ${H}`}
+        className="w-full touch-none select-none"
+        style={{ height }}
+        role="img"
+        aria-label={ariaLabel}
+        tabIndex={0}
+        onPointerDown={e => { setActive(true); pick(e.clientX); (e.target as Element).setPointerCapture?.(e.pointerId) }}
+        onPointerMove={e => { if (active || e.pointerType === 'mouse') pick(e.clientX) }}
+        onPointerUp={() => { setActive(false); setCur(lastReal) }}
+        onPointerLeave={() => { if (!active) setCur(lastReal) }}
+        onKeyDown={e => {
+          if (e.key === 'ArrowLeft') { e.preventDefault(); setCur(i => Math.max(0, i - 1)) }
+          if (e.key === 'ArrowRight') { e.preventDefault(); setCur(i => Math.min(pts.length - 1, i + 1)) }
+        }}
+      >
+        <line x1={PAD.l} y1={H - PAD.b} x2={W - PAD.r} y2={H - PAD.b} stroke="#dcdfe4" />
+        <path d={pathOf('real')} fill="none" stroke="#1a4e9c" strokeWidth="2.5" />
+        {pts.some(p => p.kind === 'proj') && (
+          <path d={pathOf('proj')} fill="none" stroke="#767676" strokeWidth="2" strokeDasharray="5 4" />
+        )}
+        {c && (
+          <>
+            <line x1={cx} y1={PAD.t} x2={cx} y2={H - PAD.b} stroke="#1a4e9c" strokeWidth="1" strokeDasharray="3 3" />
+            <circle cx={cx} cy={cy} r="5" fill="#fff" stroke={c.kind === 'proj' ? '#767676' : '#1a4e9c'} strokeWidth="2.5" />
+            <g>
+              <rect x={boxX} y={boxY} width={boxW} height={boxH} rx="4" fill="#ffffff" stroke="#dcdfe4" />
+              <text x={boxX + 8} y={boxY + 16} fontSize="11" fill="#767676">{c.label}</text>
+              <text x={boxX + 8} y={boxY + 33} fontSize="15" fontWeight="700" fill="#191919">
+                {c.v.toLocaleString('ko-KR')}{unit}
+                {c.kind === 'proj' ? ' (계산)' : ''}
+              </text>
+            </g>
+          </>
+        )}
+      </svg>
+      <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        그래프를 손가락으로 짚거나 커서를 올리면 그 시점의 값이 나옵니다. 키보드 좌우 화살표로도 움직입니다.
+      </p>
+    </div>
+  )
+}
+
 function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
   const W = 960, H = 340
   const PAD = { l: 62, r: 20, t: 20, b: 40 }
@@ -1640,6 +1739,31 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
 
   const yTicks = [0, 10000, 20000, 30000, 40000, 50000, 60000]
   const xTicks = [2020, 2025, 2030, 2035, 2040, 2045, 2050]
+
+  /* 값이 보이게 — 손가락/커서/키보드로 짚으면 그 시점의 수를 띄운다.
+     그래프가 모양만 보여주고 "이 지점이 몇 명인지 모르겠다"는 지적(2026-08-19)의 답. */
+  const scrubPts = useMemo(() => ([
+    ...csv.map((d, i) => ({ t: d.t, v: d.v, label: ymKo(isan.monthly[i]?.month), kind: 'real' as const })),
+    ...hwp.map(d => ({ t: d.t, v: d.v, label: `${ymKo(d.asOf)} 공표`, kind: 'real' as const })),
+    ...fut.map((d, i) => ({ t: d.t, v: Math.round((d.lo + d.hi) / 2), label: `${proj.byYear[i]?.year}년 (계산)`, kind: 'proj' as const })),
+  ].filter(q => Number.isFinite(q.t)).sort((a, b) => a.t - b.t)), [csv, hwp, fut, isan, proj])
+  const lastRealIdx = useMemo(() => {
+    for (let i = scrubPts.length - 1; i >= 0; i--) if (scrubPts[i].kind === 'real') return i
+    return 0
+  }, [scrubPts])
+  const [scrub, setScrub] = useState(lastRealIdx)
+  const [scrubbing, setScrubbing] = useState(false)
+  useEffect(() => { setScrub(lastRealIdx) }, [lastRealIdx])
+  const svgRef = useRef<SVGSVGElement>(null)
+  const pickAt = (clientX: number) => {
+    const r = svgRef.current?.getBoundingClientRect()
+    if (!r || !r.width) return
+    const vx = ((clientX - r.left) / r.width) * W
+    let best = 0, bd = Infinity
+    scrubPts.forEach((q, i) => { const d = Math.abs(x(q.t) - vx); if (d < bd) { bd = d; best = i } })
+    setScrub(best)
+  }
+  const sc = scrubPts[scrub]
 
   /* 1만 명 하회 구간 — 원값 시나리오(빠른 쪽)와 교정 시나리오(느린 쪽)의 두 해 사이 */
   const [m10a, m10b] = proj.milestoneRange.below10000.split('~').map(Number)
@@ -1678,8 +1802,18 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
 
         <div className="mt-4 overflow-x-auto">
           <svg
+            ref={svgRef}
             viewBox={`0 0 ${W} ${H}`}
-            className="h-auto w-full min-w-[560px]"
+            className="h-auto w-full min-w-[560px] touch-none select-none"
+            tabIndex={0}
+            onPointerDown={e => { setScrubbing(true); pickAt(e.clientX); (e.target as Element).setPointerCapture?.(e.pointerId) }}
+            onPointerMove={e => { if (scrubbing || e.pointerType === 'mouse') pickAt(e.clientX) }}
+            onPointerUp={() => { setScrubbing(false); setScrub(lastRealIdx) }}
+            onPointerLeave={() => { if (!scrubbing) setScrub(lastRealIdx) }}
+            onKeyDown={e => {
+              if (e.key === 'ArrowLeft') { e.preventDefault(); setScrub(i => Math.max(0, i - 1)) }
+              if (e.key === 'ArrowRight') { e.preventDefault(); setScrub(i => Math.min(scrubPts.length - 1, i + 1)) }
+            }}
             role="img"
             aria-label={`이산가족 생존 신청자 추이와 전망. 2017년 7월 ${nf(isan.monthly[0]?.total)}명에서 ${ymKo(isan.latest.asOf)} ${nf(isan.latest.survivors.total)}명으로 줄었고, 추계로는 ${proj.milestoneRange.below10000}년에 1만 명을 밑돌 것으로 계산됩니다.`}
           >
@@ -1724,8 +1858,30 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
             <text x={x(seam) + 6} y={PAD.t + 12} className="text-[12px] fill-slate-500">추계 →</text>
 
             <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1} />
+
+            {/* 짚은 지점의 값 — 마지막 실측값을 기본으로 늘 하나는 떠 있다 */}
+            {sc && (() => {
+              const cx = x(sc.t), cy = y(sc.v)
+              const bw = 150, bh = 44
+              const bx = Math.min(Math.max(cx - bw / 2, PAD.l), W - PAD.r - bw)
+              const by = cy - bh - 12 < PAD.t ? cy + 14 : cy - bh - 12
+              return (
+                <g>
+                  <line x1={cx} x2={cx} y1={PAD.t} y2={H - PAD.b} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1} strokeDasharray="3 3" />
+                  <circle cx={cx} cy={cy} r={5.5} fill="#fff" className={sc.kind === 'proj' ? 'stroke-slate-500' : 'stroke-blue-600'} strokeWidth={2.5} />
+                  <rect x={bx} y={by} width={bw} height={bh} rx={5} fill="#fff" className="stroke-slate-300" />
+                  <text x={bx + 10} y={by + 17} className="text-[12px] fill-slate-500">{sc.label}</text>
+                  <text x={bx + 10} y={by + 36} className="text-[16px] font-bold fill-slate-900">
+                    {nf(sc.v)}명{sc.kind === 'proj' ? ' (계산)' : ''}
+                  </text>
+                </g>
+              )
+            })()}
           </svg>
         </div>
+        <p className={`mt-1.5 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
+          그래프를 손가락으로 짚거나 커서를 올리면 그 시점의 인원이 나옵니다. 키보드 좌우 화살표로도 움직입니다.
+        </p>
 
         {/* 범례 */}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
@@ -2727,20 +2883,15 @@ function StepMode({ pack, oldRanked, onExit }: {
         const dropPct = (a?: number | null, b?: number | null) =>
           a && b ? Math.round((1 - b / a) * 100) : null
 
-        /* 전체 추이 미니 그래프 — 실측(98개월) + 추계(2026~2050) */
-        const W = 640, H = 150, PADL = 8, PADR = 8, PADT = 10, PADB = 22
-        const yTop = 62000
+        /* 전체 추이 그래프 — 값이 보이게 TrendChart 를 쓴다(호버·터치·키보드 공통) */
         const tOf = (iso: string) => {
-          const m = iso.match(/^(\d{4})-(\d{2})/)
-          return m ? Number(m[1]) + (Number(m[2]) - 1) / 12 : NaN
+          const mm = iso.match(/^(\d{4})-(\d{2})/)
+          return mm ? Number(mm[1]) + (Number(mm[2]) - 1) / 12 : NaN
         }
-        const X0 = 2017.4, X1 = 2050.7
-        const px = (t: number) => PADL + ((t - X0) / (X1 - X0)) * (W - PADL - PADR)
-        const py = (v: number) => H - PADB - (v / yTop) * (H - PADT - PADB)
-        const realPath = isan.monthly
-          .map((m, i) => `${i ? 'L' : 'M'}${px(tOf(m.month)).toFixed(1)},${py(m.total).toFixed(1)}`).join(' ')
-        const projPath = pack.proj.byYear
-          .map((r, i) => `${i ? 'L' : 'M'}${px(tOf(r.asOf)).toFixed(1)},${py(r.expected).toFixed(1)}`).join(' ')
+        const chartPts: Pt[] = [
+          ...isan.monthly.map(m => ({ t: tOf(m.month), v: m.total, label: ymKo(m.month), kind: 'real' as const })),
+          ...pack.proj.byYear.map(r => ({ t: tOf(r.asOf), v: r.expected, label: `${r.year}년 (계산)`, kind: 'proj' as const })),
+        ].filter(q => Number.isFinite(q.t))
 
         return (
           <div>
@@ -2796,18 +2947,15 @@ function StepMode({ pack, oldRanked, onExit }: {
                   {' '}(<b className={`font-bold ${TEXT.blue}`}>{dropPct(rFirst, rLast)}% 감소</b>).
                 </p>
               )}
-              <div className="mt-3 overflow-x-auto">
-                <svg viewBox={`0 0 ${W} ${H}`} className="h-[150px] w-full min-w-[420px]" role="img"
-                  aria-label="전체 생존 신청자 추이와 앞으로의 추계">
-                  <line x1={PADL} y1={H - PADB} x2={W - PADR} y2={H - PADB} stroke="#dcdfe4" />
-                  <line x1={px(tOf(isan.latest.asOf))} y1={PADT} x2={px(tOf(isan.latest.asOf))} y2={H - PADB}
-                    stroke="#b6bcc5" strokeDasharray="3 3" />
-                  <path d={realPath} fill="none" stroke="#1a4e9c" strokeWidth="2.5" />
-                  <path d={projPath} fill="none" stroke="#767676" strokeWidth="2" strokeDasharray="5 4" />
-                  <text x={PADL + 4} y={H - 6} fontSize="11" fill="#767676">2017</text>
-                  <text x={px(tOf(isan.latest.asOf)) - 14} y={H - 6} fontSize="11" fill="#767676">지금</text>
-                  <text x={W - PADR - 26} y={H - 6} fontSize="11" fill="#767676">2050</text>
-                </svg>
+              <div className="mt-3">
+                <TrendChart
+                  pts={chartPts}
+                  yMax={62000}
+                  x0={2017.4}
+                  x1={2050.7}
+                  height={190}
+                  ariaLabel="전체 생존 신청자 추이와 앞으로의 추계"
+                />
               </div>
               <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
                 진한 선은 실제로 센 값(2017~2025), 점선은 앞으로의 계산입니다.
@@ -3004,12 +3152,34 @@ export default function GohyangOn() {
     }
   }
 
+  /* 선택을 주소에 남긴다 — 공유받은 사람이 그 고향 화면으로 바로 들어와야
+     공유가 의미를 가진다. 히스토리를 더럽히지 않게 replaceState 를 쓴다. */
+  function syncUrl(s: Sel | null) {
+    if (typeof window === 'undefined') return
+    const u = new URL(window.location.href)
+    if (s) u.searchParams.set('고향', s.mode === 'old' ? s.id : s.key)
+    else u.searchParams.delete('고향')
+    window.history.replaceState(null, '', u.toString())
+  }
+
   function select(s: Sel) {
     setSel(s)
+    syncUrl(s)
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
       window.setTimeout(() => panelRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 30)
     }
   }
+
+  /* 주소에 고향이 실려 오면 그 지역을 열어 준다(팩이 준비된 뒤 한 번만). */
+  const restored = useRef(false)
+  useEffect(() => {
+    if (!pack || restored.current) return
+    restored.current = true
+    const v = new URLSearchParams(window.location.search).get('고향')
+    if (!v) return
+    if (pack.map.regionsOld.some(o => o.id === v)) { setMode('old'); setSel({ mode: 'old', id: v }) }
+    else if (pack.region.regions[v]) { setMode('modern'); setSel({ mode: 'modern', key: v }) }
+  }, [pack])
 
   /* 구행정구역 7종을 생존자 수 내림차순으로 — 고향 찾기 진입과 선택 전 안내가 같은 목록을 쓴다.
      아무 데이터도 만들지 않고 실측 순서만 매긴다. */
@@ -3209,7 +3379,7 @@ export default function GohyangOn() {
         {/* ── 패널: 선택 전엔 우측 기둥, 선택 후엔 지도 아래 전폭 ── */}
         <div ref={panelRef} className={sel ? 'mt-6 min-w-0' : 'mt-4 min-w-0 lg:mt-0'}>
           {sel ? (
-            <RegionPanel pack={pack} sel={sel} onClose={() => setSel(null)} />
+            <RegionPanel pack={pack} sel={sel} onClose={() => { setSel(null); syncUrl(null) }} />
           ) : (
             <div className={`${CARD} p-4`}>
               <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>지역을 선택하세요
