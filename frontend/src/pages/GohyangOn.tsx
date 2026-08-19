@@ -283,6 +283,7 @@ const VIEW_KEY = 'gohyang_view'
    기존 JSX 수백 곳을 건드리지 않고 껍데기만 갈아입히려고 이렇게 둔다. */
 import { SURFACE, TYPE, TEXT, ASOF, PROSE as T_PROSE, FOCUS as T_FOCUS, BTN, josa } from '../theme/gohyang'
 import MuseumTour, { type MuseumSections } from '../components/MuseumTour'
+import MuseumBanner from '../components/MuseumBanner'
 
 /* 고향 도우미(페르소나 AI) — LLM 4원칙(CLAUDE.md §5)의 화면 쪽 절반.
    사실 묶음은 buildGuideFacts 가 데이터 팩에서 만들고, LLM 은 프록시(/api/llm, kind='guide')를
@@ -2182,6 +2183,28 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
       title="후손 다리 — 1세대가 떠난 뒤 이 기록은 누구의 것인가"
       sub={`${desc.survey.name} · 심층 ${nf(desc.survey.bases.deep)}명 (${desc.survey.publishedAt} 공표)`}
     >
+      {/* ── 통일부 공식 안내로 바로 가는 줄 ──
+             수치를 읽다가 "그래서 어디서 물어보나"가 되면 안 된다. 통일부가 이미
+             운영하는 안내·접수 창구를 맨 위에 둔다. 우리가 대신 접수하지 않는다. */}
+      <div className={`${SURFACE.inset} p-4`}>
+        <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>통일부 안내로 바로 가기</p>
+        <p className={`mt-1 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
+          신청과 교류는 통일부 이산가족정보통합시스템에서 이루어집니다. 아래에서 바로 열립니다.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {([
+            ['이산가족 신청·교류 안내', 'https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118'],
+            ['이산가족찾기 신청·취소', 'https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119'],
+            ['기록물 기증 안내', 'https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265'],
+            ['상담 창구 안내', 'https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_counsel/view.do?mid=SM00000126'],
+          ] as const).map(([label, href]) => (
+            <a key={href} href={href} target="_blank" rel="noreferrer" className={`${BTN.ghost} min-h-[46px]`}>
+              {label} ↗
+            </a>
+          ))}
+        </div>
+      </div>
+
       {/* ── 반전: 후손이 1세대보다 더 원한다 ── */}
       <div className={`${SURFACE.slab} p-4`}>
         <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>
@@ -3429,7 +3452,15 @@ export default function GohyangOn() {
       {/* 박물관 둘러보기 — 기록 골든타임 다음, 후손 다리 앞.
              "얼마 안 남았다"를 본 사람이 "무엇이 남아 있나"를 보고, 그다음 "무엇을 할까"로 간다. */}
       <div id="museum-tour" className="mt-8 scroll-mt-24">
-        <MuseumTour data={pack.tour} />
+        {/* 큰 사진이 먼저, 분류는 그다음 — 사료를 목록이 아니라 사람으로 보이게 한다 */}
+        <MuseumBanner
+          records={pack.museum.records}
+          title="기증해 주신 사진"
+          sub={`실향민과 가족이 맡기신 기록물입니다. 지금 ${nf(pack.tour.totalRecords)}건이 박물관에 공개되어 있습니다.`}
+        />
+        <div className="mt-4">
+          <MuseumTour data={pack.tour} />
+        </div>
       </div>
 
       <div id="descendant" className="mt-8 scroll-mt-24">

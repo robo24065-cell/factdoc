@@ -197,6 +197,12 @@ const INPUTS = [
     require: ['builtAt', 'sources', 'license', 'licenseFullText', 'series', 'headline', 'meta'],
     role: '통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)',
   },
+  {
+    out: 'analysis.json',
+    src: '북한자료-api/analysis.json',
+    require: ['builtAt', 'generator', 'note', 'asOfByLane', 'sources', 'cards', 'meta'],
+    role: '분석 덱(/deck)이 넘기는 카드 — 성립·약함·불가를 한 벌로 싣는다(불가도 숨기지 않는다)',
+  },
 ]
 
 /* ══════════ 읽기 ══════════ */
@@ -230,6 +236,7 @@ const museum = byOut['museum.json']       // 슬림본 — 화면이 받는 바�
 const museumRaw = raw['museum.json']      // 원본 — 슬림이 원본을 배신하지 않았는지 대조할 때만 쓴다
 const paths = byOut['paths.json']
 const opinion = byOut['opinion.json']
+const analysis = byOut['analysis.json']
 
 /* ══════════ 조인 무결성 검사 ══════════
    화면이 하는 조인을 그대로 여기서 먼저 해 본다.
@@ -421,6 +428,58 @@ const latestOriginLabels = new Set((isan.latest.survivors.byOrigin.entries ?? []
   )
 }
 
+/* ── 분석 덱 (22~26) ──
+   /deck 은 카드를 한 장씩 넘긴다. 카드 한 장이 깨지면 그 자리에 '빈 카드'가 뜨는데,
+   그건 "재봤더니 아무것도 없었다"와 구분되지 않는다 — 여기서 죽는 편이 낫다.
+   ★ 불가·약함 카드도 화면에 그대로 나간다. 그래서 검사도 전부 같은 기준으로 한다. */
+const VERDICTS = new Set(['성립', '약함', '불가'])
+/* 좌표는 points 로 오는 것이 규약이지만 rows 로 오는 계열이 실제로 있다(legacy-priority).
+   화면은 둘 다 읽는다 — 검사도 같은 규칙이어야 화면과 갈라지지 않는다. */
+const coordsOf = (s) => s.points ?? s.rows ?? null
+{
+  const need = ['id', 'title', 'question', 'verdict', 'method', 'n', 'findings', 'caveats', 'asOf']
+  const bad = analysis.cards.filter((c) => need.some((k) => !(k in c)) || !Array.isArray(c.findings) || !Array.isArray(c.caveats))
+  ok(bad.length === 0, `분석 카드 ${analysis.cards.length}장 전부 필수 키(${need.length}종) 보유`, `결측: ${bad.map((c) => c.id ?? '(id 없음)').join(', ')}`)
+}
+{
+  const badV = analysis.cards.filter((c) => !VERDICTS.has(c.verdict))
+  /* frozen 에 이유가 필수인 것과 같은 규약 — '불가'는 왜 불가인지를 반드시 데리고 다닌다 */
+  const noWhy = analysis.cards.filter((c) => c.verdict === '불가' && !c.rejectWhy)
+  ok(badV.length === 0 && noWhy.length === 0, `판정 허용값 3종 + 「불가」 ${analysis.cards.filter((c) => c.verdict === '불가').length}장 전부 사유 보유`,
+    `허용 밖 ${badV.map((c) => c.verdict).join(', ')} / 사유 없음 ${noWhy.map((c) => c.id).join(', ')}`)
+}
+{
+  let n = 0
+  const bad = []
+  for (const c of analysis.cards) {
+    for (const s of c.series ?? []) {
+      const pts = coordsOf(s)
+      if (!Array.isArray(pts)) { bad.push(`${c.id}/${s.key} 좌표 배열 없음`); continue }
+      for (const p of pts) {
+        n++
+        if (!('x' in p) || typeof p.y !== 'number' || !Number.isFinite(p.y)) bad.push(`${c.id}/${s.key}`)
+      }
+    }
+  }
+  ok(bad.length === 0, `분석 계열 좌표 ${n}개 전부 {x, y} · y 유한`, `깨진 계열: ${[...new Set(bad)].slice(0, 6).join(', ')}`)
+}
+{
+  const ids = new Set(analysis.cards.map((c) => c.id))
+  const dangling = analysis.sources.flatMap((s) => s.usedBy ?? []).filter((id) => !ids.has(id))
+  ok(dangling.length === 0, `분석 출처 ${analysis.sources.length}종 → 카드 id 참조`, `없는 카드: ${[...new Set(dangling)].join(', ')}`)
+}
+{
+  const cnt = (v) => analysis.cards.filter((c) => c.verdict === v).length
+  const good =
+    analysis.meta.tried === analysis.cards.length &&
+    analysis.meta.accepted === cnt('성립') &&
+    analysis.meta.weak === cnt('약함') &&
+    analysis.meta.rejectedCount === cnt('불가') &&
+    (analysis.meta.rejected ?? []).length === cnt('불가')
+  ok(good, `분석 요약 = 실제 카드 수 (시도 ${analysis.cards.length} · 성립 ${cnt('성립')} · 약함 ${cnt('약함')} · 불가 ${cnt('불가')})`,
+    `meta ${analysis.meta.tried}/${analysis.meta.accepted}/${analysis.meta.weak}/${analysis.meta.rejectedCount} vs 실제 ${analysis.cards.length}/${cnt('성립')}/${cnt('약함')}/${cnt('불가')}`)
+}
+
 if (fails.length) die(`조인 무결성 ${fails.length}건 실패 — 복사하지 않았다.\n  ${fails.join('\n  ')}`)
 
 /* ══════════ 크기 확인 ══════════ */
@@ -526,6 +585,28 @@ const manifest = {
       caution:
         '★ 이 파일만 통일부 자료가 아니다(서울대학교 통일평화연구원). 화면은 반드시 출처가 다르다는 것을 배지·문장으로 구분 표시하고, ' +
         '소멸 곡선과 나란히 놓더라도 인과를 주장하지 말 것 — "같은 기간에 함께 내려갔다"까지만.',
+    },
+    {
+      file: 'analysis.json',
+      role: INPUTS[8].role,
+      builtAt: analysis.builtAt,
+      asOf: analysis.asOfByLane ?? null,
+      cards: {
+        tried: analysis.meta?.tried ?? null,
+        accepted: analysis.meta?.accepted ?? null,
+        weak: analysis.meta?.weak ?? null,
+        rejected: analysis.meta?.rejectedCount ?? null,
+      },
+      upstream: (analysis.sources ?? []).map((s) => ({
+        name: s.name,
+        url: s.landing ?? s.url ?? s.urls?.[0] ?? s.file ?? null,
+        org: s.org ?? null,
+        asOf: s.asOf ?? s.coverageEnd ?? null,
+      })),
+      caution:
+        '카드의 수치는 이 시제품이 계산한 결과이지 통일부 공표 통계가 아니다. 화면은 판정(성립·약함·불가)을 배지로 구분해 표시하고, ' +
+        '「약함」·「불가」 카드를 숨기지 말 것 — 무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이다. ' +
+        '기준일이 다른 계열을 이은 카드는 카드 안에 그 사실이 적혀 있다.',
     },
   ],
   files: loaded.map((l) => ({

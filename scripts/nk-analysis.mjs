@@ -312,6 +312,88 @@ const oldTable = OLD_AXIS.map((o) => {
 })
 const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
 
+/* ══ 기록 계승 우선순위 — 「어디부터 남겨야 하는가」 ══════════════════
+   분석이 판단으로 넘어가는 자리. 세 축을 순위로 바꿔 더한다(동일 가중):
+     ① 소멸 속도 — 지난 98개월 그 고향 원적 생존자가 얼마나 빨리 줄었나
+     ② 기록 공백 — 생존자 1인당 남은 공식 기록이 얼마나 적은가
+     ③ 식별 공백 — 그 고향임을 확인할 수 있는 사료가 얼마나 적은가
+   점수의 절대값은 쓰지 않는다. 순서만 쓴다. */
+{
+  const withRate = oldTable.map((r) => {
+    const v0 = M0.origin[r.originKey], v1 = M1.origin[r.originKey]
+    const dropPct = v0 ? (1 - v1 / v0) * 100 : null           // 실측 감소율(%)
+    const homePerSurv = r.survivors ? r.museumHome / r.survivors : null
+    return { ...r, v0, v1, dropPct, homePerSurv }
+  })
+
+  const usable = withRate.filter((r) => r.dropPct != null && r.survivors > 0)
+  /* 순위화 — 값이 클수록 급한 축은 내림차순, 작을수록 급한 축은 오름차순 */
+  const rankBy = (arr, f, asc) => {
+    const sorted = [...arr].sort((a, b) => (asc ? f(a) - f(b) : f(b) - f(a)))
+    const m = new Map()
+    sorted.forEach((r, i) => m.set(r.id, i + 1))
+    return m
+  }
+  const rSpeed = rankBy(usable, (r) => r.dropPct, false)        // 빨리 줄수록 1위
+  const rGap = rankBy(usable, (r) => r.densityAll, true)        // 기록 적을수록 1위
+  const rIdent = rankBy(usable, (r) => r.homePerSurv, true)     // 식별 사료 적을수록 1위
+
+  const scored = usable.map((r) => {
+    const a = rSpeed.get(r.id), b = rGap.get(r.id), c = rIdent.get(r.id)
+    return { ...r, rSpeed: a, rGap: b, rIdent: c, rankSum: a + b + c }
+  }).sort((x, y) => x.rankSum - y.rankSum || y.survivors - x.survivors)
+
+  /* 축을 하나씩 빼도 1위가 유지되는가 — 결과가 한 축에 업혀 있으면 그렇다고 적는다 */
+  const topWithout = (drop) => {
+    const alt = [...usable].map((r) => {
+      const parts = { s: rSpeed.get(r.id), g: rGap.get(r.id), i: rIdent.get(r.id) }
+      delete parts[drop]
+      return { id: r.id, name: r.name, sum: Object.values(parts).reduce((x, y) => x + y, 0) }
+    }).sort((x, y) => x.sum - y.sum)
+    return alt[0]
+  }
+  const t1 = scored[0], t2 = scored[1], last = scored.at(-1)
+  const woS = topWithout('s'), woG = topWithout('g'), woI = topWithout('i')
+  const stable = [woS.name, woG.name, woI.name].filter((n) => n === t1.name).length
+
+  push({
+    id: 'legacy-priority',
+    title: '어디부터 남겨야 하는가 — 빨리 사라지는데 기록도 없는 고향',
+    question: '고향 7종 가운데, 지금 기록을 우선 확보해야 할 곳은 어디인가?',
+    verdict: '성립',
+    method: `세 축을 각각 순위로 바꿔 동일 가중으로 더했다(합이 작을수록 급함). ① 소멸 속도 = 월별 원적 생존자 ${M0.month}→${CSV_ASOF} 감소율(실측) ② 기록 공백 = 생존자 1인당 공식 기록(카드 record-density-gap 과 같은 집계) ③ 식별 공백 = 생존자 1인당 그 고향임이 확인되는 사료(상봉장소만 걸린 건 제외). 점수의 절대값은 쓰지 않고 순서만 쓴다. 가중치를 손으로 정하지 않으려고 값이 아니라 순위를 더했다.`,
+    n: scored.length,
+    findings: [
+      F('1순위', `${t1.name}`, `소멸 ${r1(t1.dropPct)}% 감소 · 기록 ${r3(t1.densityAll)}건/인 · 식별사료 ${r3(t1.homePerSurv)}건/인 (순위합 ${t1.rankSum})`),
+      F('2순위', `${t2.name}`, `소멸 ${r1(t2.dropPct)}% · 기록 ${r3(t2.densityAll)}건/인 (순위합 ${t2.rankSum})`),
+      F('가장 여유 있는 곳', `${last.name}`, `기록 ${r3(last.densityAll)}건/인 (순위합 ${last.rankSum}) — 여유가 있다는 뜻이지 충분하다는 뜻이 아니다`),
+      F('축을 빼도 1위가 유지되는가', `${stable}/3 축`, `소멸 제외 시 ${woS.name} · 기록 제외 시 ${woG.name} · 식별 제외 시 ${woI.name}`),
+      F('표본', `${scored.length}개 고향`, 'n=7 이다. 이 순서는 정렬을 돕는 것이지 점수가 아니다'),
+    ],
+    series: [
+      {
+        key: 'priority', label: '순위합(작을수록 우선)',
+        rows: scored.map((r) => ({ x: r.name, y: r.rankSum })),
+      },
+      {
+        key: 'drop', label: `원적 생존자 감소율 % (${M0.month}→${CSV_ASOF})`,
+        rows: scored.map((r) => ({ x: r.name, y: r1(r.dropPct) })),
+      },
+      {
+        key: 'density', label: '생존자 1인당 공식 기록(건)',
+        rows: scored.map((r) => ({ x: r.name, y: r3(r.densityAll) })),
+      },
+    ],
+    caveats: [
+      'n=7 이다. 순위합은 정렬 보조이며 점수로 해석하면 안 된다.',
+      '세 축을 동일 가중으로 두었다 — 정책적으로 어느 축이 더 급한지는 이 데이터가 답할 수 없다.',
+      '소멸 속도는 원적이 확인된 생존자만의 값이다. 「기타」(남한 출생 등)는 고향 축이 없어 빠진다.',
+      '기록 밀도의 분자에는 북한정보포털 동향이 들어간다 — 이산가족 기록이 아니라 그 지역 관련 기록이다. 동향을 뺀 보수 집계로도 순위가 바뀌지 않음은 record-density-gap 카드에서 확인했다.',
+    ],
+    asOf: CSV_ASOF,
+  })
+}
+
 {
   const byDens = [...oldTable].sort((a, b) => b.densityAll - a.densityAll)
   const top = byDens[0], bot = byDens.at(-1)
