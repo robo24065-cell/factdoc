@@ -1054,18 +1054,29 @@ function museumFor(sel: Sel, pack: Pack): MuseumBundle {
 }
 
 /** 사료 한 장. 이미지가 죽으면 그림 자리를 감추고 제목만 남긴다. */
+/* 사료 이미지는 **경유로를 통해** 부른다.
+   박물관 서버가 JPEG 를 Content-Type: text/html + nosniff 로 보내서 Chromium 의 ORB 가
+   막는다 — 실측 2026-08-19: 실제 Chrome 에서 onerror, iOS Safari 는 ORB 가 없어 그냥 보였다
+   ("모바일에선 보이는데 PC 에선 안 보인다"의 원인). /api/museum-img 는 원본 바이트를
+   저장 없이 흘려보내며 Content-Type 만 실제 값으로 고친다. */
+function imgSrcOf(r: MuseumRec): string | null {
+  if (!r.imageUrl) return null
+  const m = r.imageUrl.match(/file_id=(\d+)/)
+  return m ? `/api/museum-img?file_id=${m[1]}` : r.imageUrl
+}
+
 function MuseumCard({ r, mark }: { r: MuseumRec; mark: string | null }) {
   const [broken, setBroken] = useState(false)
-  const showImg = Boolean(r.imageUrl) && !broken
+  const src = imgSrcOf(r)
+  const showImg = Boolean(src) && !broken
   return (
     <li className={`overflow-hidden ${SURFACE.card}`}>
       {showImg && (
         <img
-          src={r.imageUrl!}
+          src={src!}
           alt=""
           loading="lazy"
           decoding="async"
-          referrerPolicy="no-referrer"
           onError={() => setBroken(true)}
           className={`block h-32 w-full border-b object-cover ${SURFACE.hair}`}
         />
@@ -2448,7 +2459,18 @@ function StepMode({ pack, oldRanked, onExit }: {
     }
     setCur(n)
   }
-  const pickHome = (id: string) => { setHome({ mode: 'old', id }); go(2) }
+  /* 한걸음씩에서도 두 지도를 다 고를 수 있어야 한다(실측 지적 2026-08-19).
+     구행정구역만 주면 탈북민 출신지(현행 13종)로 들어오는 사람이 자기 고향을 못 찾는다. */
+  const [stepMode, setStepMode] = useState<Mode>('old')
+  /* 현행은 지역명(key)으로 고른다 — 대시보드의 Sel 과 같은 형태여야 패널이 붙는다 */
+  const modernRanked = useMemo(
+    () => Object.keys(pack.region.regions).sort((a, b) => a.localeCompare(b, 'ko')),
+    [pack],
+  )
+  const pickHome = (v: string) => {
+    setHome(stepMode === 'old' ? { mode: 'old', id: v } : { mode: 'modern', key: v })
+    go(2)
+  }
 
   /* 스크롤로 넘겨도 '지금 몇 번째'가 따라오게 — 한 장씩 고정은 CSS snap-mandatory 가 맡고,
      IntersectionObserver 는 현재 카드 번호만 센다. */
@@ -2517,24 +2539,54 @@ function StepMode({ pack, oldRanked, onExit }: {
         return (
           <div>
             <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
-              집안에서 들은 고향 이름을 눌러 주세요. 이산가족의 고향은 광복 당시 이름으로 적혀 있습니다.
+              집안에서 들은 고향 이름을 눌러 주세요.
             </p>
-            <div role="group" aria-label="고향 고르기" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-              {oldRanked.map(o => (
+            <div role="group" aria-label="지도 종류" className="mt-4 flex flex-wrap gap-2.5">
+              {([['old', '광복 당시 이름', '이산가족 고향은 이 이름으로 적혀 있습니다'],
+                 ['modern', '지금 이름', '탈북민 출신지는 이 이름으로 적혀 있습니다']] as const).map(([k, label, hint]) => (
                 <button
-                  key={o.id}
+                  key={k}
                   type="button"
-                  onClick={() => pickHome(o.id)}
-                  aria-pressed={home?.mode === 'old' && home.id === o.id}
-                  className={`min-h-[56px] rounded-md border px-4 py-3 text-[1.125rem] font-medium ${FOCUS} ${
-                    home?.mode === 'old' && home.id === o.id
-                      ? 'border-[#1a4e9c] bg-[#eef3fb] text-[#1a4e9c] dark:border-[#2f5f9f] dark:bg-[#16202c] dark:text-[#7aa9e8]'
-                      : `${SURFACE.line} bg-white ${TEXT.ink} hover:border-[#1a4e9c] dark:bg-transparent`
+                  onClick={() => setStepMode(k)}
+                  aria-pressed={stepMode === k}
+                  title={hint}
+                  className={`min-h-[56px] rounded-md border px-5 py-3 text-left ${FOCUS} ${
+                    stepMode === k
+                      ? 'border-[#1a4e9c] bg-[#eef3fb] dark:border-[#2f5f9f] dark:bg-[#16202c]'
+                      : `${SURFACE.line} bg-white dark:bg-transparent`
                   }`}
                 >
-                  {o.name}
+                  <span className={`block text-[1.125rem] font-bold ${stepMode === k ? TEXT.blue : TEXT.ink}`}>
+                    {stepMode === k ? '● ' : '○ '}{label}
+                  </span>
+                  <span className={`block ${STEP_TYPE.cap} ${TEXT.faint}`}>{hint}</span>
                 </button>
               ))}
+            </div>
+            <div role="group" aria-label="고향 고르기" className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {(stepMode === 'old'
+                ? oldRanked.map(o => ({ v: o.id, name: o.name }))
+                : modernRanked.map(k => ({ v: k, name: k }))
+              ).map(o => {
+                const on = home
+                  ? (home.mode === 'old' ? home.id === o.v : home.key === o.v) && home.mode === stepMode
+                  : false
+                return (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => pickHome(o.v)}
+                    aria-pressed={on}
+                    className={`min-h-[56px] rounded-md border px-4 py-3 text-[1.125rem] font-medium ${FOCUS} ${
+                      on
+                        ? 'border-[#1a4e9c] bg-[#eef3fb] text-[#1a4e9c] dark:border-[#2f5f9f] dark:bg-[#16202c] dark:text-[#7aa9e8]'
+                        : `${SURFACE.line} bg-white ${TEXT.ink} hover:border-[#1a4e9c] dark:bg-transparent`
+                    }`}
+                  >
+                    {o.name}
+                  </button>
+                )
+              })}
             </div>
             {home && homeFacts != null && (
               <div className="mt-4">
