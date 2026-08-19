@@ -2686,7 +2686,7 @@ function StepMode({ pack, oldRanked, onExit }: {
         return (
           <div>
             <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
-              할아버지·할머니의 사진과 편지를 나라에 맡기는 일부터 하실 수 있습니다.
+              집안에 남은 사진과 편지를 나라에 맡기는 일부터 하실 수 있습니다.
             </p>
             <ul className="mt-4 space-y-3">
               {donation.map(p => (
@@ -2968,12 +2968,18 @@ export default function GohyangOn() {
       {/* ── 고향 찾기 진입 ──
           지도를 읽을 줄 아는 사람만 들어올 수 있는 화면이면 후손은 못 들어온다.
           후손이 아는 것은 지도가 아니라 **집안에서 들은 고향 이름** 하나다.
-          그래서 이름만으로 들어오는 문을 표제 바로 아래에 둔다. */}
+          그래서 이름만으로 들어오는 문을 표제 바로 아래에 둔다.
+
+          ★ 물음을 "할아버지 고향"으로 좁히지 않는다(사용자 지적, 2026-08-19).
+            할머니가 지워지고, 부모 세대와 1세대 본인이 빠지며, 탈북민에게는
+            조부모가 아니라 두고 온 가족의 고향일 수 있다. 화면이 누구의 고향인지
+            먼저 단정하면 그 바깥에 있는 사람은 자기 자리가 아니라고 느낀다. */}
       <div className={`mt-8 ${SURFACE.slab} p-5`}>
-        <h2 className={`${TYPE.h2} ${TEXT.ink} ${PROSE}`}>할아버지 고향이 어디십니까?</h2>
+        <h2 className={`${TYPE.h2} ${TEXT.ink} ${PROSE}`}>어느 고향을 찾으십니까?</h2>
         <p className={`mt-1 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
-          이산가족 출신지는 광복 당시 구행정구역 {nf(pack.map.regionsOld.length)}종으로만 공표됩니다.
-          {' '}지도를 몰라도 고향 이름을 누르면 그곳이 열립니다.
+          본인의 고향이든, 부모·조부모께서 떠나오신 곳이든, 북에 두고 온 가족이 살던 곳이든 좋습니다.
+          {' '}이산가족 출신지는 광복 당시 구행정구역 {nf(pack.map.regionsOld.length)}종으로만 공표됩니다 —
+          {' '}지도를 몰라도 이름을 누르면 그곳이 열립니다.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {oldRanked.map(o => (
