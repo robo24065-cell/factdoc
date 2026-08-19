@@ -253,14 +253,14 @@ const XY = (x, y) => ({ x, y })
 
   push({
     id: 'deaths-since-last-reunion',
-    title: '마지막 상봉 이후, 2만 5천 명이 죽었다',
+    title: '마지막 상봉 이후 2만 5천 분이 세상을 떠나셨습니다',
     question: '당국차원 교류가 끊긴 뒤 등록 이산가족은 몇 명이나 사망했나?',
     verdict: '성립',
     method: '월별 등록현황의 사망자 누계 증분. 제21차 상봉행사가 있던 2018년 8월 말을 기준선으로 잡고, ①단일 출처(CSV 2025-08-31)와 ②출처 연결(HWP 2026-05-31) 두 값을 나란히 낸다.',
     n: monthsHwp,
     findings: [
-      F('단일 출처(CSV)', `${(d1 - d0).toLocaleString()}명 사망`, `2018-08-31 → ${CSV_ASOF}, ${monthsCsv}개월. 월평균 ${Math.round((d1 - d0) / monthsCsv).toLocaleString()}명`),
-      F('출처 연결(CSV→HWP)', `${(dHwp - d0).toLocaleString()}명 사망`, `2018-08-31 → ${HWP_ASOF}, ${monthsHwp}개월. 월평균 ${Math.round((dHwp - d0) / monthsHwp).toLocaleString()}명`),
+      F('단일 출처(CSV)', `${(d1 - d0).toLocaleString()}분`, `2018-08-31 → ${CSV_ASOF}, ${monthsCsv}개월. 월평균 ${Math.round((d1 - d0) / monthsCsv).toLocaleString()}명`),
+      F('출처 연결(CSV→HWP)', `${(dHwp - d0).toLocaleString()}분`, `2018-08-31 → ${HWP_ASOF}, ${monthsHwp}개월. 월평균 ${Math.round((dHwp - d0) / monthsHwp).toLocaleString()}명`),
       F('같은 기간 당국차원 교류', '0명', '카드 exchange-terminus 참조'),
       F('생존자 감소', `${base.total.toLocaleString()}명 → ${csvEnd.total.toLocaleString()}명 (${survDrop.toLocaleString()}명, ${r1((survDrop / base.total) * 100)}%)`, '감소분 < 사망자인 이유는 같은 기간 신규 등록 유입이 있기 때문'),
     ],
@@ -314,7 +314,7 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
 
 /* ══ 기록 계승 우선순위 — 「어디부터 남겨야 하는가」 ══════════════════
    분석이 판단으로 넘어가는 자리. 세 축을 순위로 바꿔 더한다(동일 가중):
-     ① 소멸 속도 — 지난 98개월 그 고향 원적 생존자가 얼마나 빨리 줄었나
+     ① 남은 분이 줄어드는 속도 — 지난 98개월 그 고향 원적 생존자가 얼마나 빨리 줄었나
      ② 기록 공백 — 생존자 1인당 남은 공식 기록이 얼마나 적은가
      ③ 식별 공백 — 그 고향임을 확인할 수 있는 사료가 얼마나 적은가
    점수의 절대값은 쓰지 않는다. 순서만 쓴다. */
@@ -358,16 +358,16 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
 
   push({
     id: 'legacy-priority',
-    title: '어디부터 남겨야 하는가 — 빨리 사라지는데 기록도 없는 고향',
+    title: '어디부터 남겨야 하는가 — 남은 분이 빠르게 줄고 기록도 적은 고향',
     question: '고향 7종 가운데, 지금 기록을 우선 확보해야 할 곳은 어디인가?',
     verdict: '성립',
-    method: `세 축을 각각 순위로 바꿔 동일 가중으로 더했다(합이 작을수록 급함). ① 소멸 속도 = 월별 원적 생존자 ${M0.month}→${CSV_ASOF} 감소율(실측) ② 기록 공백 = 생존자 1인당 공식 기록(카드 record-density-gap 과 같은 집계) ③ 식별 공백 = 생존자 1인당 그 고향임이 확인되는 사료(상봉장소만 걸린 건 제외). 점수의 절대값은 쓰지 않고 순서만 쓴다. 가중치를 손으로 정하지 않으려고 값이 아니라 순위를 더했다.`,
+    method: `세 축을 각각 순위로 바꿔 동일 가중으로 더했다(합이 작을수록 급함). ① 남은 분이 줄어드는 속도 = 월별 원적 생존자 ${M0.month}→${CSV_ASOF} 감소율(실측) ② 기록 공백 = 생존자 1인당 공식 기록(카드 record-density-gap 과 같은 집계) ③ 식별 공백 = 생존자 1인당 그 고향임이 확인되는 사료(상봉장소만 걸린 건 제외). 점수의 절대값은 쓰지 않고 순서만 쓴다. 가중치를 손으로 정하지 않으려고 값이 아니라 순위를 더했다.`,
     n: scored.length,
     findings: [
-      F('1순위', `${t1.name}`, `소멸 ${r1(t1.dropPct)}% 감소 · 기록 ${r3(t1.densityAll)}건/인 · 식별사료 ${r3(t1.homePerSurv)}건/인 (순위합 ${t1.rankSum})`),
-      F('2순위', `${t2.name}`, `소멸 ${r1(t2.dropPct)}% · 기록 ${r3(t2.densityAll)}건/인 (순위합 ${t2.rankSum})`),
+      F('1순위', `${t1.name}`, `생존 ${r1(t1.dropPct)}% 감소 · 기록 ${r3(t1.densityAll)}건/인 · 식별사료 ${r3(t1.homePerSurv)}건/인 (순위합 ${t1.rankSum})`),
+      F('2순위', `${t2.name}`, `생존 ${r1(t2.dropPct)}% · 기록 ${r3(t2.densityAll)}건/인 (순위합 ${t2.rankSum})`),
       F('가장 여유 있는 곳', `${last.name}`, `기록 ${r3(last.densityAll)}건/인 (순위합 ${last.rankSum}) — 여유가 있다는 뜻이지 충분하다는 뜻이 아니다`),
-      F('축을 빼도 1위가 유지되는가', `${stable}/3 축`, `소멸 제외 시 ${woS.name} · 기록 제외 시 ${woG.name} · 식별 제외 시 ${woI.name}`),
+      F('축을 빼도 1위가 유지되는가', `${stable}/3 축`, `감소 축 제외 시 ${woS.name} · 기록 축 제외 시 ${woG.name} · 식별 축 제외 시 ${woI.name}`),
       F('표본', `${scored.length}개 고향`, 'n=7 이다. 이 순서는 정렬을 돕는 것이지 점수가 아니다'),
     ],
     series: [
@@ -552,16 +552,16 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
 
   push({
     id: 'aging-deficit',
-    title: '8년이 흘렀지만 이 집단은 2.25세밖에 늙지 않았다',
-    question: '생존 이산가족의 평균 연령은 시간이 흐르는 만큼 오르는가?',
+    title: '여덟 해가 지났는데 평균 나이는 2.25세만 올랐습니다',
+    question: '평균 나이가 흐른 시간만큼 오르지 않는 것은 무엇을 뜻하는가?',
     verdict: '성립',
     method: `월별 공표 평균연령(연나이 — 1월 1일에 전원 +1)의 실측 계단. ${monthly.length}개월 전 구간에서 1월 증분과 나머지 달 증분을 분리해 평균낸다. 닫힌 코호트라면 1월에 정확히 +1.0, 나머지 달은 0 이어야 한다.`,
     n: monthly.length,
     findings: [
       F('평균연령', `${M0.avgAge}세 → ${M1.avgAge}세`, `${M0.month} → ${M1.month}, ${r2(spanYears)}년 동안 +${r2(ageRise)}세`),
-      F('시간 대비 노화 속도', `${pct(ageRise, spanYears)}%`, '흐른 시간의 4분의 1만큼만 늙었다 — 나머지는 나이 많은 쪽이 먼저 사라져 상쇄된 것이다'),
-      F('1월 계단', `평균 +${r2(janMean)}세`, `연나이라면 +1.00 이어야 한다. 부족분 ${r2(1 - janMean)}세가 1월 한 달의 사망 선택효과다 (n=${janJumps.length})`),
-      F('나머지 11개월', `평균 ${r2(otherMean)}세/월`, `연 ${r2(otherMean * 11)}세씩 내려간다 — 사망이 평균을 끌어내리는 속도 (n=${otherDeltas.length})`),
+      F('흐른 시간 대비', `${pct(ageRise, spanYears)}%`, '여덟 해가 흘렀지만 평균은 그 4분의 1만 올랐습니다. 가장 연로하신 분들이 그사이 세상을 떠나셨기 때문입니다'),
+      F('1월 계단', `평균 +${r2(janMean)}세`, `연나이라면 +1.00 이어야 합니다. 모자란 ${r2(1 - janMean)}세만큼 그 한 달 사이에 어르신들이 떠나셨다는 뜻입니다 (n=${janJumps.length})`),
+      F('나머지 11개월', `평균 ${r2(otherMean)}세/월`, `해마다 ${r2(otherMean * 11)}세씩 내려갑니다. 연로하신 분부터 떠나시는 만큼 남은 분들의 평균이 낮아집니다 (n=${otherDeltas.length})`),
       F('같은 기간 생존자', `${M0.total.toLocaleString()}명 → ${M1.total.toLocaleString()}명`, `${r1((M1.total / M0.total - 1) * 100)}%`),
     ],
     series: [
@@ -570,7 +570,7 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
     ],
     caveats: [
       '공표 연령은 만나이가 아니라 연나이다(원본 projection.json validation.ageConvention 에서 이미 실측 확인된 사실을 이 카드가 재현한다).',
-      '신규 등록 유입이 평균을 낮추는 쪽으로도 작용한다(최근 24개월 월 중앙값 +10명 수준). 사망 선택효과와 분리하지 않았다.',
+      '신규 등록 유입도 평균을 낮추는 쪽으로 작용합니다(최근 24개월 월 중앙값 +10명 수준). 두 요인을 분리하지 않았습니다.',
       '평균연령은 소수 둘째 자리로 공표된다. 월 증분이 0.01 단위 반올림에 걸릴 수 있다.',
     ],
     asOf: CSV_ASOF,
@@ -694,7 +694,7 @@ const breaks = []
 
   push({
     id: 'relation-shift',
-    title: '직접 헤어진 사람부터 사라진다 — 남는 것은 3촌 이상',
+    title: '직접 헤어진 분들이 먼저 떠나시고, 3촌 이상이 남습니다',
     question: '생존 이산가족의 관계 구성은 어떻게 바뀌고 있는가?',
     verdict: '성립',
     method: `관계 3종(부모=부부/부모/자녀 · 형제자매 · 3촌이상)의 감소율 비교. ${breakMonth} 재분류(카드 series-breaks) 때문에 전 구간을 이어 읽을 수 없어 **재분류 다음 달(${start.month})부터 ${end.month}까지** 82개월만 쓴다.`,
@@ -901,7 +901,7 @@ if (exists(corpusPath)) {
 
   push({
     id: 'death-seasonality',
-    title: '겨울에 더 줄어드는가 — 방향은 맞지만 표본이 7년뿐이다',
+    title: '겨울에 더 많이 떠나시는가 — 방향은 맞지만 표본이 7년뿐이다',
     question: '등록 이산가족의 사망에 계절성이 있는가?',
     verdict: '약함',
     method: `월별 사망 증분을 그 달 시작 생존자로 나눠 월 사망률을 만들고, 완전 역년 ${fullYears.length}개(${fullYears[0]}~${fullYears.at(-1)})에 대해 겨울(12·1·2월) 평균과 여름(6·7·8월) 평균을 짝지어 비교. 유의성은 부호검정 정확 p (n=${perYear.length}).`,

@@ -17,3 +17,33 @@ body {
   margin: 0;
   font-family: system-ui, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* ── 기억 카드 인쇄 ──
+   내려받기가 정책으로 막힌 PC(관공서·요양시설)와 종이를 더 편하게 여기는 사용자를 위해
+   인쇄 경로를 반드시 함께 둔다. 인쇄하면 기억 카드 한 장만 남고 나머지 화면은 사라진다.
+   visibility 로 감추는 이유: display:none 은 조상 요소의 레이아웃까지 무너뜨려
+   카드가 페이지 밖으로 밀려나가는 일이 생긴다. */
+@media print {
+  body * {
+    visibility: hidden !important;
+  }
+  .memcard-print,
+  .memcard-print * {
+    visibility: visible !important;
+  }
+  .memcard-print {
+    position: absolute !important;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0 !important;
+    border: 0 !important;
+    padding: 0 !important;
+  }
+  .memcard-noprint {
+    display: none !important;
+  }
+  @page {
+    margin: 14mm;
+  }
+}

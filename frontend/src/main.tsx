@@ -9,6 +9,8 @@ import GohyangOn from './pages/GohyangOn'
 
 // 팩트체커는 부속 화면이 됐다(지연로딩) — 검색 인덱스 13.5MB 를 첫 화면 비용에 얹지 않는다
 const SasilOn = lazy(() => import('./pages/SasilOn'))
+// 분석 덱(지연로딩) — analysis.json 234KB 를 첫 화면 비용에 얹지 않는다
+const AnalysisDeck = lazy(() => import('./pages/AnalysisDeck'))
 // 사용자(지연로딩)
 const Home = lazy(() => import('./pages/Home'))
 const Trending = lazy(() => import('./pages/Trending'))
@@ -33,6 +35,8 @@ createRoot(document.getElementById('root')!).render(
         <Route element={<SasilOnLayout />}>
           <Route index element={<GohyangOn />} />
           <Route path="gohyang" element={<GohyangOn />} />
+          {/* 분석 덱 — 재본 것과 재보지 못한 것을 한 장씩 넘긴다 */}
+          <Route path="deck" element={<AnalysisDeck />} />
           {/* 사실은ON 팩트체커 — 사이드 화면 */}
           <Route path="factcheck" element={<SasilOn />} />
         </Route>

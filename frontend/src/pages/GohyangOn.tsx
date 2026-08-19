@@ -290,6 +290,9 @@ import MuseumBanner from '../components/MuseumBanner'
    거쳐 문장으로 엮기만 한다. 검증 실패·네트워크 실패는 전부 fallbackGuide(규칙 문장)로 되돌린다. */
 import { buildGuideFacts, fallbackGuide, cardHint } from '../engine/nk-guide.mjs'
 import { probe as probeLLM, guideWithLLM } from '../engine/nk-llm-proxy.mjs'
+/* 기상은 화면이 직접 부르는 유일한 계열 — 지도와 기억 카드가 같은 호출을 쓴다 */
+import { useLiveWeather } from '../lib/gohyangWeather'
+import MemoryCard, { type MemoryHome, type MemoryDonation } from '../components/MemoryCard'
 
 const FOCUS = T_FOCUS
 const CARD = SURFACE.card
@@ -852,83 +855,8 @@ function NkMapView({
 /* ══════════════════════ 미니 추이 (출신지 월별) ══════════════════════ */
 
 /* ══════════════════════ 실시간 기상 ══════════════════════
-
-   왜 NOAA 를 안 쓰고 따로 부르는가 — 실측했다(2026-08-19):
-     GSOD  /access/2026/            → HTTP 404
-     ISD   /global-hourly/2026/     → HTTP 404
-     KN 27지점 최신 관측            → 2025-08-24 (1년 정지)
-   기상청 계열은 북한관측·ASOS·apihub 전부 로그인이 걸려 있어 익명으로 못 받는다.
-
-   그래서 **Open-Meteo** 를 쓴다 — 키·로그인·신청 없이 익명 호출이 되고,
-   13개 지역을 한 번의 요청으로 받는다(실측 1.2초 · 7.7KB).
-
-    빌드에 굽지 않고 **브라우저가 직접** 부른다. 기상은 빌드 시점의 값을 저장하는 순간
-     그 자체로 stale 이 되는 유일한 계열이라, as-of 를 지키는 방법이 '실시간'이다.
-     네트워크가 죽으면 조용히 감추고 NOAA 최종 관측만 남긴다(LLM 4원칙 ④와 같은 태도). */
-
-const OPEN_METEO = 'https://api.open-meteo.com/v1/forecast'
-
-/* 지역 대표 지점 — 도 소재지·주요 도시 좌표. 지도 centroid 는 SVG 좌표라 쓸 수 없다. */
-const REGION_LATLON: Record<string, [number, number]> = {
-  평양: [39.019, 125.738], 남포: [38.737, 125.408], 개성: [37.970, 126.554], 라선: [42.256, 130.294],
-  평안남도: [39.238, 125.876], 평안북도: [40.104, 124.398], 자강도: [40.969, 126.585],
-  황해남도: [38.044, 125.715], 황해북도: [38.507, 126.640], 강원도: [39.147, 127.444],
-  함경남도: [39.918, 127.536], 함경북도: [41.795, 129.775], 량강도: [41.396, 128.180],
-}
-
-type LiveWx = { name: string; tempC: number; maxC: number; minC: number; prcpMm: number; at: string }
-
-/** 선택한 지역들의 현재 기상. 실패·미지원은 null 로 두고 화면에서 감춘다. */
-function useLiveWeather(names: string[]): { rows: LiveWx[]; state: 'idle' | 'loading' | 'ok' | 'fail' } {
-  const [rows, setRows] = useState<LiveWx[]>([])
-  const [state, setState] = useState<'idle' | 'loading' | 'ok' | 'fail'>('idle')
-  const key = names.join('|')
-
-  useEffect(() => {
-    const targets = names.filter(n => REGION_LATLON[n])
-    if (!targets.length) { setRows([]); setState('idle'); return }
-    let alive = true
-    setState('loading')
-    const q = new URLSearchParams({
-      latitude: targets.map(n => REGION_LATLON[n][0]).join(','),
-      longitude: targets.map(n => REGION_LATLON[n][1]).join(','),
-      current: 'temperature_2m,precipitation',
-      daily: 'temperature_2m_max,temperature_2m_min',
-      timezone: 'Asia/Pyongyang',
-      forecast_days: '1',
-    })
-    fetch(`${OPEN_METEO}?${q}`)
-      .then(r => { if (!r.ok) throw new Error(String(r.status)); return r.json() })
-      .then((j: unknown) => {
-        if (!alive) return
-        // 지점이 1곳이면 객체, 여러 곳이면 배열로 온다
-        const arr = (Array.isArray(j) ? j : [j]) as Array<{
-          current?: { temperature_2m?: number; precipitation?: number; time?: string }
-          daily?: { temperature_2m_max?: number[]; temperature_2m_min?: number[] }
-        }>
-        const out: LiveWx[] = []
-        arr.forEach((x, i) => {
-          const t = x?.current?.temperature_2m
-          if (typeof t !== 'number' || !targets[i]) return
-          out.push({
-            name: targets[i],
-            tempC: t,
-            maxC: x?.daily?.temperature_2m_max?.[0] ?? NaN,
-            minC: x?.daily?.temperature_2m_min?.[0] ?? NaN,
-            prcpMm: x?.current?.precipitation ?? 0,
-            at: x?.current?.time ?? '',
-          })
-        })
-        setRows(out)
-        setState(out.length ? 'ok' : 'fail')
-      })
-      .catch(() => { if (alive) { setRows([]); setState('fail') } })
-    return () => { alive = false }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [key])
-
-  return { rows, state }
-}
+   좌표표와 호출 규약은 lib/gohyangWeather.ts 하나뿐이다 — 기억 카드도 같은 것을 쓴다.
+   빌드에 굽지 않고 브라우저가 직접 부르는 이유는 그 파일 머리에 적어 두었다. */
 
 function LiveWeatherRows({ names }: { names: string[] }) {
   const { rows, state } = useLiveWeather(names)
@@ -2171,16 +2099,69 @@ function GapBar({ g }: { g: DescGap }) {
   )
 }
 
-function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
+function DescendantBridge({ desc, isan, pack }: { desc: DescData; isan: IsanData; pack: Pack }) {
   const [openAssume, setOpenAssume] = useState(false)
   const x = desc.descendants.wantsCrossGenerationExchange
   const alive = isan.latest.overview.cumulative.alive
+
+  /* ── 기억 카드가 쓸 재료 ──
+     이 구획은 진단(통계)만 하고 후손이 무언가를 남길 자리를 주지 못했다(사용자 지적).
+     아래 도구가 그 자리인데, 빈 칸을 주면 아무도 못 쓰므로 **질문을 데이터가 만든다**.
+     여기서는 팩에서 재료만 뽑아 넘긴다 — 계산하지 않는다(패널·사료 조인은 기존 함수 그대로). */
+  const memoryHomes = useMemo<MemoryHome[]>(() => {
+    const byOrigin = new Map(isan.latest.survivors.byOrigin.entries.map(e => [e.label, e.n]))
+    return pack.map.regionsOld
+      .map(o => {
+        const sel: Sel = { mode: 'old', id: o.id }
+        const p = buildPanel(sel, pack)
+        const mu = museumFor(sel, pack)
+        const latestKey = p?.isanKey?.latestKey
+        const relics = [
+          ...mu.hometown.map(r => ({ r, historic: false })),
+          ...mu.historic.map(r => ({ r, historic: true })),
+        ].slice(0, 2)
+        return {
+          id: o.id,
+          name: o.name,
+          survivors: latestKey ? (byOrigin.get(latestKey) ?? 0) : 0,
+          members: p?.memberNames ?? [],
+          events: (p?.events ?? []).slice(0, 2).map(e => ({ date: e.date, title: clean(e.title) })),
+          eventsTotal: p?.eventsTotal ?? 0,
+          relics: relics.map(({ r, historic }) => ({
+            iId: r.iId,
+            title: plain(r.title),
+            producedOn: r.producedOn ? museumDate(r.producedOn) : null,
+            imgSrc: imgSrcOf(r),
+            recordUrl: r.recordUrl,
+            historic,
+          })),
+          relicsTotal: mu.total,
+        }
+      })
+      .sort((a, b) => b.survivors - a.survivors)
+  }, [pack, isan])
+
+  /* 기증 2경로 — 실태조사 1순위 요청(기록물 수집 보존)에 직접 답하는 창구다.
+     목록은 paths.json 이 정하고, 화면은 그중 기증만 골라 카드 옆에 둔다. */
+  const memoryDonations = useMemo<MemoryDonation[]>(
+    () =>
+      DONATION_FIRST.map(id => pack.paths.paths.find(p => p.id === id))
+        .filter((p): p is PathItem => Boolean(p))
+        .map(p => ({ id: p.id, title: plain(p.title), org: plain(p.org), what: plain(p.what), url: p.applyUrl || p.url, contact: plain(p.contact) })),
+    [pack],
+  )
+
+  const memoryAsOf = {
+    survivors: isan.latest.asOf,
+    events: pack.region.sources.find(s => s.coverageEnd)?.coverageEnd ?? pack.region.builtAt,
+    museum: pack.museum.builtAt,
+  }
 
   return (
     <Block
       tag="후손"
       tone="blue"
-      title="후손 다리 — 1세대가 떠난 뒤 이 기록은 누구의 것인가"
+      title="기록을 이어받는 사람들 — 1세대가 떠난 뒤 이 기록은 누구의 것인가"
       sub={`${desc.survey.name} · 심층 ${nf(desc.survey.bases.deep)}명 (${desc.survey.publishedAt} 공표)`}
     >
       {/* ── 통일부 공식 안내로 바로 가는 줄 ──
@@ -2190,6 +2171,12 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
         <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>통일부 안내로 바로 가기</p>
         <p className={`mt-1 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
           신청과 교류는 통일부 이산가족정보통합시스템에서 이루어집니다. 아래에서 바로 열립니다.
+        </p>
+        {/* 「후손」으로만 부르면 자녀가 없는 집안이 빠진다.
+             이산가족법 제2조는 이산가족을 8촌 이내로 정의한다 — 조카·사촌도 당사자다. */}
+        <p className={`mt-2 rounded-md border-l-[3px] border-[#1a4e9c] bg-[#eef3fb] px-3 py-2 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
+          자녀나 손자녀가 아니어도 괜찮습니다. 이산가족법은 이산가족을 <b className={`font-semibold ${TEXT.ink}`}>8촌 이내 친족</b>으로
+          정하고 있어, 조카와 사촌도 같은 자격으로 신청하고 기록을 맡기실 수 있습니다.
         </p>
         <div className="mt-3 flex flex-wrap gap-2">
           {([
@@ -2300,6 +2287,12 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
           </>
         )}
       </p>
+
+      {/* ── 진단 다음에 손을 쓸 자리 ──
+             위까지는 전부 "후손이 이어받고 싶어 하는데 수단이 없다"는 통계다.
+             아래 도구가 이 구획 안에서 그 수단 하나를 실제로 준다 — 후손이 집안의 기억을
+             구조화해 적고, 그림 파일이나 인쇄물로 손에 쥐고, 기증 창구로 들고 갈 수 있게. */}
+      <MemoryCard homes={memoryHomes} donations={memoryDonations} asOf={memoryAsOf} />
     </Block>
   )
 }
@@ -2555,7 +2548,7 @@ const STEPS = [
   { id: 'events', title: '그 고향의 최근 기록' },
   { id: 'museum', title: '그 고향에서 온 기록물' },
   { id: 'clock', title: '앞으로 몇 년 남았습니까' },
-  { id: 'action', title: '후손이 지금 할 수 있는 일' },
+  { id: 'action', title: '지금 하실 수 있는 일' },
   { id: 'sources', title: '이 화면이 쓴 자료' },
 ] as const
 type StepId = (typeof STEPS)[number]['id']
@@ -3464,7 +3457,7 @@ export default function GohyangOn() {
       </div>
 
       <div id="descendant" className="mt-8 scroll-mt-24">
-        <DescendantBridge desc={pack.desc} isan={pack.isan} />
+        <DescendantBridge desc={pack.desc} isan={pack.isan} pack={pack} />
       </div>
 
       {/* ── 진단 다음에 행동. 후손 다리가 "수단이 없다"고 말했으니

@@ -44,6 +44,9 @@ const extra = argv.filter((a) => !a.startsWith('--'))
 /* 기본 대상 — 고향ON 화면이 렌더하는 코드와 그 화면이 fetch 하는 데이터 팩 */
 const TARGETS = [
   'frontend/src/pages/GohyangOn.tsx',
+  'frontend/src/pages/AnalysisDeck.tsx',
+  'frontend/src/components/MemoryCard.tsx',
+  'frontend/src/lib/gohyangWeather.ts',
   'frontend/src/theme/gohyang.ts',
   'frontend/src/layouts/SasilOnLayout.tsx',
   'frontend/public/gohyang',

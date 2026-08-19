@@ -12,6 +12,7 @@ import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C } from '../theme/gohyang'
 
 const NAV = [
   { to: '/', label: '고향잇기', alias: '/gohyang' },
+  { to: '/deck', label: '분석' },
   { to: '/factcheck', label: '사실은ON 팩트체커' },
 ] as const
 
