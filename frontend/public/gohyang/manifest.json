@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-08-19",
+  "builtAt": "2026-08-15",
   "note": "고향ON(/gohyang) 지도 대시보드가 fetch 하는 데이터 팩. 원본 JSON을 가공 없이 그대로 복사한 것이며, 조인·집계는 화면에서 수행한다.",
   "sources": [
     {
@@ -151,7 +151,7 @@
     },
     {
       "file": "museum.json",
-      "role": "남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)",
+      "role": "박물관 묶음·코너 목록 — 둘러보기 화면이 링크로 넘길 카드",
       "builtAt": "2026-08-19",
       "asOf": {
         "수집일": "2026-08-19",
@@ -220,7 +220,7 @@
     },
     {
       "file": "paths.json",
-      "role": "후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종",
+      "role": "남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)",
       "builtAt": "2026-08-19",
       "asOf": "2026-08-19",
       "upstream": [
@@ -311,7 +311,7 @@
     },
     {
       "file": "opinion.json",
-      "role": "통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)",
+      "role": "후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종",
       "builtAt": "2026-08-19",
       "asOf": "2025-09-01",
       "upstream": [
@@ -366,21 +366,26 @@
       "bytes": 8394
     },
     {
+      "name": "museum-sections.json",
+      "from": "북한자료-api/museum-sections.json",
+      "bytes": 7978
+    },
+    {
       "name": "museum.json",
       "from": "북한자료-api/museum.json",
       "bytes": 771987,
       "slim": true,
-      "sourceBytes": 5519693
+      "sourceBytes": 5632168
     },
     {
       "name": "paths.json",
       "from": "북한자료-api/descendant-paths.json",
-      "bytes": 48570
+      "bytes": 49712
     },
     {
       "name": "opinion.json",
       "from": "북한자료-api/unification-opinion.json",
-      "bytes": 100738
+      "bytes": 104841
     }
   ],
   "limits": {

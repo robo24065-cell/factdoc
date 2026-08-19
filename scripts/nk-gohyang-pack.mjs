@@ -173,6 +173,12 @@ const INPUTS = [
     role: '후손 세대 — 제4차 실태조사의 후손 문항·기록사업 선호도·세대 간극 3종',
   },
   {
+    out: 'museum-sections.json',
+    src: '북한자료-api/museum-sections.json',
+    require: ['builtAt', 'source', 'totalRecords', 'collections', 'corners', 'meta'],
+    role: '박물관 묶음·코너 목록 — 둘러보기 화면이 링크로 넘길 카드',
+  },
+  {
     out: 'museum.json',
     src: '북한자료-api/museum.json',
     require: ['builtAt', 'sources', 'license', 'endpoints', 'collections', 'archive', 'records', 'byRegion', 'byRegionHistoric', 'meta'],

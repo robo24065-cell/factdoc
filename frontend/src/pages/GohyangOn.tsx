@@ -262,7 +262,7 @@ type OpinionData = {
 
 type Pack = {
   map: NkMapData; region: NkRegionData; isan: IsanData; proj: ProjData; desc: DescData
-  museum: MuseumData; paths: PathData; opinion: OpinionData
+  museum: MuseumData; paths: PathData; opinion: OpinionData; tour: MuseumSections
 }
 
 /* 지도 모드 — 현행 행정구역 / 광복 당시 구행정구역(= 이산가족 '고향' 축) */
@@ -282,6 +282,7 @@ const VIEW_KEY = 'gohyang_view'
    아래는 이 화면이 쓰는 이름으로 옮겨 붙인 얇은 층이다 —
    기존 JSX 수백 곳을 건드리지 않고 껍데기만 갈아입히려고 이렇게 둔다. */
 import { SURFACE, TYPE, TEXT, ASOF, PROSE as T_PROSE, FOCUS as T_FOCUS, BTN, josa } from '../theme/gohyang'
+import MuseumTour, { type MuseumSections } from '../components/MuseumTour'
 
 /* 고향 도우미(페르소나 AI) — LLM 4원칙(CLAUDE.md §5)의 화면 쪽 절반.
    사실 묶음은 buildGuideFacts 가 데이터 팩에서 만들고, LLM 은 프록시(/api/llm, kind='guide')를
@@ -3129,10 +3130,10 @@ export default function GohyangOn() {
       })
     Promise.all([
       grab('map'), grab('region'), grab('isan'), grab('projection'), grab('descendant'),
-      grab('museum'), grab('paths'), grab('opinion'),
+      grab('museum'), grab('paths'), grab('opinion'), grab('museum-sections'),
     ])
-      .then(([map, region, isan, proj, desc, museum, paths, opinion]) => {
-        if (alive) setPack({ map, region, isan, proj, desc, museum, paths, opinion })
+      .then(([map, region, isan, proj, desc, museum, paths, opinion, tour]) => {
+        if (alive) setPack({ map, region, isan, proj, desc, museum, paths, opinion, tour })
       })
       .catch(e => { if (alive) setErr(e?.message ?? '데이터를 불러오지 못했습니다.') })
     return () => { alive = false }
@@ -3425,6 +3426,12 @@ export default function GohyangOn() {
 
       {/* ── 후손 다리 — 기록 골든타임 바로 뒤에 온다.
              "언제까지 남아 있는가" 다음 질문이 "그 다음은 누구인가"이기 때문이다. */}
+      {/* 박물관 둘러보기 — 기록 골든타임 다음, 후손 다리 앞.
+             "얼마 안 남았다"를 본 사람이 "무엇이 남아 있나"를 보고, 그다음 "무엇을 할까"로 간다. */}
+      <div id="museum-tour" className="mt-8 scroll-mt-24">
+        <MuseumTour data={pack.tour} />
+      </div>
+
       <div id="descendant" className="mt-8 scroll-mt-24">
         <DescendantBridge desc={pack.desc} isan={pack.isan} />
       </div>
