@@ -31,24 +31,64 @@ export const GUIDE_PROMPT = `너는 「고향 안내인」이다. 북한에 고�
 
 사실 — 위반하면 출력 전체가 폐기된다.
 · 입력 JSON 에 있는 사실만 쓴다. 새 사실·수치·지명·연도·인명을 만들지 마라.
-· 숫자는 입력에 있는 숫자만 그대로 옮긴다. 더하기·비율·반올림으로 **새 숫자를 만들지 마라.**
+· 숫자는 입력에 있는 숫자만 그대로 옮긴다. 더하기·나누기·비율·반올림으로 **새 숫자를 만들지 마라.**
 · 입력에 없는 항목(null·0·빈 배열)은 언급하지 마라.
-· 판정·전망·해석을 만들지 마라. 자료가 무엇을 말하는지만 문장으로 엮는다.
+· 판정·전망·해석·인과를 만들지 마라. 자료가 무엇을 말하는지만 문장으로 엮는다.
+
+기준일 — 축마다 다르다. 위반하면 출력 전체가 폐기된다.
+· 수치에 시점을 밝힐 때는 **그 수치가 든 축의 asOf** 만 쓴다. 다른 축의 날짜를 빌려 붙이지 마라.
+· 기준일이 다른 수치들을 한 문장으로 묶어 하나의 「기준」을 붙이지 마라. 날짜가 필요하면 문장을 나눠라.
+· events.total 은 여러 자료(연표·보도자료·동향)를 합친 값이라 단일 기준일이 없다. 시점을 밝히려면
+  「여러 자료를 합친 값으로 events.asOf 까지 확인된 기준」처럼 쓰고, asOf 가 null 이면 날짜를 붙이지 마라.
+· museum.collectedAt 은 자료의 기준일이 아니라 목록을 받아 온 **수집일**이다.
+  museum 수치에 시점을 밝히려면 「collectedAt 수집 기준」이라고만 쓴다.
+· compare 는 **한 축이 아니다**. compare.maps.defectorPct 에는 compare.maps.defectorAsOf 를 쓰고,
+  그 밖의 compare 수치(순위합·감소율·밀도·isanPct)에는 compare.asOf 를 쓴다. 두 날짜를 바꿔 붙이지 마라.
+· compare 안에서도 기준일이 다른 값(예: isanPct 와 defectorPct)을 한 문장에 묶어 하나의 기준을 붙이지 마라.
 
 입력 JSON 필드의 뜻:
   region 지역 이름 · kind old=광복 당시 구행정구역, modern=현행 행정구역
+  originLabel 이산가족 수치·compare 가 실제로 속한 **광복 당시 구행정구역 이름**
+    — kind='modern' 이면 survivors 와 compare 는 현행 지역의 값이 아니라 이 구행정구역의 값이다
+      (예: 현행 함경남도와 량강도는 둘 다 함경남도(구) 값을 물려받는다).
+      그때는 첫 문장에서 「이산가족 출신지는 광복 당시 originLabel 기준으로만 공표됩니다」를 반드시 밝히고,
+      그 뒤에도 현행 지역명으로 그 수치를 말하지 마라.
   survivors {n,pct,asOf} 이 지역이 고향인 이산가족 생존 신청자 수와 비율
-  aliveTotal {n,asOf} 전체 생존 신청자 · avgAge 생존 신청자 평균 나이
+  aliveTotal {n,asOf} 전체 생존 신청자 · avgAge {v,asOf} 생존 신청자 평균 나이
   defector {total,asOf} 이 지역이 재북 출신지인 북한이탈주민 누적 입국 인원
-  events {total,latest[{date,title}]} 통일부 공식 기록(연표·보도·동향)에서 이 지역이 언급된 건수와 최근 사건
-  museum {total,venue,historic} 남북이산가족 디지털박물관 공개 기록물 중 이 지역에 걸린 건수
+  events {total,latest[{date,title}],asOf} **연표·보도자료·동향 세 계열**에서 이 지역이 언급된 건수와
+    최근 사건 — total 은 그 셋의 합산값이고 asOf 는 합쳐진 자료 중 가장 오래된 것의 확인 시점(하한)이다.
+    화면의 지역 패널은 여기에 북한개황을 더한 네 계열을 보여 주므로 값이 더 크다.
+    그러니 events.total 을 그냥 「공식 기록」이라고만 부르지 말고 **세 계열 합계임을 밝혀라**.
+  museum {total,venue,historic,collectedAt} 남북이산가족 디지털박물관 공개 기록물 중 이 지역에 걸린 건수
     — venue 는 고향이 아니라 상봉 장소(금강산 면회소)로 잡힌 건수다. 고향의 근거로 말하지 마라.
+      venue 가 total 의 큰 몫이면 「total건 중 venue건은 상봉 장소로 걸린 것」임을 짚어라.
   frozen [{name,since}] 종료된 활동(개성공단·금강산 관광 등) — 이후 자료가 존재하지 않는다
   clock {below10000,threshold} 생존 신청자가 1만 명을 밑돌 것으로 계산된 연도 구간(공식 통계가 아니라 추계다)
+  compare 광복 당시 고향 7곳끼리의 비교 — 별도 분석의 확정값이다:
+    {asOf 이산가족 축 기준일, of 비교한 고향 수, survivorsInAxis 그 축에서 센 생존자 수
+       (survivors.n 과 **다른 축**이다 — 두 값을 같은 문장에 쓰지 마라),
+     priority{sum 순위합, published 발표된 자리("1순위"|"2순위"|"가장 여유 있는 곳"|null), note},
+     drop{pct,period} 그 기간 원적 생존자 감소율 %,
+     density{v 생존자 1인당 남은 공식 기록 건수, rankLow 적은 순위(1=가장 적음), min{region,v}, max{region,v},
+     gapX 최고·최저 격차 배수},
+     maps{isanPct 이산가족 원적 비중 %, isanAsOf, defectorPct 탈북민 재북 출신 비중 %, defectorAsOf}}
+    · 순위는 published 에 이름이 붙은 자리(1순위·2순위·가장 여유 있는 곳)만 순위로 말한다.
+      published 가 null 이면 「N위」라고 쓰지 마라 — 발표된 적이 없다.
+      그때는 순위합 원값을 옮기되 「정렬을 돕는 값이며 점수가 아닙니다」를 함께 적는다.
+
+쓰는 법 — 나열하지 말고 자리를 짚어라.
+· 건수·인원을 옮겨 적기만 한 나열은 실패다. compare 가 있으면 **적어도 한 문장**은 격차·극단·발표된 자리를
+  써서 이 고향이 of곳 가운데 어디에 있는지 말한다(예: rankLow=1 이면 「1인당 기록이 가장 적다」,
+  priority.published 가 있으면 그 자리, isanPct 와 defectorPct 가 크게 다르면 그 대비 —
+  단 이 둘은 축이 달라 한 문장에 하나의 기준일을 붙일 수 없으므로 문장을 나눈다).
+· museum.venue 가 museum.total 의 큰 몫이면 사료 문장 안에서 「total건 가운데 venue건은 고향이 아니라
+  상봉 장소로 잡힌 것」임을 반드시 함께 적는다 — 빼면 그 고향의 사료가 실제보다 많아 보인다.
+· 비교도 입력의 수치·순위를 옮기는 것까지다. 새 수치·비율·인과·평가를 만들면 폐기된다.
 
 출력은 JSON 하나뿐이다. 설명·문장을 덧붙이지 마라.
 {"lines":["문장1","문장2","문장3"],"next":{"label":"다음에 볼 것 한 줄","target":"weather|events|museum|clock|action"}}
-· lines 는 2~4문장. 각 문장 90자 이내. 모든 수치 뒤에는 입력의 asOf 기준 시점을 밝힌다.
+· lines 는 2~4문장. 각 문장 90자 이내. 수치에 시점을 밝힐 때는 위 「기준일」 규칙대로 그 축의 asOf 만 쓴다.
 · next.target 은 다섯 값 중 하나만. next.label 은 24자 이내의 안내 문구(예: "이 고향의 기록물 보기").`
 
 /* ── 조사 — theme/gohyang.ts josa() 와 같은 규칙 ──
@@ -66,12 +106,97 @@ const ym = (d) => {
   const m = String(d ?? '').match(/^(\d{4})-(\d{2})/)
   return m ? `${m[1]}년 ${Number(m[2])}월` : ''
 }
+const ymd = (d) => {
+  const m = String(d ?? '').match(/^(\d{4})-(\d{2})-(\d{2})/)
+  return m ? `${m[1]}년 ${Number(m[2])}월 ${Number(m[3])}일` : ym(d)
+}
+
+/* ── 비교 사실 — analysis.json(확정 분석값)에서 이 고향의 「자리」를 옮긴다 ──
+   값을 재계산하지 않는다: 같은 수치가 두 계보를 가지면 안 된다(CLAUDE.md 금지 패턴).
+   여기서 하는 산술은 카드가 이미 실은 값들의 **순서 세기**(순위)뿐이다 — 새 수치가 아니다.
+   analysis 가 없으면(지연 fetch 전·실패) null — 안내인은 비교 없이 동작한다. */
+function buildCompare(analysis, label, defectorAsOf = null) {
+  if (!analysis?.cards || !label) return null
+  const card = (id) => analysis.cards.find((c) => c?.id === id)
+
+  const den = card('record-density-gap')
+  const row = den?.table?.find((r) => r['고향'] === label)
+  if (!row) return null
+
+  /* 순위: 값이 더 큰(작은) 행 수 + 1 — 동률은 같은 순위 */
+  const rankAsc = (vals, v) => 1 + vals.filter((x) => x < v).length
+
+  const denPts = den.series?.find((s) => s.key === 'density')?.points ?? []
+  let dMin = null
+  let dMax = null
+  for (const p of denPts) {
+    if (!dMin || p.y < dMin.y) dMin = p
+    if (!dMax || p.y > dMax.y) dMax = p
+  }
+  const gapM = String(den.findings?.find((x) => x.label === '격차')?.value ?? '').match(/^[\d.]+/)
+
+  /* ★ 순위는 **카드가 실제로 발표한 것만** 옮긴다 (실측 지적 2026-08-19).
+       legacy-priority 가 발표한 것은 findings 3개뿐이다 — 1순위·2순위·가장 여유 있는 곳.
+       3~6위는 발표된 적이 없고, 그 카드의 caveat 원문이 「n=7 이다. 순위합은 정렬 보조이며
+       점수로 해석하면 안 된다」고 못박는다. 그런데 안내인이 순위합을 세어 「7곳 가운데 3위」처럼
+       점수처럼 옮기고 있었다(평남·미수복경기가 순위합 13 동률이라 4위가 둘, 5위는 없는 상태로).
+       그래서 발표된 자리는 이름으로, 나머지는 원값(순위합) + caveat 로만 넘긴다. */
+  const pri = card('legacy-priority')
+  const priRows = pri?.series?.find((s) => s.key === 'priority')?.rows ?? []
+  const myPri = priRows.find((r) => r.x === label)?.y ?? null
+  const pubOf = (lab) => String(pri?.findings?.find((x) => x.label === lab)?.value ?? '')
+  const published =
+    pubOf('1순위') === label ? '1순위'
+      : pubOf('2순위') === label ? '2순위'
+        : pubOf('가장 여유 있는 곳') === label ? '가장 여유 있는 곳' : null
+  const dropSeries = pri?.series?.find((s) => s.key === 'drop')
+  const dropPct = dropSeries?.rows?.find((r) => r.x === label)?.y ?? null
+  const period = (String(dropSeries?.label ?? '').match(/\d{4}-\d{2}-\d{2}→\d{4}-\d{2}-\d{2}/) || [null])[0]
+
+  const maps = card('two-homeland-maps')
+  const share = (key) => maps?.series?.find((s) => s.key === key)?.points?.find((p) => p.x === label)?.y ?? null
+  const isanPct = share('isanShare')
+  const defectorPct = share('defectorShare')
+
+  return {
+    /* ★ compare 는 **한 축이 아니다**. 아래 값 대부분은 이산가족 축(den.asOf)이지만
+         maps.defectorPct 만 탈북민 축이고, two-homeland-maps 카드의 caveat 원문이
+         「두 계열의 기준일이 다르다 — 이산가족 2025-08-31, 탈북민 2020-03-31」이라고 밝힌다.
+         예전에는 compare.asOf 하나로 전부 덮어, 탈북민 비중에 이산가족 기준일이 붙는 것을
+         검증기가 통과시키고 올바른 날짜(2020-03)는 오히려 폐기했다. 축을 갈라 둔다. */
+    asOf: den.asOf ?? null,
+    of: den.table.length,
+    /* 순위를 센 축의 생존자 수 — survivors.n(2026-05-31 공표)과 **다른 축**이다.
+       같은 이름의 두 계보를 만들지 않도록 순위와 같은 상자에 값도 함께 둔다. */
+    survivorsInAxis: row['생존자'],
+    priority: {
+      sum: myPri,
+      published,
+      note: '순위합은 정렬 보조이며 점수가 아니다. 발표된 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이다.',
+    },
+    drop: dropPct != null ? { pct: dropPct, period } : null,
+    density: {
+      v: row['밀도'],
+      rankLow: rankAsc(den.table.map((r) => r['밀도']), row['밀도']),
+      min: dMin ? { region: dMin.x, v: dMin.y } : null,
+      max: dMax ? { region: dMax.x, v: dMax.y } : null,
+      gapX: gapM ? Number(gapM[0]) : null,
+    },
+    maps: isanPct != null || defectorPct != null
+      ? { isanPct, isanAsOf: den.asOf ?? null, defectorPct, defectorAsOf: defectorAsOf ?? null }
+      : null,
+  }
+}
 
 /* ══════════ ① 사실 묶음 — LLM 에 넘길 수 있는 전부 ══════════
    sel: { mode:'old', id } | { mode:'modern', key }  (화면의 Sel 과 같은 모양)
    pack: nk-gohyang-pack.mjs 가 만든 데이터 팩 묶음 { map, region, isan, proj, museum, … }
+   extra (선택): 화면이 계산해 넣는 부가 사실
+     eventsAsOf — 합산 계열(연표·보도자료·동향)의 확인 하한(coverageEndOf 의 min).
+                  이 파일은 의존 0개라 nk-search 를 직접 부를 수 없어 호출부가 넣는다.
+     analysis   — analysis.json (비교 확정값, 지연 fetch)
    여기 없는 사실은 LLM 도 모른다 — 그것이 원칙 ① 이다. */
-export function buildGuideFacts(sel, pack) {
+export function buildGuideFacts(sel, pack, extra = null) {
   if (!sel || !pack) return null
   const region = pack.region
   const members = sel.mode === 'modern'
@@ -103,7 +228,10 @@ export function buildGuideFacts(sel, pack) {
       }
     : null
 
-  /* 공식 기록 — 언급 건수와 최근 사건 3건 (제목은 40자에서 자른다: 프록시 길이 상한 보호) */
+  /* 공식 기록 — 언급 건수와 최근 사건 3건 (제목은 40자에서 자른다: 프록시 길이 상한 보호)
+     total 은 연표·보도자료·동향을 **합친 값**이라 단일 기준일이 없다.
+     asOf 는 합쳐진 계열 중 가장 오래된 것의 확인 하한(coverageEndOf 의 min) — 호출부가 넣는다.
+     없으면 null 이고, 프롬프트·검증기가 이 값에 날짜를 붙이는 것을 막는다. */
   const latest = infos
     .flatMap((r) => r.events.latest)
     .filter((e, i, arr) => arr.findIndex((x) => x.date === e.date && x.title === e.title) === i)
@@ -113,6 +241,7 @@ export function buildGuideFacts(sel, pack) {
   const events = {
     total: infos.reduce((s, r) => s + r.events.total + r.briefings + r.trends, 0),
     latest,
+    asOf: extra?.eventsAsOf ?? null,
   }
 
   /* 박물관 사료 — 건수만 (본문·이미지는 LLM 에 주지 않는다. 필요한 것은 규모뿐이다) */
@@ -128,7 +257,12 @@ export function buildGuideFacts(sel, pack) {
   const historicSet = new Set()
   historicKeys.forEach((k) =>
     (pack.museum?.byRegionHistoric?.[k] ?? []).forEach((i) => { if (!direct.has(i)) historicSet.add(i) }))
-  const museum = { total: direct.size + historicSet.size, venue, historic: historicSet.size }
+  /* collectedAt = museum.json 을 만든 날(builtAt) — 자료의 기준일이 아니라 **수집일**이다.
+     사료 원본에는 제작 시점이 따로 있고, 이 숫자가 말할 수 있는 것은 "그날 목록에 몇 건 있었나"뿐이다. */
+  const museum = {
+    total: direct.size + historicSet.size, venue, historic: historicSet.size,
+    collectedAt: pack.museum?.builtAt ?? null,
+  }
 
   /* 종료된 활동 — stale(모름)과 frozen(없음)의 구분은 이 서비스의 정체성이다 */
   const frozen = infos
@@ -139,17 +273,37 @@ export function buildGuideFacts(sel, pack) {
       since: r.frozen.since,
     }))
 
+  /* 비교 축은 광복 당시 고향 이름('황해도(구)' 등)으로 건다 — 현행 지역은 crosswalk 로 귀속 */
+  const oldName = oldId ? (pack.map.regionsOld.find((o) => o.id === oldId)?.name ?? null) : null
+
+  /* 탈북민 재북 출신지 계열의 기준일 — 지역이 그 계열에 없어도(라선) 축의 날짜는 하나다.
+     compare.maps.defectorPct 는 이 축의 값이므로 이산가족 축의 날짜를 빌려 쓰면 안 된다. */
+  const defectorAxisAsOf =
+    defector?.asOf
+    ?? Object.values(region.regions).map((r) => r.defectorOrigin?.asOf).find(Boolean)
+    ?? null
+
   return {
     region: title,
     kind: sel.mode,
+    /* ★ 현행 행정구역을 골라도 이산가족 수치·비교는 **광복 당시 구행정구역 축**의 값이다.
+         (함경남도와 량강도가 글자 그대로 같은 문장을 내던 자리 — 둘 다 hamgyong-s-old 에 묶여 있다.)
+         화면의 패널 머리는 '현행 행정구역'이라 적혀 있고, 어느 축의 값인지 밝히는 문장이 없었다.
+         그래서 축 이름을 사실 묶음에 실어, 규칙 문장과 프롬프트가 반드시 함께 말하게 한다. */
+    originLabel: oldName,
     survivors,
     aliveTotal: { n: pack.isan.latest.overview.cumulative.alive, asOf: pack.isan.latest.asOf },
-    avgAge: Math.round((pack.isan.monthly.at(-1)?.avgAge ?? 0) * 10) / 10,
+    /* 평균 나이는 공표(latest)가 아니라 월별 CSV 의 값 — 기준일이 다르다. 축에 asOf 를 붙인다. */
+    avgAge: {
+      v: Math.round((pack.isan.monthly.at(-1)?.avgAge ?? 0) * 10) / 10,
+      asOf: pack.isan.monthly.at(-1)?.month ?? null,
+    },
     defector,
     events,
     museum,
     frozen,
     clock: { below10000: pack.proj.milestoneRange.below10000, threshold: '1만 명' },
+    compare: buildCompare(extra?.analysis, oldName, defectorAxisAsOf),
   }
 }
 
@@ -157,6 +311,80 @@ export function buildGuideFacts(sel, pack) {
 
 /* 렌더링 이모지 금지(theme/gohyang.ts 제약 ①) — LLM 출력에도 똑같이 적용한다 */
 const EMOJI = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/u
+
+/* ── 숫자-기준일 결합 검사 ──
+   "숫자가 입력에 있는가"만 보면, 수치가 **남의 축 기준일**을 빌려 써도 통과한다
+   (실측 사고: 안내인이 세 문장 전부에 생존 신청자의 「2026년 5월 31일 기준」을 붙였다 —
+    공식 기록 합계는 단일 기준일이 없고, 사료 건수의 날짜는 수집일이다).
+   그래서 문장 단위로 「…기준/수집/현재」 날짜 주장을 뽑아, 같은 문장의 수치가 속한
+   축의 asOf 와 대조한다. 그 문장의 어떤 축과도 맞지 않는 기준일 주장은 오귀속 → 전체 폐기. */
+
+/* 축 = {이 축의 수치 토큰들, 이 축에 허용되는 기준일들}. 날짜 토큰은 길이 2 이상만 쓴다 —
+   소수·순위의 한 자리 조각('0.121'의 '0', 순위 '2')은 축 판별에 못 쓸 만큼 흔하다. */
+function guideAxes(facts) {
+  const axes = []
+  const push = (vals, dates) => {
+    const nums = new Set()
+    for (const v of vals) {
+      if (v == null) continue
+      for (const t of String(v).match(/\d+/g) ?? []) if (t.length >= 2) nums.add(t)
+    }
+    const ds = dates.filter(Boolean)
+    if (nums.size && ds.length) axes.push({ nums, dates: ds })
+  }
+  const f = facts ?? {}
+  if (f.survivors) push([f.survivors.n, f.survivors.pct], [f.survivors.asOf])
+  if (f.aliveTotal) push([f.aliveTotal.n], [f.aliveTotal.asOf])
+  if (f.avgAge) push([f.avgAge.v ?? f.avgAge], [f.avgAge.asOf])
+  if (f.defector) push([f.defector.total], [f.defector.asOf])
+  if (f.events) push([f.events.total], [f.events.asOf])          // asOf null 이면 축 자체가 빠진다 → 날짜 금지
+  if (f.museum) push([f.museum.total, f.museum.venue, f.museum.historic], [f.museum.collectedAt])
+  if (f.compare) {
+    const c = f.compare
+    /* ★ compare 를 **축별로** 쪼갠다 — 이산가족 축(den.asOf)과 탈북민 축(2020-03-31)은 다른 계열이다.
+         한 축으로 묶으면 탈북민 비중에 이산가족 기준일이 붙는 문장이 통과하고
+         올바른 날짜를 쓴 문장이 폐기된다(실측 사고). */
+    push(
+      [c.survivorsInAxis, c.priority?.sum, c.drop?.pct, c.density?.v, c.density?.rankLow,
+       c.density?.min?.v, c.density?.max?.v, c.density?.gapX, c.maps?.isanPct],
+      [c.asOf],
+    )
+    push([c.maps?.defectorPct], [c.maps?.defectorAsOf])
+  }
+  return axes
+}
+
+/* 사실 묶음이 아는 기준일 전부 — 축 판별이 안 되는 문장의 날짜 주장은 이 안에서만 허용한다.
+   (축은 수치 토큰이 있어야 서지만, 한 자리 건수처럼 토큰이 못 서는 축의 날짜도 여기엔 있어야 한다) */
+function guideDates(facts) {
+  const f = facts ?? {}
+  return [
+    f.survivors?.asOf, f.aliveTotal?.asOf, f.avgAge?.asOf, f.defector?.asOf,
+    f.events?.asOf, f.museum?.collectedAt, f.compare?.asOf, f.compare?.maps?.defectorAsOf,
+    ...(Array.isArray(f.frozen) ? f.frozen.map((z) => z?.since) : []),
+  ].filter(Boolean)
+}
+
+/* 「2026년 5월(31일)? … 기준/수집/현재」 「2026-05-31 기준」 → {y,m,d} 로 뽑고 문장에서 지운다 */
+const CLAIM_FULL = /(\d{4})\s*(?:년|[-./])\s*(\d{1,2})(?:\s*(?:월|[-./])\s*(\d{1,2})\s*일?)?[^0-9]{0,8}?(?:기준|수집|현재)/g
+const CLAIM_YEAR = /(\d{4})\s*년[^0-9]{0,8}?(?:기준|수집|현재)/g
+function extractClaims(s) {
+  const claims = []
+  let rest = String(s)
+  rest = rest.replace(CLAIM_FULL, (_, y, m, d) => { claims.push({ y: +y, m: +m, d: d ? +d : null }); return ' ' })
+  rest = rest.replace(CLAIM_YEAR, (_, y) => { claims.push({ y: +y, m: null, d: null }); return ' ' })
+  return { claims, rest }
+}
+
+/* 주장한 날짜가 그 축의 asOf 와 맞는가 — 월·일을 생략한 주장은 접두 일치로 본다 */
+function claimHits(claim, asOf) {
+  const p = String(asOf ?? '').match(/^(\d{4})-(\d{2})(?:-(\d{2}))?/)
+  if (!p) return false
+  if (claim.y !== +p[1]) return false
+  if (claim.m != null && claim.m !== +p[2]) return false
+  if (claim.d != null && claim.d !== +(p[3] ?? -1)) return false
+  return true
+}
 
 export function validateGuide(raw, facts) {
   const arr = raw?.lines
@@ -187,6 +415,32 @@ export function validateGuide(raw, facts) {
       const flat = s.replace(/(\d),(?=\d)/g, '$1')
       for (const m of flat.match(/\d+/g) ?? []) if (!allowed.has(m)) return null
     }
+
+    /* ★ 결합 검사 — 날짜 주장은 같은 문장의 수치가 속한 **모든** 축의 asOf 여야 한다.
+       예전에는 판별된 축들의 날짜를 하나로 합쳐(pool = flatMap) 그중 **하나**와만 맞으면
+       통과시켰다. 그래서 GUIDE_PROMPT 가 못박은 「기준일이 다른 수치들을 한 문장으로 묶어
+       하나의 「기준」을 붙이지 마라」를 전혀 막지 못했다 — 실측 통과 사례:
+         · '생존 신청자는 6,321명이고 기록물은 334건입니다(2026년 5월 31일 기준).'  (사료는 수집일 축)
+         · '기록물 334건과 공식 기록 456건이 남아 있습니다(2026년 8월 19일 수집 기준).' (합산은 하한 축)
+         · '생존 신청자는 2,919명, 북한이탈주민은 2,857명입니다(2026년 5월 31일 기준).' (탈북민은 2020-03)
+         · '전체 생존 신청자는 33,272명이고 평균 나이는 83세입니다(2026년 5월 31일 기준).' (평균은 2025-08)
+       그래서 교집합으로 바꾼다: 판별된 축이 둘 이상이고 그 축들의 asOf 가 서로 다르면
+       어떤 날짜 주장도 통과할 수 없다 — 문장을 나누는 수밖에 없다(프롬프트가 시키는 그대로다). */
+    const axes = guideAxes(facts)
+    const globalDates = guideDates(facts)
+    for (const s of lines) {
+      const { claims, rest } = extractClaims(s)
+      if (!claims.length) continue
+      const flat = rest.replace(/(\d),(?=\d)/g, '$1')
+      const toks = (flat.match(/\d+/g) ?? []).filter((t) => t.length >= 2)
+      const present = axes.filter((a) => toks.some((t) => a.nums.has(t)))
+      for (const c of claims) {
+        const ok = present.length
+          ? present.every((a) => a.dates.some((d) => claimHits(c, d)))
+          : globalDates.some((d) => claimHits(c, d))
+        if (!ok) return null
+      }
+    }
   }
   return { lines, next: { target, label } }
 }
@@ -197,24 +451,67 @@ export function validateGuide(raw, facts) {
 export function fallbackGuide(facts) {
   const f = facts ?? {}
   const R = f.region ?? '이 지역'
-  const lines = [`${R} 자료를 안내해 드리겠습니다.`]
+  const lines = []
 
+  /* ★ 현행 행정구역을 고른 사람에게는 **어느 축의 값인지부터** 말한다.
+       이산가족 출신지는 광복 당시 구행정구역으로만 공표되므로, 함경남도를 골라도 량강도를 골라도
+       같은 함경남도(구) 값이 온다. 그 사실을 밝히지 않으면 현행 지역의 값으로 둔갑한다. */
+  if (f.kind === 'modern' && f.originLabel) {
+    lines.push(`이산가족 출신지는 광복 당시 ${f.originLabel} 기준으로만 공표됩니다. 아래 수치는 그 기준의 값입니다.`)
+  }
+
+  const originOf = f.kind === 'modern' && f.originLabel ? `${f.originLabel} 출신` : '이곳이 고향인'
   if (f.survivors) {
-    lines.push(`이곳이 고향인 이산가족 생존 신청자는 ${nf(f.survivors.n)}명입니다(${ym(f.survivors.asOf)} 기준).`)
+    lines.push(`${originOf} 이산가족 생존 신청자는 ${nf(f.survivors.n)}명입니다(${ym(f.survivors.asOf)} 기준).`)
   } else if (f.defector) {
     lines.push(`이곳이 재북 출신지인 북한이탈주민은 누적 ${nf(f.defector.total)}명입니다(${ym(f.defector.asOf)} 기준).`)
   }
 
+  /* 비교 한 문장 — analysis 가 **발표한 것만** 옮긴다.
+     발표된 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이고, 나머지 지역은 순위합 원값 + caveat 로 간다
+     (그 카드의 caveat: 「n=7 이다. 순위합은 정렬 보조이며 점수로 해석하면 안 된다」). */
+  const c = f.compare
+  if (c?.density?.rankLow === 1) {
+    lines.push(`생존자 한 분당 남은 공식 기록은 ${c.density.v}건으로, 광복 당시 고향 ${c.of}곳 가운데 가장 적습니다(${ym(c.asOf)} 기준).`)
+  } else if (c?.priority?.published === '1순위' || c?.priority?.published === '2순위') {
+    lines.push(`기록을 우선 남겨야 할 곳으로, 광복 당시 고향 ${c.of}곳 가운데 ${c.priority.published}로 발표된 곳입니다(${ym(c.asOf)} 기준).`)
+  } else if (c?.priority?.published === '가장 여유 있는 곳') {
+    lines.push(`광복 당시 고향 ${c.of}곳 가운데 기록이 가장 여유 있는 곳으로 발표되었습니다(${ym(c.asOf)} 기준).`)
+  } else if (c?.priority?.sum != null) {
+    lines.push(`기록 우선순위의 순위합은 ${c.priority.sum}입니다 — 광복 당시 고향 ${c.of}곳 가운데 순서를 돕는 값이며 점수가 아닙니다(${ym(c.asOf)} 기준).`)
+  }
+
+  /* 사료·기록 건수 — 사료의 날짜는 자료의 기준일이 아니라 수집일이고,
+     공식 기록 합계는 여러 자료를 합친 값이라 단일 기준일이 없다(asOf 는 확인 하한). */
   if ((f.museum?.total ?? 0) > 0) {
-    lines.push(`이 고향에서 온 기록물 ${nf(f.museum.total)}건이 디지털박물관에 공개되어 있습니다.`)
+    /* ★ venue(상봉 장소로 걸린 건수)가 큰 몫이면 같은 문장에서 밝힌다 (실측 지적 2026-08-19).
+         미수복강원은 397건 중 280건(70.5%)이 고향이 아니라 금강산 면회소로 잡힌 것이고,
+         analysis.json 은 그래서 그 행의 사료를 117건으로 갈라 두었다. 화면에 실제로 뜨는 계층은
+         이 규칙 문장인데(LLM 은 검증 실패·네트워크 장애 시 폐기된다) 여기에 venue 분기가 없었다. */
+    const venueBig = (f.museum.venue ?? 0) > 0 && f.museum.venue / f.museum.total >= 0.3
+    const venueTail = venueBig
+      ? ` 이 가운데 ${nf(f.museum.venue)}건은 고향이 아니라 상봉 장소로 잡힌 것입니다.`
+      : ''
+    lines.push(f.museum.collectedAt
+      ? `이 고향에 걸린 기록물 ${nf(f.museum.total)}건이 디지털박물관에 공개되어 있습니다(${ymd(f.museum.collectedAt)} 수집 기준).${venueTail}`
+      : `이 고향에 걸린 기록물 ${nf(f.museum.total)}건이 디지털박물관에 공개되어 있습니다.${venueTail}`)
   } else if ((f.events?.total ?? 0) > 0) {
-    lines.push(`통일부 공식 기록에는 이 지역이 ${nf(f.events.total)}건 언급되어 있습니다.`)
+    /* ★ 「공식 기록」이라는 이름이 화면 안에서 두 값을 갖지 않게 계열을 명시한다.
+         지역 패널의 「공식 기록」은 북한개황까지 넣은 네 계열 합계(하한 2025-05)이고,
+         여기 events.total 은 연표·보도자료·동향 세 계열 합계(하한 2025-10)다.
+         같은 이름의 값이 852/827 두 벌로 보이던 자리 — 세는 범위를 문장이 직접 밝힌다. */
+    lines.push(f.events.asOf
+      ? `연표·보도자료·동향 세 계열을 합치면 이 지역이 ${nf(f.events.total)}건 언급되어 있습니다(${ym(f.events.asOf)}까지 확인).`
+      : `연표·보도자료·동향 세 계열을 합치면 이 지역이 ${nf(f.events.total)}건 언급되어 있습니다.`)
   }
 
   if (f.frozen?.length) {
     const z = f.frozen[0]
     lines.push(`${z.name}${josa(z.name, '은', '는')} ${z.since.slice(0, 4)}년에 중단되어, 그 뒤의 자료는 존재하지 않습니다.`)
   }
+
+  /* 인사말은 자리가 남을 때만 앞에 붙인다 — 내용 문장(비교 포함)이 밀려나지 않게 */
+  if (lines.length < 4) lines.unshift(`${R} 자료를 안내해 드리겠습니다.`)
 
   /* 다음에 볼 것 — 내용이 많은 구획부터 권한다. 만들어 내는 값 없음. */
   const next = (f.museum?.total ?? 0) >= 6

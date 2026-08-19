@@ -150,6 +150,25 @@ export const CHORO = ['#eef2f8', '#cfdcef', '#a8c2e2', '#7ba1d2', '#4b79bb', '#1
 export const CHORO_NONE = 'fill-[#f0f1f3] dark:fill-[#181c22]'
 
 /* ══════════ 상호작용 ══════════ */
+
+/* ★ 최소 타깃 — 「누르는 것 ≥48px」의 단일 진실 소스.
+   실사용자에 80~90대가 포함되고(평균 83.0세) 손이 떨리는 분이 있다. 42px 단추는
+   "작지만 눌린다"가 아니라 "세 번에 한 번 빗나간다"이다. 실측(2026-08-19)에서
+   상호작용 요소 165개 중 79개가 48px 미만이었고, 그중에는 고령자용 글자 확대 스위치
+   (76×25)까지 들어 있었다 — 접근성 장치가 가장 작은 축에 든 셈이다.
+
+   쓰는 법
+     TAP        — 단추·큰 링크. 세로만 묶는다(가로는 라벨이 정한다).
+     TAP_SQUARE — 아이콘처럼 라벨이 짧아 가로도 좁아지는 것.
+     TAP_INLINE — 본문 안에 섞여 흐르는 출처 링크(「원본↗」). inline-flex 로
+                  줄 상자를 48px 로 밀어 올린다 — 히트영역을 겹쳐 띄우는 방식은
+                  옆 줄의 다른 링크를 가려서 쓰지 않는다(실측 위험).
+   ※ 지도 폴리곤은 이 규약의 예외다. 폴리곤 크기는 지오메트리가 정하므로 늘릴 수 없고,
+     대신 같은 화면에 지역명·인원이 적힌 48px 목록 단추를 등가 경로로 둔다. */
+export const TAP = 'min-h-[48px]'
+export const TAP_SQUARE = 'min-h-[48px] min-w-[48px]'
+export const TAP_INLINE = 'inline-flex min-h-[48px] min-w-[48px] items-center justify-center'
+
 export const FOCUS =
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1a4e9c] focus-visible:ring-offset-1 dark:focus-visible:ring-[#7aa9e8]'
 
@@ -158,10 +177,10 @@ export const LINK =
   'font-medium text-[#1a4e9c] underline decoration-1 underline-offset-[3px] hover:text-[#14407f] dark:text-[#7aa9e8]'
 
 export const BTN = {
-  primary: `inline-flex items-center justify-center gap-1.5 rounded border border-[#1a4e9c] bg-[#1a4e9c] px-4 py-2 text-sm font-medium text-white hover:bg-[#14407f] dark:border-[#2f5f9f] ${FOCUS}`,
-  ghost: `inline-flex items-center justify-center gap-1.5 rounded border border-[#dcdfe4] bg-white px-3.5 py-2 text-sm font-medium text-[#555555] hover:border-[#1a4e9c] hover:text-[#1a4e9c] dark:border-[#2a2f36] dark:bg-transparent dark:text-[#a4acb6] dark:hover:text-[#7aa9e8] ${FOCUS}`,
+  primary: `inline-flex ${TAP} items-center justify-center gap-1.5 rounded border border-[#1a4e9c] bg-[#1a4e9c] px-4 py-2 text-sm font-medium text-white hover:bg-[#14407f] dark:border-[#2f5f9f] ${FOCUS}`,
+  ghost: `inline-flex ${TAP} items-center justify-center gap-1.5 rounded border border-[#dcdfe4] bg-white px-3.5 py-2 text-sm font-medium text-[#555555] hover:border-[#1a4e9c] hover:text-[#1a4e9c] dark:border-[#2a2f36] dark:bg-transparent dark:text-[#a4acb6] dark:hover:text-[#7aa9e8] ${FOCUS}`,
   /** 분절 선택 — 정부 누리집의 탭처럼 밑줄로 활성을 표시한다 */
-  seg: 'relative px-3.5 py-2 text-sm font-medium transition',
+  seg: `relative inline-flex ${TAP} items-center px-3.5 py-2 text-sm font-medium transition`,
   segOn: 'text-[#1a4e9c] after:absolute after:inset-x-1 after:-bottom-px after:h-[2px] after:bg-[#1a4e9c] dark:text-[#7aa9e8] dark:after:bg-[#7aa9e8]',
   segOff: 'text-[#767676] hover:text-[#191919] dark:text-[#7f8792] dark:hover:text-[#e6e9ed]',
 } as const

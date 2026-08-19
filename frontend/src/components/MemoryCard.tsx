@@ -79,7 +79,8 @@ type Props = {
 type QKey = 'event' | 'relic' | 'season' | 'place'
 type Voice = 'self' | 'heard'
 
-const QUESTIONS: Record<Voice, Record<QKey, string>> = {
+/* S9 견본 카드(MemoryScene)가 같은 질문 문구를 읽는다 — 두 벌로 두면 견본과 실물이 갈라진다 */
+export const QUESTIONS: Record<Voice, Record<QKey, string>> = {
   /* 고향을 직접 기억하시는 분 — 겪으신 일을 그대로 여쭙는다 */
   self: {
     place: '고향에서 기억나시는 마을·거리·산·강 이름이 있으십니까? 정확하지 않아도 됩니다.',
@@ -136,11 +137,11 @@ const FIELD_KEYS: QKey[] = ['place', 'event', 'relic', 'season']
      42px 표제도 없고 꼬리말은 한 줄로 줄어 **기증 문의 전화번호가 통째로 빠졌다**.
      내려받기가 막힌 PC 를 위해 둔 것이 인쇄 경로인데, 정작 그 사용자가 쥐는 종이에
      기증 창구가 없었다. */
-const CARD_TITLE = '고향 기억 카드'
-const CARD_SUB = '고향잇기 — 이산가족 기록을 후손에게 잇습니다'
+export const CARD_TITLE = '고향 기억 카드'
+export const CARD_SUB = '고향잇기 — 이산가족 기록을 후손에게 잇습니다'
 const FOOTER = (madeAt: string): string[] => [
   `작성 ${madeAt} · 이 카드는 이 기기의 브라우저 안에서 만들어졌으며, 내용은 서버로 전송되지 않았습니다.`,
-  '기록의 근거는 통일부 공공데이터(이산가족 신청현황·남북관계 연표·남북이산가족 디지털박물관)이며, 답변은 작성자의 기억입니다.',
+  '이 카드가 쓴 통일부 공공데이터는 이산가족 신청현황 하나이며, 작성 화면에서 보신 연표 사건·다른 집안 사료는 기억을 돕는 참고였을 뿐 이 카드에 실리지 않았습니다. 답변은 작성자의 기억입니다.',
   '국가 기록으로 남기시려면 통일부 이산가족납북자과 02-2100-5916 (생애기록물 수집 동의·기증 문의)로 이 카드를 첨부해 문의하십시오.',
 ]
 
@@ -191,7 +192,7 @@ type CardModel = {
      예전 주석은 두 경로의 줄바꿈이 갈라지지 않는다고 적혀 있었는데 사실이 아니었다.
 
      serif  = 사람이 기억해서 남긴 말   — 표제 42 · 고향 이름 34 · 답변 21 · 이름줄 19
-     gothic = 기계가 데이터에서 붙인 값 — 부제 17 · 수치 16 · 질문 16 · 참고 기록 15 · 꼬리말 14
+     gothic = 기계가 데이터에서 붙인 값 — 부제 17 · 수치 16 · 질문 16 · 쓴 자료 15 · 꼬리말 14
 
    급수의 경계가 곧 의미의 경계다. 명조는 19px 아래로 내려가면 1x 화면에서 획이 무너진다. */
 type Fam = 'serif' | 'gothic'
@@ -337,7 +338,7 @@ function paint(ctx: CanvasRenderingContext2D, m: CardModel, W: number, measure: 
     }
     inner += 12
     y = inner
-    line('이 카드가 참고한 공식 기록', 15, '700', C.soft, 26, 'gothic', M + 18, maxW - 36)
+    line('이 카드가 쓴 자료', 15, '700', C.soft, 26, 'gothic', M + 18, maxW - 36)
     for (const c of m.context) line(c, 15, '400', C.soft, 23, 'gothic', M + 18, maxW - 36)
     y = boxTop + h + 40
   }
@@ -494,11 +495,13 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
   const model: CardModel | null = useMemo(() => {
     if (!home) return null
     const qa = FIELD_KEYS.filter(k => draft[k].trim()).map(k => ({ q: Q[k], a: draft[k].trim() }))
+    /* ★ 완성 카드의 상자에는 이 카드가 **실제로 쓴** 자료만 담는다 (2026-08-19 사용자 지적).
+       연표 사건·다른 집안이 기증한 사료는 작성 화면(2단계)의 기억 단서일 뿐이고,
+       적으신 내용과 대조하거나 매칭한 것이 아니다. 그것을 「참고한 기록」이라고
+       카드에 실으면 제목이 거짓이 되고, 더 나쁘게는 남의 집안 사료 제목(기증자 성함 포함)이
+       이 집안의 카드에 인쇄되어 몇 년 뒤 그 집 기록으로 오인된다.
+       카드가 실제로 쓴 것: 생존 신청자 수(신청현황)와 작성 시각의 실측 기온 둘뿐이다. */
     const context: string[] = []
-    for (const e of home.events.slice(0, 2)) context.push(`공식 기록에 남은 이 고향 — ${ymdKo(e.date)} ${e.title}`)
-    for (const r of home.relics.slice(0, 2)) {
-      context.push(`디지털박물관 사료 — ${r.title}${r.producedOn ? ` (${r.producedOn})` : ''}`)
-    }
     if (wxRow) {
       context.push(
         `작성 시각 ${wxRow.name}의 기온 ${nf1(wxRow.tempC)}℃` +
@@ -506,10 +509,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
           ' — Open-Meteo 실시간 관측',
       )
     }
-    /* 종류가 다른 두 날짜를 같은 이름으로 나열하지 않는다 —
-       앞의 둘은 자료가 어디까지 담겼는지(coverageEnd)이고, 사료는 우리가 수집을 돌린 날이다 */
-    context.push(`기준일 — 이산가족 신청현황 ${asOf.survivors} · 남북관계 연표 ${asOf.events}`)
-    context.push(`사료 수집일 — ${asOf.museumCollected} (남북이산가족 디지털박물관에서 이 날 받아 온 목록입니다)`)
+    context.push(`기준일 — 이산가족 신청현황 ${asOf.survivors}`)
     return {
       homeName: home.name,
       survivors: home.survivors,
@@ -759,6 +759,12 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
           <div className={`${SURFACE.card} p-4`}>
             <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>이 고향에서 온 디지털박물관 사료 {nf(home.relicsTotal)}건 중</p>
             {home.relics.length ? (
+              <>
+                {/* ★ 이 사료는 **다른 집안의** 기증품이다 — 단서로만 보이고 완성 카드에는 싣지 않는다.
+                    카드에 실으면 남의 집안 기록이 이 집안의 카드로 인쇄되어 뒷날 오인된다. */}
+                <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+                  다른 집안이 맡기신 기록입니다 — 기억을 떠올리는 참고로만 보십시오.
+                </p>
               <ul className="mt-1.5 space-y-2">
                 {home.relics.slice(0, 2).map(r => (
                   <li key={r.iId} className="flex items-start gap-3">
@@ -779,7 +785,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
                         {r.recordUrl && (
                           <>
                             {' · '}
-                            <a href={r.recordUrl} target="_blank" rel="noreferrer" className={`text-[#1a4e9c] underline underline-offset-2 ${FOCUS}`}>
+                            <a href={r.recordUrl} target="_blank" rel="noreferrer" className={`inline-flex min-h-[48px] min-w-[48px] items-center justify-center px-1 text-[#1a4e9c] underline underline-offset-2 ${FOCUS}`}>
                               박물관에서 보기<span aria-hidden="true">↗</span>
                             </a>
                           </>
@@ -789,6 +795,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
                   </li>
                 ))}
               </ul>
+              </>
             ) : (
               <p className={`mt-1.5 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>이 고향으로 걸리는 공개 사료가 없습니다.</p>
             )}
@@ -900,7 +907,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             )}
 
             <div className={`mt-4 rounded-md border-l-[3px] border-[#dcdfe4] ${SURFACE.inset} p-3.5`}>
-              <p className={`${TYPE.cap} font-bold ${TEXT.soft}`}>이 카드가 참고한 공식 기록</p>
+              <p className={`${TYPE.cap} font-bold ${TEXT.soft}`}>이 카드가 쓴 자료</p>
               <ul className="mt-1 space-y-1">
                 {model.context.map((c, i) => (
                   <li key={i} className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>· {c}</li>

@@ -146,7 +146,7 @@ export default function MuseumTour({ data }: { data: MuseumSections }) {
             type="button"
             onClick={() => go(i)}
             aria-current={i === cur ? 'true' : undefined}
-            className={`rounded-full px-3 py-1 ${TYPE.cap} font-semibold transition ${FOCUS} ${
+            className={`inline-flex min-h-[48px] items-center rounded-full px-4 py-2 ${TYPE.cap} font-semibold transition ${FOCUS} ${
               i === cur ? 'bg-[#1a4e9c] text-white' : 'bg-[#eef1f5] text-[#555555] hover:text-[#191919]'
             }`}
           >
@@ -195,7 +195,7 @@ export default function MuseumTour({ data }: { data: MuseumSections }) {
       <div className={`border-t px-4 py-3 ${SURFACE.hair}`}>
         <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
           출처 {data.source.name} · 수집 {data.builtAt} ·{' '}
-          <a href={data.source.url} target="_blank" rel="noreferrer" className={`underline ${TEXT.blue}`}>박물관 원문</a>
+          <a href={data.source.url} target="_blank" rel="noreferrer" className={`inline-flex min-h-[48px] items-center underline ${TEXT.blue}`}>박물관 원문</a>
           {' '}— 사진은 박물관 원본을 그대로 불러온 것이며 본 화면은 저장하거나 다시 배포하지 않습니다.
           {' '}코너는 목록이 박물관 화면에서 그려져 건수를 세지 못했으므로 비워 두었습니다.
         </p>

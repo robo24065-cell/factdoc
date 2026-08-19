@@ -22,7 +22,10 @@
          "명조로 그린다"는 코드가 있다는 말이지 그려졌다는 말이 아니다. 웹폰트가 막히면
          조용히 폴백으로 떨어지고 오류도 안 난다(실측: 같은 문장이 로드 전 738.45px →
          로드 후 697.54px). 그래서 캔버스에서 직접 재서 판정한다.
-    [10] 기억 카드 기준일이 **보여 준 것의 출처**와 같은가 (카탈로그와 대조)
+    [10] 완성 카드의 상자(「이 카드가 쓴 자료」)가 **실제로 쓴 자료만** 대는가 —
+         작성 화면의 단서(연표 사건·다른 집안의 기증 사료 제목)가 완성 카드에
+         한 글자도 실리지 않는가. 사료 제목에는 기증자 성함이 들어가므로,
+         카드에 박혀 인쇄되면 몇 년 뒤 그 집안의 기록으로 오인된다.
     [11] 인쇄본에 기증 문의 창구가 남는가 — 내려받기가 막힌 PC 의 유일한 출구다
     [12] 캔버스 줄바꿈 규칙(lib/wrapLines.mjs) — 단어를 쪼개지 않고 줄 앞에 공백을 남기지 않는가
 
@@ -326,7 +329,9 @@ try {
   const asked = await evl(`document.querySelector('#memory-card')?.innerText.includes('기억을 여쭙겠습니다') ?? false`)
   check('고향을 고르면 질문 단계로 넘어간다', picked === 'ok' && asked, `단추 ${picked}`)
 
-  /* 데이터가 질문을 만들었는가 — 연표·사료·날씨 단서가 실제로 붙는가 */
+  /* 데이터가 질문을 만들었는가 — 연표·사료·날씨 단서가 실제로 붙는가.
+     사료 단서에는 성격 고지가 함께 있어야 한다(다른 집안의 기증품이라는 사실),
+     연표 단서에는 그 출처(남북관계 연표)의 기준일이 카탈로그 값 그대로 있어야 한다. */
   const prompts = await evl(`(() => {
     const t = document.querySelector('#memory-card')?.innerText ?? ''
     return {
@@ -335,9 +340,23 @@ try {
       season: t.includes('어떤 계절의 이야기를 들으셨습니까'),
       place: t.includes('마을·거리·산·강 이름'),
       timeline: /\\d{4}년 \\d{1,2}월 \\d{1,2}일/.test(t),
+      relicNotice: t.includes('다른 집안이 맡기신 기록입니다'),
+      eventsAsOf: t.includes('남북관계 연표 기준일 ${DATASETS.timeline.coverageEnd}'),
     }
   })()`)
-  check('질문 4종이 데이터 단서와 함께 뜬다', Object.values(prompts).every(Boolean), JSON.stringify(prompts))
+  check('질문 4종이 데이터 단서·참고 고지·연표 기준일과 함께 뜬다', Object.values(prompts).every(Boolean), JSON.stringify(prompts))
+
+  /* ★ 단서 원문 채집 — 뒤에서 완성 카드에 "이 문자열이 없다"를 재기 위해,
+     지금 작성 화면에 실제로 뜬 연표 사건 줄과 사료 제목을 그대로 집어 둔다. */
+  const clueLines = await evl(`(() => {
+    const sec = document.querySelector('#memory-card')
+    if (!sec) return []
+    const events = sec.innerText.match(/\\d{4}년 \\d{1,2}월 \\d{1,2}일 — [^\\n]+/g) ?? []
+    const relics = [...sec.querySelectorAll('li > span.min-w-0 > span:first-of-type')]
+      .map((x) => (x.textContent ?? '').trim())
+      .filter(Boolean)
+    return [...events, ...relics]
+  })()`)
 
   /* ★ 목소리 축 — 1세대 당사자가 직접 적으면 질문과 이름표가 함께 바뀌는가.
      후손 전용으로 만들어 두면 살아 계신 당사자에게 "들으셨습니까"라고 묻게 된다. */
@@ -491,19 +510,65 @@ try {
     `답 "${fontProbe.stack.slice(0, 20)}…" · 질문 "${fontProbe.qFont.slice(0, 20)}…"`,
   )
 
-  /* ★ 기준일 — 화면이 대는 날짜가 **보여 준 것의 출처**의 것인가.
-     전에는 region.json sources 를 앞에서부터 훑어 「coverageEnd 가 있는 첫 항목」
-     (북한정보포털 동향)을 집었다. 사건 목록은 남북관계연표에서만 오는데도. */
+  /* ★ 완성 카드의 상자 — 제목이 「이 카드가 쓴 자료」이고 실제로 쓴 것(신청현황 기준일·
+     실측 기온)만 대는가. 연표·사료는 작성 화면의 단서일 뿐 카드가 쓰지 않았으므로
+     그 계열의 날짜(연표 coverageEnd·동향 coverageEnd)가 완성 카드에 보이면 안 된다.
+     (연표 기준일이 카탈로그와 같은지는 위 작성 화면 검사(eventsAsOf)가 잰다.) */
   const wantEventsAsOf = DATASETS.timeline.coverageEnd
   const trendAsOf = DATASETS.nkinfoTrend.coverageEnd
   const asOfSeen = await evl(`(() => {
-    const t = document.querySelector('#memory-card')?.innerText ?? ''
-    return { hasTimeline: t.includes('${wantEventsAsOf}'), hasTrend: t.includes('${trendAsOf}'), sample: (t.match(/기준일 — [^\\n]*/) ?? [''])[0] }
+    const t = document.querySelector('.memcard-print')?.innerText ?? ''
+    return {
+      boxTitle: t.includes('이 카드가 쓴 자료'),
+      oldTitle: t.includes('참고한 공식 기록'),
+      survivorsLine: t.includes('기준일 — 이산가족 신청현황'),
+      hasTimeline: t.includes('${wantEventsAsOf}'),
+      hasTrend: t.includes('${trendAsOf}'),
+      sample: (t.match(/기준일 — [^\\n]*/) ?? [''])[0],
+    }
   })()`)
   check(
-    `기억 카드의 연표 기준일이 카탈로그와 같다 (${wantEventsAsOf})`,
-    asOfSeen.hasTimeline && !asOfSeen.hasTrend,
-    `연표 ${asOfSeen.hasTimeline} · 무관한 동향 기준일(${trendAsOf}) 노출 ${asOfSeen.hasTrend} · "${asOfSeen.sample}"`,
+    '완성 카드의 상자가 실제로 쓴 자료(신청현황 기준일)만 댄다',
+    asOfSeen.boxTitle && !asOfSeen.oldTitle && asOfSeen.survivorsLine && !asOfSeen.hasTimeline && !asOfSeen.hasTrend,
+    `"${asOfSeen.sample}" · 연표일(${wantEventsAsOf}) 노출 ${asOfSeen.hasTimeline} · 동향일(${trendAsOf}) 노출 ${asOfSeen.hasTrend}`,
+  )
+
+  /* ★ 남의 집안 기록이 이 카드에 실렸는가 — 작성 화면에서 단서로 보였던
+     연표 사건 줄·기증 사료 제목이 완성 카드(인쇄·PNG 의 원본)에 한 글자도 없어야 한다.
+     사료 제목에는 기증자 성함이 들어간다(예: 「이오환 님 가족 사진」) — 이 집안의
+     카드에 박혀 인쇄되면 몇 년 뒤 그 집안의 기록으로 오인된다. */
+  const cardText = await evl(`document.querySelector('.memcard-print')?.innerText ?? ''`)
+  const clueArr = Array.isArray(clueLines) ? clueLines : []
+  const strayClues = clueArr.filter((s) => s && cardText.includes(s))
+  check(
+    '완성 카드에 다른 집안의 사료 제목·연표 사건이 실리지 않는다',
+    clueArr.length > 0 && strayClues.length === 0 && !/디지털박물관 사료 —|공식 기록에 남은 이 고향/.test(cardText),
+    strayClues.length ? `카드에 남음: "${strayClues[0]}"` : `단서 ${clueArr.length}건 전부 카드 밖`,
+  )
+
+  /* ★ 기증자 성함 전수 대조 — 단서로 뜬 두 건만이 아니라, 박물관 사료 전체의 기증자 이름이
+     완성 카드에 한 명도 없어야 한다. 사료 제목·기증자란에는 실제 성함이 들어가고(예: 「○○○ 님 기증」),
+     그것이 이 집안의 카드에 인쇄되면 몇 년 뒤 그 집 기록으로 오인된다.
+     3글자 이상 이름만 본다 — 두 글자는 일반 낱말과 겹쳐 오탐이 된다. */
+  const museumPack = JSON.parse(fs.readFileSync(path.join(root, 'frontend/public/gohyang/museum.json'), 'utf8'))
+  const donors = [...new Set((museumPack.records ?? [])
+    .map((r) => String(r.donor ?? '').replace(/\s+/g, ''))
+    .filter((d) => d.length >= 3))]
+  const strayDonors = donors.filter((d) => cardText.includes(d))
+  check(
+    `완성 카드에 다른 집안 기증자 성함이 없다 (성함 ${donors.length}명 전수 대조)`,
+    donors.length > 0 && strayDonors.length === 0 && !/님 기증/.test(cardText),
+    strayDonors.length ? `카드에 남음: "${strayDonors[0]}"` : `${donors.length}명 전부 카드 밖`,
+  )
+
+  /* 꼬리말이 카드가 **실제로 쓴 것**만 주장하는가 — 예전 꼬리말은 연표·디지털박물관까지
+     근거로 적어, 바로 위 상자가 지킨 배제를 문장 하나로 뒤집고 있었다. */
+  check(
+    '카드 꼬리말이 실제로 쓴 자료(신청현황)만 근거로 주장한다',
+    /이 카드가 쓴 통일부 공공데이터는 이산가족 신청현황 하나이며/.test(cardText)
+    && /이 카드에 실리지 않았습니다/.test(cardText)
+    && !/기록의 근거는 통일부 공공데이터\(이산가족 신청현황·남북관계 연표/.test(cardText),
+    (cardText.split(String.fromCharCode(10)).find((l) => l.includes('이 카드가 쓴 통일부 공공데이터')) ?? '').slice(0, 80),
   )
 
   /* 인쇄 경로 — 내려받기가 막힌 환경의 대체 경로가 실제로 있는가 */
@@ -542,7 +607,7 @@ try {
       title: t.includes('고향 기억 카드'),
       sub: t.includes('고향잇기 — 이산가족 기록을 후손에게 잇습니다'),
       donate: t.includes('02-2100-5916'),
-      basis: t.includes('기록의 근거는 통일부 공공데이터'),
+      basis: t.includes('이 카드가 쓴 통일부 공공데이터는 이산가족 신청현황 하나이며'),
       privacy: t.includes('서버로 전송되지 않았습니다'),
       len: t.length,
     }
@@ -576,12 +641,224 @@ try {
   })()`)
   check('다시 들어오면 이어 쓸 수 있다', resumed.banner && resumed.values >= 3, JSON.stringify(resumed))
 
+  /* ══════════ ③ 홈 씬 서사 ══════════
+     씬은 "있으면 보이는" 것이 아니라 **세어야 보이는** 것이다. 씬 하나가 조용히 빠지거나
+     이음새 한 줄이 사라져도 오류가 나지 않는다 — 화면이 그냥 조금 짧아질 뿐이다.
+     그래서 씬 수·이음 문구를 화면에서 직접 센다. 핀 덱도 "코드가 있다"가 아니라
+     "스크롤로 실제로 넘어간다"를 재고, reduced-motion 에서는 런웨이가 풀리는지 본다. */
+  if (!AS_JSON) console.log(`\n▶ 홈 씬 서사 (5막 13씬)`)
+
+  const SEAMS = [
+    '그분들의 고향은 일곱 이름으로 기록되어 있습니다.',
+    '고향의 오늘을 보셨습니다. 이 기록에는 시한이 있습니다.',
+    '숫자는 줄어들지만, 남겨 주신 것이 있습니다.',
+    '이 사진들을 맡기신 분들은 1세대였습니다. 다음은 누구입니까.',
+    /* S7 은 「이어받을 마음은 확인되었습니다」였다 — 이 조사는 후손 본인에게 묻지 않았고
+       자손이 있는 1세대가 자기 자손을 평가한 값이라, 확정형으로 쓰면 조사가 답하지 않은 것을
+       승격시킨다. 그래서 평가 주체를 문장에 남긴다. */
+    '이어받을 뜻은 1세대의 평가로 확인되었습니다. 통일부 조사에는 그다음 답도 적혀 있습니다.',
+    '그 요청에 오늘 답할 수 있는 자리를 여기 두었습니다.',
+    '만드신 카드를 맡길 곳이 있습니다.',
+    '기증 말고도 가족 이름으로 신청할 수 있는 창구가 여덟 곳 더 있습니다.',
+    '열려 있는 곳을 보셨습니다. 닫혀 있는 곳도 그대로 적습니다.',
+    '여기 적힌 모든 수치에는 기준일이 있습니다.',
+  ]
+  const ANCHORS = ['extinction', 'descendant', 'memory-card', 'actions']
+
+  await cdp.send('Page.navigate', { url: `${BASE}/` })
+  await waitFor(`document.querySelectorAll('[data-scene]').length >= 13`, 120)
+  await sleep(1200)
+
+  const scenes = await evl(`(() => ({
+    count: document.querySelectorAll('[data-scene]').length,
+    seams: [...document.querySelectorAll('[data-seam]')].map(e => e.getAttribute('data-seam')),
+    anchors: ${JSON.stringify(ANCHORS)}.filter(id => document.getElementById(id)),
+  }))()`)
+  check('홈이 13개 씬으로 렌더된다', scenes.count === 13, `씬 ${scenes.count}개`)
+  check(
+    `이음새 ${SEAMS.length}줄이 한 글자도 다르지 않게 렌더된다`,
+    JSON.stringify(scenes.seams) === JSON.stringify(SEAMS),
+    (scenes.seams ?? []).length === SEAMS.length
+      ? (scenes.seams.find((v, i) => v !== SEAMS[i]) ?? '일치')
+      : `화면 ${scenes.seams?.length}줄`,
+  )
+  check(`앵커 id ${ANCHORS.length}종이 살아 있다`, scenes.anchors?.length === ANCHORS.length, (scenes.anchors ?? []).join(' · '))
+
+  /* ── 최소 타깃 — 「누르는 것 ≥48px」. 지도 폴리곤만 예외다(지오메트리가 크기를 정한다;
+       같은 화면에 지역명·인원이 적힌 48px 목록 단추가 등가 경로로 있다). ── */
+  const tiny = await evl(`(() => [...document.querySelectorAll('a[href],button,[role=button],input,select,summary')]
+    .filter(e => { const r = e.getBoundingClientRect(); return (r.width || r.height) && (r.height < 48 || r.width < 48) })
+    .filter(e => !e.closest('svg'))
+    .map(e => (e.tagName + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)))()`)
+  check('누르는 것은 전부 48px 이상이다 (지도 폴리곤 제외)', tiny.length === 0, tiny.slice(0, 3).join(' | ') || '0건')
+
+  /* ── 핀 덱 — 페이지 스크롤이 카드를 넘기고, 카드 경계에 정확히 선다 ── */
+  const ROW = `[...document.querySelectorAll('[role=group][aria-roledescription="가로 카드 묶음"]')][0]`
+  const deck0 = await evl(`(() => { const row = ${ROW}; if (!row) return null
+    const r = row.getBoundingClientRect()
+    return { y: Math.round(r.top + scrollY), cards: row.children.length } })()`)
+  check('사료 핀 덱이 가로 카드 묶음으로 실재한다', Boolean(deck0 && deck0.cards > 1), deck0 ? `카드 ${deck0.cards}장` : '없음')
+
+  const readDeck = `(() => { const row = ${ROW}
+    const cnt = [...document.querySelectorAll('p')].map(p => p.textContent.trim()).filter(t => t.length < 9 && t.indexOf(' / ') > 0)[0] ?? null
+    return {
+      left: Math.round(row.scrollLeft), mod: Math.round(row.scrollLeft % row.clientWidth), counter: cnt,
+      inert: [...row.children].filter(c => c.hasAttribute('inert')).length,
+      reachable: [...row.querySelectorAll('a[href],button')].filter(e => !e.closest('[inert]')).length,
+    } })()`
+  await evl(`window.scrollTo(0, ${(deck0?.y ?? 0) + 400})`)
+  await sleep(700)
+  const pinA = await evl(readDeck)
+  await evl(`window.scrollBy(0, 900)`)
+  await sleep(800)
+  const pinB = await evl(readDeck)
+  check(
+    '페이지를 내리면 핀 덱이 실제로 넘어간다',
+    Boolean(pinA && pinB && pinB.left > pinA.left && pinB.counter !== pinA.counter),
+    `${pinA?.counter} → ${pinB?.counter} (scrollLeft ${pinA?.left} → ${pinB?.left})`,
+  )
+  check(
+    '사상 결과가 카드 경계에 정확히 선다 (반씩 걸치지 않는다)',
+    pinA?.mod === 0 && pinB?.mod === 0,
+    `나머지 ${pinA?.mod}px · ${pinB?.mod}px`,
+  )
+  check(
+    '화면 밖 카드는 탭 정지점이 아니다 (포커스와 화면이 어긋나지 않는다)',
+    Boolean(pinB && deck0 && pinB.inert === deck0.cards - 1 && pinB.reachable <= 4),
+    `inert ${pinB?.inert}/${(deck0?.cards ?? 1) - 1}장 · 닿는 링크 ${pinB?.reachable}개`,
+  )
+
+  /* ── reduced-motion 폴백 — 런웨이가 풀리고 평범한 가로 snap 행 + 단추만 남는가 ── */
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
+  await cdp.send('Page.navigate', { url: `${BASE}/` })
+  await waitFor(`document.querySelectorAll('[data-scene]').length >= 13`, 120)
+  await sleep(900)
+  const reduced = await evl(`(() => { const row = ${ROW}; if (!row) return null
+    const stage = row.parentElement
+    const runway = stage.parentElement
+    return {
+      sticky: getComputedStyle(stage).position,
+      runwayHeight: runway.style.height || '',
+      buttons: [...stage.querySelectorAll('button')].length,
+      snap: getComputedStyle(row).scrollSnapType,
+    } })()`)
+  check(
+    'prefers-reduced-motion 이면 런웨이가 풀리고 평범한 가로 snap 행 + 단추만 남는다',
+    Boolean(reduced && reduced.runwayHeight === '' && reduced.sticky === 'static' && reduced.buttons >= 2 && /x/.test(reduced.snap)),
+    JSON.stringify(reduced),
+  )
+  await cdp.send('Emulation.setEmulatedMedia', { features: [] })
+
+  /* ── 딥링크 — 주소로 들어온 사람이 그 자리에 서는가 ── */
+  const landed = async (url, expr) => {
+    await cdp.send('Page.navigate', { url })
+    await waitFor(`document.querySelectorAll('[data-scene]').length >= 13`, 120)
+    await sleep(1500)
+    return evl(expr)
+  }
+  const inView = `(id => { const el = document.getElementById(id); if (!el) return null
+    const r = el.getBoundingClientRect(); return { top: Math.round(r.top), inView: r.top < innerHeight && r.bottom > 0 } })`
+  const d1 = await landed(`${BASE}/?${encodeURIComponent('고향')}=hwanghae-old`,
+    `(() => ({ y: Math.round(scrollY), t: ${inView}('g-weather') }))()`)
+  check('?고향=<id> 로 들어오면 그 고향 패널까지 데려간다', Boolean(d1?.t?.inView && d1.y > 0), JSON.stringify(d1))
+  const d2 = await landed(`${BASE}/#extinction`, `(() => ({ y: Math.round(scrollY), t: ${inView}('extinction') }))()`)
+  check('#앵커로 들어오면 그 씬까지 데려간다', Boolean(d2?.t?.inView && d2.y > 0), JSON.stringify(d2))
+  const d3 = await landed(`${BASE}/?${encodeURIComponent('고향')}=pyongyang`,
+    `(() => ({ y: Math.round(scrollY), t: ${inView}('home-pick'), notice: document.body.innerText.includes('이 화면이 아는 이름이 아닙니다') }))()`)
+  check('알 수 없는 고향 id 는 조용히 무시하지 않고 고르는 자리로 보낸다', Boolean(d3?.t?.inView && d3.notice), JSON.stringify(d3))
+
+  /* ══════════ ④ 고향 안내인 — 기준일 결합 ══════════
+     화면에 실제로 뜬 문장을 그대로 걷어, 같은 사실 묶음으로 validateGuide 를 돌린다.
+     "코드에 검증기가 있다"가 아니라 "지금 화면에 뜬 문장이 그 검증을 통과한다"를 잰다.
+     규칙 문장이든 LLM 문장이든 통과해야 한다 — 못 하면 화면이 자기 기준을 못 지킨 것이다. */
+  if (!AS_JSON) console.log(`\n▶ 고향 안내인 기준일 결합 (축별 asOf)`)
+  const { buildGuideFacts, validateGuide, fallbackGuide } = await import('../frontend/src/engine/nk-guide.mjs')
+  const { coverageEndOf } = await import('../frontend/src/engine/nk-search.mjs')
+  const gload = (n) => JSON.parse(fs.readFileSync(path.join(root, 'frontend/public/gohyang', n + '.json'), 'utf8'))
+  const gpack = {
+    map: gload('map'), region: gload('region'), isan: gload('isan'),
+    proj: gload('projection'), museum: gload('museum'), paths: gload('paths'),
+  }
+  const gextra = { eventsAsOf: coverageEndOf('timeline', 'briefing', 'nkinfoTrend'), analysis }
+  const GUIDE_BOX = `document.querySelector('[aria-label="고향 안내인의 자동 작성 안내문"]')`
+  const guideOf = async (id) => {
+    await cdp.send('Page.navigate', { url: `${BASE}/?${encodeURIComponent('고향')}=${id}` })
+    await waitFor(`${GUIDE_BOX} && ${GUIDE_BOX}.querySelectorAll('p').length > 1`, 120)
+    await sleep(1600)
+    return evl(`(() => { const b = ${GUIDE_BOX}; if (!b) return null
+      return {
+        via: b.innerText.includes('AI 보조 문장') ? 'llm' : 'rule',
+        lines: [...b.querySelectorAll('p')].map(p => p.textContent.trim()).filter(t => t && !t.startsWith('이 안내문은')),
+      } })()`)
+  }
+  const shownVia = []
+  for (const [id, label] of [['gangwon-unrec', '미수복강원'], ['hamgyong-n-old', '함경북도(구)']]) {
+    const shown = await guideOf(id)
+    shownVia.push({ label, via: shown?.via ?? null, lines: shown?.lines?.length ?? 0 })
+    const facts = buildGuideFacts({ mode: 'old', id }, gpack, gextra)
+    const verdict = shown && facts
+      ? validateGuide({ lines: shown.lines.slice(0, 4), next: { target: 'events', label: '기록 보기' } }, facts)
+      : null
+    check(
+      `${label} — 화면에 뜬 안내문이 축별 기준일 검증을 통과한다`,
+      verdict !== null,
+      `${shown?.via === 'llm' ? 'AI 문장' : '규칙 문장'} · ${(shown?.lines ?? []).join(' / ').slice(0, 70)}`,
+    )
+  }
+  /* ★ LLM 4원칙 ④ 의 실측 — 개발 서버에는 Cloudflare Pages Function(/api/llm)이 없어 404 가 난다.
+     그 상황에서도 안내인이 비지 않고 규칙 문장으로 서는지를 여기서 잰다.
+     (배포본에서는 이 경로가 살아 있고, 그때는 LLM 문장이 validateGuide 를 통과해야 한다 —
+      위 두 검사는 어느 쪽이든 같은 기준으로 판정한다.) */
+  const llmDown = cdp.events.some((e) => e.method === 'Network.responseReceived'
+    && /\/api\/llm/.test(e.params?.response?.url ?? '') && (e.params.response.status ?? 0) >= 400)
+  check(
+    'LLM 경로가 죽어도(개발 서버 /api/llm 404) 안내인이 규칙 문장으로 선다',
+    shownVia.every((v) => v.lines >= 2) && (!llmDown || shownVia.every((v) => v.via === 'rule')),
+    `${llmDown ? '/api/llm 404 관측 · ' : ''}${shownVia.map((v) => `${v.label}=${v.via}(${v.lines}줄)`).join(' · ')}`,
+  )
+
+  /* 음성 대조군 — 축이 다른 두 수치를 한 「기준」으로 묶으면 반드시 폐기돼야 한다.
+     (합집합 규칙이던 시절에는 아래 문장들이 전부 통과했다) */
+  const fHw = buildGuideFacts({ mode: 'old', id: 'hwanghae-old' }, gpack, gextra)
+  const fHn = buildGuideFacts({ mode: 'old', id: 'hamgyong-n-old' }, gpack, gextra)
+  const bad = (lines, facts) => validateGuide({ lines, next: { target: 'events', label: '기록 보기' } }, facts) === null
+  check(
+    '축이 다른 수치를 한 기준일로 묶은 문장은 폐기된다 (생존 신청자 + 사료 수집일)',
+    bad(['안내입니다.', `생존 신청자는 ${fHw.survivors.n.toLocaleString('ko-KR')}명이고 기록물은 ${fHw.museum.total}건입니다(2026년 5월 31일 기준).`], fHw),
+    `생존 ${fHw.survivors.asOf} · 사료 수집 ${fHw.museum.collectedAt}`,
+  )
+  check(
+    '평균 나이에 신청현황 기준일을 붙이면 폐기된다 (S1 표제가 쓰던 조합)',
+    bad(['안내입니다.', `전체 생존 신청자는 ${fHw.aliveTotal.n.toLocaleString('ko-KR')}명이고 평균 나이는 ${fHw.avgAge.v}세입니다(2026년 5월 31일 기준).`], fHw),
+    `전체 ${fHw.aliveTotal.asOf} · 평균 나이 ${fHw.avgAge.asOf}`,
+  )
+  check(
+    '탈북민 비중에 이산가족 기준일을 붙이면 폐기된다 (compare 축 분리)',
+    bad(['안내입니다.', `탈북민 재북 출신 비중은 ${fHn.compare.maps.defectorPct}%입니다(2025년 8월 기준).`], fHn)
+    && !bad(['안내입니다.', `탈북민 재북 출신 비중은 ${fHn.compare.maps.defectorPct}%입니다(2020년 3월 기준).`], fHn),
+    `탈북민 축 ${fHn.compare.maps.defectorAsOf} · 이산가족 축 ${fHn.compare.asOf}`,
+  )
+  check(
+    '발표되지 않은 순위를 만들어 내지 않는다 (순위합은 caveat 와 함께)',
+    gpack.map.regionsOld.every((o) => {
+      const g = buildGuideFacts({ mode: 'old', id: o.id }, gpack, gextra)
+      const line = (g && g.compare) ? (fallbackGuide(g).lines.find((l) => l.includes('곳 가운데')) ?? '') : ''
+      return !/[0-9]+위/.test(line) || /[12]순위/.test(line)
+    }),
+    'legacy-priority 가 발표한 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이다',
+  )
+
   /* 콘솔 오류 */
   const errs = cdp.events
     .filter((e) => e.method === 'Log.entryAdded' && e.params?.entry?.level === 'error')
-    .map((e) => e.params.entry.text)
-    /* 박물관 원본 이미지가 개발 서버 경유로에서 502 로 막히는 것은 화면 밖의 일이다(이미지는 감춰진다) */
-    .filter((t) => !/museum-img|favicon/.test(t))
+    /* ★ 텍스트만 보면 "Failed to load resource…" 뿐이라 무엇이 실패했는지 알 수 없다 —
+         URL 을 붙여서 판정한다(사료 사진을 eager 로 바꾼 뒤 이 구분이 실제로 필요해졌다). */
+    .map((e) => `${e.params.entry.text} ${e.params.entry.url ?? ''}`)
+    /* 박물관 원본 이미지가 개발 서버 경유로에서 502·404 로 막히는 것은 화면 밖의 일이다(이미지는 감춰진다) */
+    /* /api/llm 은 Cloudflare Pages Function 이라 **개발 서버에 존재하지 않는다**(404).
+       그것이 오류로 세어지면 안 되는 이유는 바로 위 검사가 증거다 — 이 경로가 죽은 채로
+       안내인이 규칙 문장으로 서는 것을 실측했다(LLM 4원칙 ④). 배포본에는 이 경로가 있다. */
+    .filter((t) => !/museum-img|favicon|reunion\.unikorea\.go\.kr|\/api\/llm/.test(t))
   check('콘솔 오류 0건', errs.length === 0, errs.slice(0, 3).join(' | '))
 
   /* ══════════ ③ 캔버스 줄바꿈 규칙 (브라우저 없이) ══════════

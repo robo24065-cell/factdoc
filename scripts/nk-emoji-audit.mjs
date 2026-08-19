@@ -44,8 +44,16 @@ const extra = argv.filter((a) => !a.startsWith('--'))
 /* 기본 대상 — 고향ON 화면이 렌더하는 코드와 그 화면이 fetch 하는 데이터 팩 */
 const TARGETS = [
   'frontend/src/pages/GohyangOn.tsx',
+  /* ★ 씬 분해(2026-08-19) 이후 홈 화면의 문자열 대부분은 이 두 디렉터리에 산다.
+       목록이 GohyangOn.tsx 하나에 머물러 있으면 감사가 조용히 빈 곳을 재게 된다 —
+       파일을 쪼갠 그 순간부터 새 파일은 검사 밖이었다. 디렉터리째 본다. */
+  'frontend/src/pages/gohyang',
+  'frontend/src/components/gohyang',
   'frontend/src/pages/AnalysisDeck.tsx',
   'frontend/src/components/MemoryCard.tsx',
+  'frontend/src/components/MuseumTour.tsx',
+  'frontend/src/components/MuseumBanner.tsx',
+  'frontend/src/components/FontScale.tsx',
   'frontend/src/lib/gohyangWeather.ts',
   'frontend/src/theme/gohyang.ts',
   'frontend/src/layouts/SasilOnLayout.tsx',

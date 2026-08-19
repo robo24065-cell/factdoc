@@ -16,6 +16,16 @@ const NAV = [
   { to: '/factcheck', label: '사실은ON 팩트체커' },
 ] as const
 
+/* 하단 탭 4개 — 라벨은 「무엇을 보는 곳인가」로 적는다(기능 이름이 아니라).
+   가운데 둘은 홈의 씬 앵커로 간다: 홈이 한 스크롤 서사라 그 안의 자리로 데려가야 한다.
+   장식 이모지 금지 — 기하 도형만 쓴다(theme/gohyang.ts 제약 ①). */
+const BOTTOM_TABS = [
+  { to: '/', match: '/', label: '고향', glyph: '●' },
+  { to: '/#extinction', match: '/', label: '골든타임', glyph: '▲' },
+  { to: '/#actions', match: '/', label: '할 수 있는 일', glyph: '■' },
+  { to: '/factcheck', match: '/factcheck', label: '팩트체커', glyph: '◆' },
+] as const
+
 export default function SasilOnLayout() {
   const { pathname } = useLocation()
 
@@ -32,7 +42,7 @@ export default function SasilOnLayout() {
       {/* ② 머리글 — 제목줄과 주메뉴줄을 분리한다(정부 누리집 관용 구조) */}
       <header className={`sticky top-0 z-20 border-b bg-white/95 backdrop-blur ${SURFACE.line} dark:bg-[#111418]/95`}>
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
-          <NavLink to="/" className={`flex min-w-0 items-baseline gap-2.5 ${FOCUS}`}>
+          <NavLink to="/" className={`flex min-h-[48px] min-w-0 items-center gap-2.5 ${FOCUS}`}>
             <span className={`text-[1.125rem] font-bold tracking-[-0.02em] ${TEXT.ink}`}>
               고향<span style={{ color: C.blue }}>잇기</span>
             </span>
@@ -53,7 +63,7 @@ export default function SasilOnLayout() {
                     to={item.to}
                     end={item.to === '/'}
                     aria-current={active ? 'page' : undefined}
-                    className={`${BTN.seg} ${active ? BTN.segOn : BTN.segOff} ${FOCUS} inline-block`}
+                    className={`${BTN.seg} ${active ? BTN.segOn : BTN.segOff} ${FOCUS}`}
                   >
                     {item.label}
                   </NavLink>
@@ -64,8 +74,8 @@ export default function SasilOnLayout() {
         </nav>
       </header>
 
-      {/* ③ 본문 */}
-      <main className="mx-auto w-full max-w-2xl px-4 pb-16 pt-6 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+      {/* ③ 본문 — 모바일에서는 하단 고정 탭(72px)에 가리지 않게 여백을 더 준다 */}
+      <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-6 lg:max-w-6xl lg:px-6 lg:pb-16 xl:max-w-7xl">
         <Suspense
           fallback={
             <p className={`flex items-center gap-2 py-24 ${TYPE.sub} ${TEXT.faint}`}>
@@ -77,6 +87,36 @@ export default function SasilOnLayout() {
           <Outlet />
         </Suspense>
       </main>
+
+      {/* ⑤ 모바일 하단 고정 탭 — 사이트구조.md 규정: 「하단 고정 탭 4개, 라벨 포함, 터치 영역 56px.
+             엄지가 닿는 곳에 있어야 한다. 상단 햄버거 메뉴는 노인 사용자에게 보이지 않는 것과 같다.」
+             홈이 씬 서사(문서 높이 2만 픽셀 이상)로 바뀌면서 상단 sticky 머리글 하나로만
+             다녀야 했다 — 그 자리를 여기서 메운다. 인쇄에는 나가지 않는다. */}
+      <nav
+        aria-label="빠른 이동"
+        className={`fixed inset-x-0 bottom-0 z-30 border-t bg-white/95 backdrop-blur lg:hidden print:hidden ${SURFACE.line}`}
+      >
+        <ul className="mx-auto grid max-w-2xl grid-cols-4">
+          {BOTTOM_TABS.map(t => {
+            const on = pathname === t.match && !t.to.includes('#')
+            return (
+              <li key={t.to}>
+                <NavLink
+                  to={t.to}
+                  end={t.match === '/' && !t.to.includes('#')}
+                  aria-current={on ? 'page' : undefined}
+                  className={`flex min-h-[56px] flex-col items-center justify-center gap-0.5 px-1 py-2 text-center ${FOCUS} ${
+                    on ? TEXT.blue : TEXT.soft
+                  }`}
+                >
+                  <span aria-hidden="true" className="text-[13px] leading-none">{t.glyph}</span>
+                  <span className={`${TYPE.cap} font-semibold leading-tight`}>{t.label}</span>
+                </NavLink>
+              </li>
+            )
+          })}
+        </ul>
+      </nav>
 
       {/* ④ 바닥글 */}
       <footer className={`border-t bg-[#f5f7fa] ${SURFACE.hair} dark:bg-[#14181e]`}>
