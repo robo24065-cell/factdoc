@@ -5,10 +5,15 @@
    바꾸지 않고 **감싸기만** 한다 — 씬 분해(승격·격하)는 다음 단계 몫.
 
    맡는 것
-     · 무대   — full 이면 min-height 100svh (내용이 넘치면 늘어난다 — 잘라내기 금지)
+     · 무대   — 씬은 **무대 전폭**을 쓴다. 폭을 씬마다 따로 정하지 않는다.
+                (2026-08-20 실측: 씬마다 기둥 폭을 주고 가운데로 모았더니 1440px 에서
+                 좌측 시작점이 104/208/352 셋으로 갈라져 스크롤 내내 흔들렸다.
+                 좌측 레일은 하나여야 한다 — theme/gohyang.ts STAGE 주석 참조.)
+                full 이면 min-height 100svh (내용이 넘치면 늘어난다 — 잘라내기 금지)
      · 리빌   — 불투명도 + 8px 상승 1회 (motion.ts useReveal · EASE 토큰)
                 reduced-motion 이면 즉시 표시, 모션 없음
-     · 꼬리   — 가정·한계·출처 줄 (캡션급, 접지 않음)
+     · 꼬리   — 가정·한계·출처 줄 (캡션급, 접지 않음). 읽는 폭(MEASURE)으로 줄이되
+                **왼쪽 레일에 붙인 채** 줄인다 — 가운데로 모으면 레일이 하나 더 생긴다.
      · 이음새 — seam: 다음 씬으로 건네는 마지막 한 문장 (말 걸기 = 명조·합쇼체)
      · 스크롤 단서 — "↓ 계속"
 
@@ -18,15 +23,8 @@
    ──────────────────────────────────────────────────────────────── */
 
 import type { CSSProperties, ReactNode } from 'react'
-import { FONT, TYPE, TEXT, PROSE } from '../../theme/gohyang'
+import { FONT, TYPE, TEXT, PROSE, MEASURE } from '../../theme/gohyang'
 import { useReveal, prefersReduced, REVEAL_TRANSITION, REVEAL_STAGGER } from './motion'
-
-/* 서사 46rem · 차트 64rem(max-w-5xl) · 전폭. 리터럴로 적어야 Tailwind 가 클래스를 만든다. */
-const COLUMN = {
-  narrative: 'mx-auto w-full max-w-[46rem]',
-  wide: 'mx-auto w-full max-w-5xl',
-  full: '',
-} as const
 
 type SceneProps = {
   /** 앵커 id — extinction · descendant · actions 등 기존 딥링크가 그대로 살아야 한다 */
@@ -44,16 +42,12 @@ type SceneProps = {
   seam?: string
   /** 스크롤 단서 "↓ 계속" */
   cue?: boolean
-  /* 본문 기둥 폭 — 1280px 화면에서 서사 씬이 왼쪽에 붙어 오른쪽 520px(41%)이
-     비는 사고가 실측으로 잡혔다(2026-08-20). 무대는 전폭으로 두고 **읽는 기둥만**
-     가운데로 모은다. 지도·핀 덱처럼 폭을 다 써야 하는 씬은 'full' 로 남긴다. */
-  column?: 'narrative' | 'wide' | 'full'
   children: ReactNode
 }
 
 export default function Scene({
   id, full = false, reveal = true, step = 0, className = '', tail, seam, cue = false,
-  column = 'full', children,
+  children,
 }: SceneProps) {
   const { ref, shown } = useReveal<HTMLDivElement>()
   const animate = reveal && !prefersReduced()
@@ -77,16 +71,16 @@ export default function Scene({
       data-seam={seam || undefined}
       className={`${full ? 'flex min-h-[100svh] flex-col justify-center' : ''} ${className}`.trim() || undefined}
     >
-      <div className={COLUMN[column]}>
+      <div className="w-full">
         {children}
 
         {tail && (
-          <div className={`mt-4 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{tail}</div>
+          <div className={`mt-4 ${MEASURE} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{tail}</div>
         )}
 
         {seam && (
           <p
-            className={`mt-6 text-[1.1875rem] leading-[1.8] ${TEXT.soft} ${PROSE}`}
+            className={`mt-6 ${MEASURE} text-[1.1875rem] leading-[1.8] ${TEXT.soft} ${PROSE}`}
             style={{ fontFamily: FONT.serif }}
           >
             {seam}

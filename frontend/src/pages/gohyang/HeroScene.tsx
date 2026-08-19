@@ -10,7 +10,7 @@
 
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-import { SURFACE, TYPE, TEXT, BTN, FONT, josa } from '../../theme/gohyang'
+import { SURFACE, TYPE, TEXT, BTN, FONT, MEASURE, josa } from '../../theme/gohyang'
 import type { Pack, Sel, View } from '../../components/gohyang/pack-types'
 import { nf, nf1, ymKo } from '../../components/gohyang/format'
 import { FOCUS, PROSE } from '../../components/gohyang/bits'
@@ -30,8 +30,11 @@ export function HeroScene({ pack, view, viewSwitch }: {
       {view === 'step' ? (
         /* 한걸음씩 모드의 표제 — 숫자를 여기서 쏟지 않는다. 첫 카드가 하나씩 말한다. */
         <>
-          <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>한 걸음씩 보여 드리겠습니다</h1>
-          <p className={`mt-3 max-w-prose ${TYPE.body} ${TEXT.soft}`}>
+          {/* 「보여 드리겠습니다」도 합쇼체 말 걸기다 — 아래 한눈에 표제와 **같은 자리**이므로
+              글꼴도 같아야 한다(FONT 규약: 사람이 남긴 말·표제는 명조).
+              붙이지 않으면 보기 방식을 바꾸는 순간 표제 글꼴이 명조↔고딕으로 갈린다(실측 2026-08-20). */}
+          <h1 className={`mt-3 ${MEASURE} ${TYPE.h1} ${TEXT.ink}`} style={{ fontFamily: FONT.serif }}>한 걸음씩 보여 드리겠습니다</h1>
+          <p className={`mt-3 ${MEASURE} ${TYPE.body} ${TEXT.soft}`}>
             화면 하나에 한 가지씩만 나옵니다. [다음] 단추나 키보드 위·아래 화살표,
             또는 스크롤 어느 것으로든 넘기실 수 있습니다.
           </p>
@@ -39,7 +42,7 @@ export function HeroScene({ pack, view, viewSwitch }: {
       ) : (
         <>
       {/* 말 거는 문장(합쇼체)은 명조 — 수치는 고딕 tabular 그대로(FONT 토큰 규약) */}
-      <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`} style={{ fontFamily: FONT.serif }}>고향을 기억하는 사람이<br className="hidden sm:block" />
+      <h1 className={`mt-3 ${MEASURE} ${TYPE.h1} ${TEXT.ink}`} style={{ fontFamily: FONT.serif }}>고향을 기억하는 사람이<br className="hidden sm:block" />
         {' '}
         <span className="whitespace-nowrap">
           <span className={`${TYPE.figure} ${TEXT.stale} align-baseline`} style={{ fontFamily: FONT.gothic }}>
@@ -54,10 +57,10 @@ export function HeroScene({ pack, view, viewSwitch }: {
             33,272명은 게시판 공표(HWP, 2026-05-31)이고, 평균 나이는 등록현황 월별 CSV
             (2025-08-31)라 9개월 벌어져 있다. 이 프로젝트 자신의 검증기(validateGuide)가
             「평균 나이 83세(2026년 5월 기준)」를 폐기한다 — 화면이 그 기준을 통과해야 한다. */}
-      <p className={`mt-3 max-w-2xl ${TYPE.body} ${TEXT.soft}`}>
+      <p className={`mt-3 ${MEASURE} ${TYPE.body} ${TEXT.soft}`}>
         {ymKo(pack.isan.latest.asOf)} 기준 이산가족 생존 신청자 수입니다.
       </p>
-      <ul className="mt-2 flex max-w-2xl flex-wrap gap-x-5 gap-y-1.5">
+      <ul className={`mt-2 flex ${MEASURE} flex-wrap gap-x-5 gap-y-1.5`}>
         <li className={`${TYPE.sub} ${TEXT.soft}`}>
           평균 나이 <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(pack.isan.monthly.at(-1)?.avgAge)}세</b>
           {' '}<span className={`${TYPE.cap} tabular-nums ${TEXT.faint}`}>({ymKo(pack.isan.monthly.at(-1)?.month)} 기준 · 등록현황 월별 자료)</span>
@@ -67,7 +70,7 @@ export function HeroScene({ pack, view, viewSwitch }: {
           {' '}<span className={`${TYPE.cap} tabular-nums ${TEXT.faint}`}>(계산 결과 · 기준 인원 {ymKo(pack.proj.headline.asOf)} 공표)</span>
         </li>
       </ul>
-      <p className={`mt-1.5 max-w-2xl ${TYPE.sub} ${TEXT.faint}`}>아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
+      <p className={`mt-1.5 ${MEASURE} ${TYPE.sub} ${TEXT.faint}`}>아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
         네 자료는 조사한 날짜가 서로 다릅니다. 그래서 값마다 기준일을 함께 적었습니다.
       </p>
 
@@ -125,7 +128,10 @@ export function HomePickScene({ pack, oldRanked, sel, unknownHome, onPickOld }: 
         {' '}이산가족 출신지는 광복 당시 구행정구역 {nf(pack.map.regionsOld.length)}종으로만 공표됩니다 —
         {' '}지도를 몰라도 이름을 누르면 그곳이 열립니다.
       </p>
-      <div className="mt-3 flex flex-wrap gap-2">
+      {/* lg 이상에서만 4열 격자 — 무대가 64rem 로 고정되면서 7개가 한 줄에 안 들어가
+          「미수복강원」 하나만 둘째 줄에 남았다(실측). 격자로 두면 4+3 으로 갈라지고
+          단추 폭이 같아져 세로선도 맞는다. lg 미만은 기존 흐름 배치 그대로다(모바일 무변경). */}
+      <div className="mt-3 flex flex-wrap gap-2 lg:grid lg:grid-cols-4">
         {oldRanked.map(o => (
           <button
             key={o.id}

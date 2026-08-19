@@ -37,7 +37,7 @@ import { coverageEndOf, datasetLabel } from '../engine/nk-search.mjs'
    ──────────────────────────────────────────────────────────────── */
 
 /* 팔레트·활자는 theme/gohyang.ts 가 단일 진실 소스다. */
-import { SURFACE, TYPE, TEXT, BTN, josa } from '../theme/gohyang'
+import { SURFACE, TYPE, TEXT, BTN, MEASURE, josa } from '../theme/gohyang'
 import type { Level, Mode, Pack, PathItem, Sel, View } from '../components/gohyang/pack-types'
 import { PACK } from '../components/gohyang/pack-types'
 import { nf, nf1, ymKo, ymdKo, clean, plain, notice } from '../components/gohyang/format'
@@ -170,7 +170,9 @@ function TrendChart({
 
 function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
   return (
-    <div role="group" aria-label="보기 방식 고르기" className="mt-6 grid gap-2.5 sm:grid-cols-2 sm:max-w-2xl">
+    /* 폭은 읽는 폭(MEASURE)에 맞춘다 — 2xl(672) 은 이 화면 어디에도 없는 폭이라
+       1920px 에서 단추군만 좌측 344~1016 에 몰리고 오른쪽 904px 이 비어 있었다(실측). */
+    <div role="group" aria-label="보기 방식 고르기" className={`mt-6 grid gap-2.5 ${MEASURE} sm:grid-cols-2`}>
       {([
         ['all', '한눈에 보기', '지도·통계·연표가 한 화면에 모두 나옵니다'],
         ['step', '한걸음씩 보기', '큰 글씨로, 한 번에 한 가지씩만 나옵니다'],
@@ -990,14 +992,14 @@ export default function GohyangOn() {
       </Scene>
 
       {/* ── S4 기록 골든타임 — 2038~2041 이 주인공 ── */}
-      <Scene id="extinction" full column="wide" className="mt-8 scroll-mt-24">
+      <Scene id="extinction" full className="mt-8 scroll-mt-24">
         <ClockScene isan={pack.isan} proj={pack.proj} />
       </Scene>
 
       {/* ── S5 통일의식 — 기록 골든타임 **바로 아래**.
              두 곡선을 나란히 두는 것이 요지라 사이에 다른 구획을 끼우지 않는다(그래서 S4에는 이음새가 없다).
              출처가 다르므로(서울대 통일평화연구원) 배지·문장으로 갈라 표시한다. */}
-      <Scene full column="wide" className="mt-6" seam="숫자는 줄어들지만, 남겨 주신 것이 있습니다." cue>
+      <Scene full className="mt-6" seam="숫자는 줄어들지만, 남겨 주신 것이 있습니다." cue>
         <OpinionScene opinion={pack.opinion} isan={pack.isan} />
       </Scene>
 
@@ -1016,7 +1018,6 @@ export default function GohyangOn() {
       <Scene
         id="descendant"
         full
-        column="wide"
         className="mt-8 scroll-mt-24"
         seam="이어받을 뜻은 1세대의 평가로 확인되었습니다. 통일부 조사에는 그다음 답도 적혀 있습니다."
         cue
@@ -1025,19 +1026,18 @@ export default function GohyangOn() {
       </Scene>
 
       {/* ── S8 근거 — 59.9%: 이 화면이 하는 일을 이산가족이 먼저 요청했다 ── */}
-      <Scene full column="narrative" className="mt-6" seam="그 요청에 오늘 답할 수 있는 자리를 여기 두었습니다." cue>
+      <Scene full className="mt-6" seam="그 요청에 오늘 답할 수 있는 자리를 여기 두었습니다." cue>
         <DescendantEvidenceScene desc={pack.desc} isan={pack.isan} />
       </Scene>
 
       {/* ── S9 기억 카드 — 도구 씬(무모션). 견본이 먼저, #memory-card 앵커는 도구 안에 산다 ── */}
-      <Scene reveal={false} column="wide" className="mt-8" seam="만드신 카드를 맡길 곳이 있습니다." cue>
+      <Scene reveal={false} className="mt-8" seam="만드신 카드를 맡길 곳이 있습니다." cue>
         <MemoryScene pack={pack} isan={pack.isan} />
       </Scene>
 
       {/* ── S10 기증 — 진단 다음에 행동. 기증 2경로가 맨 앞이다 ── */}
       <Scene
         id="actions"
-        column="wide"
         full
         className="mt-6 scroll-mt-24"
         seam="기증 말고도 가족 이름으로 신청할 수 있는 창구가 여덟 곳 더 있습니다."
@@ -1047,17 +1047,17 @@ export default function GohyangOn() {
       </Scene>
 
       {/* ── S11 창구 핀 — 열린 8경로, 카드당 스크롤 한 구간(핀 두 곳 중 둘째) ── */}
-      <Scene column="wide" className="mt-6" seam="열려 있는 곳을 보셨습니다. 닫혀 있는 곳도 그대로 적습니다." cue>
+      <Scene className="mt-6" seam="열려 있는 곳을 보셨습니다. 닫혀 있는 곳도 그대로 적습니다." cue>
         <ChannelsScene paths={pack.paths} />
       </Scene>
 
       {/* ── S12 정직 — 닫힌 것 11가지 ── */}
-      <Scene full column="narrative" className="mt-6" seam="여기 적힌 모든 수치에는 기준일이 있습니다.">
+      <Scene full className="mt-6" seam="여기 적힌 모든 수치에는 기준일이 있습니다.">
         <ClosedScene paths={pack.paths} />
       </Scene>
 
       {/* ── S13 출처 — 압축 1뷰포트, 마지막 줄은 팩트체커 유도 ── */}
-      <Scene column="wide" className="mt-8">
+      <Scene className="mt-8">
         <SourcesScene pack={pack} />
       </Scene>
       </>

@@ -1,0 +1,168 @@
+{
+ "blues": [
+  {
+   "color": "oklch(0.9680.007247.896)",
+   "n": 1,
+   "where": [
+    "DIV.flex rounded-xl bg-slate-1"
+   ]
+  },
+  {
+   "color": "oklch(0.5540.046257.417)",
+   "n": 60,
+   "where": [
+    "BUTTON.inline-flex min-h-[48px] i",
+    "BUTTON.inline-flex min-h-[48px] i",
+    "circle.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklch(0.2080.042265.755)",
+   "n": 5,
+   "where": [
+    "BUTTON.inline-flex min-h-[48px] i",
+    "BUTTON.inline-flex min-h-[48px] i",
+    "P.text-base font-semibold te"
+   ]
+  },
+  {
+   "color": "oklch(0.7040.04256.788)",
+   "n": 82,
+   "where": [
+    "P.text-[11px] text-slate-400",
+    "P.text-[11px] text-slate-400",
+    "SPAN.text-[11px] tabular-nums t"
+   ]
+  },
+  {
+   "color": "oklch(0.3720.044257.287)",
+   "n": 36,
+   "where": [
+    "text.[object SVGAnimatedString]",
+    "text.[object SVGAnimatedString]",
+    "text.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklch(0.9840.003247.858)",
+   "n": 3,
+   "where": [
+    "DIV.mt-2 flex flex-wrap items-",
+    "DIV.mt-2 flex flex-wrap items-",
+    "P.mt-1.5 rounded-lg bg-slate"
+   ]
+  },
+  {
+   "color": "oklch(0.4460.043257.281)",
+   "n": 28,
+   "where": [
+    "SPAN.text-[11px] font-medium te",
+    "SPAN.text-[11px] font-medium te",
+    "P.mt-1.5 text-sm leading-rel"
+   ]
+  },
+  {
+   "color": "oklch(0.5460.245262.881)",
+   "n": 214,
+   "where": [
+    "A.inline-flex min-h-[48px] m",
+    "A.inline-flex min-h-[48px] m",
+    "SPAN."
+   ]
+  },
+  {
+   "color": "oklch(0.2790.041260.031)",
+   "n": 8,
+   "where": [
+    "SPAN.text-sm font-medium text-s",
+    "SPAN.text-sm font-medium text-s",
+    "SPAN.text-sm font-medium text-s"
+   ]
+  },
+  {
+   "color": "oklch(0.4880.243264.376)",
+   "n": 14,
+   "where": [
+    "SPAN.text-sm font-semibold tabu",
+    "SPAN.text-sm font-semibold tabu",
+    "SPAN.text-sm font-semibold tabu"
+   ]
+  },
+  {
+   "color": "oklch(0.9290.013255.508)",
+   "n": 11,
+   "where": [
+    "line.[object SVGAnimatedString]",
+    "line.[object SVGAnimatedString]",
+    "line.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklab(0.623-0.0378409-0.210628/0.1)",
+   "n": 1,
+   "where": [
+    "rect.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklch(0.6230.214259.815)",
+   "n": 1,
+   "where": [
+    "line.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklab(0.704-0.00914218-0.0389412/0.25)",
+   "n": 1,
+   "where": [
+    "path.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklch(0.8690.022252.894)",
+   "n": 3,
+   "where": [
+    "line.[object SVGAnimatedString]",
+    "rect.[object SVGAnimatedString]",
+    "line.[object SVGAnimatedString]"
+   ]
+  },
+  {
+   "color": "oklab(0.9999940.00004556780.0000200868/0.85)",
+   "n": 26,
+   "where": [
+    "SPAN.block text-[12px] text-whi",
+    "SPAN.block text-[12px] text-whi",
+    "SPAN.block text-[12px] text-whi"
+   ]
+  }
+ ],
+ "h1all": {
+  "한눈에_h1": {
+   "t": "고향을 기억하는 사람이 33,272명 남았습",
+   "f": "Noto Serif KR"
+  }
+ },
+ "h1step": {
+  "h1": {
+   "t": "한 걸음씩 보여 드리겠습니다",
+   "f": "system-ui"
+  },
+  "cards": [
+   {
+    "t": "몇 분이 남아 계십니까",
+    "f": "system-ui"
+   },
+   {
+    "t": "고향이 어디십니까",
+    "f": "system-ui"
+   },
+   {
+    "t": "그 고향의 오늘 날씨",
+    "f": "system-ui"
+   }
+  ],
+  "ov": 0
+ },
+ "stepScreens": []
+}

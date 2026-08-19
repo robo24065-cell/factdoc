@@ -10,7 +10,9 @@
      우리가 고른 순서가 아니라 이산가족이 고른 순서다.
      S10 꼬리에는 통일부 안내 4링크와 8촌 안내를 둔다(옛 후손 다리 머리에서 이관 — 삭제 0건).
 
-   S11 — 나머지 열린 8경로는 PinnedDeck(핀 가로 넘김 두 곳 중 하나).
+   S11 — 나머지 열린 8경로는 PinnedDeck(가로 덱 두 곳 중 하나).
+     ★ 2026-08-20 — 여기도 sticky 런웨이를 걷어냈다(사료 덱과 같은 이유). 창구 8곳을
+     다 넘길 때까지 페이지가 4.8화면 붙잡혀 있었다. 지금은 세로 스크롤이 그냥 지나간다.
      카드 무대면 = 제목 + 자격 배지 + 한 줄 설명 + 신청 단추.
      상세(자격 근거·주관·문의·법적 근거·절차·유의)는 카드 안 details — 정보 무손실.
 
@@ -107,7 +109,10 @@ function ChannelCard({ p }: { p: PathItem }) {
   const e = ELIG[p.eligibility] ?? ELIG['불명']
   const apply = p.applyUrl || p.url
   return (
-    <article className={`mx-auto max-w-[46rem] ${SURFACE.card} p-5`}>
+    /* ★ mx-auto 금지 — 무대는 왼쪽 레일 하나다(theme/gohyang.ts STAGE 주석).
+       읽는 폭으로 줄이되 **왼쪽 레일에 붙인 채** 줄인다. 가운데로 모으면 이 덱 카드만
+       레일이 +72.3px 어긋나 데스크톱 3폭(1280·1440·1920)에서 제3의 시작점이 생긴다(실측 2026-08-20). */
+    <article className={`max-w-[46rem] ${SURFACE.card} p-5`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
         <h4 className={`min-w-0 flex-1 text-[1.1875rem] font-bold leading-snug ${TEXT.ink} ${PROSE}`}>{plain(p.title)}</h4>
         <span className={`shrink-0 rounded px-2 py-0.5 ${TYPE.cap} font-semibold ${e.chip}`}>
@@ -241,8 +246,12 @@ export function ChannelsScene({ paths }: { paths: PathData }) {
         </p>
       </header>
 
+      {/* 엿보임 14% — 사진 덱(7%)보다 두껍게 문다. 정보 카드는 글이라 옆 장의 제목 첫 글자가
+            보이는 편이 「여덟 곳이 옆으로 이어진다」를 더 정직하게 알린다. 잘려도 읽는 데
+            손해가 없는 종류의 카드이기도 하다(상세는 카드 안 details 에 그대로 있다). */}
       <PinnedDeck
         label="신청 창구"
+        peek={0.14}
         className="mt-3"
         items={rest.map(p => <ChannelCard key={p.id} p={p} />)}
       />

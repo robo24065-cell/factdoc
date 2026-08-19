@@ -3,6 +3,10 @@
 
    원칙 (사이트구조.md 개정 · 확정 설계)
      · 스크롤 하이재킹 금지 — 페이지 휠은 항상 페이지를 움직인다.
+       단 하나의 예외가 **가로 덱 위의 휠**이다(PinnedDeck). 그것도 「덱이 그 방향으로
+       더 갈 수 있을 때만」이라 끝에 닿는 순간 페이지로 넘어간다 — 갇히는 구간이 없다.
+       옛 sticky 런웨이(구간 수 × 60vh)는 걷어냈다: 사진 24장 덱이 페이지를 5~6화면
+       붙잡아, 사진을 볼 생각이 없는 사람에게 벽이었다(2026-08-20 사용자 지적).
      · 리빌은 불투명도 + 8px 상승, **1회만**. 다시 숨기지 않는다.
      · prefers-reduced-motion 이면 모션 전부 꺼지고 평범한 배치로 남는다.
      · 이징은 여기 EASE 토큰 한 곳 — 화면 어디서도 cubic-bezier 를 직접 쓰지 않는다.
@@ -14,9 +18,13 @@ import { useEffect, useRef, useState } from 'react'
 
 /* ══════════ 이징 토큰 ══════════ */
 export const EASE = {
-  /** 감속 곡선 — 리빌·핀 등 서사 모션 공용 */
+  /** 감속 곡선 — 리빌·덱 활강 등 서사 모션 공용 */
   out: 'cubic-bezier(0.22, 1, 0.36, 1)',
 } as const
+
+/** EASE.out 의 네 점 — CSS 문자열과 JS 활강이 **같은 숫자**를 읽게 한다.
+ *  곡선을 두 벌 두면 전환(CSS)과 스크롤 활강(JS)의 결이 조용히 갈린다. */
+export const EASE_OUT_POINTS = [0.22, 1, 0.36, 1] as const
 
 /** 리빌 한 번의 transition 문자열 — Scene 과 개별 리빌이 같은 값을 쓴다 */
 export const REVEAL_TRANSITION = `opacity 700ms ${EASE.out}, transform 700ms ${EASE.out}`
@@ -92,39 +100,75 @@ export function useReducedMotion(): boolean {
   return reduced
 }
 
-/* ══════════ 핀 진행률 ══════════
-   계약:
-     · ref 를 sticky 런웨이(구간 수 × 60vh)에 건다.
-     · progress 는 그 런웨이 안에서의 페이지 scrollY 진행률 0~1.
-       핀은 이 값을 가로 snap 행의 scrollLeft 로 **사상만** 한다 —
-       페이지 휠은 항상 페이지를 움직인다(하이재킹 금지의 이행).
-     · enabled=false(reduced-motion)면 null — 런웨이를 해제(height auto)하고
-       평범한 가로 snap 행 + 좌우 단추만 남긴다.
-   scroll 이벤트는 rAF 로 한 프레임에 한 번만 계산한다 — 값을 만들지 않고 재기만 한다. */
-export function usePinProgress(enabled = true): { ref: React.RefObject<HTMLDivElement | null>; progress: number | null } {
-  const ref = useRef<HTMLDivElement | null>(null)
-  const [progress, setProgress] = useState<number | null>(null)
-  useEffect(() => {
-    if (!enabled) { setProgress(null); return }
-    const el = ref.current
-    if (!el) { setProgress(null); return }
-    let raf = 0
-    const measure = () => {
-      raf = 0
-      const total = el.offsetHeight - window.innerHeight
-      if (total <= 0) { setProgress(0); return }
-      const top = el.getBoundingClientRect().top
-      setProgress(Math.min(1, Math.max(0, -top / total)))
+/* ══════════ 덱 활강 (가로 카드 묶음이 한 장 넘어가는 움직임) ══════════
+
+   왜 직접 굴리는가 (2026-08-20 사용자 지적: *"옆으로 넘어가는 모션같은것도 없어서 뭔가 부족하고"*)
+     옛 구현은 `row.scrollLeft = target` 직접 대입이라 중간 프레임이 **없었다** — 카드가
+     뚝뚝 갈렸다. 네이티브 `scrollTo({behavior:'smooth'})` 는 프레임을 만들지만 이징이
+     브라우저 것이라 이 화면의 EASE.out 과 결이 다르고, 곡선을 우리가 못 고른다.
+     그래서 rAF 로 EASE.out 을 그대로 샘플링한다 — 리빌(CSS)과 활강(JS)이 한 곡선을 쓴다.
+
+   snap 은 활강 동안만 풀어 둔다. scroll-snap-type: x mandatory 는 프로그램이 만든
+   중간 위치를 매 프레임 근처 카드로 되감아 활강과 싸운다(실측 Chromium).
+   착지 지점이 정확히 카드 경계라 snap 을 되돌릴 때 튀지 않는다.
+
+   prefers-reduced-motion 이면 곧바로 목적지에 놓는다(behavior:'auto' 와 같은 뜻). */
+
+/** 한 장 넘어가는 데 걸리는 시간. 고령 사용자 기준 — 너무 빠르면 무엇이 지나갔는지 못 읽는다. */
+export const DECK_GLIDE_MS = 420
+
+/* cubic-bezier(x1,y1,x2,y2) 를 x→y 로 푸는 최소 구현(뉴턴 6회). EASE_OUT_POINTS 하나만 쓴다. */
+function cubicBezier(x1: number, y1: number, x2: number, y2: number): (x: number) => number {
+  const cx = 3 * x1, bx = 3 * (x2 - x1) - cx, ax = 1 - cx - bx
+  const cy = 3 * y1, by = 3 * (y2 - y1) - cy, ay = 1 - cy - by
+  const fx = (t: number) => ((ax * t + bx) * t + cx) * t
+  const dfx = (t: number) => (3 * ax * t + 2 * bx) * t + cx
+  return (x: number) => {
+    let t = x
+    for (let i = 0; i < 6; i++) {
+      const err = fx(t) - x
+      const d = dfx(t)
+      if (Math.abs(err) < 1e-5 || d === 0) break
+      t -= err / d
     }
-    const onScroll = () => { if (!raf) raf = requestAnimationFrame(measure) }
-    measure()
-    window.addEventListener('scroll', onScroll, { passive: true })
-    window.addEventListener('resize', onScroll)
-    return () => {
-      window.removeEventListener('scroll', onScroll)
-      window.removeEventListener('resize', onScroll)
-      if (raf) cancelAnimationFrame(raf)
-    }
-  }, [enabled])
-  return { ref, progress: enabled ? progress : null }
+    t = Math.min(1, Math.max(0, t))
+    return ((ay * t + by) * t + cy) * t
+  }
+}
+
+/** EASE.out 과 같은 곡선의 JS 판(0~1 → 0~1) */
+export const easeOut = cubicBezier(...EASE_OUT_POINTS)
+
+/** 가로 스크롤 컨테이너를 EASE.out 으로 활강시킨다. 돌려주는 함수를 부르면 그 자리에 선다.
+ *  (사용자가 손으로 밀기 시작하면 반드시 취소해야 한다 — 두 힘이 겹치면 화면이 떤다.) */
+export function glideScrollLeft(el: HTMLElement, to: number, ms = DECK_GLIDE_MS, onLand?: () => void): () => void {
+  const from = el.scrollLeft
+  const dist = to - from
+  if (prefersReduced() || typeof requestAnimationFrame === 'undefined' || Math.abs(dist) < 1) {
+    el.scrollLeft = to
+    onLand?.()
+    return () => {}
+  }
+  const snap = el.style.scrollSnapType
+  el.style.scrollSnapType = 'none'
+  let raf = 0
+  let stopped = false
+  const finish = (land: boolean) => {
+    if (stopped) return
+    stopped = true
+    if (raf) cancelAnimationFrame(raf)
+    raf = 0
+    if (land) el.scrollLeft = to
+    el.style.scrollSnapType = snap
+    if (land) onLand?.()
+  }
+  const t0 = (typeof performance !== 'undefined' ? performance.now() : Date.now())
+  const step = (now: number) => {
+    const p = Math.min(1, (now - t0) / ms)
+    el.scrollLeft = from + dist * easeOut(p)
+    if (p < 1) raf = requestAnimationFrame(step)
+    else finish(true)
+  }
+  raf = requestAnimationFrame(step)
+  return () => finish(false)
 }

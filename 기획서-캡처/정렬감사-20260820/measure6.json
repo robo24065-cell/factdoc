@@ -1,0 +1,203 @@
+{
+ "byProp": [
+  {
+   "k": "color oklch(0.5460.245262.881)",
+   "n": 95,
+   "ex": [
+    "A|inline-flex min-h-[48px] min-w-[48px] items-|원본 데이터↗",
+    "SPAN||↗"
+   ]
+  },
+  {
+   "k": "borderTopColor oklch(0.5460.245262.881)",
+   "n": 95,
+   "ex": [
+    "A|inline-flex min-h-[48px] min-w-[48px] items-|원본 데이터↗",
+    "SPAN||↗"
+   ]
+  },
+  {
+   "k": "borderLeftColor oklch(0.5460.245262.881)",
+   "n": 95,
+   "ex": [
+    "A|inline-flex min-h-[48px] min-w-[48px] items-|원본 데이터↗",
+    "SPAN||↗"
+   ]
+  },
+  {
+   "k": "outlineColor oklch(0.5460.245262.881)",
+   "n": 95,
+   "ex": [
+    "A|inline-flex min-h-[48px] min-w-[48px] items-|원본 데이터↗",
+    "SPAN||↗"
+   ]
+  },
+  {
+   "k": "color oklch(0.7040.04256.788)",
+   "n": 27,
+   "ex": [
+    "P|text-[11px] text-slate-400|지역을 누르면 그 지역의 자료",
+    "SPAN|text-[11px] tabular-nums text-slate-400|0"
+   ]
+  },
+  {
+   "k": "borderTopColor oklch(0.7040.04256.788)",
+   "n": 27,
+   "ex": [
+    "P|text-[11px] text-slate-400|지역을 누르면 그 지역의 자료",
+    "SPAN|text-[11px] tabular-nums text-slate-400|0"
+   ]
+  },
+  {
+   "k": "borderLeftColor oklch(0.7040.04256.788)",
+   "n": 27,
+   "ex": [
+    "P|text-[11px] text-slate-400|지역을 누르면 그 지역의 자료",
+    "SPAN|text-[11px] tabular-nums text-slate-400|0"
+   ]
+  },
+  {
+   "k": "outlineColor oklch(0.7040.04256.788)",
+   "n": 27,
+   "ex": [
+    "P|text-[11px] text-slate-400|지역을 누르면 그 지역의 자료",
+    "SPAN|text-[11px] tabular-nums text-slate-400|0"
+   ]
+  },
+  {
+   "k": "color oklch(0.5540.046257.417)",
+   "n": 25,
+   "ex": [
+    "BUTTON|inline-flex min-h-[48px] items-center rounde|현행 행정구역",
+    "SPAN|text-[11px] tabular-nums text-slate-500|기준 2026년 5월"
+   ]
+  },
+  {
+   "k": "outlineColor oklch(0.5540.046257.417)",
+   "n": 25,
+   "ex": [
+    "BUTTON|inline-flex min-h-[48px] items-center rounde|현행 행정구역",
+    "SPAN|text-[11px] tabular-nums text-slate-500|기준 2026년 5월"
+   ]
+  },
+  {
+   "k": "fill oklch(0.7040.04256.788)",
+   "n": 25,
+   "ex": [
+    "text|[object SVGAnimatedString]|0",
+    "text|[object SVGAnimatedString]|1만"
+   ]
+  },
+  {
+   "k": "borderTopColor oklch(0.5540.046257.417)",
+   "n": 24,
+   "ex": [
+    "BUTTON|inline-flex min-h-[48px] items-center rounde|현행 행정구역",
+    "SPAN|text-[11px] tabular-nums text-slate-500|기준 2026년 5월"
+   ]
+  },
+  {
+   "k": "borderLeftColor oklch(0.5540.046257.417)",
+   "n": 24,
+   "ex": [
+    "BUTTON|inline-flex min-h-[48px] items-center rounde|현행 행정구역",
+    "SPAN|text-[11px] tabular-nums text-slate-500|기준 2026년 5월"
+   ]
+  },
+  {
+   "k": "fill oklch(0.5460.245262.881)",
+   "n": 19,
+   "ex": [
+    "circle|[object SVGAnimatedString]|",
+    "circle|[object SVGAnimatedString]|"
+   ]
+  },
+  {
+   "k": "borderTopColor oklch(0.9680.007247.896)",
+   "n": 18,
+   "ex": [
+    "DIV|flex flex-wrap items-center justify-between |현행 행정구역고향 지도 (광복",
+    "DIV|border-t border-slate-100 px-3 py-2.5 dark:b|구역 안의 가는 선은 현행 도"
+   ]
+  },
+  {
+   "k": "borderLeftColor oklch(0.9680.007247.896)",
+   "n": 18,
+   "ex": [
+    "DIV|flex flex-wrap items-center justify-between |현행 행정구역고향 지도 (광복",
+    "DIV|border-t border-slate-100 px-3 py-2.5 dark:b|구역 안의 가는 선은 현행 도"
+   ]
+  },
+  {
+   "k": "color oklch(0.3720.044257.287)",
+   "n": 16,
+   "ex": [
+    "P|mt-4 text-sm font-medium text-slate-700 dark|이산가족 생존 신청자가 많은 ",
+    "SPAN|min-w-0 flex-1 truncate text-[13px] leading-|이산가족 신청 현황 (월별 공"
+   ]
+  },
+  {
+   "k": "borderTopColor oklch(0.3720.044257.287)",
+   "n": 16,
+   "ex": [
+    "P|mt-4 text-sm font-medium text-slate-700 dark|이산가족 생존 신청자가 많은 ",
+    "SPAN|min-w-0 flex-1 truncate text-[13px] leading-|이산가족 신청 현황 (월별 공"
+   ]
+  },
+  {
+   "k": "borderLeftColor oklch(0.3720.044257.287)",
+   "n": 16,
+   "ex": [
+    "P|mt-4 text-sm font-medium text-slate-700 dark|이산가족 생존 신청자가 많은 ",
+    "SPAN|min-w-0 flex-1 truncate text-[13px] leading-|이산가족 신청 현황 (월별 공"
+   ]
+  },
+  {
+   "k": "outlineColor oklch(0.3720.044257.287)",
+   "n": 16,
+   "ex": [
+    "P|mt-4 text-sm font-medium text-slate-700 dark|이산가족 생존 신청자가 많은 ",
+    "SPAN|min-w-0 flex-1 truncate text-[13px] leading-|이산가족 신청 현황 (월별 공"
+   ]
+  }
+ ],
+ "step": [
+  {
+   "진행": "1 / 8",
+   "제목": null,
+   "제목글꼴": null,
+   "h1글꼴": "system-ui",
+   "ov": 0,
+   "docH": 5829,
+   "최소단추": 48,
+   "미달": [],
+   "mainL": 184
+  },
+  {
+   "진행": "2 / 8",
+   "제목": null,
+   "제목글꼴": null,
+   "h1글꼴": "system-ui",
+   "ov": 0,
+   "docH": 5829,
+   "최소단추": 48,
+   "미달": [],
+   "mainL": 184
+  },
+  {
+   "진행": "3 / 8",
+   "제목": null,
+   "제목글꼴": null,
+   "h1글꼴": "system-ui",
+   "ov": 0,
+   "docH": 5829,
+   "최소단추": 48,
+   "미달": [],
+   "mainL": 184
+  }
+ ],
+ "deckFont": {
+  "t": "재본 것과, 재보지 못한 것",
+  "f": "system-ui"
+ }
+}

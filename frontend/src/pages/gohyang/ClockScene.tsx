@@ -125,21 +125,21 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
             {yTicks.map(v => (
               <g key={v}>
                 <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="stroke-slate-200 dark:stroke-slate-800" strokeWidth={1} />
-                <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" className="text-[13px] tabular-nums fill-slate-400">
+                <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" className="text-[13px] tabular-nums fill-[#767676]">
                   {v === 0 ? '0' : `${v / 10000}만`}
                 </text>
               </g>
             ))}
             {xTicks.map(t => (
-              <text key={t} x={x(t)} y={H - PAD.b + 20} textAnchor="middle" className="text-[13px] tabular-nums fill-slate-400">
+              <text key={t} x={x(t)} y={H - PAD.b + 20} textAnchor="middle" className="text-[13px] tabular-nums fill-[#767676]">
                 {t}
               </text>
             ))}
 
             {/* 1만 명 기준선 + 하회 구간 */}
-            <rect x={x(m10a)} y={PAD.t} width={Math.max(2, x(m10b) - x(m10a))} height={H - PAD.t - PAD.b} className="fill-blue-500/10" />
-            <line x1={PAD.l} x2={W - PAD.r} y1={y(10000)} y2={y(10000)} className="stroke-blue-500" strokeWidth={1.5} strokeDasharray="6 4" />
-            <text x={x(m10b) + 6} y={y(10000) - 8} className="text-[13px] font-semibold fill-blue-700 dark:fill-blue-300">
+            <rect x={x(m10a)} y={PAD.t} width={Math.max(2, x(m10b) - x(m10a))} height={H - PAD.t - PAD.b} className="fill-[#4b79bb]/10" />
+            <line x1={PAD.l} x2={W - PAD.r} y1={y(10000)} y2={y(10000)} className="stroke-[#4b79bb]" strokeWidth={1.5} strokeDasharray="6 4" />
+            <text x={x(m10b) + 6} y={y(10000) - 8} className="text-[13px] font-semibold fill-[#14407f] dark:fill-[#7aa9e8]">
               1만 명 하회 {proj.milestoneRange.below10000}
             </text>
 
@@ -149,15 +149,15 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
             <path d={path(fut.map(p => ({ t: p.t, v: p.hi })))} fill="none" className="stroke-slate-500 dark:stroke-slate-400" strokeWidth={2} strokeDasharray="7 5" />
 
             {/* 실측 — 등록현황 CSV */}
-            <path d={path(csv)} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={2.5} strokeLinejoin="round" />
+            <path d={path(csv)} fill="none" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth={2.5} strokeLinejoin="round" />
 
             {/* 실측 — 공표 HWP 3개월 (다른 채널이므로 이어 붙이지 않고 점으로 찍는다) */}
             {hwp.map(p => (
-              <circle key={p.asOf} cx={x(p.t)} cy={y(p.v)} r={3.5} className="fill-blue-700 stroke-white dark:fill-blue-300 dark:stroke-slate-900" strokeWidth={1.2} />
+              <circle key={p.asOf} cx={x(p.t)} cy={y(p.v)} r={3.5} className="fill-[#14407f] stroke-white dark:fill-[#7aa9e8] dark:stroke-slate-900" strokeWidth={1.2} />
             ))}
 
             {/* 실측 / 추계 경계 */}
-            <line x1={x(seam)} x2={x(seam)} y1={PAD.t} y2={H - PAD.b} className="stroke-slate-400" strokeWidth={1} strokeDasharray="3 3" />
+            <line x1={x(seam)} x2={x(seam)} y1={PAD.t} y2={H - PAD.b} className="stroke-[#767676]" strokeWidth={1} strokeDasharray="3 3" />
             <text x={x(seam) - 6} y={PAD.t + 12} textAnchor="end" className="text-[12px] fill-slate-500">← 실측</text>
             <text x={x(seam) + 6} y={PAD.t + 12} className="text-[12px] fill-slate-500">추계 →</text>
 
@@ -171,8 +171,8 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
               const by = cy - bh - 12 < PAD.t ? cy + 14 : cy - bh - 12
               return (
                 <g>
-                  <line x1={cx} x2={cx} y1={PAD.t} y2={H - PAD.b} className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={1} strokeDasharray="3 3" />
-                  <circle cx={cx} cy={cy} r={5.5} fill="#fff" className={sc.kind === 'proj' ? 'stroke-slate-500' : 'stroke-blue-600'} strokeWidth={2.5} />
+                  <line x1={cx} x2={cx} y1={PAD.t} y2={H - PAD.b} className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth={1} strokeDasharray="3 3" />
+                  <circle cx={cx} cy={cy} r={5.5} fill="#fff" className={sc.kind === 'proj' ? 'stroke-slate-500' : 'stroke-[#1a4e9c]'} strokeWidth={2.5} />
                   <rect x={bx} y={by} width={bw} height={bh} rx={5} fill="#fff" className="stroke-slate-300" />
                   <text x={bx + 10} y={by + 17} className="text-[12px] fill-slate-500">{sc.label}</text>
                   <text x={bx + 10} y={by + 36} className="text-[16px] font-bold fill-slate-900">
@@ -190,10 +190,10 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
         {/* 범례 */}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth="2.5" /></svg>실측 — 등록현황 CSV (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
+            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth="2.5" /></svg>실측 — 등록현황 CSV (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-blue-700 dark:fill-blue-300" /></svg>실측 — 공표 HWP 3개월 (2026.3~5)
+            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-[#14407f] dark:fill-[#7aa9e8]" /></svg>실측 — 공표 HWP 3개월 (2026.3~5)
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
             <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-slate-500" strokeWidth="2" strokeDasharray="7 5" /></svg>추계 범위 (생명표 원값 ~ 실측 교정)
@@ -216,7 +216,7 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
             아래쪽 선: {proj.method.scenarios.expected} · {proj.milestoneRange.note}
           </p>
           <details className="mt-2">
-            <summary className={`inline-flex min-h-[48px] cursor-pointer list-none items-center text-[11px] font-medium text-blue-600 dark:text-blue-400 [&::-webkit-details-marker]:hidden ${FOCUS}`}>가정 {proj.assumptions.length}가지 전부 보기 ▾
+            <summary className={`inline-flex min-h-[48px] cursor-pointer list-none items-center text-[11px] font-medium text-[#1a4e9c] dark:text-[#7aa9e8] [&::-webkit-details-marker]:hidden ${FOCUS}`}>가정 {proj.assumptions.length}가지 전부 보기 ▾
             </summary>
             <ul className="mt-1.5 space-y-1">
               {proj.assumptions.map((a, i) => (

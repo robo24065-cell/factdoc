@@ -132,11 +132,11 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
             {yTicks.map(v => (
               <g key={v}>
                 <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="stroke-slate-200 dark:stroke-slate-800" strokeWidth={1} />
-                <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" className="text-[13px] tabular-nums fill-slate-400">{v}%</text>
+                <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" className="text-[13px] tabular-nums fill-[#767676]">{v}%</text>
               </g>
             ))}
             {xTickYears.map(t => (
-              <text key={t} x={x(yrs.indexOf(t))} y={H - PAD.b + 20} textAnchor="middle" className="text-[13px] tabular-nums fill-slate-400">{t}</text>
+              <text key={t} x={x(yrs.indexOf(t))} y={H - PAD.b + 20} textAnchor="middle" className="text-[13px] tabular-nums fill-[#767676]">{t}</text>
             ))}
 
             {/* 출처 전환 지점 */}
@@ -147,7 +147,7 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
                   x2={(x(switchAt - 1) + x(switchAt)) / 2}
                   y1={PAD.t}
                   y2={H - PAD.b}
-                  className="stroke-slate-400"
+                  className="stroke-[#767676]"
                   strokeWidth={1}
                   strokeDasharray="3 3"
                 />
@@ -161,15 +161,15 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
             )}
 
             {/* 필요하지 않다 — 대조선 */}
-            <path d={line(notNeed.values)} fill="none" className="stroke-slate-400 dark:stroke-slate-500" strokeWidth={1.8} strokeDasharray="5 4" strokeLinejoin="round" />
+            <path d={line(notNeed.values)} fill="none" className="stroke-[#767676] dark:stroke-slate-500" strokeWidth={1.8} strokeDasharray="5 4" strokeLinejoin="round" />
             {/* 필요하다 — 주인공 */}
-            <path d={line(need.values)} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={2.5} strokeLinejoin="round" />
+            <path d={line(need.values)} fill="none" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth={2.5} strokeLinejoin="round" />
             {need.values.map((v, i) => (
-              <circle key={i} cx={x(i)} cy={y(v)} r={2.6} className="fill-blue-600 dark:fill-blue-400" />
+              <circle key={i} cx={x(i)} cy={y(v)} r={2.6} className="fill-[#1a4e9c] dark:fill-[#7aa9e8]" />
             ))}
 
             {/* 끝점 라벨 — 오른쪽 여백에 둔다 */}
-            <text x={x(yrs.length - 1) + 8} y={y(need.values[need.values.length - 1]) + 4} className="text-[13px] font-semibold tabular-nums fill-blue-700 dark:fill-blue-300">
+            <text x={x(yrs.length - 1) + 8} y={y(need.values[need.values.length - 1]) + 4} className="text-[13px] font-semibold tabular-nums fill-[#14407f] dark:fill-[#7aa9e8]">
               {need.label} {nf1(need.values[need.values.length - 1])}%
             </text>
             <text x={x(yrs.length - 1) + 8} y={y(notNeed.values[notNeed.values.length - 1]) + 4} className="text-[13px] tabular-nums fill-slate-500">

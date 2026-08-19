@@ -16,7 +16,7 @@
      [6] 기억 카드: 고향 고르기 → 답 입력 → 미리보기 → PNG 생성
          (canvas.toDataURL 이 data:image/png 로 시작하는 문자열을 돌려주는지 실측)
      [7] 기억 카드 입력이 localStorage 에만 남는가 — 네트워크 요청에 답이 실려 나가지 않았는가
-     [8] 덱 상단 「기계가 쓴 요약」이 실제로 렌더되는가 · 줄마다 기준일이 붙는가 ·
+     [8] 「기계가 쓴 요약」이 **카드 뷰어 아래에** 실제로 렌더되는가 · 줄마다 기준일이 붙는가 ·
          근거 단추를 누르면 그 카드로 실제로 건너뛰는가 (파일의 cardIds 와 대조)
      [9] 기억 카드가 **지정한 글꼴로 그려지는가** — 폭 실측.
          "명조로 그린다"는 코드가 있다는 말이지 그려졌다는 말이 아니다. 웹폰트가 막히면
@@ -198,6 +198,59 @@ try {
   const urlHas = await evl(`decodeURIComponent(location.search).includes('카드=')`)
   check('주소에 카드 id 가 남는다', urlHas, await evl(`decodeURIComponent(location.search)`))
 
+  /* ★ 회귀 방지 — 넘길 때 읽던 자리를 지킨다 (AnalysisDeck.keepPlace)
+       예전에는 카드를 넘길 때마다 표제로 scrollIntoView 해서 화면이 맨 위로 튕겼다.
+       21장이면 21번이다. "코드에 keepPlace 가 있다"가 아니라 **scrollY 가 안 튄다**를 잰다.
+       카드 블록이 이미 보이는 자리(머리글 아래)로 내려두고 「다음」·「이전」을 눌러
+       scrollY 가 그대로인지 본다. 0 으로 돌아가면 그것이 회귀다. */
+  const keepPlace = await evl(`(() => {
+    const deck = document.querySelector('div.scroll-mt-32')
+    if (!deck) return null
+    /* 카드 블록의 위쪽이 머리글(121px) 아래에 오도록 페이지를 내린다 */
+    scrollTo(0, Math.round(deck.getBoundingClientRect().top + scrollY - 200))
+    return Math.round(scrollY)
+  })()`)
+  await sleep(500)
+  const beforeY = await evl(`Math.round(scrollY)`)
+  await evl(clickNext)
+  await sleep(700)
+  const afterNextY = await evl(`Math.round(scrollY)`)
+  await evl(`(() => {
+    const b = [...document.querySelectorAll('button')].filter(x => x.textContent.replace(/\\s+/g,'').startsWith('이전') && !x.disabled)[0]
+    if (b) b.click(); return Boolean(b)
+  })()`)
+  await sleep(700)
+  const afterPrevY = await evl(`Math.round(scrollY)`)
+  check(
+    '분석 덱: 「이전」·「다음」이 화면을 맨 위로 되돌리지 않는다 (읽던 자리를 지킨다)',
+    beforeY > 0 && afterNextY === beforeY && afterPrevY === beforeY,
+    `내려둔 자리 ${beforeY} → 다음 ${afterNextY} → 이전 ${afterPrevY}`,
+  )
+
+  /* ★ 회귀 방지 — DOM 순서: 카드 뷰어가 요약보다 **앞**이다.
+       요약이 위에 있던 동안은 카드로 가는 길목을 막고 있었다. 여기서 재는 것은 요약의
+       내용이 아니라 **자리**이므로, 요약 파일이 있든 없든 이 검사는 성립해야 한다
+       (요약이 없으면 그 자리가 비므로 「앞에 온 카드」만 확인한다). */
+  const order = await evl(`(() => {
+    const deck = document.querySelector('div.scroll-mt-32')
+    const card = deck ? deck.querySelector('article') : null
+    const sum = document.getElementById('deck-summary')
+    const index = document.getElementById('deck-index')
+    if (!deck || !card) return null
+    /* 4 = Node.DOCUMENT_POSITION_FOLLOWING */
+    return {
+      cardInDeck: true,
+      sum: sum ? ((deck.compareDocumentPosition(sum) & 4) !== 0) : null,
+      index: index ? ((deck.compareDocumentPosition(index) & 4) !== 0) : null,
+      sumBeforeIndex: (sum && index) ? ((sum.compareDocumentPosition(index) & 4) !== 0) : null,
+    }
+  })()`)
+  check(
+    '분석 덱 DOM 순서: 카드 뷰어 → 요약 → 목차',
+    Boolean(order) && order.cardInDeck && order.sum !== false && order.index === true && order.sumBeforeIndex !== false,
+    JSON.stringify(order),
+  )
+
   /* 카드 21장을 전부 돌며 그림/표가 있는지, 판정 배지가 붙는지 센다 */
   const sweep = await evl(`(async () => {
     const out = []
@@ -236,11 +289,14 @@ try {
   check('모든 카드에 기준일이 붙는다', sweep.every((r) => r.hasAsOf), `누락 ${sweep.filter((r) => !r.hasAsOf).length}장`)
   check('모든 카드에 출처 줄이 붙는다', sweep.every((r) => r.hasSource), `누락 ${sweep.filter((r) => !r.hasSource).length}장`)
 
-  /* ══════════ ①b 덱 상단 「기계가 쓴 요약」 ══════════
+  /* ══════════ ①b 「기계가 쓴 요약」 — 카드 뷰어 아래 ══════════
      이 구획은 **없어도 되는 파일**로 만들어져 있다(deck-summary.json 이 없으면 화면이
      그 자리를 조용히 비운다). 그래서 "요약이 안 뜬다"가 오류로 드러나지 않는다 —
-     여기서 재지 않으면 조용히 사라져도 아무도 모른다. */
-  if (!AS_JSON) console.log(`\n▶ 덱 상단 요약`)
+     여기서 재지 않으면 조용히 사라져도 아무도 모른다.
+     자리도 함께 잰다: 요약은 **카드 다음**이다. 위로 올라가면 카드로 가는 길목을 막아
+     사용자가 매번 요약을 지나쳐야 한다(그래서 아래로 내렸다). 순서는 문자열로 재지 못하므로
+     DOM 위치로 잰다 — article(카드) 뒤에 오는가. */
+  if (!AS_JSON) console.log(`\n▶ 덱 요약 (카드 아래)`)
   if (!summary) {
     check('덱 요약 파일이 있다', false, 'frontend/public/gohyang/deck-summary.json 이 없다')
   } else {
@@ -250,7 +306,10 @@ try {
       const sec = document.querySelector('section[aria-label="기계가 쓴 요약"]')
       if (!sec) return null
       const chips = [...sec.querySelectorAll('button[data-summary-chip]')]
+      const card = document.querySelector('article')
       return {
+        /* 4 = Node.DOCUMENT_POSITION_FOLLOWING — 카드보다 뒤에 있는가 */
+        afterCard: Boolean(card) && (card.compareDocumentPosition(sec) & 4) !== 0,
         head: sec.querySelector('h2')?.textContent?.trim() ?? null,
         text: sec.innerText,
         lines: sec.querySelectorAll('ul > li').length,
@@ -260,8 +319,8 @@ try {
       }
     })()`)
     const wantLines = summary.sections.reduce((s, x) => s + x.lines.length, 0)
-    check('덱 상단에 요약 구획이 렌더된다', Boolean(sumUp) && sumUp.head === '이 덱이 말하는 것',
-      sumUp ? `머리글 "${sumUp.head}" · 줄 ${sumUp.lines}개` : '구획 없음')
+    check('요약 구획이 카드 뷰어 아래에 렌더된다', Boolean(sumUp) && sumUp.head === '이 덱이 말하는 것' && sumUp.afterCard === true,
+      sumUp ? `머리글 "${sumUp.head}" · 줄 ${sumUp.lines}개 · 카드 뒤 ${sumUp.afterCard}` : '구획 없음')
     check(`요약 ${wantLines}줄이 전부 그려진다`, sumUp?.lines === wantLines, `화면 ${sumUp?.lines}줄`)
     check('머리 문장이 파일과 한 글자도 다르지 않다',
       Boolean(sumUp) && sumUp.text.includes(summary.headline.text), summary.headline.text.slice(0, 30) + '…')
@@ -692,35 +751,82 @@ try {
     .map(e => (e.tagName + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)))()`)
   check('누르는 것은 전부 48px 이상이다 (지도 폴리곤 제외)', tiny.length === 0, tiny.slice(0, 3).join(' | ') || '0건')
 
-  /* ── 핀 덱 — 페이지 스크롤이 카드를 넘기고, 카드 경계에 정확히 선다 ── */
+  /* ── 가로 덱 — 세로 스크롤은 그냥 지나가고, 가로는 「덱과의 상호작용」에서만 나온다 ──
+       ★ 2026-08-20 재계약. 옛 검사는 「페이지를 내리면 덱이 넘어간다」를 쟀다(sticky 런웨이가
+         페이지 진행률을 scrollLeft 로 사상). 그 구조는 사진 24장 덱이 페이지를 4.8화면
+         붙잡는 벽이어서 걷어냈다(사용자 지적: *"수십개 다 넘길때까지 아래로 못넘기는것도
+         스트레스"*). 지금 재는 것은 뒤집힌 계약 셋이다 —
+           ① 덱을 지나쳐 페이지가 내려가는 동안 덱은 제자리다(붙잡지 않는다)
+           ② 포인터가 덱 위에 있을 때의 휠만 가로로 돌고, 그동안 페이지는 그대로다
+           ③ 마지막 장에서는 그 즉시 페이지로 넘어간다(scroll chaining — 갇히는 프레임 0) */
   const ROW = `[...document.querySelectorAll('[role=group][aria-roledescription="가로 카드 묶음"]')][0]`
   const deck0 = await evl(`(() => { const row = ${ROW}; if (!row) return null
     const r = row.getBoundingClientRect()
     return { y: Math.round(r.top + scrollY), cards: row.children.length } })()`)
-  check('사료 핀 덱이 가로 카드 묶음으로 실재한다', Boolean(deck0 && deck0.cards > 1), deck0 ? `카드 ${deck0.cards}장` : '없음')
+  check('사료 가로 덱이 카드 묶음으로 실재한다', Boolean(deck0 && deck0.cards > 1), deck0 ? `카드 ${deck0.cards}장` : '없음')
 
+  /* 카드 경계는 clientWidth 가 아니라 **카드 간격(피치)** 으로 잰다 — 엿보임(peek)이 있어
+     카드 폭 < 행 폭이다. 옆 카드가 얼마나 물려 보이는지는 덱마다 다르게 정한다. */
   const readDeck = `(() => { const row = ${ROW}
-    const cnt = [...document.querySelectorAll('p')].map(p => p.textContent.trim()).filter(t => t.length < 9 && t.indexOf(' / ') > 0)[0] ?? null
+    const r = row.getBoundingClientRect()
+    const kids = row.children
+    const pitch = kids.length > 1
+      ? kids[1].getBoundingClientRect().left - kids[0].getBoundingClientRect().left
+      : row.clientWidth
+    const off = pitch ? row.scrollLeft % pitch : 0
     return {
-      left: Math.round(row.scrollLeft), mod: Math.round(row.scrollLeft % row.clientWidth), counter: cnt,
+      y: Math.round(scrollY), left: Math.round(row.scrollLeft),
+      max: Math.round(row.scrollWidth - row.clientWidth),
+      offBoundary: Math.round(Math.min(Math.abs(off), Math.abs(pitch - off))),
+      counter: [...row.parentElement.querySelectorAll('p')].map(p => p.textContent.trim()).filter(t => t.indexOf(' / ') > 0)[0] ?? null,
+      cx: Math.round(r.left + r.width / 2), cy: Math.round(r.top + r.height / 2),
       inert: [...row.children].filter(c => c.hasAttribute('inert')).length,
       reachable: [...row.querySelectorAll('a[href],button')].filter(e => !e.closest('[inert]')).length,
     } })()`
-  await evl(`window.scrollTo(0, ${(deck0?.y ?? 0) + 400})`)
-  await sleep(700)
+  const centerDeck = async () => {
+    await evl(`(() => { const el = ${ROW}.parentElement.parentElement
+      const r = el.getBoundingClientRect()
+      scrollTo(0, Math.max(0, Math.round(r.top + scrollY - (innerHeight - r.height) / 2))) })()`)
+    await sleep(700)
+  }
+  const wheelOn = (x, y, dy) =>
+    cdp.send('Input.dispatchMouseEvent', { type: 'mouseWheel', x, y, deltaX: 0, deltaY: dy, pointerType: 'mouse' })
+
+  await centerDeck()
+  const pin0 = await evl(readDeck)
+  /* ① 페이지가 덱을 그냥 지나간다 */
+  await evl(`window.scrollBy(0, 700)`)
+  await sleep(600)
+  const pinPass = await evl(readDeck)
+  /* ② 덱 위 휠 → 가로만 */
+  await centerDeck()
   const pinA = await evl(readDeck)
-  await evl(`window.scrollBy(0, 900)`)
-  await sleep(800)
+  await wheelOn(pinA.cx, pinA.cy, 120)
+  await sleep(900)
   const pinB = await evl(readDeck)
+  /* ③ 마지막 장 → 페이지로 넘어간다 */
+  await evl(`${ROW}.scrollLeft = ${ROW}.scrollWidth`)
+  await sleep(400)
+  await centerDeck()
+  const pinEnd = await evl(readDeck)
+  await wheelOn(pinEnd.cx, pinEnd.cy, 120)
+  await sleep(600)
+  const pinChain = await evl(readDeck)
+
   check(
-    '페이지를 내리면 핀 덱이 실제로 넘어간다',
-    Boolean(pinA && pinB && pinB.left > pinA.left && pinB.counter !== pinA.counter),
-    `${pinA?.counter} → ${pinB?.counter} (scrollLeft ${pinA?.left} → ${pinB?.left})`,
+    '가로 덱: 세로 스크롤은 지나가고 · 덱 위 휠만 가로로 돌고 · 끝에서는 페이지로 넘어간다',
+    Boolean(pin0 && pinPass && pinA && pinB && pinEnd && pinChain
+      && pinPass.left === pin0.left && pinPass.y > pin0.y
+      && pinB.left > pinA.left && pinB.y === pinA.y && pinB.counter !== pinA.counter
+      && pinChain.left === pinEnd.left && pinChain.y > pinEnd.y),
+    `지나감 ${pin0?.left}→${pinPass?.left}(페이지 +${(pinPass?.y ?? 0) - (pin0?.y ?? 0)}) · `
+    + `휠 ${pinA?.counter}→${pinB?.counter}(페이지 ${(pinB?.y ?? 0) - (pinA?.y ?? 0)}) · `
+    + `끝에서 페이지 +${(pinChain?.y ?? 0) - (pinEnd?.y ?? 0)}`,
   )
   check(
-    '사상 결과가 카드 경계에 정확히 선다 (반씩 걸치지 않는다)',
-    pinA?.mod === 0 && pinB?.mod === 0,
-    `나머지 ${pinA?.mod}px · ${pinB?.mod}px`,
+    '카드가 반씩 걸치지 않는다 (엿보임을 뺀 카드 경계에 정확히 선다)',
+    (pinA?.offBoundary ?? 99) <= 1 && (pinB?.offBoundary ?? 99) <= 1,
+    `경계 어긋남 ${pinA?.offBoundary}px · ${pinB?.offBoundary}px`,
   )
   check(
     '화면 밖 카드는 탭 정지점이 아니다 (포커스와 화면이 어긋나지 않는다)',
@@ -728,7 +834,112 @@ try {
     `inert ${pinB?.inert}/${(deck0?.cards ?? 1) - 1}장 · 닿는 링크 ${pinB?.reachable}개`,
   )
 
-  /* ── reduced-motion 폴백 — 런웨이가 풀리고 평범한 가로 snap 행 + 단추만 남는가 ── */
+  /* ── ★ 회귀 방지 ⓐ 「덱이 페이지를 붙잡는 총량」에 상한이 있는가 ─────────────
+       위 검사는 「끝에 닿으면 페이지로 넘어간다」만 봤다. 그런데 사진 24장 덱은
+       **끝까지 가는 데 22회**가 들었다 — 포인터를 화면 한가운데(=덱 위) 두는 기본 자세로
+       홈을 훑으면 x=64 경로 128회가 156회가 됐다(실측 2026-08-20 1280×900, delta=100).
+       계약은 지켜지는데 사용자 지적 ③ 은 그대로 참인 상태였다.
+       그래서 여기서 재는 것은 「끝」이 아니라 **총량**이다: 덱 위에서 같은 방향으로 계속
+       굴릴 때, 페이지가 멈춰 있는 휠이 PinnedDeck 의 예산(WHEEL_BUDGET)+여유 안에서
+       끝나고 그 뒤로는 페이지가 이어지는가. 덱은 24장이므로 「카드가 떨어져서」 풀리는
+       것이 아니다 — 상한이 실제로 걸린 것만 이 검사를 통과한다. ── */
+  const TRAP_MAX = 6          // 예산 4장 + 관측 여유 2 — 느슨하게 만들지 말 것
+  await evl(`${ROW}.scrollLeft = 0`)
+  await sleep(500)
+  await centerDeck()
+  const trap = []
+  let prevY = await evl(`Math.round(scrollY)`)
+  for (let i = 0; i < 14; i++) {
+    const at = await evl(readDeck)
+    await wheelOn(at.cx, Math.max(8, Math.min(892, at.cy)), 100)
+    await sleep(120)
+    const y = await evl(`Math.round(scrollY)`)
+    trap.push({ i, held: y === prevY, y, left: (await evl(readDeck)).left })
+    prevY = y
+  }
+  /* 앞머리에서 페이지가 멈춰 있는 연속 길이 = 덱이 붙잡은 총량 */
+  let heldRun = 0
+  while (heldRun < trap.length && trap[heldRun].held) heldRun++
+  const movedAfter = trap.slice(heldRun).filter((t) => !t.held).length
+  const notAtEnd = await evl(`(() => { const r = ${ROW}; return r.scrollLeft < r.scrollWidth - r.clientWidth - 2 })()`)
+  check(
+    `사진 덱: 휠이 가로로 가고, 붙잡는 총량이 ${TRAP_MAX}회 이하다 (카드가 떨어져서가 아니라 상한으로 풀린다)`,
+    heldRun >= 1 && heldRun <= TRAP_MAX && movedAfter >= 4 && notAtEnd === true && trap[0].left > 0,
+    `붙잡은 휠 ${heldRun}회 · 그 뒤 페이지가 움직인 휠 ${movedAfter}회 · 덱은 아직 끝이 아님 ${notAtEnd} · 첫 휠 scrollLeft ${trap[0]?.left}`,
+  )
+
+  /* ── ★ 회귀 방지 ⓑ 카드 전환에 **중간 프레임**이 있는가 (부드러움) ─────────────
+       옛 구현은 `row.scrollLeft = target` 직접 대입이라 중간 프레임이 0 이었다 — 카드가
+       뚝뚝 갈렸다(사용자 지적 ②). 「motion.ts 를 쓴다」가 아니라 rAF 로 실제 표본을 걷어
+       서로 다른 중간값이 몇 개 나오는지 센다. 값이 두 개(시작·끝)뿐이면 회귀다. ── */
+  await evl(`${ROW}.scrollLeft = 0`)
+  await sleep(500)
+  const frames = await evl(`(async () => {
+    const row = ${ROW}
+    const btn = [...row.parentElement.querySelectorAll('button')]
+      .find(b => b.textContent.replace(/\\s+/g, '').startsWith('다음'))
+    if (!btn) return null
+    const from = row.scrollLeft
+    const s = []
+    let go = true
+    const tick = () => { s.push(row.scrollLeft); if (go) requestAnimationFrame(tick) }
+    requestAnimationFrame(tick)
+    btn.click()
+    await new Promise(r => setTimeout(r, 900))
+    go = false
+    const to = row.scrollLeft
+    const lo = Math.min(from, to), hi = Math.max(from, to)
+    return {
+      from: Math.round(from), to: Math.round(to), n: s.length,
+      uniq: new Set(s.map(v => Math.round(v))).size,
+      mid: new Set(s.filter(v => v > lo + 1 && v < hi - 1).map(v => Math.round(v))).size,
+    }
+  })()`)
+  check(
+    '카드 전환에 중간 프레임이 있다 (직접 대입이 아니라 활강한다)',
+    Boolean(frames) && frames.to !== frames.from && frames.uniq >= 6 && frames.mid >= 4,
+    frames ? `표본 ${frames.n}개 · 서로 다른 값 ${frames.uniq}개 · 중간값 ${frames.mid}개 (${frames.from}→${frames.to})` : '단추 없음',
+  )
+
+  /* ── ★ 회귀 방지 ⓔ 홈의 주요 블록이 **같은 중심선**을 쓰는가 (1280) ─────────────
+       theme/gohyang.ts STAGE 주석의 「이 화면에는 좌측 레일이 하나만 있어야 한다」를
+       화면에서 잰다. 씬마다 기둥 폭을 따로 주면 기둥이 저마다 가운데로 모이면서
+       시작점이 셋으로 갈라진다 — 스크롤을 내리는 동안 글머리가 옮겨 다닌다.
+       중심선 하나 + 무대 상자 다섯의 좌/우/폭 일치를 함께 본다. ── */
+  const rails = await evl(`(() => {
+    const head = document.querySelector('header')
+    const box = (el) => { if (!el) return null; const r = el.getBoundingClientRect()
+      return { l: Math.round(r.left), r: Math.round(r.right), w: Math.round(r.width), c: Math.round((r.left + r.width / 2) * 10) / 10 } }
+    const stage = {
+      고지띠: box(head?.previousElementSibling?.querySelector('p')),
+      머리글행: box(head?.querySelector('div')),
+      주메뉴: box(document.querySelector('nav[aria-label="주요 화면"]')),
+      본문: box(document.querySelector('main')),
+      바닥글: box(document.querySelector('footer > div')),
+    }
+    const scenes = [...document.querySelectorAll('[data-scene]')].map(e => ({ id: e.getAttribute('data-scene'), ...box(e) }))
+    /* 덱 카드 — S11 이 mx-auto 로 가운데 모여 레일을 하나 더 만들었던 자리다 */
+    const deckCards = [...document.querySelectorAll('[data-deck-card]:not([inert]) > *')].map(e => box(e).l)
+    return { stage, scenes, deckCards: [...new Set(deckCards)].sort((a, b) => a - b) }
+  })()`)
+  const stageBoxes = Object.values(rails.stage)
+  const centers = [...stageBoxes.map((b) => b?.c), ...rails.scenes.map((s) => s.c)]
+  const oneCenter = centers.every((c) => c !== null && Math.abs(c - centers[0]) <= 0.5)
+  const oneRail = stageBoxes.every((b) => b && b.l === stageBoxes[0].l && b.w === stageBoxes[0].w)
+  check(
+    '홈 주요 블록이 1280 에서 같은 중심선을 쓴다 (무대 상자 5 + 씬 13)',
+    oneCenter && oneRail && rails.scenes.length === 13,
+    `중심 ${[...new Set(centers)].join('·')} · 무대 L/W ${stageBoxes[0]?.l}/${stageBoxes[0]?.w} · 씬 ${rails.scenes.length}개`,
+  )
+  /* 씬 안쪽 — 덱 카드가 씬 레일 밖으로 새 시작점을 만들지 않는가(S11 mx-auto 회귀) */
+  const sceneL = rails.scenes[0]?.l
+  check(
+    '덱 카드가 씬 레일에서 벗어나 새 시작점을 만들지 않는다 (S11 mx-auto 회귀)',
+    rails.deckCards.length > 0 && rails.deckCards.every((l) => Math.abs(l - sceneL) <= 4),
+    `씬 레일 ${sceneL} · 덱 카드 시작점 ${rails.deckCards.join('·')}`,
+  )
+
+  /* ── reduced-motion 폴백 — 런웨이가 없고(항상) 평범한 가로 snap 행 + 단추만 남는가 ── */
   await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] })
   await cdp.send('Page.navigate', { url: `${BASE}/` })
   await waitFor(`document.querySelectorAll('[data-scene]').length >= 13`, 120)

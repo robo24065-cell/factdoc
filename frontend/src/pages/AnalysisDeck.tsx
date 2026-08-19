@@ -947,6 +947,9 @@ function SummaryLine({ line, cards, onGo }: { line: SumLine; cards: Card[]; onGo
   )
 }
 
+/* 이 구획은 카드 **아래**에 놓인다(화면 조립부 참조). 표제의 「이 덱이 말하는 것 ↓」가 여기로 온다 —
+   그래서 id 와 scroll-mt-32(sticky 머리글 실측 121px)를 가진다. 둘 중 하나만 빠져도
+   안내는 있는데 도착 자리가 머리글에 잠긴다. */
 function SummaryBlock({ sum, cards, onGo }: { sum: DeckSummary; cards: Card[]; onGo: (i: number) => void }) {
   /* 구획별 개수는 meta 에서 온 shape 값이다 — LLM 무관 */
   const count: Record<string, number> = {
@@ -956,8 +959,9 @@ function SummaryBlock({ sum, cards, onGo }: { sum: DeckSummary; cards: Card[]; o
   }
   return (
     <section
+      id="deck-summary"
       aria-label="기계가 쓴 요약"
-      className={`mt-4 rounded-md border border-l-[6px] border-l-[#1a4e9c] ${SURFACE.line} ${SURFACE.inset} p-5 sm:p-6`}
+      className={`mt-8 scroll-mt-32 rounded-md border border-l-[6px] border-l-[#1a4e9c] ${SURFACE.line} ${SURFACE.inset} p-5 sm:p-6`}
     >
       <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>기계가 쓴 요약 · 통일부 공식 서술이 아닙니다</p>
       <h2 className={`mt-2 ${TYPE.h2} ${TEXT.ink} ${PROSE}`}>이 덱이 말하는 것</h2>
@@ -1029,7 +1033,8 @@ export default function AnalysisDeck() {
   const [sum, setSum] = useState<DeckSummary | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [cur, setCur] = useState(0)
-  const topRef = useRef<HTMLDivElement>(null)
+  /* 넘길 때 기준이 되는 자리는 **표제가 아니라 카드 블록**이다 (아래 keepPlace 주석) */
+  const deckRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let alive = true
@@ -1069,6 +1074,27 @@ export default function AnalysisDeck() {
   const total = data?.cards.length ?? 0
   const card = data?.cards[cur]
 
+  /* ★ 넘길 때 화면을 함부로 움직이지 않는다.
+     예전에는 표제(header)로 scrollIntoView 했다 — 카드를 한 장 넘길 때마다 화면이 맨 위로
+     튕겨서, 사용자는 카드를 보려고 매번 다시 스크롤해야 했다. 21장이면 21번이다.
+     규칙은 하나다: **읽던 자리를 지킨다.**
+       · 카드 블록의 위쪽이 이미 보이면(머리글에 가리지 않은 채) 스크롤을 아예 건드리지 않는다.
+       · 카드가 화면 위로 벗어났을 때만(목차·요약의 근거 단추로 건너뛴 경우가 이것이다)
+         카드 블록을 화면 안으로 들인다. 표제가 아니라 카드 블록이다.
+     HEAD_GAP 은 sticky 머리글이 가리는 높이 — 카드 블록의 scroll-mt-32(128px)와 **같은 값**이어야 한다.
+     둘이 어긋나면 「보인다」의 기준과 실제로 멈추는 자리가 달라진다.
+     128 은 실측값이다: SasilOnLayout 의 sticky 머리글이 데스크톱·모바일 모두 121px 이다.
+     다른 자리가 쓰는 scroll-mt-24(96px)를 그대로 가져오면 「이전」 단추가 머리글 밑에 25px 잠긴다. */
+  const HEAD_GAP = 128
+  const keepPlace = () => {
+    const el = deckRef.current
+    if (!el || typeof window === 'undefined') return
+    const top = el.getBoundingClientRect().top
+    if (top >= HEAD_GAP) return // 이미 보인다 — 아무것도 하지 않는다
+    const still = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false
+    el.scrollIntoView({ block: 'start', behavior: still ? 'auto' : 'smooth' })
+  }
+
   const go = (i: number) => {
     if (!data) return
     const n = Math.max(0, Math.min(data.cards.length - 1, i))
@@ -1079,7 +1105,7 @@ export default function AnalysisDeck() {
       u.searchParams.set('카드', id)
       window.history.replaceState(null, '', u.toString())
     }
-    topRef.current?.scrollIntoView({ block: 'start', behavior: 'auto' })
+    keepPlace()
   }
 
   /* 키보드 ←→ — 큰 단추와 같은 일을 한다. 입력 칸 안에서는 가로채지 않는다 */
@@ -1131,7 +1157,7 @@ export default function AnalysisDeck() {
   return (
     <div className="pb-4">
       {/* ── 표제 ── */}
-      <header className={PROSE} ref={topRef}>
+      <header className={PROSE}>
         <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>통일부 공공데이터 · 이산가족 자료 분석</p>
         <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>재본 것과, 재보지 못한 것</h1>
         <p className={`mt-3 max-w-3xl ${TYPE.body} ${TEXT.soft}`}>
@@ -1150,6 +1176,13 @@ export default function AnalysisDeck() {
           <a href="#deck-index" className={BTN.ghost}>
             카드 {nf(total)}장 목차 <span aria-hidden="true">↓</span>
           </a>
+          {/* 요약이 카드 아래로 내려갔으므로, 처음 온 사람이 그 존재를 모를 수 있다.
+              그래서 한 줄만 남긴다 — 요약 파일이 없으면 이 안내도 없다(빈 곳을 가리키지 않는다). */}
+          {ok && (
+            <a href="#deck-summary" className={BTN.ghost}>
+              이 덱이 말하는 것 <span aria-hidden="true">↓</span>
+            </a>
+          )}
         </div>
         <div className={`mt-4 rounded-md border ${SURFACE.line} ${SURFACE.inset} p-3.5`}>
           <p className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
@@ -1159,42 +1192,50 @@ export default function AnalysisDeck() {
         </div>
       </header>
 
-      {/* ── 기계가 쓴 요약 — 파일이 없거나 계보가 어긋나면 이 자리는 조용히 비워진다 ── */}
-      {ok && <SummaryBlock sum={ok} cards={data.cards} onGo={go} />}
-
-      {/* ── 진행 표시 + 넘김 단추 (카드 위) ── */}
-      <div className="mt-6 flex items-center justify-between gap-3">
-        <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className={navBtn(cur === 0)}>
-          <span aria-hidden="true">←</span> 이전
-        </button>
-        <div className="min-w-0 text-center" aria-live="polite">
-          <p className={`text-[1.0625rem] font-bold tabular-nums ${TEXT.ink}`}>
-            {cur + 1} / {total}
-          </p>
-          <p className={`truncate ${TYPE.cap} ${TEXT.faint}`}>
-            {VERDICT[card.verdict]?.label} · {card.title}
-          </p>
+      {/* ── 카드 뷰어 — 표제 바로 다음이다.
+             예전에는 요약이 이 자리에 있어서, 카드를 보려면 매번 요약을 지나쳐야 했다.
+             이 덱의 본문은 카드이고 요약은 그 요약이므로, 본문이 먼저 온다.
+             scroll-mt-32 는 sticky 머리글(실측 121px)이 가리는 높이 — keepPlace 의 HEAD_GAP 과 같은 값이다. ── */}
+      <div ref={deckRef} className="scroll-mt-32">
+        {/* ── 진행 표시 + 넘김 단추 (카드 위) ── */}
+        <div className="mt-6 flex items-center justify-between gap-3">
+          <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className={navBtn(cur === 0)}>
+            <span aria-hidden="true">←</span> 이전
+          </button>
+          <div className="min-w-0 text-center" aria-live="polite">
+            <p className={`text-[1.0625rem] font-bold tabular-nums ${TEXT.ink}`}>
+              {cur + 1} / {total}
+            </p>
+            <p className={`truncate ${TYPE.cap} ${TEXT.faint}`}>
+              {VERDICT[card.verdict]?.label} · {card.title}
+            </p>
+          </div>
+          <button type="button" onClick={() => go(cur + 1)} disabled={cur === total - 1} className={navBtn(cur === total - 1)}>
+            다음 <span aria-hidden="true">→</span>
+          </button>
         </div>
-        <button type="button" onClick={() => go(cur + 1)} disabled={cur === total - 1} className={navBtn(cur === total - 1)}>
-          다음 <span aria-hidden="true">→</span>
-        </button>
+
+        {/* ── 카드 ── */}
+        <div className="mt-3">
+          <DeckCard card={card} index={cur} total={total} sources={data.sources} />
+        </div>
+
+        {/* ── 넘김 단추 (카드 아래) ── */}
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className={navBtn(cur === 0)}>
+            <span aria-hidden="true">←</span> 이전
+          </button>
+          <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE} text-center`}>키보드 좌우 화살표로도 넘길 수 있습니다.</p>
+          <button type="button" onClick={() => go(cur + 1)} disabled={cur === total - 1} className={navBtn(cur === total - 1)}>
+            다음 <span aria-hidden="true">→</span>
+          </button>
+        </div>
       </div>
 
-      {/* ── 카드 ── */}
-      <div className="mt-3">
-        <DeckCard card={card} index={cur} total={total} sources={data.sources} />
-      </div>
-
-      {/* ── 넘김 단추 (카드 아래) ── */}
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className={navBtn(cur === 0)}>
-          <span aria-hidden="true">←</span> 이전
-        </button>
-        <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE} text-center`}>키보드 좌우 화살표로도 넘길 수 있습니다.</p>
-        <button type="button" onClick={() => go(cur + 1)} disabled={cur === total - 1} className={navBtn(cur === total - 1)}>
-          다음 <span aria-hidden="true">→</span>
-        </button>
-      </div>
+      {/* ── 기계가 쓴 요약 — 카드 **아래**다. 파일이 없거나 계보가 어긋나면 이 자리는 조용히 비워진다.
+             (요약이 카드 위에 있던 동안은 카드로 가는 길목을 막고 있었다 — 이 덱을 여는 사람은
+              요약을 읽으러 오는 것이 아니라 카드를 넘기러 온다.) ── */}
+      {ok && <SummaryBlock sum={ok} cards={data.cards} onGo={go} />}
 
       {/* ── 목차 — 21장을 한눈에. 감춘 카드가 없다는 것을 이 목록이 보인다 ── */}
       <section id="deck-index" className={`mt-8 scroll-mt-24 ${SURFACE.card} p-5`}>

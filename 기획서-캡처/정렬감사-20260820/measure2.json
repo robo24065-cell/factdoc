@@ -1,0 +1,371 @@
+{
+ "extra": {
+  "고지띠": {
+   "l": 184,
+   "r": 1256,
+   "w": 1072,
+   "h": 29.6
+  },
+  "보기방식": null,
+  "보기방식버튼": [],
+  "지도svg": {
+   "l": 221,
+   "r": 811,
+   "w": 590,
+   "h": 612
+  },
+  "지도조상": [
+   {
+    "tag": "DIV",
+    "cls": "relative",
+    "l": 221,
+    "r": 811,
+    "w": 590,
+    "h": 612
+   },
+   {
+    "tag": "DIV",
+    "cls": "",
+    "l": 221,
+    "r": 811,
+    "w": 590,
+    "h": 679
+   },
+   {
+    "tag": "DIV",
+    "cls": "mx-auto w-full max-w-3xl",
+    "l": 221,
+    "r": 811,
+    "w": 590,
+    "h": 679
+   },
+   {
+    "tag": "DIV",
+    "cls": "p-3",
+    "l": 209,
+    "r": 823,
+    "w": 614,
+    "h": 703
+   }
+  ]
+ },
+ "gaps": [
+  {
+   "id": null,
+   "h": 497.4,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 497.4,
+   "justify": "normal"
+  },
+  {
+   "id": "home-pick",
+   "h": 263.3,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 263.3,
+   "justify": "normal"
+  },
+  {
+   "id": null,
+   "h": 1093.8,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1093.8,
+   "justify": "normal"
+  },
+  {
+   "id": "extinction",
+   "h": 1056,
+   "minH": "900px",
+   "topPad": 0,
+   "botPad": -49.1,
+   "inked": 1105.1,
+   "justify": "center"
+  },
+  {
+   "id": null,
+   "h": 1014.2,
+   "minH": "900px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1014.2,
+   "justify": "center"
+  },
+  {
+   "id": "museum-tour",
+   "h": 1530,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1530,
+   "justify": "normal"
+  },
+  {
+   "id": "descendant",
+   "h": 1000.5,
+   "minH": "900px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1000.5,
+   "justify": "center"
+  },
+  {
+   "id": null,
+   "h": 900,
+   "minH": "900px",
+   "topPad": 52.3,
+   "botPad": 52.3,
+   "inked": 795.5,
+   "justify": "center"
+  },
+  {
+   "id": null,
+   "h": 1298.3,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1298.3,
+   "justify": "normal"
+  },
+  {
+   "id": "actions",
+   "h": 900,
+   "minH": "900px",
+   "topPad": 10.4,
+   "botPad": 10.4,
+   "inked": 879.1,
+   "justify": "center"
+  },
+  {
+   "id": null,
+   "h": 796.3,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 796.3,
+   "justify": "normal"
+  },
+  {
+   "id": null,
+   "h": 1464,
+   "minH": "900px",
+   "topPad": 0,
+   "botPad": -322.2,
+   "inked": 1786.2,
+   "justify": "center"
+  },
+  {
+   "id": null,
+   "h": 1168.1,
+   "minH": "0px",
+   "topPad": 0,
+   "botPad": 0,
+   "inked": 1168.1,
+   "justify": "normal"
+  }
+ ],
+ "deckInner": [
+  {
+   "sceneId": "museum-tour",
+   "tree": {
+    "tag": "DIV",
+    "cls": "mt-8 scroll-mt-24",
+    "top": 4260.3,
+    "h": 1530,
+    "kids": [
+     {
+      "tag": "DIV",
+      "cls": "w-full",
+      "top": 4260.3,
+      "h": 1530,
+      "kids": [
+       {
+        "tag": "HEADER",
+        "cls": "break-keep [word-break:keep-all]",
+        "top": 4260.3,
+        "h": 76.4,
+        "kids": [
+         {
+          "tag": "P",
+          "cls": "text-[11px] font-bold tracking-[0.02em] text",
+          "top": 4260.3,
+          "h": 16.5
+         },
+         {
+          "tag": "H2",
+          "cls": "mt-1.5 text-[1.1875rem] font-bold leading-sn",
+          "top": 4282.8,
+          "h": 26.1
+         },
+         {
+          "tag": "P",
+          "cls": "mt-1 text-sm leading-[1.7] text-[#555555] da",
+          "top": 4313,
+          "h": 23.8
+         }
+        ]
+       },
+       {
+        "tag": "DIV",
+        "cls": "mt-3",
+        "top": 4348.8,
+        "h": 660.7,
+        "kids": [
+         {
+          "tag": "DIV",
+          "cls": "flex flex-col justify-center",
+          "top": 4348.8,
+          "h": 660.7
+         }
+        ]
+       },
+       {
+        "tag": "P",
+        "cls": "mt-3 text-[11px] leading-[1.6] text-[#767676",
+        "top": 5021.5,
+        "h": 17.6,
+        "kids": []
+       },
+       {
+        "tag": "DIV",
+        "cls": "mt-5",
+        "top": 5059.1,
+        "h": 639.5,
+        "kids": [
+         {
+          "tag": "SECTION",
+          "cls": "overflow-hidden rounded-md border border-[#d",
+          "top": 5059.1,
+          "h": 639.5
+         }
+        ]
+       },
+       {
+        "tag": "P",
+        "cls": "mt-6 max-w-[46rem] text-[1.1875rem] leading-",
+        "top": 5722.5,
+        "h": 34.2,
+        "kids": []
+       },
+       {
+        "tag": "P",
+        "cls": "mt-4 text-[11px] leading-[1.6] font-semibold",
+        "top": 5772.7,
+        "h": 17.6,
+        "kids": []
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "sceneId": null,
+   "tree": {
+    "tag": "DIV",
+    "cls": "mt-6",
+    "top": 10025.1,
+    "h": 796.3,
+    "kids": [
+     {
+      "tag": "DIV",
+      "cls": "w-full",
+      "top": 10025.1,
+      "h": 796.3,
+      "kids": [
+       {
+        "tag": "SECTION",
+        "cls": "",
+        "top": 10025.1,
+        "h": 704.5,
+        "kids": [
+         {
+          "tag": "HEADER",
+          "cls": "break-keep [word-break:keep-all]",
+          "top": 10025.1,
+          "h": 70.2
+         },
+         {
+          "tag": "DIV",
+          "cls": "mt-3",
+          "top": 10107.3,
+          "h": 332.2
+         },
+         {
+          "tag": "DIV",
+          "cls": "mt-4 max-w-[46rem] rounded-md border border-",
+          "top": 10455.5,
+          "h": 274
+         }
+        ]
+       },
+       {
+        "tag": "P",
+        "cls": "mt-6 max-w-[46rem] text-[1.1875rem] leading-",
+        "top": 10753.6,
+        "h": 34.2,
+        "kids": []
+       },
+       {
+        "tag": "P",
+        "cls": "mt-4 text-[11px] leading-[1.6] font-semibold",
+        "top": 10803.8,
+        "h": 17.6,
+        "kids": []
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ],
+ "reduced": {
+  "씬수": 13,
+  "투명씬": 0,
+  "전이있는요소": 19,
+  "docH": 13648,
+  "ov": 0
+ },
+ "step": [
+  {
+   "heads": [
+    "한 걸음씩 보여 드리겠습니다"
+   ],
+   "ov": 0,
+   "docH": 5829,
+   "진행": "1 / 8",
+   "작은단추": [],
+   "단추수": 21,
+   "mainL": 184,
+   "mainW": 1072
+  },
+  {
+   "heads": [
+    "한 걸음씩 보여 드리겠습니다"
+   ],
+   "ov": 0,
+   "docH": 5829,
+   "진행": "2 / 8",
+   "작은단추": [],
+   "단추수": 21,
+   "mainL": 184,
+   "mainW": 1072
+  },
+  {
+   "heads": [
+    "한 걸음씩 보여 드리겠습니다"
+   ],
+   "ov": 0,
+   "docH": 5829,
+   "진행": "3 / 8",
+   "작은단추": [],
+   "단추수": 21,
+   "mainL": 184,
+   "mainW": 1072
+  }
+ ]
+}

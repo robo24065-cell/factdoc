@@ -30,7 +30,10 @@ export default function FontScale() {
     >
       <span className="leading-none text-[11px]">가</span>
       <span className="leading-none text-[15px] font-bold">가</span>
-      <span className="text-[10px] text-slate-400">{LABELS[i]}</span>
+      {/* ★ 색도 규약을 따른다 — Tailwind 기본 slate-400(#90a1b9)은 흰 바탕 대비 2.63:1 로
+          AA(4.5:1) 미달이다. 저시력 사용자용 스위치의 라벨이 화면에서 가장 안 보이는 색이면
+          안 된다. #767676 은 theme/gohyang.ts C.faint — 흰 바탕 4.54:1 로 AA 하한이다. */}
+      <span className="text-[10px] text-[#767676]">{LABELS[i]}</span>
     </button>
   )
 }

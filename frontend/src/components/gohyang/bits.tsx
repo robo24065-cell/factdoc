@@ -134,13 +134,13 @@ export function AsOfLine({ n, verbose = false }: { n: Notice; verbose?: boolean 
      히트영역만 투명하게 넓히는 방식(::after 겹치기)은 같은 열에 세로로 늘어선
      이웃 링크를 가려 오히려 오작동을 만들어서 쓰지 않는다. 줄 상자를 실제로 키운다. */
 export function OutLink({ href, children }: { href?: string | null; children: ReactNode }) {
-  if (!href) return <span className="text-[11px] text-slate-400">원본 링크 미제공</span>
+  if (!href) return <span className="text-[11px] text-[#767676]">원본 링크 미제공</span>
   return (
     <a
       href={href}
       target="_blank"
       rel="noreferrer"
-      className={`${TAP_INLINE} gap-1 rounded px-1 text-[11px] text-blue-600 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}
+      className={`${TAP_INLINE} gap-1 rounded px-1 text-[11px] text-[#1a4e9c] underline underline-offset-2 dark:text-[#7aa9e8] ${FOCUS}`}
     >
       {children}
       <span aria-hidden="true">↗</span>
@@ -183,7 +183,7 @@ export function StatRow({ label, value, sub }: { label: string; value: string; s
       <span className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>{label}</span>
       <span className="shrink-0 text-right">
         <b className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">{value}</b>
-        {sub && <span className="ml-1 text-[11px] text-slate-400">{sub}</span>}
+        {sub && <span className="ml-1 text-[11px] text-[#767676]">{sub}</span>}
       </span>
     </div>
   )

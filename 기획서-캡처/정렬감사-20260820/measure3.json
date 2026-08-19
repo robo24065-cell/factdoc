@@ -1,0 +1,424 @@
+{
+ "overflowers": [
+  {
+   "idx": 4,
+   "id": "extinction",
+   "sceneH": 1056,
+   "bad": [
+    {
+     "tag": "UL",
+     "cls": "mt-1.5 space-y-1",
+     "pos": "static",
+     "top": 901.2,
+     "bottom": 49.1,
+     "h": 203.9,
+     "txt": "· 신규 등록 유입 무시 — 실측 최근 24개월 월"
+    },
+    {
+     "tag": "LI",
+     "cls": "text-[11px] leading-[1.6] text-[#767676] dark:text-[#7f8792]",
+     "pos": "static",
+     "top": 1026.7,
+     "bottom": 5.9,
+     "h": 35.2,
+     "txt": "· 공표 연령은 연나이로 판정(1월 톱니 실측)했고"
+    },
+    {
+     "tag": "LI",
+     "cls": "text-[11px] leading-[1.6] text-[#767676] dark:text-[#7f8792]",
+     "pos": "static",
+     "top": 1065.9,
+     "bottom": 27.5,
+     "h": 17.6,
+     "txt": "· 이산가족 생존자 집단의 사망률 = 전국 평균이라"
+    },
+    {
+     "tag": "LI",
+     "cls": "text-[11px] leading-[1.6] text-[#767676] dark:text-[#7f8792]",
+     "pos": "static",
+     "top": 1087.5,
+     "bottom": 49.1,
+     "h": 17.6,
+     "txt": "· 생존자 감소 실측치에는 사망 신고·확인 지연이 "
+    }
+   ],
+   "badCount": 4
+  },
+  {
+   "idx": 12,
+   "id": null,
+   "sceneH": 1464,
+   "bad": [
+    {
+     "tag": "UL",
+     "cls": "mt-3 space-y-3",
+     "pos": "static",
+     "top": 1380,
+     "bottom": 322.2,
+     "h": 406.2,
+     "txt": "「나의 살던 고향은」 (박물관 스토리)함경·평안·황"
+    },
+    {
+     "tag": "LI",
+     "cls": "rounded-md bg-[#f5f7fa] dark:bg-[#14181e] p-3",
+     "pos": "static",
+     "top": 1380,
+     "bottom": 101.2,
+     "h": 185.2,
+     "txt": "「나의 살던 고향은」 (박물관 스토리)함경·평안·황"
+    },
+    {
+     "tag": "P",
+     "cls": "mt-1.5 text-[11px] leading-[1.6] text-[#767676] dark:text-[#",
+     "pos": "static",
+     "top": 1446.4,
+     "bottom": 35.2,
+     "h": 52.8,
+     "txt": "\"만나보실 수 있도록\"이라고 쓰여 있듯 보는 코너다"
+    },
+    {
+     "tag": "P",
+     "cls": "mt-1.5",
+     "pos": "static",
+     "top": 1505.2,
+     "bottom": 89.2,
+     "h": 48,
+     "txt": "해당 페이지 보기↗"
+    },
+    {
+     "tag": "A",
+     "cls": "inline-flex min-h-[48px] min-w-[48px] items-center justify-c",
+     "pos": "static",
+     "top": 1505.2,
+     "bottom": 89.2,
+     "h": 48,
+     "txt": "해당 페이지 보기↗"
+    },
+    {
+     "tag": "SPAN",
+     "cls": "",
+     "pos": "static",
+     "top": 1521,
+     "bottom": 73.5,
+     "h": 16.5,
+     "txt": "↗"
+    },
+    {
+     "tag": "LI",
+     "cls": "rounded-md bg-[#f5f7fa] dark:bg-[#14181e] p-3",
+     "pos": "static",
+     "top": 1577.2,
+     "bottom": 322.2,
+     "h": 209,
+     "txt": "남북 이산가족 영상편지 공모전(청소년·대학생)초·중"
+    },
+    {
+     "tag": "P",
+     "cls": "text-[0.9375rem] font-bold leading-snug text-[#191919] dark:",
+     "pos": "static",
+     "top": 1589.2,
+     "bottom": 145.8,
+     "h": 20.6,
+     "txt": "남북 이산가족 영상편지 공모전(청소년·대학생)"
+    }
+   ],
+   "badCount": 13
+  }
+ ],
+ "viewSwitch": {
+  "l": 208,
+  "r": 944,
+  "w": 736,
+  "buttons": [
+   {
+    "t": "● 한눈에 보기지도",
+    "l": 208,
+    "r": 571,
+    "h": 75.1
+   },
+   {
+    "t": "○ 한걸음씩 보기큰",
+    "l": 581,
+    "r": 944,
+    "h": 75.1
+   }
+  ]
+ },
+ "mapCols": {
+  "scene": {
+   "l": 208,
+   "r": 1232,
+   "w": 1024,
+   "h": 1093.8
+  },
+  "grid": {
+   "l": 208,
+   "r": 1232,
+   "w": 1024,
+   "h": 1002
+  },
+  "gridCols": "616px 384px",
+  "cols": [
+   {
+    "cls": "min-w-0",
+    "l": 208,
+    "r": 824,
+    "w": 616,
+    "h": 1002
+   },
+   {
+    "cls": "mt-4 min-w-0 lg:mt-0",
+    "l": 848,
+    "r": 1232,
+    "w": 384,
+    "h": 456.8
+   }
+  ]
+ },
+ "reducedTransitions": [
+  {
+   "tag": "A",
+   "cls": "relative inline-flex min-h-[48px] items-center px-",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "고향잇기"
+  },
+  {
+   "tag": "A",
+   "cls": "relative inline-flex min-h-[48px] items-center px-",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "분석"
+  },
+  {
+   "tag": "A",
+   "cls": "relative inline-flex min-h-[48px] items-center px-",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "사실은ON 팩트체커"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-lg p",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "현행 행정구역"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-lg p",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "고향 지도 (광복 당시)"
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "path",
+   "cls": "[object SVGAnimatedString]",
+   "tp": "stroke",
+   "td": "0.15s",
+   "an": "none",
+   "txt": ""
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "많이 모인 묶음"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "컬렉션 2"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "컬렉션 3"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "컬렉션 4"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "박물관의 다른 코너"
+  },
+  {
+   "tag": "BUTTON",
+   "cls": "inline-flex min-h-[48px] items-center rounded-full",
+   "tp": "color, background-color, border-color, outline-color, text-decoration-color, fill, stroke, --tw-gradient-from, --tw-gradient-via, --tw-gradient-to, opacity, box-shadow, transform, translate, scale, rotate, filter, -webkit-backdrop-filter, backdrop-filter, display, content-visibility, overlay, pointer-events",
+   "td": "0.15s",
+   "an": "none",
+   "txt": "코너 2"
+  }
+ ],
+ "deck": {
+  "vh": 900,
+  "docH": 7339,
+  "ov": 0,
+  "순서": [
+   [
+    "머리글",
+    176,
+    364
+   ],
+   [
+    "카드뷰어",
+    176,
+    7033
+   ],
+   [
+    "요약",
+    2676,
+    1349
+   ],
+   [
+    "목차",
+    4057,
+    1048
+   ]
+  ],
+  "머리글링크": [
+   {
+    "t": "고향잇기 화면으로",
+    "href": "/",
+    "top": 411,
+    "h": 48
+   },
+   {
+    "t": "카드 21장 목차 ↓",
+    "href": "#deck-index",
+    "top": 411,
+    "h": 48
+   },
+   {
+    "t": "이 덱이 말하는 것 ↓",
+    "href": "#deck-summary",
+    "top": 411,
+    "h": 48
+   }
+  ],
+  "요약이_첫화면에_보이는가": false,
+  "요약안내가_첫화면에_보이는가": true,
+  "요약제목": "기계가 쓴 요약 · 통일부 공식 서술이 아닙니다",
+  "카드뷰어_L": 104,
+  "요약_L": 104,
+  "목차_L": 104,
+  "main_L": 80,
+  "main_W": 1280,
+  "헤더_L": 104
+ },
+ "deckAnchor": true,
+ "deckAfterAnchor": {
+  "scrollY": 2548,
+  "sumTop": 128,
+  "가려짐": false
+ },
+ "deckJump": true,
+ "deckAfterJump": {
+  "scrollY": 0,
+  "articleTop": 632,
+  "진행": "10 / 21"
+ }
+}

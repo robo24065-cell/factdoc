@@ -82,7 +82,7 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
                 {n && <AsOfPill level={n.level as Level} size="sm" />}
                 <span className={`min-w-0 flex-1 truncate text-[13px] leading-[1.6] text-slate-700 dark:text-slate-200`}>
                   {s.name}
-                  <span className="ml-1 text-[11px] text-slate-400">{s.org}</span>
+                  <span className="ml-1 text-[11px] text-[#767676]">{s.org}</span>
                   {(s as { outside?: boolean }).outside && (
                     <span className={`ml-1.5 rounded px-1.5 py-0.5 ${TYPE.cap} font-semibold ${ASOF.stale.chip}`}>통일부 자료 아님</span>
                   )}
@@ -94,10 +94,10 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
           })}
         </div>
         <div className="border-t border-slate-100 p-3 dark:border-slate-800">
-          <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt} · 박물관 사료 {pack.museum.builtAt} · 후손 경로 {pack.paths.builtAt} · 통일의식조사 {pack.opinion.builtAt}.
+          <p className={`text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt} · 박물관 사료 {pack.museum.builtAt} · 후손 경로 {pack.paths.builtAt} · 통일의식조사 {pack.opinion.builtAt}.
             북한 관련 정보 특성상 공식자료에 수록되지 않은 사실이 존재할 수 있습니다.
           </p>
-          <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+          <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
             박물관 사료는 공개 {nf(pack.museum.archive.totCnt)}건 가운데 본문에서 지역명이 확인된 {nf(pack.museum.meta.slim.keptRecords)}건만 이 화면에 실려 있습니다
             {' '}— 나머지 {nf(pack.museum.meta.slim.droppedRecords)}건은 고향이 없어서가 아니라 본문에 지명이 적혀 있지 않아 지도에 걸 자리가 없는 것입니다.
             {' '}사료 이미지는 저장하지 않고 박물관 원본을 그대로 참조합니다.

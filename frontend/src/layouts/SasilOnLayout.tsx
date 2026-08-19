@@ -1,7 +1,7 @@
 import { Suspense } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import FontScale from '../components/FontScale'
-import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C } from '../theme/gohyang'
+import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C, STAGE, STAGE_WIDE } from '../theme/gohyang'
 
 /* 고향잇기 껍데기 — 통일부 누리집의 구조를 따른다.
      ① 최상단 안내 띠(고지)  ② 흰 머리글 + 가로 주메뉴  ③ 본문  ④ 바닥글
@@ -29,11 +29,18 @@ const BOTTOM_TABS = [
 export default function SasilOnLayout() {
   const { pathname } = useLocation()
 
+  /* ★ 무대 — 고지 띠·머리글·주메뉴·본문·바닥글이 **같은 좌우 레일**을 쓴다.
+       레일이 갈리면 주메뉴 밑줄과 표제의 시작점이 어긋나 화면이 흔들린다(theme/gohyang.ts STAGE).
+       고향잇기 홈만 새 무대(64rem)로 옮긴다 — 팩트체커·분석은 기존 폭을 유지해
+       이번 정렬 작업이 그 화면들의 실측을 흔들지 않게 한다. */
+  const home = pathname === '/' || pathname === '/gohyang'
+  const stage = home ? STAGE : STAGE_WIDE
+
   return (
     <div className={`min-h-screen overflow-x-clip ${SURFACE.page}`}>
       {/* ① 최상단 고지 띠 */}
       <div className={`border-b bg-[#f5f7fa] ${SURFACE.hair} dark:bg-[#14181e]`}>
-        <p className={`mx-auto max-w-2xl px-4 py-1.5 ${TYPE.cap} ${TEXT.faint} lg:max-w-6xl lg:px-6 xl:max-w-7xl ${PROSE}`}>
+        <p className={`${stage} py-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
           이 화면은 <b className="font-semibold">2026년 통일부 공공데이터 활용 공모전 출품 시제품</b>입니다.
           {' '}통일부 공식 서비스가 아니며, 표시되는 모든 값은 공개된 통일부 데이터를 그대로 대조한 결과입니다.
         </p>
@@ -41,7 +48,7 @@ export default function SasilOnLayout() {
 
       {/* ② 머리글 — 제목줄과 주메뉴줄을 분리한다(정부 누리집 관용 구조) */}
       <header className={`sticky top-0 z-20 border-b bg-white/95 backdrop-blur ${SURFACE.line} dark:bg-[#111418]/95`}>
-        <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+        <div className={`${stage} flex items-center justify-between gap-4 py-3`}>
           <NavLink to="/" className={`flex min-h-[48px] min-w-0 items-center gap-2.5 ${FOCUS}`}>
             <span className={`text-[1.125rem] font-bold tracking-[-0.02em] ${TEXT.ink}`}>
               고향<span style={{ color: C.blue }}>잇기</span>
@@ -53,7 +60,7 @@ export default function SasilOnLayout() {
           <FontScale />
         </div>
 
-        <nav aria-label="주요 화면" className={`mx-auto max-w-2xl border-t px-4 lg:max-w-6xl lg:px-6 xl:max-w-7xl ${SURFACE.hair}`}>
+        <nav aria-label="주요 화면" className={`${stage} border-t ${SURFACE.hair}`}>
           <ul className="-mb-px flex items-center gap-1">
             {NAV.map(item => {
               const active = pathname === item.to || ('alias' in item && pathname === item.alias)
@@ -75,7 +82,7 @@ export default function SasilOnLayout() {
       </header>
 
       {/* ③ 본문 — 모바일에서는 하단 고정 탭(72px)에 가리지 않게 여백을 더 준다 */}
-      <main className="mx-auto w-full max-w-2xl px-4 pb-28 pt-6 lg:max-w-6xl lg:px-6 lg:pb-16 xl:max-w-7xl">
+      <main className={`${stage} pb-28 pt-6 lg:pb-16`}>
         <Suspense
           fallback={
             <p className={`flex items-center gap-2 py-24 ${TYPE.sub} ${TEXT.faint}`}>
@@ -120,7 +127,7 @@ export default function SasilOnLayout() {
 
       {/* ④ 바닥글 */}
       <footer className={`border-t bg-[#f5f7fa] ${SURFACE.hair} dark:bg-[#14181e]`}>
-        <div className="mx-auto w-full max-w-2xl px-4 py-6 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
+        <div className={`${stage} py-6`}>
           <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
             자료 출처: 통일부 공공데이터 · 본 화면은 아이디어 기획 부문 출품작의 실현가능성 검증용 시제품입니다.
             {' '}북한 관련 정보 특성상 공식자료에 수록되지 않은 사실이 존재할 수 있습니다.

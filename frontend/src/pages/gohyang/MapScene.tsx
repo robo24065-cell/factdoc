@@ -176,7 +176,7 @@ function NkMapView({
                     fillRule="evenodd"
                     className={`${CHORO[s.step]} ${
                       on
-                        ? 'stroke-blue-800 dark:stroke-blue-300'
+                        ? 'stroke-[#14407f] dark:stroke-[#7aa9e8]'
                         : hot
                           ? 'stroke-slate-900 dark:stroke-white'
                           : 'stroke-white dark:stroke-slate-900'
@@ -191,7 +191,7 @@ function NkMapView({
                     cy={s.marker.cy}
                     r={s.marker.r}
                     fillRule="evenodd"
-                    className={`${CHORO[s.step]} ${on ? 'stroke-blue-800 dark:stroke-blue-300' : 'stroke-slate-500'}`}
+                    className={`${CHORO[s.step]} ${on ? 'stroke-[#14407f] dark:stroke-[#7aa9e8]' : 'stroke-slate-500'}`}
                     strokeWidth={on ? 3 : 1.6}
                     strokeDasharray="4 3"
                   />
@@ -254,7 +254,7 @@ function NkMapView({
             {hovered.tipRows.map((t, i) => (
               <p key={i} className={`mt-0.5 text-[11px] leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{t}</p>
             ))}
-            <p className="mt-1 text-[11px] text-blue-600 dark:text-blue-400">눌러서 자세히 보기 →</p>
+            <p className="mt-1 text-[11px] text-[#1a4e9c] dark:text-[#7aa9e8]">눌러서 자세히 보기 →</p>
           </div>
         )}
       </div>
@@ -264,9 +264,9 @@ function NkMapView({
         <span className={`text-[11px] font-medium text-slate-600 dark:text-slate-300 ${PROSE}`}>색 = {metric}
         </span>
         <span className="flex items-center gap-1" aria-hidden="true">
-          <span className="text-[11px] tabular-nums text-slate-400">0</span>
+          <span className="text-[11px] tabular-nums text-[#767676]">0</span>
           {CHORO_SWATCH.slice(1).map(c => <span key={c} className={`h-3 w-5 rounded-sm ${c}`} />)}
-          <span className="text-[11px] tabular-nums text-slate-400">{nf(max)}명</span>
+          <span className="text-[11px] tabular-nums text-[#767676]">{nf(max)}명</span>
         </span>
         {metricAsOf && <span className="text-[11px] tabular-nums text-slate-500">기준 {ymKo(metricAsOf)}</span>}
         <AsOfPill level={notice(metricAsOf || pack.region.builtAt, 'live').level as Level} size="sm" />
@@ -282,7 +282,7 @@ function NkMapView({
 function LiveWeatherRows({ names }: { names: string[] }) {
   const { rows, state } = useLiveWeather(names)
   if (state === 'loading') {
-    return <p className="text-[11px] text-slate-400">현재 기상을 불러오는 중…</p>
+    return <p className="text-[11px] text-[#767676]">현재 기상을 불러오는 중…</p>
   }
   if (state !== 'ok') return null  // 실패하면 조용히 사라진다 — 아래 NOAA 최종 관측이 남는다
 
@@ -297,16 +297,16 @@ function LiveWeatherRows({ names }: { names: string[] }) {
           <li key={w.name} className="flex items-baseline justify-between gap-2">
             <span className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>
               {w.name}
-              <span className="ml-1 text-[11px] text-slate-400">
+              <span className="ml-1 text-[11px] text-[#767676]">
                 {w.at ? `${w.at.slice(5, 10).replace('-', '월 ')}일 ${w.at.slice(11, 16)} 평양시각` : ''}
               </span>
             </span>
             <span className="shrink-0 text-right">
               <b className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">{nf1(w.tempC)}℃</b>
               {Number.isFinite(w.maxC) && (
-                <span className="ml-1 text-[11px] tabular-nums text-slate-400">최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}</span>
+                <span className="ml-1 text-[11px] tabular-nums text-[#767676]">최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}</span>
               )}
-              {w.prcpMm > 0 && <span className="ml-1 text-[11px] tabular-nums text-blue-600">비 {nf1(w.prcpMm)}㎜</span>}
+              {w.prcpMm > 0 && <span className="ml-1 text-[11px] tabular-nums text-[#1a4e9c]">비 {nf1(w.prcpMm)}㎜</span>}
             </span>
           </li>
         ))}
@@ -315,7 +315,7 @@ function LiveWeatherRows({ names }: { names: string[] }) {
         {' '}이 값만은 저장하지 않고 화면을 열 때마다 새로 받습니다.
       </p>
       <p className="mt-1.5">
-        <span className="text-[11px] text-slate-400">출처 Open-Meteo (무료·인증 없음) · </span>
+        <span className="text-[11px] text-[#767676]">출처 Open-Meteo (무료·인증 없음) · </span>
         <OutLink href="https://open-meteo.com/">원본 API</OutLink>
       </p>
     </div>
@@ -336,9 +336,9 @@ function Spark({ rows, label }: { rows: Array<{ month: string; v: number }>; lab
     <figure className="mt-2">
       <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full" role="img"
         aria-label={`${label} 월별 추이. ${ymKo(first.month)} ${nf(first.v)}명에서 ${ymKo(last.month)} ${nf(last.v)}명으로 ${drop}% 감소.`}>
-        <path d={area} className="fill-blue-500/15" />
-        <path d={line} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={2} strokeLinejoin="round" />
-        <circle cx={x(rows.length - 1)} cy={y(last.v)} r={3} className="fill-blue-600 dark:fill-blue-400" />
+        <path d={area} className="fill-[#4b79bb]/15" />
+        <path d={line} fill="none" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth={2} strokeLinejoin="round" />
+        <circle cx={x(rows.length - 1)} cy={y(last.v)} r={3} className="fill-[#1a4e9c] dark:fill-[#7aa9e8]" />
       </svg>
       <figcaption className="mt-1 flex items-baseline justify-between text-[11px] tabular-nums text-slate-500">
         <span>{ymKo(first.month)} {nf(first.v)}명</span>
@@ -694,7 +694,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       <div className={`${CARD} p-4 lg:col-span-2`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="text-[11px] font-semibold tracking-wide text-blue-700 dark:text-blue-400">
+            <p className="text-[11px] font-semibold tracking-wide text-[#14407f] dark:text-[#7aa9e8]">
               {p.kind === 'old' ? '광복 당시 구행정구역 (이산가족 고향 축)' : '현행 행정구역'}
             </p>
             <h2 className={`mt-0.5 text-2xl font-semibold leading-snug text-slate-900 dark:text-white ${PROSE}`}>{p.title}</h2>
@@ -759,11 +759,11 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
                 <li key={`${w.station}-${w.date}`} className="flex items-baseline justify-between gap-2 border-b border-slate-100 py-1.5 last:border-0 dark:border-slate-800">
                   <span className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>
                     {w.station}
-                    <span className="ml-1 text-[11px] text-slate-400">{ymdKo(w.date)} 관측</span>
+                    <span className="ml-1 text-[11px] text-[#767676]">{ymdKo(w.date)} 관측</span>
                   </span>
                   <span className="shrink-0 text-right">
                     <b className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">{nf1(w.tempC)}℃</b>
-                    <span className="ml-1 text-[11px] tabular-nums text-slate-400">최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}
+                    <span className="ml-1 text-[11px] tabular-nums text-[#767676]">최고 {nf1(w.maxC)} · 최저 {nf1(w.minC)}
                     </span>
                   </span>
                 </li>
@@ -776,7 +776,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               {pack.region.meta.weather.asOfNote}
             </p>
             <p className="mt-1.5">
-              <span className="text-[11px] text-slate-400">출처 NOAA Global Summary of the Day · </span>
+              <span className="text-[11px] text-[#767676]">출처 NOAA Global Summary of the Day · </span>
               <OutLink href="https://www.ncei.noaa.gov/data/global-summary-of-the-day/">원본 데이터</OutLink>
             </p>
           </>
@@ -796,16 +796,16 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             <p className={`text-3xl font-semibold tabular-nums text-slate-900 dark:text-white`}>
               {nf(originEntry.n)}
               <span className="ml-1 text-base font-medium text-slate-500">명</span>
-              <span className="ml-2 text-sm font-medium text-slate-400">전체 생존자의 {nf1(originEntry.pct)}%</span>
+              <span className="ml-2 text-sm font-medium text-[#767676]">전체 생존자의 {nf1(originEntry.pct)}%</span>
             </p>
             <div className="mt-2">
               <AsOfLine n={isanNotice} verbose />
             </div>
             <p className="mt-1.5">
-              <span className="text-[11px] text-slate-400">통일부 「{isan.latest.title}」 ({isan.latest.postedAt} 게시) ·{' '}
+              <span className="text-[11px] text-[#767676]">통일부 「{isan.latest.title}」 ({isan.latest.postedAt} 게시) ·{' '}
               </span>
               <OutLink href={isan.latest.attachment}>공표 원문(HWP)</OutLink>
-              <span className="text-[11px] text-slate-400"> · </span>
+              <span className="text-[11px] text-[#767676]"> · </span>
               <OutLink href={isan.latest.boardUrl}>게시판 {nf(isan.latest.boardTotalPosts)}건</OutLink>
             </p>
 
@@ -825,7 +825,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
                   두 값을 한 문장에 섞어 쓰면 기준일이 깨집니다.
                 </p>
                 <p className="mt-1.5">
-                  <span className="text-[11px] text-slate-400">출처 {isan.sources[0]?.name} · 자료 기준일 {isan.sources[0]?.asOf} ·{' '}
+                  <span className="text-[11px] text-[#767676]">출처 {isan.sources[0]?.name} · 자료 기준일 {isan.sources[0]?.asOf} ·{' '}
                   </span>
                   <OutLink href={isan.sources[0]?.landing}>원본 데이터</OutLink>
                 </p>
@@ -868,7 +868,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               <AsOfLine n={defNotice} verbose />
             </div>
             <p className="mt-1.5">
-              <span className="text-[11px] text-slate-400">출처 통일부 북한이탈주민 재북 출신지역별 현황 · </span>
+              <span className="text-[11px] text-[#767676]">출처 통일부 북한이탈주민 재북 출신지역별 현황 · </span>
               <OutLink href="https://www.data.go.kr/data/15090949/fileData.do">원본 데이터</OutLink>
             </p>
           </>
@@ -897,7 +897,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
 
         <div className="mt-3">
           <AsOfLine n={recNotice} />
-          <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+          <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
             네 계열을 합쳐 보여 주는 구획이라 단일 기준일이 없습니다. 위 배지는 가장 오래된 계열
             {recOldestName ? `(${recOldestName})` : ''} 기준이고, 계열별 기준일은 각 행에 있습니다.
           </p>
@@ -910,7 +910,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             <ol className="relative mt-2 ml-1 space-y-3 border-l border-slate-200 pl-4 dark:border-slate-700">
               {events.map((e, i) => (
                 <li key={`${e.date}-${i}`} className="relative">
-                  <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-blue-500 ring-2 ring-white dark:ring-slate-900" aria-hidden="true" />
+                  <span className="absolute -left-[21px] top-1.5 h-2 w-2 rounded-full bg-[#1a4e9c] ring-2 ring-white dark:ring-slate-900" aria-hidden="true" />
                   <time className="text-[11px] font-medium tabular-nums text-slate-500" dateTime={e.date}>{e.date}</time>
                   <p className={`text-sm leading-relaxed text-slate-800 dark:text-slate-100 ${PROSE}`}>{clean(e.title)}</p>
                 </li>
@@ -926,7 +926,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               </button>
             )}
             {p.eventsTotal > p.events.length && (
-              <p className={`mt-2 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>전체 {nf(p.eventsTotal)}건 중 최신 {nf(p.events.length)}건만 이 화면에 수록돼 있습니다.
+              <p className={`mt-2 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>전체 {nf(p.eventsTotal)}건 중 최신 {nf(p.events.length)}건만 이 화면에 수록돼 있습니다.
                 나머지는 사실은ON 검색에서 확인할 수 있습니다.
               </p>
             )}
@@ -937,18 +937,18 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
         )}
 
         <div className="mt-4 space-y-1 border-t border-slate-100 pt-2.5 dark:border-slate-800">
-          <p className="text-[11px] text-slate-400">연표·보도자료 —{' '}
+          <p className="text-[11px] text-[#767676]">연표·보도자료 —{' '}
             <OutLink href="https://www.data.go.kr/data/15090949/fileData.do">공공데이터포털</OutLink>
           </p>
-          <p className="text-[11px] text-slate-400">동향·북한개황 —{' '}
+          <p className="text-[11px] text-[#767676]">동향·북한개황 —{' '}
             <OutLink href="https://nkinfo.unikorea.go.kr">북한정보포털</OutLink>
           </p>
-          <p className={`mt-1 leading-relaxed text-[11px] text-slate-400 ${PROSE}`}>지역 귀속은 지역명·도시명 문자열 매칭 결과입니다. {pack.region.meta.matching.caveats[0]}
+          <p className={`mt-1 leading-relaxed text-[11px] text-[#767676] ${PROSE}`}>지역 귀속은 지역명·도시명 문자열 매칭 결과입니다. {pack.region.meta.matching.caveats[0]}
           </p>
         </div>
 
         <p className="mt-3">
-          <Link to={`/factcheck?q=${encodeURIComponent(p.title.replace(/\(구\)$/, ''))}`} className={`inline-flex items-center gap-1 rounded text-sm font-medium text-blue-700 underline underline-offset-2 dark:text-blue-400 ${FOCUS}`}>사실은ON에서 「{p.title}」 검색하기 →
+          <Link to={`/factcheck?q=${encodeURIComponent(p.title.replace(/\(구\)$/, ''))}`} className={`inline-flex items-center gap-1 rounded text-sm font-medium text-[#14407f] underline underline-offset-2 dark:text-[#7aa9e8] ${FOCUS}`}>사실은ON에서 「{p.title}」 검색하기 →
           </Link>
         </p>
       </Block>
@@ -984,7 +984,9 @@ export default function MapScene({
   onPickOld: (id: string) => void
 }) {
   return (
-    <div className={`mt-8 ${sel ? '' : 'lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]'}`}>
+    /* 패널 폭은 24rem 하나로 둔다 — 무대가 64rem 로 고정됐으므로 xl 에서 26rem 로
+       넓히면 지도 열만 32px 좁아진다. 무대 안에서 지도가 가장 넓은 도구다. */
+    <div className={`mt-8 ${sel ? '' : 'lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6'}`}>
       <div className="min-w-0">
         <div className={`overflow-hidden ${CARD}`}>
           <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
@@ -1005,7 +1007,7 @@ export default function MapScene({
                 </button>
               ))}
             </div>
-            <p className="text-[11px] text-slate-400">지역을 누르면 그 지역의 자료가 아래에 열립니다</p>
+            <p className="text-[11px] text-[#767676]">지역을 누르면 그 지역의 자료가 아래에 열립니다</p>
           </div>
 
           <div className="p-3">
@@ -1016,7 +1018,7 @@ export default function MapScene({
           </div>
 
           <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-800">
-            <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+            <p className={`text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
               {mode === 'old' ? (
                 <>구역 안의 가는 선은 <b className="font-medium">현행 도 경계</b>입니다 — 구행정구역 폴리곤이 따로 없어 현행 구역을 묶어 근사한 것입니다.
                   {' '}미수복경기는 개성 위치의 <b className="font-medium">원형 마커</b>로 대신했습니다(별도 지오메트리 없음). {pack.map.crosswalk.note}
@@ -1027,7 +1029,7 @@ export default function MapScene({
                 </>
               )}
             </p>
-            <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>지도 지오메트리 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
+            <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>지도 지오메트리 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
               <OutLink href={pack.map.sources[0]?.url}>원본 데이터</OutLink>
             </p>
           </div>
@@ -1055,12 +1057,12 @@ export default function MapScene({
                     className={`flex min-h-[48px] w-full items-center justify-between gap-2 rounded-xl border border-slate-200 px-3 py-2 text-left dark:border-slate-800 ${FOCUS}`}
                   >
                     <span className="text-sm font-medium text-slate-800 dark:text-slate-100">{o.name}</span>
-                    <span className="text-sm font-semibold tabular-nums text-blue-700 dark:text-blue-400">{nf(o.n)}명</span>
+                    <span className="text-sm font-semibold tabular-nums text-[#14407f] dark:text-[#7aa9e8]">{nf(o.n)}명</span>
                   </button>
                 </li>
               ))}
             </ul>
-            <p className={`mt-3 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+            <p className={`mt-3 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
               「기타」 {nf(pack.isan.latest.survivors.byOrigin.entries.find(e => e.label === '기타')?.n)}명은
               공표 출신지 7종에 속하지 않아 지도에 표시할 수 없습니다.
             </p>
