@@ -10,6 +10,7 @@
 import { validateNormalized } from './nk-normalize.mjs'
 import { TIME_SLOTS } from './nk-time.mjs'
 import { validateScores, validateIntent } from './nk-judge.mjs'
+import { validateGuide } from './nk-guide.mjs'
 
 const ENDPOINT = '/api/llm'
 const TIMEOUT = 6000            // 이 시간을 넘기면 규칙 결과로 답한다. 사용자를 기다리게 하지 않는다.
@@ -87,6 +88,17 @@ export async function rerankWithLLM(q, items) {
 // ── 의도 분류 — 표현이 아니라 뜻을 본다 ─────────────────────
 export async function intentWithLLM(q) {
   return validateIntent(await call('intent', q))
+}
+
+// ── 고향 안내인 — 사실 묶음을 문장으로 엮기만 한다 ──────────
+//    수치·판정 생성은 validateGuide 가 막는다(사실에 없는 숫자가 있으면 통째로 폐기).
+//    실패는 전부 조용히 null — 호출부가 fallbackGuide(규칙 문장)로 되돌린다.
+export async function guideWithLLM(facts) {
+  if (!facts) return null
+  try {
+    const raw = await call('guide', JSON.stringify(facts))
+    return validateGuide(raw, facts)
+  } catch { return null }
 }
 
 export const llmAdapter = { hasKeys, normalizeWithLLM, timeWithLLM, rerankWithLLM, intentWithLLM }

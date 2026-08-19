@@ -1,5 +1,5 @@
 {
-  "builtAt": "2026-08-15",
+  "builtAt": "2026-08-19",
   "note": "고향ON(/gohyang) 지도 대시보드가 fetch 하는 데이터 팩. 원본 JSON을 가공 없이 그대로 복사한 것이며, 조인·집계는 화면에서 수행한다.",
   "sources": [
     {
@@ -148,33 +148,239 @@
         }
       ],
       "caution": "요약자료가 이미지 PDF라 이 수치는 사람이 판독해 옮긴 값이다. 조사 회차가 바뀌면 손으로 갱신할 것."
+    },
+    {
+      "file": "museum.json",
+      "role": "남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)",
+      "builtAt": "2026-08-19",
+      "asOf": {
+        "수집일": "2026-08-19",
+        "공개사료최신생산일": "2018-07-27"
+      },
+      "upstream": [
+        {
+          "name": "통일부 남북이산가족 디지털박물관 — 박물관 진입(세션)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "디지털박물관 컬렉션 개요(제목)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id={col_id}&mid=SM00000263",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "디지털박물관 컬렉션 사료 목록(JS 호출 엔드포인트)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionViewList.do?mid=SM00000263",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "디지털박물관 사료 상세",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionRecord.do?i_id={i_id}&col_id={col_id}&pageIndex=1&mid=SM00000263",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "디지털박물관 기록관 — 공개 사료 전량 목록(JS 호출 엔드포인트)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/ArchivesList.do",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "디지털박물관 기록관 사료 상세(GET)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/RecordView.do?i_id={i_id}&mid=SM00000264",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "사료 이미지 뷰어(URL 만 기록, 파일 미저장)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/letter/HandLttrImageView.do?mid=SM00000262&file_id={file_id}",
+          "asOf": "2026-08-19"
+        }
+      ],
+      "slim": {
+        "totalRecords": 4342,
+        "keptRecords": 1445,
+        "droppedRecords": 2897,
+        "keptRule": "제목·내용에서 북한 지역명 또는 구(舊)도명이 확인된 사료만 남겼다. 나머지는 지도 위에 놓을 자리가 없다.",
+        "droppedFields": [
+          "content",
+          "colId",
+          "colIds",
+          "regNo",
+          "producer",
+          "origin",
+          "fileIds",
+          "archiveRecordUrl",
+          "inCollections"
+        ],
+        "droppedFieldsNote": "화면이 쓰지 않는 필드다. 전량·전필드는 북한자료-api/museum.json 에 그대로 있다.",
+        "addedFields": [
+          "venueOnly"
+        ],
+        "addedFieldsNote": "원본 meta.kangwonVenueOnly 판정 규칙(근거 지명이 금강산·장전항·갈마뿐)을 행 단위로 재현한 플래그. 이 스크립트가 매 실행 원본 count 와 대조한다."
+      },
+      "caution": "개방형 라이선스 표기를 찾지 못했다(원본 license 필드 참조). 사료 원본은 기증자 저작물이므로 이미지 바이너리를 저장·재배포하지 않는다. 화면은 박물관 원본 URL 을 <img> 로 직접 참조하고 recordUrl 로 링크만 건다."
+    },
+    {
+      "file": "paths.json",
+      "role": "후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종",
+      "builtAt": "2026-08-19",
+      "asOf": "2026-08-19",
+      "upstream": [
+        {
+          "name": "이산가족정보통합시스템 — 이산가족 신청/교류안내",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "이산가족정보통합시스템 — 이산가족 신청 및 취소",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "이산가족정보통합시스템 — 북한주민접촉신고·방문신청",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "이산가족정보통합시스템 — 교류안내 > 재북가족과의 접촉",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/5.do?mid=SM00000131",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "이산가족정보통합시스템 — 교류안내 > 교류주선 및 지원",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/4.do?mid=SM00000131",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "남북이산가족 디지털박물관 — 기증현황(기증 안내)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "이산가족정보통합시스템 — 각종서식관리(별지 서식)",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/list.do?mid=SM00000133",
+          "asOf": "2024-09-05"
+        },
+        {
+          "name": "이산가족정보통합시스템 — FAQ",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/faq/list_t1.do?mid=SM00000142",
+          "asOf": "2026-08-19"
+        },
+        {
+          "name": "통일부 — 주요사업 > 이산가족 > 교류기반 구축(유전자검사·영상편지)",
+          "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_build",
+          "asOf": "2025-07-30"
+        },
+        {
+          "name": "통일부 — 주요사업 > 이산가족 > 교류촉진 기본계획 및 실태조사",
+          "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_Promotion",
+          "asOf": "2025-07-30"
+        },
+        {
+          "name": "통일부 — 주요사업 > 이산가족 > 민간교류 지원",
+          "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_private",
+          "asOf": "2025-07-30"
+        },
+        {
+          "name": "남북 이산가족 생사확인 및 교류 촉진에 관한 법률 [법률 제20184호]",
+          "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=259607&type=XML",
+          "asOf": "2024-08-07"
+        },
+        {
+          "name": "같은 법 시행령 [대통령령] — 제4조·제4조의2·제4조의3",
+          "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=263503&type=XML",
+          "asOf": "2024-08-07"
+        },
+        {
+          "name": "통일부 공고 제2026-92호 — 2026 DMZ 평화걷기 참여 신청자 모집",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5931&mid=SM00000138",
+          "asOf": "2026-04-30"
+        },
+        {
+          "name": "통일부 보도자료 — 청소년ㆍ대학생 대상 남북 이산가족 영상편지 공모전",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5905&mid=SM00000138",
+          "asOf": "2024-06-11"
+        }
+      ],
+      "linkCheck": {
+        "checked": 29,
+        "live": 28,
+        "confirmedDead": [
+          "http://www.isanfilm.or.kr/"
+        ]
+      },
+      "caution": "eligibility '후손 가능' 다수는 법령 정의(8촌 이내)에서 도출한 것이지 페이지가 \"후손도 됩니다\"라고 쓴 것이 아니다. 화면에 걸 때 「법적으로는 이미 대상」과 「안내에는 없음」을 함께 보여야 오해가 없다."
+    },
+    {
+      "file": "opinion.json",
+      "role": "통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)",
+      "builtAt": "2026-08-19",
+      "asOf": "2025-09-01",
+      "upstream": [
+        {
+          "name": "통일의식조사 인포그래픽 시계열 XLSX",
+          "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/",
+          "org": "서울대학교 통일평화연구원",
+          "asOf": "2022-12-31"
+        },
+        {
+          "name": "통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)",
+          "url": "https://ipus.snu.ac.kr/data-archive",
+          "org": "서울대학교 통일평화연구원",
+          "asOf": "2025-09-01"
+        },
+        {
+          "name": "2025 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)",
+          "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
+          "org": "서울대학교 통일평화연구원",
+          "asOf": "2025-09-01"
+        }
+      ],
+      "license": "서울대학교 통일평화연구원에서 실시한 통일의식조사",
+      "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임을 명기해 주시길 부탁 드립니다.",
+      "caution": "★ 이 파일만 통일부 자료가 아니다(서울대학교 통일평화연구원). 화면은 반드시 출처가 다르다는 것을 배지·문장으로 구분 표시하고, 소멸 곡선과 나란히 놓더라도 인과를 주장하지 말 것 — \"같은 기간에 함께 내려갔다\"까지만."
     }
   ],
   "files": [
     {
       "name": "map.json",
       "from": "frontend/src/data/nk-map.json",
-      "bytes": 58349
+      "bytes": 58758
     },
     {
       "name": "region.json",
       "from": "북한자료-api/nk-region.json",
-      "bytes": 66706
+      "bytes": 69134
     },
     {
       "name": "isan.json",
       "from": "북한자료-api/isan.json",
-      "bytes": 303324
+      "bytes": 313640
     },
     {
       "name": "projection.json",
       "from": "북한자료-api/isan-projection.json",
-      "bytes": 33072
+      "bytes": 34209
     },
     {
       "name": "descendant.json",
       "from": "북한자료-api/isan-descendant.json",
-      "bytes": 8097
+      "bytes": 8394
+    },
+    {
+      "name": "museum.json",
+      "from": "북한자료-api/museum.json",
+      "bytes": 771987,
+      "slim": true,
+      "sourceBytes": 5519693
+    },
+    {
+      "name": "paths.json",
+      "from": "북한자료-api/descendant-paths.json",
+      "bytes": 48570
+    },
+    {
+      "name": "opinion.json",
+      "from": "북한자료-api/unification-opinion.json",
+      "bytes": 100738
     }
   ],
   "limits": {

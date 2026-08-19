@@ -1,0 +1,4104 @@
+{
+  "builtAt": "2026-08-19",
+  "sources": [
+    {
+      "name": "통일의식조사 인포그래픽 시계열 XLSX",
+      "kind": "xlsx",
+      "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/",
+      "org": "서울대학교 통일평화연구원",
+      "asOf": "2022-12-31",
+      "accessedAt": "2026-08-19",
+      "note": "지표 30종. 파일 목록은 https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/main.js 의 setDownload() 호출에서 실측 추출."
+    },
+    {
+      "name": "통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)",
+      "kind": "pdf",
+      "url": "https://ipus.snu.ac.kr/data-archive",
+      "org": "서울대학교 통일평화연구원",
+      "asOf": "2025-09-01",
+      "accessedAt": "2026-08-19",
+      "note": "11개 연도 「표 2. 남북한 통일의 필요성」 전체 행. 열 순서가 연도마다 달라 좌표 기반 추출."
+    },
+    {
+      "name": "2025 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)",
+      "kind": "zip",
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
+      "landing": "https://ipus.snu.ac.kr/blog/archives/research/11790",
+      "org": "서울대학교 통일평화연구원",
+      "asOf": "2025-09-01",
+      "accessedAt": "2026-08-19",
+      "note": "전 연도 ZIP 을 받지 않는다(용량). 최신 2025년분 1개만 실측한다."
+    }
+  ],
+  "license": "서울대학교 통일평화연구원에서 실시한 통일의식조사",
+  "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임을 명기해 주시길 부탁 드립니다.",
+  "licenseUrl": "https://ipus.snu.ac.kr/data-archive",
+  "series": [
+    {
+      "key": "Uni01",
+      "titleKey": "Uni01",
+      "topic": "통일 필요성",
+      "question": "통일 필요성: 남북한 통일이 얼마나 필요하다고 생각하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "필요하다",
+          "values": [
+            64.1,
+            51.6,
+            56.4,
+            59.3,
+            53.8,
+            54,
+            54.9,
+            55.9,
+            52,
+            53.7,
+            54,
+            59.7,
+            53.6,
+            52.9,
+            44.6,
+            46
+          ]
+        },
+        {
+          "label": "반반/보통",
+          "values": [
+            20.9,
+            23.2,
+            23.5,
+            20.4,
+            25.1,
+            21.6,
+            21.5,
+            22.6,
+            24.6,
+            22.5,
+            24.5,
+            24.2,
+            26.4,
+            22.4,
+            26,
+            27.9
+          ]
+        },
+        {
+          "label": "필요하지 않다",
+          "values": [
+            15,
+            25.2,
+            20.1,
+            20.4,
+            21.1,
+            21.4,
+            23.6,
+            21.6,
+            23.4,
+            23.8,
+            21.5,
+            16.1,
+            20,
+            24.7,
+            29.4,
+            26.1
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-01-Uni01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-01-Uni01.png",
+        "bytes": 9205,
+        "sheet": "Sheet1"
+      },
+      "extended": {
+        "years": [
+          2007,
+          2008,
+          2009,
+          2010,
+          2011,
+          2012,
+          2013,
+          2014,
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "sourceByYear": {
+          "2007": "infographic",
+          "2008": "infographic",
+          "2009": "infographic",
+          "2010": "infographic",
+          "2011": "infographic",
+          "2012": "infographic",
+          "2013": "infographic",
+          "2014": "infographic",
+          "2015": "infographic",
+          "2016": "infographic",
+          "2017": "infographic",
+          "2018": "infographic",
+          "2019": "infographic",
+          "2020": "infographic",
+          "2021": "infographic",
+          "2022": "infographic",
+          "2023": "basicReport",
+          "2024": "basicReport",
+          "2025": "basicReport"
+        },
+        "rows": [
+          {
+            "label": "필요하다",
+            "values": [
+              64.1,
+              51.6,
+              56.4,
+              59.3,
+              53.8,
+              54,
+              54.9,
+              55.9,
+              52,
+              53.7,
+              54,
+              59.7,
+              53.6,
+              52.9,
+              44.6,
+              46,
+              43.8,
+              36.9,
+              41.1
+            ]
+          },
+          {
+            "label": "반반/보통",
+            "values": [
+              20.9,
+              23.2,
+              23.5,
+              20.4,
+              25.1,
+              21.6,
+              21.5,
+              22.6,
+              24.6,
+              22.5,
+              24.5,
+              24.2,
+              26.4,
+              22.4,
+              26,
+              27.9,
+              26.2,
+              28.1,
+              28.5
+            ]
+          },
+          {
+            "label": "필요하지 않다",
+            "values": [
+              15,
+              25.2,
+              20.1,
+              20.4,
+              21.1,
+              21.4,
+              23.6,
+              21.6,
+              23.4,
+              23.8,
+              21.5,
+              16.1,
+              20,
+              24.7,
+              29.4,
+              26.1,
+              30,
+              35,
+              30.4
+            ]
+          }
+        ],
+        "note": "2007~2022 은 인포그래픽 XLSX, 그 이후는 연도별 기초보고서 표2 전체 행. 중복 8개 연도 대조 결과 최대 1.4%p 차이(산출 방식 상이) — extended.sourceByYear 로 출처를 구분할 것."
+      },
+      "reportSeries": {
+        "years": [
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022,
+          2023,
+          2024,
+          2025
+        ],
+        "asOfByYear": {
+          "2015": "2015-07-24",
+          "2016": "2016-07-22",
+          "2017": "2017-07-28",
+          "2018": "2018-08-03",
+          "2019": "2019-07-26",
+          "2020": "2020-08-17",
+          "2021": "2021-08-04",
+          "2022": "2022-07-25",
+          "2023": "2023-07-27",
+          "2024": "2024-07-23",
+          "2025": "2025-09-01"
+        },
+        "sampleSizeByYear": {
+          "2015": 1200,
+          "2016": 1200,
+          "2017": 1200,
+          "2018": 1200,
+          "2019": 1200,
+          "2020": 1200,
+          "2021": 1200,
+          "2022": 1200,
+          "2023": 1200,
+          "2024": 1200,
+          "2025": 1200
+        },
+        "rows": [
+          {
+            "label": "필요하다",
+            "values": [
+              51,
+              53.3,
+              53.8,
+              59.7,
+              53,
+              52.3,
+              44.3,
+              46,
+              43.8,
+              36.9,
+              41.1
+            ]
+          },
+          {
+            "label": "반반/보통",
+            "values": [
+              24.2,
+              22,
+              24.1,
+              24.1,
+              26.5,
+              22.6,
+              26.5,
+              27.3,
+              26.2,
+              28.1,
+              28.5
+            ]
+          },
+          {
+            "label": "필요하지 않다",
+            "values": [
+              24.8,
+              24.6,
+              22.1,
+              16.1,
+              20.5,
+              25,
+              29.2,
+              26.7,
+              30,
+              35,
+              30.4
+            ]
+          }
+        ],
+        "note": "기초보고서 표2 단일 출처 시계열(가중 집계). 인포그래픽과 섞이지 않아 방식이 일관된다."
+      },
+      "overlapCheck": {
+        "years": [
+          2015,
+          2016,
+          2017,
+          2018,
+          2019,
+          2020,
+          2021,
+          2022
+        ],
+        "maxAbsDiffPp": 1.4,
+        "rows": [
+          {
+            "year": 2015,
+            "infographic": {
+              "need": 52,
+              "neutral": 24.6,
+              "notNeed": 23.4
+            },
+            "report": {
+              "need": 51,
+              "neutral": 24.2,
+              "notNeed": 24.8
+            },
+            "diffPp": {
+              "need": 1,
+              "neutral": 0.4,
+              "notNeed": -1.4
+            }
+          },
+          {
+            "year": 2016,
+            "infographic": {
+              "need": 53.7,
+              "neutral": 22.5,
+              "notNeed": 23.8
+            },
+            "report": {
+              "need": 53.3,
+              "neutral": 22,
+              "notNeed": 24.6
+            },
+            "diffPp": {
+              "need": 0.4,
+              "neutral": 0.5,
+              "notNeed": -0.8
+            }
+          },
+          {
+            "year": 2017,
+            "infographic": {
+              "need": 54,
+              "neutral": 24.5,
+              "notNeed": 21.5
+            },
+            "report": {
+              "need": 53.8,
+              "neutral": 24.1,
+              "notNeed": 22.1
+            },
+            "diffPp": {
+              "need": 0.2,
+              "neutral": 0.4,
+              "notNeed": -0.6
+            }
+          },
+          {
+            "year": 2018,
+            "infographic": {
+              "need": 59.7,
+              "neutral": 24.2,
+              "notNeed": 16.1
+            },
+            "report": {
+              "need": 59.7,
+              "neutral": 24.1,
+              "notNeed": 16.1
+            },
+            "diffPp": {
+              "need": 0,
+              "neutral": 0.1,
+              "notNeed": 0
+            }
+          },
+          {
+            "year": 2019,
+            "infographic": {
+              "need": 53.6,
+              "neutral": 26.4,
+              "notNeed": 20
+            },
+            "report": {
+              "need": 53,
+              "neutral": 26.5,
+              "notNeed": 20.5
+            },
+            "diffPp": {
+              "need": 0.6,
+              "neutral": -0.1,
+              "notNeed": -0.5
+            }
+          },
+          {
+            "year": 2020,
+            "infographic": {
+              "need": 52.9,
+              "neutral": 22.4,
+              "notNeed": 24.7
+            },
+            "report": {
+              "need": 52.3,
+              "neutral": 22.6,
+              "notNeed": 25
+            },
+            "diffPp": {
+              "need": 0.6,
+              "neutral": -0.2,
+              "notNeed": -0.3
+            }
+          },
+          {
+            "year": 2021,
+            "infographic": {
+              "need": 44.6,
+              "neutral": 26,
+              "notNeed": 29.4
+            },
+            "report": {
+              "need": 44.3,
+              "neutral": 26.5,
+              "notNeed": 29.2
+            },
+            "diffPp": {
+              "need": 0.3,
+              "neutral": -0.5,
+              "notNeed": 0.2
+            }
+          },
+          {
+            "year": 2022,
+            "infographic": {
+              "need": 46,
+              "neutral": 27.9,
+              "notNeed": 26.1
+            },
+            "report": {
+              "need": 46,
+              "neutral": 27.3,
+              "notNeed": 26.7
+            },
+            "diffPp": {
+              "need": 0,
+              "neutral": 0.6,
+              "notNeed": -0.6
+            }
+          }
+        ]
+      }
+    },
+    {
+      "key": "Uni06",
+      "titleKey": "Uni06",
+      "topic": "통일 이유",
+      "question": "통일 이유: 우리나라가 통일이 되어야 하는 가장 큰 이유가 다음 중 무엇이라고 생각하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "같은 민족이니까",
+          "values": [
+            50.7,
+            58.5,
+            44.3,
+            43.3,
+            41.9,
+            46,
+            40.4,
+            42.6,
+            42,
+            38.9,
+            40.4,
+            45.1,
+            35.2,
+            37.3,
+            45.7,
+            42.3
+          ]
+        },
+        {
+          "label": "이산가족의 고통을 해결해 주기 위해",
+          "values": [
+            8.9,
+            6.6,
+            8.6,
+            7,
+            7.1,
+            9.1,
+            8.4,
+            8.9,
+            11.4,
+            12.2,
+            10.3,
+            6.9,
+            10,
+            7.4,
+            11.3,
+            10.7
+          ]
+        },
+        {
+          "label": "남북 간에 전쟁위협을 없애기 위해",
+          "values": [
+            19.2,
+            14.6,
+            23.4,
+            24.2,
+            27.4,
+            25.2,
+            30.8,
+            26.8,
+            25.7,
+            29.2,
+            32.4,
+            31.4,
+            32.5,
+            37.9,
+            28.2,
+            31.6
+          ]
+        },
+        {
+          "label": "북한주민도 잘 살 수 있도록",
+          "values": [
+            1.8,
+            2.9,
+            4.2,
+            4,
+            4.8,
+            4.4,
+            5.5,
+            3.8,
+            6.2,
+            4.8,
+            4,
+            3.4,
+            3.1,
+            2,
+            3.5,
+            4.6
+          ]
+        },
+        {
+          "label": "한국이 보다 선진국이 되기 위해서",
+          "values": [
+            18.7,
+            17.3,
+            18.6,
+            20.8,
+            17.8,
+            14.5,
+            14.2,
+            17.5,
+            14.1,
+            14.2,
+            13,
+            12.9,
+            18.8,
+            15.3,
+            11.4,
+            10.7
+          ]
+        },
+        {
+          "label": "기타",
+          "values": [
+            0.7,
+            0.1,
+            0.8,
+            5.9,
+            1.1,
+            0.8,
+            0.8,
+            0.4,
+            0.5,
+            0.7,
+            0.1,
+            0.2,
+            0.4,
+            0.3,
+            0,
+            0.1
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-02-Uni06.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-02-Uni06.png",
+        "bytes": 11354,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nk01",
+      "titleKey": "Nk01",
+      "topic": "북한에 대한 인식",
+      "question": "북한에 대한 인식: 북한이 우리에게 어떤 대상이라고 생각하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "지원과 협력의 대상",
+          "values": [
+            78.5,
+            79.3,
+            68.5,
+            64.3,
+            63.9,
+            63,
+            56.8,
+            59.3,
+            54.2,
+            55.2,
+            55.7,
+            71.8,
+            67.9,
+            60.6,
+            60.2,
+            63
+          ]
+        },
+        {
+          "label": "선의의 경쟁 대상",
+          "values": [
+            3.3,
+            3.6,
+            2.2,
+            3.3,
+            2.3,
+            4.9,
+            5.6,
+            4.5,
+            7.6,
+            8,
+            6.3,
+            4.3,
+            4.9,
+            4,
+            6.5,
+            5.3
+          ]
+        },
+        {
+          "label": "경계대상 및 안전위협대상",
+          "values": [
+            18.2,
+            17.1,
+            29.3,
+            32.4,
+            33.8,
+            32.1,
+            37.6,
+            36.2,
+            38.1,
+            36.8,
+            38,
+            23.9,
+            27.2,
+            35.4,
+            33.3,
+            31.7
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-03-Nk01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-03-Nk01.png",
+        "bytes": 11127,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nk03",
+      "titleKey": "Nk03",
+      "topic": "북한 대화 가능성",
+      "question": "북한 대화 가능성: 통일을 함께 논의할 대상으로 북한 정권이 대화와 타협이 가능한 상대라고 생각하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "가능하다",
+          "values": [
+            41,
+            35,
+            34.3,
+            39.3,
+            35.8,
+            28.3,
+            29,
+            32,
+            28.8,
+            55.6,
+            52,
+            34.7,
+            33,
+            33.7
+          ]
+        },
+        {
+          "label": "불가능하다",
+          "values": [
+            59,
+            65,
+            65.7,
+            60.7,
+            64.2,
+            71.8,
+            71,
+            68,
+            71.2,
+            44.4,
+            48,
+            65.4,
+            67,
+            66.3
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-04-Nk03.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-04-Nk03.png",
+        "bytes": 11056,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nk10",
+      "titleKey": "Nk10",
+      "topic": "북핵 위협",
+      "question": "북핵 위협: 북한의 핵무기 보유에 대해 얼마나 위협을 느끼십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "위협을 느낀다",
+          "values": [
+            68.1,
+            61.9,
+            74.2,
+            75.9,
+            80.8,
+            80.4,
+            78.4,
+            88.9,
+            84.2,
+            80.1,
+            82.9,
+            77.7,
+            78.4,
+            76.3,
+            82.3,
+            80.9
+          ]
+        },
+        {
+          "label": "위협을 느끼지 않는다",
+          "values": [
+            31.8,
+            38.1,
+            25.8,
+            26.1,
+            19.2,
+            19.7,
+            21.6,
+            11.2,
+            15.8,
+            19.9,
+            17,
+            22.4,
+            21.5,
+            23.7,
+            17.7,
+            19
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-05-Nk10.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-05-Nk10.png",
+        "bytes": 11038,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nkp03",
+      "titleKey": "Nkp03",
+      "topic": "대북정책 만족도",
+      "question": "대북정책 만족도: 현 정부의 대북정책에 대해 얼마나 만족하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "만족",
+          "values": [
+            30.3,
+            34.3,
+            31.8,
+            86.3,
+            40.1,
+            34.4,
+            57.6,
+            53.6,
+            49.2,
+            44.6,
+            59.1,
+            65.6,
+            55.9,
+            37.7,
+            35,
+            45.6
+          ]
+        },
+        {
+          "label": "불만족",
+          "values": [
+            69.7,
+            65.7,
+            18.1,
+            14.2,
+            60,
+            65.6,
+            42.4,
+            46.4,
+            50.8,
+            55.4,
+            40.9,
+            34.4,
+            44.1,
+            62.2,
+            65,
+            54.3
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-06-Nkp03.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-06-Nkp03.png",
+        "bytes": 11038,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nkp07_11",
+      "titleKey": "Nkp07_11",
+      "topic": "핵무장 의견",
+      "question": "핵무장 의견: 한국도 핵무기를 가져야 한다.",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "찬성",
+          "values": [
+            52.3,
+            54.2,
+            55.1,
+            52.4,
+            49.8,
+            40,
+            38.1,
+            45.6,
+            44.2,
+            55.8
+          ]
+        },
+        {
+          "label": "반반/보통",
+          "values": [
+            27.9,
+            28.1,
+            27.2,
+            31.8,
+            31.1,
+            35,
+            34.4,
+            32.1,
+            34,
+            28.3
+          ]
+        },
+        {
+          "label": "반대",
+          "values": [
+            19.8,
+            17.8,
+            17.8,
+            15.8,
+            19.1,
+            24.9,
+            27.5,
+            22.3,
+            21.8,
+            16
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-07-Nkp07_11.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-07-Nkp07_11.png",
+        "bytes": 10960,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nkd01_11",
+      "titleKey": "Nkd01_11",
+      "topic": "탈북민 친근감",
+      "question": "탈북민 친근감: 한국에 거주하는 탈북자(새터민)가 얼마나 친근하게 느껴지십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "(변환 후) 친근",
+          "values": [
+            36.1,
+            36.2,
+            36.5,
+            42.4,
+            41.3,
+            39.5,
+            42.1,
+            43.8,
+            45.7,
+            52.4,
+            51.3,
+            53.4,
+            58.9,
+            42,
+            47.2,
+            42
+          ]
+        },
+        {
+          "label": "(변환 후) 친근하지 않음",
+          "values": [
+            63.9,
+            63.8,
+            63.5,
+            57.6,
+            58.8,
+            60.5,
+            58,
+            56.3,
+            54.3,
+            47.6,
+            48.7,
+            46.6,
+            41.1,
+            58,
+            52.8,
+            58
+          ]
+        }
+      ],
+      "blocks": [
+        {
+          "years": [
+            2007,
+            2008,
+            2009,
+            2010,
+            2011,
+            2012,
+            2013,
+            2014,
+            2015
+          ],
+          "rows": [
+            {
+              "label": "친근",
+              "values": [
+                36.1,
+                36.2,
+                36.5,
+                42.4,
+                41.3,
+                39.5,
+                42.1,
+                43.8,
+                45.7
+              ]
+            },
+            {
+              "label": "친근하지 않음",
+              "values": [
+                63.9,
+                63.8,
+                63.5,
+                57.6,
+                58.8,
+                60.5,
+                58,
+                56.3,
+                54.3
+              ]
+            }
+          ]
+        },
+        {
+          "years": [
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ],
+          "rows": [
+            {
+              "label": "친근",
+              "values": [
+                29.3,
+                26,
+                27.8,
+                30.4,
+                20.6,
+                24.3,
+                23.2
+              ]
+            },
+            {
+              "label": "반반/보통",
+              "values": [
+                44.1,
+                49.2,
+                48,
+                48.4,
+                51,
+                48.5,
+                44.8
+              ]
+            },
+            {
+              "label": "친근하지 않음",
+              "values": [
+                26.6,
+                24.7,
+                24.3,
+                21.2,
+                28.4,
+                27.2,
+                32.1
+              ]
+            }
+          ]
+        },
+        {
+          "years": [
+            2007,
+            2008,
+            2009,
+            2010,
+            2011,
+            2012,
+            2013,
+            2014,
+            2015,
+            2016,
+            2017,
+            2018,
+            2019,
+            2020,
+            2021,
+            2022
+          ],
+          "rows": [
+            {
+              "label": "(변환 후) 친근",
+              "values": [
+                36.1,
+                36.2,
+                36.5,
+                42.4,
+                41.3,
+                39.5,
+                42.1,
+                43.8,
+                45.7,
+                52.4,
+                51.3,
+                53.4,
+                58.9,
+                42,
+                47.2,
+                42
+              ]
+            },
+            {
+              "label": "(변환 후) 친근하지 않음",
+              "values": [
+                63.9,
+                63.8,
+                63.5,
+                57.6,
+                58.8,
+                60.5,
+                58,
+                56.3,
+                54.3,
+                47.6,
+                48.7,
+                46.6,
+                41.1,
+                58,
+                52.8,
+                58
+              ]
+            }
+          ]
+        }
+      ],
+      "blockNote": "문항 개편으로 파일 안에 블록 3개. years/rows 는 연도 폭이 가장 넓은 블록.",
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-08-Nkd01_11.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-08-Nkd01_11.png",
+        "bytes": 11469,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Fp01",
+      "titleKey": "Fp01",
+      "topic": "주변국 친밀감",
+      "question": "주변국 친밀감: 다음 국가들 중 어느 나라를 가장 가깝게 느끼십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "미국",
+          "values": [
+            53.2,
+            60.7,
+            68.4,
+            70.6,
+            68.9,
+            65.8,
+            76.1,
+            74.4,
+            77.7,
+            72.4,
+            73.2,
+            70.3,
+            71.1,
+            66.9,
+            76.2,
+            79.3
+          ]
+        },
+        {
+          "label": "일본",
+          "values": [
+            11.5,
+            9.5,
+            8.5,
+            9.6,
+            9.2,
+            6.8,
+            5.1,
+            4.5,
+            3.7,
+            5.4,
+            8.8,
+            4.8,
+            5.4,
+            6.1,
+            4.8,
+            5.2
+          ]
+        },
+        {
+          "label": "북한",
+          "values": [
+            24.2,
+            20.4,
+            15.9,
+            14.9,
+            15.9,
+            20.6,
+            11,
+            9.7,
+            8.8,
+            11.1,
+            11.5,
+            20.8,
+            19.8,
+            18.1,
+            14.4,
+            10.6
+          ]
+        },
+        {
+          "label": "중국",
+          "values": [
+            10.2,
+            7.9,
+            6.1,
+            4.21,
+            5.3,
+            5.9,
+            7.3,
+            10.4,
+            8.8,
+            10.6,
+            5.4,
+            4,
+            3.5,
+            7.9,
+            4,
+            4.4
+          ]
+        },
+        {
+          "label": "러시아",
+          "values": [
+            0.9,
+            1.5,
+            1,
+            0.8,
+            0.8,
+            0.9,
+            0.5,
+            1,
+            1.1,
+            0.5,
+            1.2,
+            0.2,
+            0.2,
+            1,
+            0.7,
+            0.6
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-09-Fp01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-09-Fp01.png",
+        "bytes": 11181,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Fp02",
+      "titleKey": "Fp02",
+      "topic": "평화위협국가",
+      "question": "평화위협국가: 다음 국가들 중에서 어느 나라가 한반도의 평화에 가장 위협적인 나라라고 생각하십니까?",
+      "group": {
+        "menu": 1,
+        "label": "남한 주민 대상 통일의식조사",
+        "respondents": "남한 주민",
+        "dir": "1-opinion-south"
+      },
+      "unit": "%",
+      "years": [
+        2007,
+        2008,
+        2009,
+        2010,
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020,
+        2021,
+        2022
+      ],
+      "rows": [
+        {
+          "label": "미국",
+          "values": [
+            21.2,
+            16,
+            12.7,
+            8.2,
+            8.6,
+            9.5,
+            4.4,
+            5.3,
+            4.8,
+            5,
+            0.5,
+            5.4,
+            5.9,
+            8.3,
+            4.3,
+            3.2
+          ]
+        },
+        {
+          "label": "일본",
+          "values": [
+            25.8,
+            34.1,
+            17.4,
+            10.4,
+            11.6,
+            12.2,
+            15.9,
+            25.1,
+            15.7,
+            11,
+            7.8,
+            13.9,
+            28.2,
+            18.5,
+            11.5,
+            7.7
+          ]
+        },
+        {
+          "label": "북한",
+          "values": [
+            36.1,
+            34.2,
+            53,
+            55.7,
+            45.8,
+            47.5,
+            57,
+            49.6,
+            55,
+            64.9,
+            62.5,
+            32.4,
+            30.6,
+            40.8,
+            38.5,
+            36.1
+          ]
+        },
+        {
+          "label": "중국",
+          "values": [
+            15.5,
+            14.6,
+            15.8,
+            24.5,
+            33.7,
+            30.4,
+            21.4,
+            17.8,
+            23.3,
+            17.5,
+            23,
+            46.2,
+            34.2,
+            31.6,
+            44.7,
+            43.8
+          ]
+        },
+        {
+          "label": "러시아",
+          "values": [
+            1.4,
+            1.2,
+            1.1,
+            1.2,
+            0.3,
+            0.4,
+            1.3,
+            2.2,
+            1.3,
+            1.6,
+            1.8,
+            2,
+            0.1,
+            0.8,
+            0.9,
+            9.2
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-10-Fp02.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/1-opinion-south/1-10-Fp02.png",
+        "bytes": 11266,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Uni01",
+      "titleKey": "Uni01",
+      "topic": "통일 필요성",
+      "question": "통일 필요성: 귀하는 북한에 살고 계실 때 통일이 얼마나 필요하다고 생각하셨습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "필요하다",
+          "values": [
+            94.8,
+            93.4,
+            93.1,
+            100,
+            97.8,
+            94.9,
+            97.7,
+            95.3,
+            93.3,
+            93.3
+          ]
+        },
+        {
+          "label": "반반/보통",
+          "values": [
+            4.1,
+            5.8,
+            6.1,
+            0,
+            1.5,
+            3.6,
+            1.5,
+            4.7,
+            6.7,
+            5.8
+          ]
+        },
+        {
+          "label": "필요하지 않다",
+          "values": [
+            1.1,
+            0.8,
+            0.8,
+            0,
+            0.7,
+            1.5,
+            0.8,
+            0,
+            0,
+            0.9
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-01-Uni01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-01-Uni01.png",
+        "bytes": 14332,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Uni03",
+      "titleKey": "Uni03",
+      "topic": "통일 이유",
+      "question": "통일 이유: 귀하는 북한에 살고 계실 때 통일이 되어야 하는 가장 큰 이유가 다음 중 무엇이라고 생각하십니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "같은 민족이니까",
+          "values": [
+            23.4,
+            28.8,
+            30.7,
+            37.1,
+            42.4,
+            28.6,
+            47.1
+          ]
+        },
+        {
+          "label": "이산가족의 고통을 해결해 주기 위해",
+          "values": [
+            7.1,
+            3.6,
+            8.8,
+            8.3,
+            4.7,
+            7.6,
+            5.8
+          ]
+        },
+        {
+          "label": "남북 간에 전쟁위협을 없애기 위해",
+          "values": [
+            12.1,
+            8.6,
+            12.4,
+            9.9,
+            14.1,
+            6.7,
+            4.8
+          ]
+        },
+        {
+          "label": "북한주민이 잘 살 수 있도록",
+          "values": [
+            48.9,
+            47.5,
+            41.6,
+            29.5,
+            30.6,
+            49.5,
+            26
+          ]
+        },
+        {
+          "label": "북한이 보다 선진국이 되기 위해서",
+          "values": [
+            7.8,
+            10.1,
+            4.4,
+            12.1,
+            5.9,
+            4.8,
+            11.5
+          ]
+        },
+        {
+          "label": "기타",
+          "values": [
+            0.7,
+            1.4,
+            2.2,
+            3,
+            2.4,
+            2.9,
+            4.8
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-02-Uni03.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-02-Uni03.png",
+        "bytes": 14600,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Sk01",
+      "titleKey": "Sk01",
+      "topic": "남한에 대한 인식",
+      "question": "남한에 대한 인식: 귀하는 북한에 살고 계실 때 남한이 북한에게 어떤 대상이라고 생각하고 있었습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "지원과 협력의 대상",
+          "values": [
+            62.9,
+            69.7,
+            76.2,
+            67.4,
+            70.5,
+            65,
+            62.1,
+            64.7,
+            58.1,
+            70.2
+          ]
+        },
+        {
+          "label": "선의의 경쟁 대상",
+          "values": [
+            2.1,
+            1.6,
+            2.3,
+            2.1,
+            4.3,
+            2.2,
+            4.6,
+            1.2,
+            2.9,
+            4.8
+          ]
+        },
+        {
+          "label": "경계대상 및 안전위협대상",
+          "values": [
+            35.1,
+            28.7,
+            21.5,
+            30.5,
+            25.2,
+            32.8,
+            33.3,
+            34.1,
+            39,
+            25
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-03-Sk01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-03-Sk01.png",
+        "bytes": 14420,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Sk03",
+      "titleKey": "Sk03",
+      "topic": "남한 문화경험",
+      "question": "남한 문화경험: 귀하는 북한에 살고 계실 때 남한 방송, 영화, 드라마, 노래 등을 접해본 경험이 있습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "자주 접해 봤다",
+          "values": [
+            43.3,
+            42.6,
+            43.1,
+            41.1,
+            59,
+            51.8,
+            43.2,
+            41.2,
+            47.6,
+            43.3
+          ]
+        },
+        {
+          "label": "한두 번 접해봤다",
+          "values": [
+            30.9,
+            46.7,
+            44.6,
+            44.7,
+            30.2,
+            36.5,
+            43.2,
+            40,
+            44.8,
+            40.4
+          ]
+        },
+        {
+          "label": "전혀 접해보지 못 했다",
+          "values": [
+            25.8,
+            10.7,
+            12.3,
+            14.2,
+            10.8,
+            11.7,
+            13.6,
+            18.8,
+            7.6,
+            16.3
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-04-Sk03.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-04-Sk03.png",
+        "bytes": 14393,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Sk06",
+      "titleKey": "Sk06",
+      "topic": "핵무기 위협",
+      "question": "핵무기 위협: 귀하는 북한에 살고 계실 때 북한의 핵무기가 남한에 얼마나 위협적일 것이라고 생각하셨습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "위협적이다",
+          "values": [
+            89.6,
+            91,
+            83.8,
+            86.5,
+            89.9,
+            89.1,
+            82.6,
+            89.4,
+            86.7,
+            84.6
+          ]
+        },
+        {
+          "label": "위협적이지 않다",
+          "values": [
+            10.4,
+            9.1,
+            16.2,
+            13.5,
+            10.1,
+            11,
+            17.4,
+            10.6,
+            13.4,
+            15.4
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-05-Sk06.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-05-Sk06.png",
+        "bytes": 14400,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Sk07",
+      "titleKey": "Sk07",
+      "topic": "대북지원 인식",
+      "question": "대북지원 인식: 귀하는 북한주민들이 남한이 쌀, 비료 등을 북한에 지원한 적이 있다는 것을 얼마나 알고 있다고 생각하십니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "알고 있다",
+          "values": [
+            66,
+            66.4,
+            65.3,
+            62.4,
+            66.9,
+            63.5,
+            53.1,
+            56.5,
+            44.8,
+            52.9
+          ]
+        },
+        {
+          "label": "알지 못 한다",
+          "values": [
+            34,
+            33.6,
+            34.7,
+            37.6,
+            33.1,
+            36.5,
+            46.9,
+            43.6,
+            55.2,
+            47.1
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-06-Sk07.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-06-Sk07.png",
+        "bytes": 14432,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nk02",
+      "titleKey": "Nk02",
+      "topic": "김정은 지지도",
+      "question": "김정은 지지도: 귀하는 북한에 살고 계실 때 김정은 위원장에 대한 북한 주민들의 지지도가 어느 정도라고 생각하셨습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "낮음",
+          "values": [
+            35.1,
+            23.8,
+            34.6,
+            27,
+            38.1,
+            32.1,
+            28,
+            22.4,
+            21,
+            29.8
+          ]
+        },
+        {
+          "label": "보통",
+          "values": [
+            34,
+            32.8,
+            33.8,
+            34.8,
+            38.1,
+            31.4,
+            34.8,
+            27.1,
+            31,
+            31.7
+          ]
+        },
+        {
+          "label": "높음",
+          "values": [
+            29.9,
+            42.6,
+            31.5,
+            38.3,
+            23.7,
+            36.5,
+            36.4,
+            50.6,
+            38.1,
+            38.5
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-07-Nk02.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-07-Nk02.png",
+        "bytes": 14385,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Nk07",
+      "titleKey": "Nk07",
+      "topic": "핵무기 보유견해",
+      "question": "핵무기 보유견해: 귀하는 북한에 살고 계실 때, '북한은 핵무기를 가져야 한다'라는 견해에 어떻게 생각하셨습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "찬성",
+          "values": [
+            46.8,
+            51.8,
+            50.4,
+            53.8,
+            57.6,
+            49.5,
+            44.2
+          ]
+        },
+        {
+          "label": "반반/보통",
+          "values": [
+            23.4,
+            28.1,
+            19,
+            28.8,
+            27.1,
+            26.7,
+            40.4
+          ]
+        },
+        {
+          "label": "반대",
+          "values": [
+            29.8,
+            20.1,
+            30.7,
+            17.4,
+            15.3,
+            23.8,
+            15.4
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-08-Nk07.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-08-Nk07.png",
+        "bytes": 14325,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Fp01",
+      "titleKey": "Fp01",
+      "topic": "주변국 친밀감",
+      "question": "주변국 친밀감: 귀하는 북한에 살고 계실 때 다음 국가들 중 어느 나라를 가장 가깝게 느끼셨습니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "미국",
+          "values": [
+            1.6,
+            1.5,
+            1.4,
+            2.2,
+            0,
+            0,
+            2.4,
+            1,
+            1.9
+          ]
+        },
+        {
+          "label": "일본",
+          "values": [
+            0.8,
+            0,
+            0,
+            0,
+            0.7,
+            0,
+            4.7,
+            1,
+            1
+          ]
+        },
+        {
+          "label": "남한",
+          "values": [
+            22.1,
+            13.1,
+            16.3,
+            21.6,
+            16.1,
+            22.7,
+            12.9,
+            22.9,
+            20.2
+          ]
+        },
+        {
+          "label": "중국",
+          "values": [
+            72.1,
+            83.1,
+            79.4,
+            74.8,
+            76.6,
+            71.2,
+            67.1,
+            69.5,
+            65.4
+          ]
+        },
+        {
+          "label": "러시아",
+          "values": [
+            3.3,
+            2.3,
+            2.8,
+            1.4,
+            6.6,
+            6.1,
+            12.9,
+            5.7,
+            11.5
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-09-Fp01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-09-Fp01.png",
+        "bytes": 14516,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "Skd01",
+      "titleKey": "Skd01",
+      "topic": "남한 주민 친근감",
+      "question": "남한 주민 친근감: 귀하는 남한에 살면서 남한 주민들이 얼마나 친근하게 느껴지십니까?",
+      "group": {
+        "menu": 2,
+        "label": "북한 이탈 주민 대상 통일의식조사",
+        "respondents": "북한이탈주민(북한 거주 시 인식)",
+        "dir": "2-opinion-north"
+      },
+      "unit": "%",
+      "years": [
+        2011,
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "친근함",
+          "values": [
+            90.8,
+            89.3,
+            87.7,
+            90.7,
+            92.5,
+            90.5,
+            92.4,
+            90.5,
+            88.5,
+            87.5
+          ]
+        },
+        {
+          "label": "친근하지 않음",
+          "values": [
+            9.3,
+            10.6,
+            12.3,
+            9.2,
+            7.5,
+            9.5,
+            7.6,
+            9.4,
+            11.4,
+            12.5
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-10-Skd01.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/2-opinion-north/2-10-Skd01.png",
+        "bytes": 14381,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q1_1",
+      "titleKey": "Q1_1",
+      "topic": "끼니",
+      "question": "끼니: 보통 하루 몇 끼를 먹었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "하루 세 끼 이상",
+          "values": [
+            74.3,
+            81.1,
+            74.8,
+            87.9,
+            90.4,
+            87.3,
+            87.4,
+            87.8,
+            83.5
+          ]
+        },
+        {
+          "label": "하루 두 끼",
+          "values": [
+            16.8,
+            12.1,
+            10.9,
+            8.6,
+            8.2,
+            8,
+            11.5,
+            10.4,
+            12.8
+          ]
+        },
+        {
+          "label": "하루 한 끼",
+          "values": [
+            5.3,
+            6.8,
+            12.9,
+            2.9,
+            1.5,
+            4,
+            1.2,
+            0.9,
+            2.8
+          ]
+        },
+        {
+          "label": "한 끼도 못 먹을 때가 많았다",
+          "values": [
+            3.5,
+            0,
+            1.4,
+            7.1,
+            0,
+            8,
+            0,
+            0.9,
+            0.9
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-01-q1_1.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-01-q1_1.png",
+        "bytes": 11041,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q1_11",
+      "titleKey": "Q1_11",
+      "topic": "인트라넷",
+      "question": "인트라넷: 북한에서 인트라넷을 사용해 보신 적이 있었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "있었음",
+          "values": [
+            10.7,
+            8.2,
+            5.6,
+            5.7,
+            7,
+            8.3
+          ]
+        },
+        {
+          "label": "없었음",
+          "values": [
+            89.3,
+            91.8,
+            94.4,
+            94.3,
+            93,
+            91.7
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-02-q1_11.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-02-q1_11.png",
+        "bytes": 10859,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q1_11_1",
+      "titleKey": "Q1_11_1",
+      "topic": "손전화",
+      "question": "손전화: 북한에서 본인의 손전화(휴대폰)가 있었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "있었음",
+          "values": [
+            55.5,
+            46.4,
+            43.9,
+            44.8,
+            62.6,
+            56
+          ]
+        },
+        {
+          "label": "없었음",
+          "values": [
+            44.5,
+            53.6,
+            56.1,
+            55.2,
+            37.4,
+            44
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-03-q1_11_1.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-03-q1_11_1.png",
+        "bytes": 10857,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q1_12",
+      "titleKey": "Q1_12",
+      "topic": "남한 물건",
+      "question": "남한 물건: 북한에서 남한산 물건을 사용해본 적이 있었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "있었음",
+          "values": [
+            66,
+            72.1,
+            60.7,
+            57.1,
+            41.4,
+            60,
+            52.3
+          ]
+        },
+        {
+          "label": "없었음",
+          "values": [
+            34,
+            27.9,
+            39.3,
+            42.9,
+            58.6,
+            40,
+            47.7
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-04-q1_12.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-04-q1_12.png",
+        "bytes": 10879,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q1_13",
+      "titleKey": "Q1_13",
+      "topic": "식생활 현황",
+      "question": "식생활 현황: 귀하가 북한을 떠나기 전, 1년 동안 귀댁의 식생활을 가장 잘 나타낸 것은 어느 것입니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "가족 모두 충분한 양과 다양한 음식",
+          "values": [
+            40,
+            34.1,
+            31.7,
+            26.4,
+            40.9,
+            36.7
+          ]
+        },
+        {
+          "label": "가족 모두 충분한 양 그러나 다양하지 않은 음식",
+          "values": [
+            41.4,
+            51.1,
+            50.8,
+            47.1,
+            45.2,
+            44
+          ]
+        },
+        {
+          "label": "가끔 먹을 것이 부족",
+          "values": [
+            17.1,
+            11.9,
+            11.9,
+            17.2,
+            10.4,
+            18.3
+          ]
+        },
+        {
+          "label": "자주 먹을 것이 부족",
+          "values": [
+            1.4,
+            3,
+            5.6,
+            9.2,
+            3.5,
+            0.9
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-05-q1_13.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-05-q1_13.png",
+        "bytes": 11070,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q4_1_1",
+      "titleKey": "Q4_1_1",
+      "topic": "잘사는 직업",
+      "question": "잘사는 직업: 귀하는 북한에 거주할 당시 어느 직업을 가진 사람들이 가장 잘 산다고 생각했습니까?(1순위)",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "중앙당 간부",
+          "values": [
+            76.1,
+            84.1,
+            73.5,
+            80.7,
+            83.7,
+            80.2,
+            79.3,
+            81.7,
+            77.1
+          ]
+        },
+        {
+          "label": "지방당 간부",
+          "values": [
+            2.7,
+            0,
+            3.4,
+            0.7,
+            0,
+            0.8,
+            2.3,
+            0.9,
+            0
+          ]
+        },
+        {
+          "label": "법기관(보위부, 안전부, 검찰) 간부",
+          "values": [
+            14.2,
+            13.6,
+            18.4,
+            11.4,
+            12.6,
+            14.3,
+            12.6,
+            11.3,
+            15.6
+          ]
+        },
+        {
+          "label": "인민위원회 간부",
+          "values": [
+            0.9,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "label": "전문직(의사, 교수, 기술자 등)",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "외화벌이",
+          "values": [
+            5.3,
+            2.3,
+            4.1,
+            5,
+            3,
+            4,
+            5.8,
+            4.4,
+            5.5
+          ]
+        },
+        {
+          "label": "군관",
+          "values": [
+            0,
+            0,
+            0.7,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "시장 상인",
+          "values": [
+            0.9,
+            0,
+            0,
+            2.1,
+            0.7,
+            0,
+            0,
+            0,
+            1
+          ]
+        },
+        {
+          "label": "기업소 공장 간부",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0.8,
+            0,
+            1.7,
+            0
+          ]
+        },
+        {
+          "label": "기업소 공장 노동자",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "농장 관리일꾼",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "농장원",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-06-q4_1_1.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-06-q4_1_1.png",
+        "bytes": 11384,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q8_1",
+      "titleKey": "Q8_1",
+      "topic": "일상문제",
+      "question": "일상문제: 일상에서 가장 걱정을 많이 했던 문제는 무엇이었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "돈 버는 것",
+          "values": [
+            60.9,
+            50,
+            53.2,
+            46.8,
+            49.3,
+            52,
+            55.2,
+            43.1,
+            48.6
+          ]
+        },
+        {
+          "label": "보안원/보위부 각종 단속",
+          "values": [
+            20.9,
+            30.3,
+            29.8,
+            32.4,
+            27.6,
+            28.5,
+            26.4,
+            35.8,
+            27.1
+          ]
+        },
+        {
+          "label": "간부에게 뇌물 고이는 것",
+          "values": [
+            0.9,
+            3,
+            4.3,
+            2.2,
+            5.2,
+            2.4,
+            3.5,
+            3.7,
+            1.9
+          ]
+        },
+        {
+          "label": "조직생활",
+          "values": [
+            7.3,
+            6.8,
+            4.3,
+            8.6,
+            9,
+            5.7,
+            5.8,
+            9.2,
+            13.1
+          ]
+        },
+        {
+          "label": "출세",
+          "values": [
+            2.7,
+            4.6,
+            2.8,
+            4.3,
+            3.7,
+            0,
+            3.5,
+            2.8,
+            3.7
+          ]
+        },
+        {
+          "label": "자녀 교육",
+          "values": [
+            5.5,
+            3,
+            5,
+            5,
+            5.2,
+            8.1,
+            4.6,
+            2.8,
+            2.8
+          ]
+        },
+        {
+          "label": "기타",
+          "values": [
+            1.8,
+            2.3,
+            0.7,
+            0.7,
+            0,
+            3.3,
+            1.2,
+            2.8,
+            2.8
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-07-q8_1.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-07-q8_1.png",
+        "bytes": 11139,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q12",
+      "titleKey": "Q12",
+      "topic": "뇌물",
+      "question": "뇌물: 귀하가 북한에 거주할 당시에 벌어들인 전체 수입 중에서 각종 뇌물로 고인 액수의 비율은 얼마나 됩니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "전혀 없음",
+          "values": [
+            12.1,
+            10.3,
+            15.6,
+            19.7,
+            14.8,
+            14.7,
+            28.7,
+            13.2,
+            16.5
+          ]
+        },
+        {
+          "label": "적음-0% 초과 30% 이하",
+          "values": [
+            60.8,
+            61.6,
+            59.9,
+            54.7,
+            57.8,
+            53.6,
+            52.9,
+            68,
+            62.4
+          ]
+        },
+        {
+          "label": "보통-30% 초과 50% 이하",
+          "values": [
+            14.8,
+            20.9,
+            14.3,
+            16.1,
+            18.5,
+            15.5,
+            10.3,
+            14.1,
+            12.8
+          ]
+        },
+        {
+          "label": "많음-50% 이상",
+          "values": [
+            12.1,
+            7.2,
+            10.2,
+            9.7,
+            8.9,
+            16.2,
+            8.1,
+            4.6,
+            8.3
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-08-q12.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-08-q12.png",
+        "bytes": 11021,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q15",
+      "titleKey": "Q15",
+      "topic": "주요 수입원",
+      "question": "주요 수입원: 귀하가 북한에 거주할 당시에 가장 많은 수입을 얻은 일거리는 무엇이었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "소매장사",
+          "values": [
+            36.8,
+            38.8,
+            32.3,
+            26.8,
+            21.2,
+            14,
+            11.5,
+            25.3,
+            19.3
+          ]
+        },
+        {
+          "label": "개인 편의봉사",
+          "values": [
+            5.3,
+            5.2,
+            5.7,
+            2.4,
+            3.4,
+            6.1,
+            6.4,
+            3.5,
+            3.7
+          ]
+        },
+        {
+          "label": "개인 (임)가공",
+          "values": [
+            2.1,
+            4.3,
+            3.2,
+            2.4,
+            0,
+            2.6,
+            6.4,
+            1.2,
+            2.8
+          ]
+        },
+        {
+          "label": "식당, 상점 임대 운영",
+          "values": [
+            2.1,
+            0,
+            3.2,
+            4.9,
+            2.5,
+            0,
+            2.6,
+            2.3,
+            2.8
+          ]
+        },
+        {
+          "label": "되거리장사",
+          "values": [
+            11.6,
+            6,
+            16.1,
+            13,
+            22,
+            11.4,
+            7.7,
+            24.1,
+            10.1
+          ]
+        },
+        {
+          "label": "외화벌이 계통",
+          "values": [
+            8.4,
+            12.1,
+            6.5,
+            16.3,
+            8.5,
+            10.5,
+            9,
+            14.9,
+            10.1
+          ]
+        },
+        {
+          "label": "돈장사",
+          "values": [
+            6.3,
+            5.2,
+            3.2,
+            8.1,
+            3.4,
+            6.1,
+            3.9,
+            4.6,
+            2.8
+          ]
+        },
+        {
+          "label": "삯벌이",
+          "values": [
+            3.2,
+            10.3,
+            8,
+            2.4,
+            6.8,
+            7.9,
+            19.2,
+            5.8,
+            5.5
+          ]
+        },
+        {
+          "label": "해외 파견노력 근무",
+          "values": [
+            0,
+            1.7,
+            1.6,
+            0,
+            0.8,
+            3.5,
+            3.9,
+            1.2,
+            0
+          ]
+        },
+        {
+          "label": "기타",
+          "values": [
+            24.2,
+            16.4,
+            20.2,
+            26,
+            31.4,
+            37.7,
+            29.5,
+            17.2,
+            20.2
+          ]
+        },
+        {
+          "label": "해당없음(2020년 신설)",
+          "values": [
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            null,
+            22.9
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-09-q15.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-09-q15.png",
+        "bytes": 11413,
+        "sheet": "Sheet1"
+      }
+    },
+    {
+      "key": "q17",
+      "titleKey": "Q17",
+      "topic": "원자재 수입국가",
+      "question": "원자재 수입국가: 장사 물건이나 사업용 원료, 자재는 주로 어느 나라 것이었습니까?",
+      "group": {
+        "menu": 3,
+        "label": "북한 이탈 주민 대상 북한사회변동조사",
+        "respondents": "북한이탈주민(북한 사회 실태)",
+        "dir": "3-society-north"
+      },
+      "unit": "%",
+      "years": [
+        2012,
+        2013,
+        2014,
+        2015,
+        2016,
+        2017,
+        2018,
+        2019,
+        2020
+      ],
+      "rows": [
+        {
+          "label": "북한",
+          "values": [
+            23.1,
+            34.7,
+            30.4,
+            32.8,
+            29.1,
+            30.3,
+            45.2,
+            32.1,
+            21.1
+          ]
+        },
+        {
+          "label": "중국",
+          "values": [
+            71.8,
+            62.7,
+            65.2,
+            60.3,
+            64.5,
+            66.1,
+            54.8,
+            63.1,
+            78.9
+          ]
+        },
+        {
+          "label": "남한",
+          "values": [
+            0,
+            1.7,
+            2.7,
+            5.2,
+            3.6,
+            2.8,
+            0,
+            4.8,
+            0
+          ]
+        },
+        {
+          "label": "러시아",
+          "values": [
+            0,
+            0,
+            0,
+            0,
+            1.8,
+            0,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "일본",
+          "values": [
+            0,
+            0.8,
+            0.9,
+            0.9,
+            0.9,
+            0.9,
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "기타",
+          "values": [
+            0,
+            0,
+            0.9,
+            0.9,
+            0,
+            0,
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "source": {
+        "xlsx": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/3-society-north/3-10-q17.xlsx",
+        "png": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-graph/3-society-north/3-10-q17.png",
+        "bytes": 11037,
+        "sheet": "Sheet1"
+      }
+    }
+  ],
+  "microdata": {
+    "available": true,
+    "year": 2025,
+    "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
+    "landingUrl": "https://ipus.snu.ac.kr/blog/archives/research/11790",
+    "zipBytes": 791949,
+    "files": [
+      {
+        "name": "2-1. 2025 통일의식조사 로데이터(STATA).dta",
+        "bytes": 321115
+      },
+      {
+        "name": "2-1. 2025 통일의식조사_로데이터.xlsx",
+        "bytes": 736212
+      },
+      {
+        "name": "2-2. 2025 통일의식조사_로데이터(SPSS).SAV",
+        "bytes": 261530
+      }
+    ],
+    "respondents": 1200,
+    "unit": "개인 단위 응답(1행 = 1응답자)",
+    "xlsx": {
+      "entry": "2-1. 2025 통일의식조사_로데이터.xlsx",
+      "sheet": "2-1. 2025년 통일의식조사_로데이터(EXCEL)",
+      "sheetRows": 1202,
+      "sheetCols": 169,
+      "headerRows": 2,
+      "headerNote": "1행 = 한글 문항라벨, 2행 = 변수명(uni01_a, wt …), 3행부터 응답",
+      "columnsKor": [
+        "응답 ID",
+        "지역",
+        "지역 크기",
+        "성별",
+        "SQ1",
+        "문1",
+        "문2",
+        "문3",
+        "문4",
+        "문5_1",
+        "문5_2",
+        "문5_3",
+        "문5_4",
+        "문5_5",
+        "문5_6",
+        "문5_7",
+        "문5_8",
+        "문5_9",
+        "문5_10",
+        "문5_11"
+      ],
+      "columnsVar": [
+        "ID",
+        "d04",
+        "d06",
+        "d01",
+        "d02",
+        "uni14",
+        "uni01_a",
+        "uni02_01",
+        "uni03",
+        "uni05_12",
+        "uni05_03",
+        "uni05_04",
+        "uni05_08",
+        "uni05_02",
+        "uni05_06",
+        "uni05_07",
+        "uni05_09",
+        "uni05_05",
+        "uni05_10",
+        "uni05_11"
+      ]
+    },
+    "crosscheck": {
+      "variable": "uni01_a",
+      "weight": "wt",
+      "byCode": {
+        "1": 10,
+        "2": 31.1,
+        "3": 28.5,
+        "4": 24.3,
+        "5": 6.1
+      },
+      "need": 41.1,
+      "neutral": 28.5,
+      "notNeed": 30.4,
+      "rawCount": {
+        "1": 125,
+        "2": 367,
+        "3": 345,
+        "4": 287,
+        "5": 76
+      },
+      "note": "로데이터를 표준화 가중치(wt)로 재집계한 값. 같은 해 기초보고서 표2와 대조해 파서 정확도를 검증한다.",
+      "matchesReport": true,
+      "reportValues": {
+        "need": 41.1,
+        "neutral": 28.5,
+        "notNeed": 30.4
+      }
+    },
+    "note": "전 연도 ZIP 을 받지 않는다(용량). 최신 2025년분 1개만 실측한다."
+  },
+  "headline": {
+    "needUnification": {
+      "first": {
+        "year": 2007,
+        "pct": 64.1,
+        "source": "infographic"
+      },
+      "last": {
+        "year": 2025,
+        "pct": 41.1,
+        "source": "basicReport"
+      },
+      "deltaPp": -23,
+      "label": "필요하다",
+      "unit": "%",
+      "basis": "series[].extended (인포그래픽 + 기초보고서 연결)",
+      "infographicOnly": {
+        "first": {
+          "year": 2007,
+          "pct": 64.1
+        },
+        "last": {
+          "year": 2022,
+          "pct": 46
+        },
+        "deltaPp": -18.1,
+        "basis": "단일 출처(인포그래픽 XLSX)만으로 계산한 대조값"
+      },
+      "basicReportOnly": {
+        "first": {
+          "year": 2015,
+          "pct": 51
+        },
+        "last": {
+          "year": 2025,
+          "pct": 41.1
+        },
+        "deltaPp": -9.9,
+        "basis": "단일 출처(기초보고서 PDF)만으로 계산한 대조값"
+      }
+    }
+  },
+  "reports": [
+    {
+      "year": 2015,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2015-통일의식조사_기초보고서.pdf",
+      "fileBytes": 3451463,
+      "pdfPages": 155,
+      "tablePage": 17,
+      "asOf": "2015-07-24",
+      "sampleSize": 1200,
+      "need": 51,
+      "neutral": 24.2,
+      "notNeed": 24.8,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2015-07-01",
+        "to": "2015-07-24",
+        "days": 24,
+        "printedDays": 24
+      }
+    },
+    {
+      "year": 2016,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2016-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 3835830,
+      "pdfPages": 167,
+      "tablePage": 22,
+      "asOf": "2016-07-22",
+      "sampleSize": 1200,
+      "need": 53.3,
+      "neutral": 22,
+      "notNeed": 24.6,
+      "sum": 99.9,
+      "fieldPeriod": {
+        "from": "2016-07-01",
+        "to": "2016-07-22",
+        "days": 22,
+        "printedDays": 22
+      }
+    },
+    {
+      "year": 2017,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2017-통일의식조사_기초보고서.pdf",
+      "fileBytes": 3909247,
+      "pdfPages": 194,
+      "tablePage": 22,
+      "asOf": "2017-07-28",
+      "sampleSize": 1200,
+      "need": 53.8,
+      "neutral": 24.1,
+      "notNeed": 22.1,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2017-07-03",
+        "to": "2017-07-28",
+        "days": 26,
+        "printedDays": 26
+      }
+    },
+    {
+      "year": 2018,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2018-통일의식조사_기초보고서.pdf",
+      "fileBytes": 2081914,
+      "pdfPages": 198,
+      "tablePage": 23,
+      "asOf": "2018-08-03",
+      "sampleSize": 1200,
+      "need": 59.7,
+      "neutral": 24.1,
+      "notNeed": 16.1,
+      "sum": 99.9,
+      "fieldPeriod": {
+        "from": "2018-07-12",
+        "to": "2018-08-03",
+        "days": 23,
+        "printedDays": 23
+      }
+    },
+    {
+      "year": 2019,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2019-통일의식조사_기초보고서.pdf",
+      "fileBytes": 22493257,
+      "pdfPages": 225,
+      "tablePage": 25,
+      "asOf": "2019-07-26",
+      "sampleSize": 1200,
+      "need": 53,
+      "neutral": 26.5,
+      "notNeed": 20.5,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2019-07-01",
+        "to": "2019-07-26",
+        "days": 26,
+        "printedDays": 26
+      }
+    },
+    {
+      "year": 2020,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2020-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 4282992,
+      "pdfPages": 214,
+      "tablePage": 25,
+      "asOf": "2020-08-17",
+      "sampleSize": 1200,
+      "need": 52.3,
+      "neutral": 22.6,
+      "notNeed": 25,
+      "sum": 99.9,
+      "fieldPeriod": {
+        "from": "2020-07-22",
+        "to": "2020-08-17",
+        "days": 27,
+        "printedDays": 27
+      }
+    },
+    {
+      "year": 2021,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2021-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 3278637,
+      "pdfPages": 186,
+      "tablePage": 25,
+      "asOf": "2021-08-04",
+      "sampleSize": 1200,
+      "need": 44.3,
+      "neutral": 26.5,
+      "notNeed": 29.2,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2021-07-10",
+        "to": "2021-08-04",
+        "days": 26,
+        "printedDays": 26
+      }
+    },
+    {
+      "year": 2022,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2022-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 3639859,
+      "pdfPages": 188,
+      "tablePage": 25,
+      "asOf": "2022-07-25",
+      "sampleSize": 1200,
+      "need": 46,
+      "neutral": 27.3,
+      "notNeed": 26.7,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2022-07-01",
+        "to": "2022-07-25",
+        "days": 25,
+        "printedDays": 25
+      }
+    },
+    {
+      "year": 2023,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2024/01/4.-2023-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 3652820,
+      "pdfPages": 186,
+      "tablePage": 25,
+      "asOf": "2023-07-27",
+      "sampleSize": 1200,
+      "need": 43.8,
+      "neutral": 26.2,
+      "notNeed": 30,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2023-07-04",
+        "to": "2023-07-27",
+        "days": 24,
+        "printedDays": 24
+      }
+    },
+    {
+      "year": 2024,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2025/02/4.-2024-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 4589853,
+      "pdfPages": 190,
+      "tablePage": 25,
+      "asOf": "2024-07-23",
+      "sampleSize": 1200,
+      "need": 36.9,
+      "neutral": 28.1,
+      "notNeed": 35,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2024-07-01",
+        "to": "2024-07-23",
+        "days": 23,
+        "printedDays": 23
+      }
+    },
+    {
+      "year": 2025,
+      "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/4-2025-통일의식조사_기초보고서PDF.pdf",
+      "fileBytes": 4300013,
+      "pdfPages": 187,
+      "tablePage": 25,
+      "asOf": "2025-09-01",
+      "sampleSize": 1200,
+      "need": 41.1,
+      "neutral": 28.5,
+      "notNeed": 30.4,
+      "sum": 100,
+      "fieldPeriod": {
+        "from": "2025-08-08",
+        "to": "2025-09-01",
+        "days": 25,
+        "printedDays": 25
+      }
+    }
+  ],
+  "archive": {
+    "url": "https://ipus.snu.ac.kr/data-archive",
+    "years": [
+      {
+        "year": 2015,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2015-통일의식조사_로데이터.zip",
+            "name": "1.-2015-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2015-통일의식조사_설문지.pdf",
+            "name": "2.-2015-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2015-통일의식조사_코드북.xlsx",
+            "name": "3.-2015-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2015-통일의식조사_기초보고서.pdf",
+            "name": "4.-2015-통일의식조사_기초보고서.pdf"
+          }
+        }
+      },
+      {
+        "year": 2016,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2016-통일의식조사_로데이터.zip",
+            "name": "1.-2016-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2016-통일의식조사_질문지.pdf",
+            "name": "2.-2016-통일의식조사_질문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2016통일의식조사_코드북.xlsx",
+            "name": "3.-2016통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2016-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2016-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2017,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2017-통일의식조사_로데이터.zip",
+            "name": "1.-2017-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2017-통일의식조사_설문지.pdf",
+            "name": "2.-2017-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2017-통일의식조사_코드북.xlsx",
+            "name": "3.-2017-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2017-통일의식조사_기초보고서.pdf",
+            "name": "4.-2017-통일의식조사_기초보고서.pdf"
+          }
+        }
+      },
+      {
+        "year": 2018,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2018-통일의식조사_로데이터.zip",
+            "name": "1.-2018-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2018-통일의식조사_설문지.pdf",
+            "name": "2.-2018-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2018-통일의식조사_코드북.xlsx",
+            "name": "3.-2018-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2018-통일의식조사_기초보고서.pdf",
+            "name": "4.-2018-통일의식조사_기초보고서.pdf"
+          }
+        }
+      },
+      {
+        "year": 2019,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2019-통일의식조사_로데이터.zip",
+            "name": "1.-2019-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2019-통일의식조사_설문지.pdf",
+            "name": "2.-2019-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2019-통일의식조사_코드북.xlsx",
+            "name": "3.-2019-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2019-통일의식조사_기초보고서.pdf",
+            "name": "4.-2019-통일의식조사_기초보고서.pdf"
+          }
+        }
+      },
+      {
+        "year": 2020,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2020-통일의식조사_로데이터.zip",
+            "name": "1.-2020-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2020-통일의식조사_설문지.pdf",
+            "name": "2.-2020-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2020-통일의식조사_코드북.xlsx",
+            "name": "3.-2020-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2020-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2020-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2021,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2021-통일의식조사_로데이터.zip",
+            "name": "1.-2021-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2021-통일의식조사_설문지.pdf",
+            "name": "2.-2021-통일의식조사_설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2021-통일의식조사_코드북.xlsx",
+            "name": "3.-2021-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2021-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2021-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2022,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/1.-2022-통일의식조사_로데이터-1.zip",
+            "name": "1.-2022-통일의식조사_로데이터-1.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/2.-2022-통일의식조사_조사표설문지.pdf",
+            "name": "2.-2022-통일의식조사_조사표설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/3.-2022-통일의식조사_코드북.xlsx",
+            "name": "3.-2022-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2023/05/4.-2022-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2022-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2023,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2024/01/1.-2023-통일의식조사_로데이터.zip",
+            "name": "1.-2023-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2024/01/2.-2023-통일의식조사_조사표설문지.pdf",
+            "name": "2.-2023-통일의식조사_조사표설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2024/01/3.-2023-통일의식조사_코드북.xlsx",
+            "name": "3.-2023-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2024/01/4.-2023-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2023-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2024,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2025/02/1.-2024-통일의식조사_로데이터.zip",
+            "name": "1.-2024-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2025/02/2.-2024-통일의식조사_조사표설문지.pdf",
+            "name": "2.-2024-통일의식조사_조사표설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2025/02/3.-2024-통일의식조사_코드북.xlsx",
+            "name": "3.-2024-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2025/02/4.-2024-통일의식조사_기초보고서PDF.pdf",
+            "name": "4.-2024-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      },
+      {
+        "year": 2025,
+        "files": {
+          "rawdata": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
+            "name": "1-2025-통일의식조사_로데이터.zip"
+          },
+          "questionnaire": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/2-2025-통일의식조사_조사표설문지.pdf",
+            "name": "2-2025-통일의식조사_조사표설문지.pdf"
+          },
+          "codebook": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/3-2025-통일의식조사_코드북.xlsx",
+            "name": "3-2025-통일의식조사_코드북.xlsx"
+          },
+          "report": {
+            "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/4-2025-통일의식조사_기초보고서PDF.pdf",
+            "name": "4-2025-통일의식조사_기초보고서PDF.pdf"
+          }
+        }
+      }
+    ],
+    "landings": [
+      "https://ipus.snu.ac.kr/blog/archives/research/11790",
+      "https://ipus.snu.ac.kr/blog/archives/research/10439",
+      "https://ipus.snu.ac.kr/blog/archives/research/8700",
+      "https://ipus.snu.ac.kr/blog/archives/research/7592",
+      "https://ipus.snu.ac.kr/blog/archives/research/7657",
+      "https://ipus.snu.ac.kr/blog/archives/research/7666",
+      "https://ipus.snu.ac.kr/blog/archives/research/7672",
+      "https://ipus.snu.ac.kr/blog/archives/research/7678",
+      "https://ipus.snu.ac.kr/blog/archives/research/7684",
+      "https://ipus.snu.ac.kr/blog/archives/research/7690",
+      "https://ipus.snu.ac.kr/blog/archives/research/7709"
+    ]
+  },
+  "meta": {
+    "found": 30,
+    "yearRange": {
+      "infographic": [
+        2007,
+        2022
+      ],
+      "extendedUni01": [
+        2007,
+        2025
+      ],
+      "archiveDownloadable": [
+        2015,
+        2025
+      ]
+    },
+    "missing": [],
+    "caveats": [
+      "인포그래픽 시계열은 2007~2022 에서 끊긴다(실측 — 2023 이후 XLSX 미배포). 2023 이후 값은 기초보고서 PDF 에서 별도 추출했다.",
+      "같은 연도라도 인포그래픽과 기초보고서 값이 최대 1.4%p 다르다(중복 8개 연도 실측). 두 계열을 한 선으로 이어 붙일 때는 series[].extended.sourceByYear 로 출처 전환 지점을 표시할 것.",
+      "데이터 아카이브에서 로그인 없이 내려받을 수 있는 연도는 2015~2025 11개 연도다(실측). 페이지 하단 「데이터 이용문헌」에는 2007년부터의 문헌이 나열되지만 그건 참고문헌 목록이고 다운로드 링크가 아니다.",
+      "menu 2·3 은 「통일의식조사」와 별개 조사(북한이탈주민조사·북한사회변동조사)다. 같은 인포그래픽에 실려 있을 뿐이므로 남한 주민 계열과 직접 비교하지 말 것.",
+      "남북통합지수(2-index-data) 는 연도×계열 표가 아니라 배점표·방법론 시트라서 series[] 로 옮기지 않았다. meta.indexFiles 에 URL 만 기록한다."
+    ],
+    "sweep": {
+      "pattern": "{menu}-{gNum:01..12}-Uni{01..20}.xlsx (menu 1·2)",
+      "tried": 480,
+      "found": [
+        "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-01-Uni01.xlsx",
+        "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/1-opinion-south/1-02-Uni06.xlsx",
+        "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-01-Uni01.xlsx",
+        "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/1-survey-data/2-opinion-north/2-02-Uni03.xlsx"
+      ],
+      "extraBeyondManifest": [],
+      "note": "파일명에 차트슬롯 번호(gNum)가 들어가므로 1-01-Uni01 식 조합만 존재한다. Uni02·Uni04… 처럼 슬롯이 없는 문항은 인포그래픽에 배포되지 않는다."
+    },
+    "indexFiles": [
+      {
+        "menu": 1,
+        "name": "index",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/1-index.xlsx"
+      },
+      {
+        "menu": 2,
+        "name": "economy",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/2-economy.xlsx"
+      },
+      {
+        "menu": 3,
+        "name": "politics",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/3-politics.xlsx"
+      },
+      {
+        "menu": 4,
+        "name": "social_culture",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/4-social_culture.xlsx"
+      },
+      {
+        "menu": 5,
+        "name": "integration",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/5-integration.xlsx"
+      },
+      {
+        "menu": 6,
+        "name": "total",
+        "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/2-index-data/6-total.xlsx"
+      }
+    ],
+    "generator": "scripts/nk-opinion-harvest.mjs (+ scripts/nk-opinion-parse.py)"
+  }
+}

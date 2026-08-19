@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
-// @ts-expect-error — 순수 JS 어댑터 (프록시 경유, 키를 만지지 않는다)
+/* 순수 JS 어댑터 (프록시 경유, 키를 만지지 않는다) — 타입은 nk-llm-proxy.d.mts */
 import { llmAdapter, probe as probeLLM } from '../engine/nk-llm-proxy.mjs'
 import {
   answerAsync, asOfNotice, buildIndex,

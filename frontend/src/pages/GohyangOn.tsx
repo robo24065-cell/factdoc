@@ -147,11 +147,134 @@ type DescData = {
   caveats: string[]
 }
 
-type Pack = { map: NkMapData; region: NkRegionData; isan: IsanData; proj: ProjData; desc: DescData }
+/* 박물관 사료 — 통일부 남북이산가족 디지털박물관.
+    이미지는 **우리가 저장하지 않는다.** 기증자 저작물이고 개방형 라이선스 표기를 확인하지 못했다.
+     imageUrl 은 박물관 원본을 그대로 가리키는 문자열이고, 화면은 그 URL 을 <img> 로 참조만 한다. */
+type MuseumRec = {
+  iId: number
+  title: string
+  producedOn: string | null
+  form: string | null
+  donor: string | null
+  imageUrl: string | null
+  recordUrl: string | null
+  regions: string[]
+  regionCities: string[]
+  regionsHistoric: string[]
+  source: string
+  /** 강원도로 잡혔지만 근거 지명이 금강산·장전항·갈마뿐 = 고향이 아니라 상봉 장소 */
+  venueOnly: boolean
+}
+type MuseumData = {
+  builtAt: string
+  sources: Array<{ name: string; url?: string; asOf?: string; note?: string }>
+  license: string
+  endpoints: { image: string | null; record: string | null }
+  archive: { totCnt: number | null; note?: string | null }
+  records: MuseumRec[]
+  byRegion: Record<string, number[]>
+  byRegionHistoric: Record<string, number[]>
+  meta: {
+    historicToOld: Record<string, string[]>
+    historicNote: string
+    kangwonVenueOnly: { count: number; venueCities: string[]; note: string } | null
+    caveats: string[]
+    slim: { totalRecords: number; keptRecords: number; droppedRecords: number; keptRule: string }
+  }
+}
+
+/* 후손이 오늘 실제로 신청할 수 있는 창구.
+   actionable = ① 후손이 자기 이름으로 신청 주체가 될 수 있고 ② 창구가 실측으로 살아 있음.
+   **성사 가능성은 포함하지 않는다** — 그건 note 와 gaps 가 따로 말한다. */
+type PathItem = {
+  id: string
+  title: string
+  org: string
+  what: string
+  eligibility: string
+  eligibilityQuote?: string
+  eligibilityQuote2?: string
+  counterQuote?: string
+  actionable: boolean
+  url: string
+  applyUrl?: string
+  contact: string
+  legalBasis?: string | null
+  how?: string[]
+  note?: string
+}
+type PathGap = { id: string; title: string; fact: string; consequence: string; evidence?: string }
+type PathData = {
+  builtAt: string
+  sources: Array<{ name: string; url?: string; asOf?: string }>
+  paths: PathItem[]
+  summary: { actionableCount: number; totalPaths: number; gapCount: number; descendantEligibleCount: number; unknownCount: number; gen1OnlyCount: number }
+  gaps: PathGap[]
+  meta: {
+    actionableCriterion: string
+    eligibilityRule: string
+    legalRoot: string
+    checkedUrls: number
+    liveUrls: number
+    caveats: string[]
+    measured?: { archiveNewestProducedOn?: string; counselWindows?: number; archivePublicTotal?: number }
+  }
+}
+
+/* 통일의식조사 — ★ 이 계열만 통일부 자료가 아니다(서울대학교 통일평화연구원).
+   화면에서 반드시 출처를 갈라 표시하고, 소멸 곡선과 나란히 놓되 인과를 주장하지 않는다. */
+type OpinionRow = { label: string; values: number[] }
+type OpinionSeries = {
+  key: string
+  titleKey: string
+  topic: string
+  question: string
+  group: { menu: number; label: string; respondents: string; dir: string }
+  unit: string
+  years: number[]
+  rows: OpinionRow[]
+  extended?: { years: number[]; sourceByYear: Record<string, string>; rows: OpinionRow[]; note: string }
+  reportSeries?: { years: number[]; asOfByYear: Record<string, string>; sampleSizeByYear: Record<string, number>; rows: OpinionRow[]; note: string }
+  overlapCheck?: { years: number[]; maxAbsDiffPp: number }
+  source: { xlsx: string; png: string }
+}
+type OpinionData = {
+  builtAt: string
+  sources: Array<{ name: string; url?: string; org?: string; asOf?: string; kind?: string }>
+  license: string
+  licenseFullText: string
+  licenseUrl: string
+  series: OpinionSeries[]
+  headline: {
+    needUnification: {
+      first: { year: number; pct: number; source: string }
+      last: { year: number; pct: number; source: string }
+      deltaPp: number
+      label: string
+      /* 두 출처를 이어 붙인 값이라, 단일 출처만으로 계산한 대조값을 함께 갖고 있다 */
+      infographicOnly?: { first: { year: number; pct: number }; last: { year: number; pct: number }; deltaPp: number }
+      basicReportOnly?: { first: { year: number; pct: number }; last: { year: number; pct: number }; deltaPp: number }
+    }
+  }
+  reports: Array<{ year: number; url: string; asOf?: string; sampleSize: number; fieldPeriod?: { from: string; to: string; days: number } }>
+  meta: { caveats: string[] }
+}
+
+type Pack = {
+  map: NkMapData; region: NkRegionData; isan: IsanData; proj: ProjData; desc: DescData
+  museum: MuseumData; paths: PathData; opinion: OpinionData
+}
 
 /* 지도 모드 — 현행 행정구역 / 광복 당시 구행정구역(= 이산가족 '고향' 축) */
 type Mode = 'modern' | 'old'
 type Sel = { mode: 'modern'; key: string } | { mode: 'old'; id: string }
+
+/* 보기 방식 — 같은 데이터를 두 밀도로 읽는다 (2026-08-19 사용자 지시).
+   all  = 한눈에: 지도+패널+소멸시계+후손층을 한 화면에 (기존 대시보드)
+   step = 한걸음씩: 노인·어린이용. 한 번에 카드 하나, 큰 글씨, 쉬운 문장.
+   선택은 localStorage 에 저장해 다시 와도 유지한다. */
+type View = 'all' | 'step'
+const VIEW_KEY = 'gohyang_view'
 
 /* ══════════════════════ 상수 (SasilOn 과 같은 팔레트) ══════════════════════ */
 
@@ -159,6 +282,12 @@ type Sel = { mode: 'modern'; key: string } | { mode: 'old'; id: string }
    아래는 이 화면이 쓰는 이름으로 옮겨 붙인 얇은 층이다 —
    기존 JSX 수백 곳을 건드리지 않고 껍데기만 갈아입히려고 이렇게 둔다. */
 import { SURFACE, TYPE, TEXT, ASOF, PROSE as T_PROSE, FOCUS as T_FOCUS, BTN, josa } from '../theme/gohyang'
+
+/* 고향 도우미(페르소나 AI) — LLM 4원칙(CLAUDE.md §5)의 화면 쪽 절반.
+   사실 묶음은 buildGuideFacts 가 데이터 팩에서 만들고, LLM 은 프록시(/api/llm, kind='guide')를
+   거쳐 문장으로 엮기만 한다. 검증 실패·네트워크 실패는 전부 fallbackGuide(규칙 문장)로 되돌린다. */
+import { buildGuideFacts, fallbackGuide, cardHint } from '../engine/nk-guide.mjs'
+import { probe as probeLLM, guideWithLLM } from '../engine/nk-llm-proxy.mjs'
 
 const FOCUS = T_FOCUS
 const CARD = SURFACE.card
@@ -278,6 +407,36 @@ function clean(s?: string | null): string {
     .trim()
 }
 
+/* 수집 원자료에는 편집자 표시 글리프(★ ⚠)가 섞여 있다.
+   ⚠(U+26A0)는 플랫폼에 따라 컬러 이모지로 렌더되므로 화면에 내보내기 전에 뗀다
+   (theme/gohyang.ts 제약 ① — 이 화면의 렌더링 이모지는 0개여야 한다). */
+function plain(s?: string | null): string {
+  return String(s ?? '')
+    .replace(/[★☆⚠]️?/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .trim()
+}
+
+/* 박물관 생산일자 — 원문 표기를 그대로 보존한 값이라 형태가 여러 가지다(실측).
+   '1987.03.24' · '1997.00.00'(월일 미상) · '0000.00.00'(전체 미상) · '2003.09' · '2015' · '-' · null
+   없는 것을 있는 것처럼 채우지 않는다. 모르는 자리는 잘라내고 모르면 '미상'이라고 쓴다. */
+function museumDate(v?: string | null): string {
+  const s = String(v ?? '').trim()
+  if (!s || s === '-' || /^0{4}/.test(s)) return '생산일자 미상'
+  const [y, mo, d] = s.split('.')
+  if (!/^\d{4}$/.test(y)) return '생산일자 미상'
+  const M = mo && /^\d{1,2}$/.test(mo) && Number(mo) > 0 ? Number(mo) : null
+  const D = d && /^\d{1,2}$/.test(d) && Number(d) > 0 ? Number(d) : null
+  if (M == null) return `${y}년`
+  if (D == null) return `${y}년 ${M}월`
+  return `${y}년 ${M}월 ${D}일`
+}
+
+/* '사진류 > 인화사진' → '사진류 · 인화사진' */
+function formKo(v?: string | null): string {
+  return String(v ?? '').split('>').map(s => s.trim()).filter(Boolean).join(' · ')
+}
+
 /* 기준일 문구는 엔진 asOfNotice 하나만 쓴다 — 재구현하면 엔진이 문구를 고칠 때 화면만 갈라진다.
    (asOfNotice 가 읽는 필드는 coverageEnd / freshness / frozenReason 셋뿐이다) */
 function notice(coverageEnd: string, freshness: Level, frozenReason?: string | null): Notice {
@@ -356,7 +515,7 @@ function Block({ tag, tone, title, sub, children }: {
   const T = TONE[tone]
   return (
     <section className={`overflow-hidden ${CARD}`}>
-      <div className={`flex items-start gap-2.5 border-b p-4 ${SURFACE.hair} ${T.band}`}>
+      <div className={`flex items-start gap-2.5 border-b p-5 ${SURFACE.hair} ${T.band}`}>
         <ClauseTag>{tag}</ClauseTag>
         <div className={`h-9 w-[3px] shrink-0 ${T.accent}`} aria-hidden="true" />
         <div className="min-w-0 flex-1">
@@ -364,7 +523,7 @@ function Block({ tag, tone, title, sub, children }: {
           {sub && <p className={`mt-1 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>{sub}</p>}
         </div>
       </div>
-      <div className="p-4">{children}</div>
+      <div className="p-5">{children}</div>
     </section>
   )
 }
@@ -839,11 +998,289 @@ function Spark({ rows, label }: { rows: Array<{ month: string; v: number }>; lab
   )
 }
 
+/* ══════════════════════ 박물관 사료 ══════════════════════
+
+   통일부 남북이산가족 디지털박물관의 공개 사료 4,342건 중, 본문에 북한 지명이
+   확인된 1,445건만 이 화면이 지역에 걸 수 있다. 나머지 2,897건은 고향이 없어서가
+   아니라 **본문에 지명이 적혀 있지 않아서** 걸 자리가 없는 것이다 — 화면이 그렇게 말한다.
+
+   ★ 이미지는 저장하지 않는다.
+     기증자 저작물이고 개방형 라이선스(공공누리) 표기를 수집 단계에서 확인하지 못했다.
+     그래서 박물관 원본 URL 을 <img> 로 그대로 참조하고, 자세히 보기는 박물관 페이지로 보낸다.
+     정부 서버가 언제든 막을 수 있으므로 실패하면 이미지 자리를 통째로 감춘다
+     (깨진 이미지 아이콘은 "자료가 없다"는 거짓 신호가 된다). */
+
+type MuseumBundle = {
+  hometown: MuseumRec[]
+  venue: MuseumRec[]
+  historic: MuseumRec[]
+  historicKeys: string[]
+  total: number
+}
+
+/** 사료 목록 안에서의 정렬 — 상세를 받은 건(전 필드 보유)을 앞에 둔다. */
+function museumOrder(a: MuseumRec, b: MuseumRec): number {
+  const rank = (r: MuseumRec) => (r.source === 'collectionDetail' ? 0 : 1)
+  return rank(a) - rank(b) || a.iId - b.iId
+}
+
+function museumFor(sel: Sel, pack: Pack): MuseumBundle {
+  const m = pack.museum
+  const byId = new Map(m.records.map(r => [r.iId, r]))
+  const pick = (ids?: number[]) => (ids ?? []).map(i => byId.get(i)).filter((r): r is MuseumRec => Boolean(r))
+
+  const members = membersOf(sel, pack.region)
+  const oldId = sel.mode === 'old' ? sel.id : pack.region.regions[sel.key]?.isanOrigin?.key ?? null
+
+  const direct = new Map<number, MuseumRec>()
+  members.forEach(n => pick(m.byRegion[n]).forEach(r => direct.set(r.iId, r)))
+
+  /* 구(舊)도명 — 광복 당시 표기라 현행 13축으로 확정할 수 없어 따로 묶는다.
+     historicToOld 는 데이터 팩이 검증한 대응표다(화면에서 만들어 내지 않는다). */
+  const historicKeys = oldId
+    ? Object.keys(m.meta.historicToOld).filter(k => (m.meta.historicToOld[k] ?? []).includes(oldId))
+    : []
+  const historic = new Map<number, MuseumRec>()
+  historicKeys.forEach(k => pick(m.byRegionHistoric[k]).forEach(r => { if (!direct.has(r.iId)) historic.set(r.iId, r) }))
+
+  const all = [...direct.values()]
+  return {
+    hometown: all.filter(r => !r.venueOnly).sort(museumOrder),
+    venue: all.filter(r => r.venueOnly).sort(museumOrder),
+    historic: [...historic.values()].sort(museumOrder),
+    historicKeys,
+    total: all.length + historic.size,
+  }
+}
+
+/** 사료 한 장. 이미지가 죽으면 그림 자리를 감추고 제목만 남긴다. */
+function MuseumCard({ r, mark }: { r: MuseumRec; mark: string | null }) {
+  const [broken, setBroken] = useState(false)
+  const showImg = Boolean(r.imageUrl) && !broken
+  return (
+    <li className={`overflow-hidden ${SURFACE.card}`}>
+      {showImg && (
+        <img
+          src={r.imageUrl!}
+          alt=""
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+          className={`block h-32 w-full border-b object-cover ${SURFACE.hair}`}
+        />
+      )}
+      <div className="p-2.5">
+        {mark && (
+          <span className={`mb-1 inline-block rounded px-1.5 py-0.5 ${TYPE.cap} font-semibold ${ASOF.stale.chip}`}>{mark}</span>
+        )}
+        <p className={`${TYPE.sub} font-medium ${TEXT.ink} ${PROSE}`}>{clean(r.title)}</p>
+        <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          {museumDate(r.producedOn)}
+          {r.form ? ` · ${formKo(r.form)}` : ''}
+          {r.donor ? ` · 기증 ${clean(r.donor)}` : ''}
+        </p>
+        <p className="mt-1.5">
+          <OutLink href={r.recordUrl}>박물관에서 보기</OutLink>
+        </p>
+      </div>
+    </li>
+  )
+}
+
+function MuseumBlock({ pack, sel }: { pack: Pack; sel: Sel }) {
+  const b = useMemo(() => museumFor(sel, pack), [sel, pack])
+  const [open, setOpen] = useState(false)
+  useEffect(() => { setOpen(false) }, [sel])
+
+  const m = pack.museum
+  const src = m.sources[0]
+  /* 이 사료 더미의 as-of 는 '언제 받아왔나'가 아니라 '가장 최근 것이 언제 만들어졌나'다.
+     실측: 기록관 공개 사료의 최신 생산일 2018-07-27 — 그 뒤로 공개된 것이 있는지는 모른다(stale). */
+  const newest = pack.paths.meta.measured?.archiveNewestProducedOn ?? null
+  const n = newest ? notice(newest, 'stale') : null
+
+  const rows = [
+    ...b.hometown.map(r => ({ r, mark: null as string | null })),
+    ...b.venue.map(r => ({ r, mark: '상봉 장소 표기' })),
+    ...b.historic.map(r => ({ r, mark: `${b.historicKeys.join('·')} 표기` })),
+  ]
+  const shown = open ? rows : rows.slice(0, 6)
+
+  return (
+    <Block
+      tag="사료"
+      tone="blue"
+      title="이 고향에서 온 기록물"
+      sub={`통일부 남북이산가족 디지털박물관 공개 사료 ${nf(m.archive.totCnt)}건 중 이 구역에 걸린 것`}
+    >
+      {rows.length === 0 ? (
+        <>
+          <p className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>이 고향의 사료는 아직 공개 목록에 없습니다.</p>
+          <p className={`mt-2 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+            사료가 없다는 뜻이 아니라, 공개된 {nf(m.archive.totCnt)}건의 제목·내용에서 이 지역 이름이 확인되지 않았다는 뜻입니다.
+            {' '}{nf(m.meta.slim.totalRecords - m.meta.slim.keptRecords)}건은 본문에 지명이 적혀 있지 않아 어느 고향에도 걸지 못했습니다.
+          </p>
+        </>
+      ) : (
+        <>
+          <p className={`${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
+            <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(rows.length)}건</b>
+            {b.venue.length > 0 && <> · 이 가운데 {nf(b.venue.length)}건은 고향이 아니라 <b className="font-medium">상봉 장소</b>(금강산 면회소)로 잡힌 것입니다</>}
+            {b.historic.length > 0 && <> · {nf(b.historic.length)}건은 광복 당시 구(舊)도명으로만 적힌 것입니다</>}
+          </p>
+
+          <ul className="mt-3 grid grid-cols-2 gap-2.5">
+            {shown.map(({ r, mark }) => <MuseumCard key={r.iId} r={r} mark={mark} />)}
+          </ul>
+
+          {rows.length > 6 && (
+            <button
+              type="button"
+              onClick={() => setOpen(v => !v)}
+              className={`mt-3 w-full ${BTN.ghost}`}
+              aria-expanded={open}
+            >
+              {open ? '접기' : `나머지 ${nf(rows.length - 6)}건 더 보기`}
+            </button>
+          )}
+
+          {b.historic.length > 0 && (
+            <p className={`mt-3 rounded-md border-l-[3px] border-[#dcdfe4] pl-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              {m.meta.historicNote}
+            </p>
+          )}
+          {b.venue.length > 0 && m.meta.kangwonVenueOnly && (
+            <p className={`mt-2 rounded-md border-l-[3px] border-[#dcdfe4] pl-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              {m.meta.kangwonVenueOnly.note}
+            </p>
+          )}
+        </>
+      )}
+
+      {n && (
+        <div className="mt-3">
+          <AsOfLine n={n} />
+        </div>
+      )}
+
+      <div className={`mt-3 space-y-1 border-t pt-2.5 ${SURFACE.hair}`}>
+        <p className={`${TYPE.cap} ${TEXT.faint}`}>
+          출처 통일부 남북이산가족 디지털박물관 · 수집 {m.builtAt} ·{' '}
+          <OutLink href={src?.url}>박물관 원문</OutLink>
+        </p>
+        <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          사진은 <b className="font-medium">박물관 원본을 그대로 불러온 것</b>입니다.
+          {' '}본 화면은 사료 이미지를 내려받아 저장하거나 다시 배포하지 않습니다 — 기증자의 저작물이기 때문입니다.
+          {' '}이미지가 보이지 않으면 박물관이 외부 참조를 막은 것이며, 제목과 원문 링크는 그대로 남습니다.
+        </p>
+      </div>
+    </Block>
+  )
+}
+
+/* ══════════════════════ 고향 안내인 (페르소나 AI) ══════════════════════
+
+   지역을 고른 사람에게 그 지역의 **우리 데이터만 근거로** 말을 거는 도우미.
+
+   LLM 4원칙이 코드에 그대로 박혀 있다 (CLAUDE.md §5 — 타협 대상 아님):
+     ① 규칙이 먼저 — 수치·사건·사료는 전부 buildGuideFacts 가 데이터 팩에서 꺼낸다.
+     ② LLM 은 해석만 — validateGuide(프록시 어댑터 내부)가 사실 묶음에 없는 숫자를
+        하나라도 발견하면 출력 전체를 폐기한다. LLM 이 수치를 만들 문법이 없다.
+     ③ 스키마 밖이면 폐기 — guideWithLLM 은 닫힌 스키마(lines 2~4 + next 1)가 아니면 null.
+     ④ 네트워크가 죽어도 동작 — 화면은 fallbackGuide(규칙 문장)로 먼저 채우고,
+        LLM 이 검증을 통과한 경우에만 그 자리를 바꾼다. 빈 화면이 되는 경로가 없다.
+
+   시각 구분 — AI/규칙이 만든 문장은 **점선 상자** 안에만 산다. 공식 수치(실선 구획)와
+   같은 표면에 두지 않는다. 라벨과 "자동 작성" 고지를 항상 붙인다. */
+
+type GuideMsg = { lines: string[]; next: { target: string; label: string } }
+
+function prefersReduced(): boolean {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
+
+/* smooth 스크롤은 rAF 로 움직여서 백그라운드 탭·저사양 기기에서 멈춘 채 끝나기도 한다(실측).
+   잠시 뒤 도착을 확인하고 못 갔으면 즉시 이동한다 — 눌렀는데 안 움직이는 화면이 제일 나쁘다. */
+function scrollToEl(el: HTMLElement | null) {
+  if (!el) return
+  el.scrollIntoView({ behavior: prefersReduced() ? 'auto' : 'smooth', block: 'start' })
+  window.setTimeout(() => {
+    const r = el.getBoundingClientRect()
+    if (r.top >= window.innerHeight || r.bottom <= 0) el.scrollIntoView({ block: 'start' })
+  }, 700)
+}
+
+/* 보기 방식을 갈아탄 직후에는 목적지 구획이 아직 렌더 전일 수 있다 — 생길 때까지 잠깐 기다린다 */
+function scrollToId(id: string, tries = 12) {
+  const el = document.getElementById(id)
+  if (el) { scrollToEl(el); return }
+  if (tries > 0) window.setTimeout(() => scrollToId(id, tries - 1), 120)
+}
+
+/* next.target → 대시보드 구획 앵커 (한걸음씩 모드는 onGo 로 카드 번호에 따로 잇는다) */
+const GUIDE_ANCHOR: Record<string, string> = {
+  weather: 'g-weather', events: 'g-events', museum: 'g-museum', clock: 'extinction', action: 'actions',
+}
+
+function GuideBox({ pack, sel, onGo }: { pack: Pack; sel: Sel; onGo?: (target: string) => void }) {
+  const facts = useMemo(() => buildGuideFacts(sel, pack), [sel, pack])
+  const [g, setG] = useState<GuideMsg | null>(() => (facts ? (fallbackGuide(facts) as GuideMsg) : null))
+  const [via, setVia] = useState<'rule' | 'llm'>('rule')
+
+  useEffect(() => {
+    let alive = true
+    if (!facts) { setG(null); return }
+    setG(fallbackGuide(facts) as GuideMsg)          // ④ 네트워크와 무관하게 화면부터 채운다
+    setVia('rule')
+    ;(async () => {
+      try {
+        await probeLLM()
+        /* guideWithLLM 은 호출 실패·스키마 위반·수치 생성 전부 null 로 돌려준다 */
+        const ok = (await guideWithLLM(facts)) as GuideMsg | null
+        if (alive && ok) { setG(ok); setVia('llm') }
+      } catch { /* 규칙 문장 유지 — 화면은 이미 차 있다 */ }
+    })()
+    return () => { alive = false }
+  }, [facts])
+
+  if (!g) return null
+  const go = (t: string) => {
+    if (onGo) { onGo(t); return }
+    scrollToEl(document.getElementById(GUIDE_ANCHOR[t] ?? ''))
+  }
+  return (
+    <div
+      className={`rounded-md border border-dashed ${SURFACE.line} ${SURFACE.inset} p-4`}
+      role="note"
+      aria-label="고향 안내인의 자동 작성 안내문"
+    >
+      <div className="flex flex-wrap items-center gap-2">
+        <span className={`rounded px-2 py-0.5 ${TYPE.cap} font-semibold ${TONE.slate.chip}`}>고향 안내인</span>
+        <span className={`${TYPE.cap} ${TEXT.faint}`}>{via === 'llm' ? 'AI 보조 문장 · 수치 검증 통과' : '규칙 기반 문장'}</span>
+      </div>
+      <div className="mt-2.5 space-y-1.5">
+        {g.lines.map((l, i) => (
+          <p key={i} className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>{l}</p>
+        ))}
+      </div>
+      <p className="mt-3">
+        <button type="button" onClick={() => go(g.next.target)} className={BTN.ghost}>
+          {g.next.label} <span aria-hidden="true">→</span>
+        </button>
+      </p>
+      <p className={`mt-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        이 안내문은 아래 자료만 근거로 자동 작성됐습니다. 공식 수치는 실선 구획의 값을 보십시오.
+      </p>
+    </div>
+  )
+}
+
 /* ══════════════════════ 우측 패널 ══════════════════════ */
 
 function StatRow({ label, value, sub }: { label: string; value: string; sub?: string }) {
   return (
-    <div className="flex items-baseline justify-between gap-2 border-b border-slate-100 py-1.5 last:border-0 dark:border-slate-800">
+    <div className="flex items-baseline justify-between gap-2 border-b border-slate-100 py-2.5 last:border-0 dark:border-slate-800">
       <span className={`text-sm text-slate-600 dark:text-slate-300 ${PROSE}`}>{label}</span>
       <span className="shrink-0 text-right">
         <b className="text-base font-semibold tabular-nums text-slate-900 dark:text-white">{value}</b>
@@ -885,7 +1322,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
   const events = allEvents ? p.events : p.events.slice(0, 8)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* ── 머리 ── */}
       <div className={`${CARD} p-4`}>
         <div className="flex items-start justify-between gap-2">
@@ -929,7 +1366,11 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
         )
       })}
 
+      {/* ── 고향 안내인 — AI/규칙 문장은 점선 상자에만 산다. 공식 수치와 섞이지 않는다 ── */}
+      <GuideBox pack={pack} sel={sel} />
+
       {/* ── 날씨 ── */}
+      <div id="g-weather" className="scroll-mt-24">
       <Block
         tag="관측"
         tone="slate"
@@ -974,6 +1415,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
           </>
         )}
       </Block>
+      </div>
 
       {/* ── 이산가족: 이 지역이 고향인 생존 신청자 ── */}
       <Block
@@ -1071,6 +1513,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       </Block>
 
       {/* ── 이 지역의 기록 ── */}
+      <div id="g-events" className="scroll-mt-24">
       <Block
         tag="기록"
         tone="blue"
@@ -1137,6 +1580,14 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
           </Link>
         </p>
       </Block>
+      </div>
+
+      {/* ── 박물관 사료 ──
+          위의 '기록'이 이 지역이 **몇 번 언급됐는지**를 세는 것이라면,
+          이 구획은 이 지역에서 실제로 나온 **물건**을 보여준다. 숫자 다음에 얼굴이 와야 한다. */}
+      <div id="g-museum" className="scroll-mt-24">
+        <MuseumBlock pack={pack} sel={sel} />
+      </div>
     </div>
   )
 }
@@ -1289,10 +1740,10 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
 
         {/* 각주 — 가정·출처 */}
         <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
-          <p className={`text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
+          <p className={`max-w-prose text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
             <b className="font-semibold text-slate-600 dark:text-slate-300">방법</b> — {proj.method.summary}
           </p>
-          <p className={`mt-1 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
+          <p className={`mt-1 max-w-prose text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>
             <b className="font-semibold text-slate-600 dark:text-slate-300">두 시나리오</b> — 위쪽 선: {proj.method.scenarios.expectedCalibrated} /
             아래쪽 선: {proj.method.scenarios.expected} · {proj.milestoneRange.note}
           </p>
@@ -1312,6 +1763,188 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
           </p>
           <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}><b className="font-medium">이 곡선의 미래 구간은 통일부가 발표한 값이 아니라 본 시제품이 계산한 추계</b>입니다.
             {proj.headline.note}
+          </p>
+        </div>
+      </div>
+    </section>
+  )
+}
+
+/* ══════════════════════ 통일 필요성 19년 ══════════════════════
+
+   소멸 시계 바로 아래에 온다. 두 곡선을 나란히 두는 것이 요지다 —
+   1세대가 줄어드는 선과, 통일이 필요하다는 응답이 내려가는 선.
+
+   ★★ 이 구획만 통일부 자료가 아니다. 서울대학교 통일평화연구원의 통일의식조사다.
+      화면 전체가 통일부 공공데이터로 만들어져 있으므로, 여기만 출처가 다르다는 것을
+      배지·머리글·출처란 세 곳에서 반복해 밝힌다. 섞이면 이 화면의 신뢰가 통째로 깨진다.
+
+    인과를 주장하지 않는다. "같은 기간에 함께 내려갔다"까지만 쓴다.
+     한쪽이 다른 쪽의 원인이라는 근거는 이 자료에 없다. */
+
+function OpinionTrend({ opinion, isan }: { opinion: OpinionData; isan: IsanData }) {
+  const s = opinion.series.find(x => x.titleKey === 'Uni01' && x.group.menu === 1)
+  const ext = s?.extended
+  if (!s || !ext || !ext.years.length) return null
+
+  const need = ext.rows.find(r => r.label === '필요하다') ?? ext.rows[0]
+  const notNeed = ext.rows.find(r => r.label === '필요하지 않다') ?? ext.rows[ext.rows.length - 1]
+  const H0 = opinion.headline.needUnification
+
+  const W = 960, H = 300
+  const PAD = { l: 46, r: 116, t: 18, b: 38 }
+  const Y1 = 70
+  const yrs = ext.years
+  const x = (i: number) => PAD.l + (i / Math.max(1, yrs.length - 1)) * (W - PAD.l - PAD.r)
+  const y = (v: number) => H - PAD.b - (v / Y1) * (H - PAD.t - PAD.b)
+  const line = (vals: number[]) => vals.map((v, i) => `${i ? 'L' : 'M'}${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ')
+
+  /* 출처 전환 지점 — 인포그래픽 XLSX 는 2022 에서 끊기고 그 뒤는 기초보고서 PDF 다.
+     한 선으로 그리되 어디서 출처가 바뀌었는지 선 위에 표시한다(데이터가 시킨 것이다). */
+  const switchAt = yrs.findIndex(v => ext.sourceByYear[String(v)] !== ext.sourceByYear[String(yrs[0])])
+  const yTicks = [0, 20, 40, 60]
+  const xTickYears = yrs.filter(v => v % 3 === 1 || v === yrs[yrs.length - 1])
+
+  /* 같은 기간 1세대는 몇 명에서 몇 명이 됐나 — 옆 곡선과 이어 읽히게 하려는 것 */
+  const isanFirst = isan.monthly[0]
+  const isanLast = isan.latest
+
+  return (
+    <section className={`overflow-hidden ${CARD}`}>
+      <div className={`flex flex-wrap items-start gap-2.5 p-4 ${TONE.slate.band}`}>
+        <ClauseTag>참고</ClauseTag>
+        <div className="min-w-0 flex-1">
+          <h2 className={`${TYPE.h2} ${TEXT.ink} ${PROSE}`}>같은 기간, 통일이 필요하다는 응답</h2>
+          <p className={`mt-0.5 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>
+            {s.question} · {ext.years[0]}~{ext.years[ext.years.length - 1]}년 {nf(ext.years.length)}개 연도 · 단위 {s.unit}
+          </p>
+        </div>
+        <span className={`shrink-0 self-center rounded-md border px-2 py-0.5 ${TYPE.cap} font-semibold ${ASOF.stale.chip}`}>
+          통일부 자료 아님 · 서울대학교 통일평화연구원
+        </span>
+      </div>
+
+      <div className="p-4">
+        {/* ── 두 곡선을 잇는 한 문장 ── */}
+        <p className={`${SURFACE.inset} p-3 ${TYPE.body} ${TEXT.soft} ${PROSE}`}>
+          위 소멸 시계에서 고향을 기억하는 사람은 {ymKo(isanFirst?.month)}{' '}
+          <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanFirst?.total)}명</b>에서 {ymKo(isanLast.asOf)}{' '}
+          <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanLast.survivors.total)}명</b>으로 줄었습니다.
+          {' '}같은 기간 「통일이 필요하다」는 응답은 {H0.first.year}년{' '}
+          <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(H0.first.pct)}%</b>에서 {H0.last.year}년{' '}
+          <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(H0.last.pct)}%</b>로 내려갔습니다.
+          {' '}<b className={`font-semibold ${TEXT.ink}`}>두 곡선은 같은 기간에 함께 내려갔습니다.</b>
+          {' '}여기까지가 자료가 말하는 전부입니다 — 한쪽이 다른 쪽의 원인이라는 근거는 이 자료에 없습니다.
+        </p>
+
+        <div className="mt-3 grid gap-3 sm:grid-cols-3">
+          <div className={`${SURFACE.inset} p-3`}>
+            <p className={`${TYPE.cap} ${TEXT.faint}`}>{H0.first.year}년 「{H0.label}」</p>
+            <p className={`${TYPE.figureSm} ${TEXT.ink}`}>{nf1(H0.first.pct)}%</p>
+          </div>
+          <div className={`${SURFACE.inset} p-3`}>
+            <p className={`${TYPE.cap} ${TEXT.faint}`}>{H0.last.year}년 「{H0.label}」</p>
+            <p className={`${TYPE.figureSm} ${TEXT.ink}`}>{nf1(H0.last.pct)}%</p>
+          </div>
+          <div className={`${SURFACE.slab} p-3`}>
+            <p className={`${TYPE.cap} ${TEXT.faint}`}>{ext.years.length}개 연도 변화폭</p>
+            <p className={`${TYPE.figureSm} ${TEXT.blue}`}>{nf1(H0.deltaPp)}%p</p>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <svg
+            viewBox={`0 0 ${W} ${H}`}
+            className="h-auto w-full min-w-[560px]"
+            role="img"
+            aria-label={`남한 주민의 통일 필요성 응답 추이. 「${H0.label}」는 ${H0.first.year}년 ${nf1(H0.first.pct)}퍼센트에서 ${H0.last.year}년 ${nf1(H0.last.pct)}퍼센트로 ${nf1(Math.abs(H0.deltaPp))}퍼센트포인트 내려갔습니다.`}
+          >
+            {yTicks.map(v => (
+              <g key={v}>
+                <line x1={PAD.l} x2={W - PAD.r} y1={y(v)} y2={y(v)} className="stroke-slate-200 dark:stroke-slate-800" strokeWidth={1} />
+                <text x={PAD.l - 8} y={y(v) + 4} textAnchor="end" className="text-[13px] tabular-nums fill-slate-400">{v}%</text>
+              </g>
+            ))}
+            {xTickYears.map(t => (
+              <text key={t} x={x(yrs.indexOf(t))} y={H - PAD.b + 20} textAnchor="middle" className="text-[13px] tabular-nums fill-slate-400">{t}</text>
+            ))}
+
+            {/* 출처 전환 지점 */}
+            {switchAt > 0 && (
+              <>
+                <line
+                  x1={(x(switchAt - 1) + x(switchAt)) / 2}
+                  x2={(x(switchAt - 1) + x(switchAt)) / 2}
+                  y1={PAD.t}
+                  y2={H - PAD.b}
+                  className="stroke-slate-400"
+                  strokeWidth={1}
+                  strokeDasharray="3 3"
+                />
+                <text x={(x(switchAt - 1) + x(switchAt)) / 2 - 6} y={PAD.t + 12} textAnchor="end" className="text-[12px] fill-slate-500">
+                  ← 인포그래픽 XLSX
+                </text>
+                <text x={(x(switchAt - 1) + x(switchAt)) / 2 + 6} y={PAD.t + 12} className="text-[12px] fill-slate-500">
+                  기초보고서 PDF →
+                </text>
+              </>
+            )}
+
+            {/* 필요하지 않다 — 대조선 */}
+            <path d={line(notNeed.values)} fill="none" className="stroke-slate-400 dark:stroke-slate-500" strokeWidth={1.8} strokeDasharray="5 4" strokeLinejoin="round" />
+            {/* 필요하다 — 주인공 */}
+            <path d={line(need.values)} fill="none" className="stroke-blue-600 dark:stroke-blue-400" strokeWidth={2.5} strokeLinejoin="round" />
+            {need.values.map((v, i) => (
+              <circle key={i} cx={x(i)} cy={y(v)} r={2.6} className="fill-blue-600 dark:fill-blue-400" />
+            ))}
+
+            {/* 끝점 라벨 — 오른쪽 여백에 둔다 */}
+            <text x={x(yrs.length - 1) + 8} y={y(need.values[need.values.length - 1]) + 4} className="text-[13px] font-semibold tabular-nums fill-blue-700 dark:fill-blue-300">
+              {need.label} {nf1(need.values[need.values.length - 1])}%
+            </text>
+            <text x={x(yrs.length - 1) + 8} y={y(notNeed.values[notNeed.values.length - 1]) + 4} className="text-[13px] tabular-nums fill-slate-500">
+              {notNeed.label} {nf1(notNeed.values[notNeed.values.length - 1])}%
+            </text>
+
+            <line x1={PAD.l} x2={W - PAD.r} y1={H - PAD.b} y2={H - PAD.b} className="stroke-slate-300 dark:stroke-slate-700" strokeWidth={1} />
+          </svg>
+        </div>
+
+        {/* 두 출처를 이어 붙였다는 사실 — 감추면 곡선이 거짓이 된다 */}
+        <div className={`mt-3 ${SURFACE.inset} p-3`}>
+          <p className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>{ext.note}</p>
+          {H0.infographicOnly && H0.basicReportOnly && (
+            <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              단일 출처만으로 보면 — 인포그래픽 {H0.infographicOnly.first.year}~{H0.infographicOnly.last.year}년{' '}
+              {nf1(H0.infographicOnly.deltaPp)}%p · 기초보고서 {H0.basicReportOnly.first.year}~{H0.basicReportOnly.last.year}년{' '}
+              {nf1(H0.basicReportOnly.deltaPp)}%p.
+              {s.overlapCheck && ` 두 출처가 겹치는 ${nf(s.overlapCheck.years.length)}개 연도의 최대 차이는 ${nf1(s.overlapCheck.maxAbsDiffPp)}%p입니다.`}
+            </p>
+          )}
+        </div>
+
+        <div className={`mt-3 border-t pt-3 ${SURFACE.hair}`}>
+          <p className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
+            <b className={`font-semibold ${TEXT.ink}`}>출처</b> — {opinion.licenseFullText}
+          </p>
+          <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+            {opinion.sources.map((v, i) => (
+              <span key={v.name}>
+                {i > 0 && ' · '}
+                {v.name}
+                {v.asOf ? ` (기준 ${v.asOf})` : ''}
+              </span>
+            ))}
+          </p>
+          <p className="mt-1.5">
+            <OutLink href={opinion.licenseUrl}>통일의식조사 데이터 아카이브</OutLink>
+            <span className={`${TYPE.cap} ${TEXT.faint}`}> · </span>
+            <OutLink href={s.source.xlsx}>이 지표의 원본 XLSX</OutLink>
+          </p>
+          <p className={`mt-2 rounded-md p-2 ${SURFACE.inset} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+            이 구획의 수치는 <b className="font-medium">통일부 공공데이터가 아닙니다.</b>
+            {' '}본 화면의 다른 모든 수치와 <b className="font-medium">출처가 다르며</b>, 조사기관·표본·조사방법이 달라 같은 표에 넣어 계산하면 안 됩니다.
+            {' '}여기서는 <b className="font-medium">같은 기간을 나란히 보여주는 참고 자료</b>로만 씁니다.
           </p>
         </div>
       </div>
@@ -1478,6 +2111,639 @@ function DescendantBridge({ desc, isan }: { desc: DescData; isan: IsanData }) {
   )
 }
 
+/* ══════════════════════ 지금 할 수 있는 일 ══════════════════════
+
+   위의 '후손 다리'는 **진단**이다 — 후손이 이어받고 싶어 하는데 수단이 없다는 것.
+   진단만 하고 끝내면 화면이 후손에게 아무것도 주지 않는다. 그래서 이 층을 붙인다.
+
+   ★ 기증 경로가 맨 앞이다.
+     실태조사에서 이산가족이 1순위로 요청한 사업이 「사진·물건 등 기록물 수집 보존」 59.9% 였고,
+     후손이 조부모의 사진을 기증하는 것이 그 요청에 직접 답하는 행동이기 때문이다.
+     우리가 고른 순서가 아니라 이산가족이 고른 순서다.
+
+    정직성 두 가지
+     ① actionable 은 **창구가 살아 있다**는 뜻이지 **성사된다**는 뜻이 아니다(예: 북한방문).
+     ② '후손 가능' 판정 다수는 법령 정의에서 도출한 것이지 안내 페이지가 그렇게 쓴 것이 아니다.
+        "법적으로는 이미 대상 / 안내에는 없음"을 붙여 보여야 오해가 없다. */
+
+const ELIG: Record<string, { glyph: string; label: string; chip: string }> = {
+  '후손 가능': { glyph: '◆', label: '후손도 신청 주체가 될 수 있음', chip: TONE.blue.chip },
+  '불명': { glyph: '◇', label: '후손 대상 여부가 안내에 없음', chip: ASOF.stale.chip },
+  '1세대만': { glyph: '■', label: '이산 1세대 본인만', chip: ASOF.frozen.chip },
+}
+
+/* 기증 경로를 맨 앞으로 — 실태조사 1순위 요청에 직접 답하는 행동이기 때문 */
+const DONATION_FIRST = ['life-record-donation', 'museum-donation']
+
+function PathCard({ p }: { p: PathItem }) {
+  const e = ELIG[p.eligibility] ?? ELIG['불명']
+  const apply = p.applyUrl || p.url
+  return (
+    <li className={`${SURFACE.card} p-4`}>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <h4 className={`min-w-0 flex-1 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{plain(p.title)}</h4>
+        <span className={`shrink-0 rounded px-2 py-0.5 ${TYPE.cap} font-semibold ${e.chip}`}>
+          <span aria-hidden="true">{e.glyph}</span> {e.label}
+        </span>
+      </div>
+      <p className={`mt-1.5 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{plain(p.what)}</p>
+
+      {p.eligibilityQuote && (
+        <blockquote className={`mt-2.5 border-l-[3px] border-[#dcdfe4] pl-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE} dark:border-[#2a2f36]`}>
+          자격 근거 — “{plain(p.eligibilityQuote)}”
+        </blockquote>
+      )}
+
+      <dl className={`mt-2.5 space-y-0.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        <div className="flex gap-1.5">
+          <dt className="shrink-0 font-semibold">주관</dt>
+          <dd className="min-w-0">{plain(p.org)}</dd>
+        </div>
+        <div className="flex gap-1.5">
+          <dt className="shrink-0 font-semibold">문의</dt>
+          <dd className="min-w-0">{plain(p.contact)}</dd>
+        </div>
+        {p.legalBasis && (
+          <div className="flex gap-1.5">
+            <dt className="shrink-0 font-semibold">근거</dt>
+            <dd className="min-w-0">{plain(p.legalBasis)}</dd>
+          </div>
+        )}
+      </dl>
+
+      {(p.note || p.counterQuote || (p.how?.length ?? 0) > 0) && (
+        <details className="mt-2.5">
+          <summary className={`cursor-pointer list-none ${TYPE.cap} font-medium ${TEXT.blue} [&::-webkit-details-marker]:hidden ${FOCUS}`}>
+            신청 전에 알아야 할 것 ▾
+          </summary>
+          {(p.how?.length ?? 0) > 0 && (
+            <ul className="mt-1.5 space-y-0.5">
+              {p.how!.map((h, i) => (
+                <li key={i} className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>· {plain(h)}</li>
+              ))}
+            </ul>
+          )}
+          {p.note && <p className={`mt-1.5 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>{plain(p.note)}</p>}
+          {p.counterQuote && (
+            <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>안내 원문 — “{plain(p.counterQuote)}”</p>
+          )}
+        </details>
+      )}
+
+      <p className="mt-3">
+        <a href={apply} target="_blank" rel="noreferrer" className={BTN.primary}>
+          신청·안내 페이지 열기 <span aria-hidden="true">↗</span>
+        </a>
+      </p>
+    </li>
+  )
+}
+
+function DescendantActions({ paths, desc }: { paths: PathData; desc: DescData }) {
+  const actionable = paths.paths.filter(p => p.actionable)
+  const donation = DONATION_FIRST.map(id => actionable.find(p => p.id === id)).filter((p): p is PathItem => Boolean(p))
+  const donationIds = new Set(donation.map(p => p.id))
+  const rest = actionable.filter(p => !donationIds.has(p.id))
+  const closed = paths.paths.filter(p => !p.actionable)
+  const top = desc.recordPrograms.기록및공감대[0]
+
+  return (
+    <Block
+      tag="행동"
+      tone="blue"
+      title="지금 할 수 있는 일 — 후손 이름으로 신청되는 창구"
+      sub={`${nf(paths.summary.totalPaths)}건을 확인해 ${nf(actionable.length)}건이 열려 있었습니다 · 링크 ${nf(paths.meta.checkedUrls)}개 중 ${nf(paths.meta.liveUrls)}개 생존 (${paths.builtAt} 실측)`}
+    >
+      {/* ── ★ 기증 경로 먼저 ── */}
+      <div className={`${SURFACE.slab} p-4`}>
+        <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>가장 먼저 할 수 있는 일</p>
+        <p className={`mt-1 ${TYPE.body} ${TEXT.soft} ${PROSE}`}>
+          {top && (
+            <>
+              이산가족이 1순위로 요청한 사업은 「{plain(top.label)}」{josa(plain(top.label), '이', '가')}{' '}
+              <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(top.pct)}%</b>였습니다.
+            </>
+          )}
+          {' '}<b className={`font-semibold ${TEXT.ink}`}>후손이 조부모의 사진을 기증하는 것이 그 요청에 직접 답하는 행동입니다</b> —
+          {' '}1세대가 원한 일을, 1세대가 없어도 후손이 대신 할 수 있는 유일한 자리이기 때문입니다.
+        </p>
+      </div>
+      <ul className="mt-3 space-y-3">
+        {donation.map(p => <PathCard key={p.id} p={p} />)}
+      </ul>
+
+      {/* ── 나머지 창구 ── */}
+      <p className={`mt-5 ${TYPE.eyebrow} ${TEXT.faint} ${PROSE}`}>그 밖에 후손이 신청할 수 있는 것 {nf(rest.length)}건</p>
+      <ul className="mt-2 space-y-3">
+        {rest.map(p => <PathCard key={p.id} p={p} />)}
+      </ul>
+
+      {/* ── 판정 기준을 밝힌다 ── */}
+      <div className={`mt-4 rounded-md border ${ASOF.stale.edge} ${ASOF.stale.band} p-4`}>
+        <p className={`${TYPE.eyebrow} ${TEXT.stale} ${PROSE}`}>이 목록을 읽을 때 반드시 알아야 할 것</p>
+        <ul className={`mt-1.5 space-y-1 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>
+          <li>
+            · <b className="font-semibold">「열려 있다」는 창구가 살아 있다는 뜻이지 성사된다는 뜻이 아닙니다.</b> {plain(paths.meta.actionableCriterion)}
+          </li>
+          <li>
+            · <b className="font-semibold">「후손도 신청 주체가 될 수 있음」의 다수는 법령 정의에서 나온 판정</b>이며, 안내 페이지가 「후손도 됩니다」라고 쓴 것이 아닙니다.
+            {' '}법적으로는 이미 대상인데 안내에는 없습니다.
+          </li>
+          <li>· 근거 — {plain(paths.meta.legalRoot)}</li>
+          {paths.meta.caveats.map((c, i) => (
+            <li key={i}>· {plain(c)}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* ── 헛걸음 방지 — 지금은 신청할 수 없는 것 ── */}
+      <details className={`mt-3 ${SURFACE.card} p-4`}>
+        <summary className={`cursor-pointer list-none ${TYPE.h3} ${TEXT.ink} [&::-webkit-details-marker]:hidden ${FOCUS} ${PROSE}`}>
+          지금은 신청할 수 없는 것 {nf(closed.length)}건 ▾
+        </summary>
+        <p className={`mt-2 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          이 조사에서 <b className="font-medium">「이산 1세대 본인만 가능」으로 판정된 제도는 {nf(paths.summary.gen1OnlyCount)}건</b>입니다.
+          {' '}아래 {nf(closed.length)}건은 후손의 자격이 막혀서가 아니라 <b className="font-medium">접수할 창구 자체가 없거나 사라졌기</b> 때문에 신청할 수 없습니다.
+          {' '}헛걸음하지 않도록 따로 묶어 둡니다.
+        </p>
+        <ul className="mt-3 space-y-3">
+          {closed.map(p => (
+            <li key={p.id} className={`${SURFACE.inset} p-3`}>
+              <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{plain(p.title)}</p>
+              <p className={`mt-1 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{plain(p.what)}</p>
+              {p.note && <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{plain(p.note)}</p>}
+              <p className="mt-1.5">
+                <OutLink href={p.url}>해당 페이지 보기</OutLink>
+              </p>
+            </li>
+          ))}
+        </ul>
+      </details>
+
+      {/* ── 아직 후손에게 열려 있지 않은 것 — 감추지 않는다 ── */}
+      <div className="mt-4">
+        <p className={`${TYPE.eyebrow} ${TEXT.faint} ${PROSE}`}>아직 후손에게 열려 있지 않은 것 {nf(paths.gaps.length)}가지</p>
+        <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          제도가 없어서가 아니라, 있는 제도가 후손에게 닿지 않는 지점입니다. 고치자는 제안이 아니라 이번 조사에서 실제로 확인된 사실만 적었습니다.
+        </p>
+        <ul className="mt-2">
+          {paths.gaps.map(g => (
+            <li key={g.id} className={`border-b py-3 last:border-0 ${SURFACE.hair}`}>
+              <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{plain(g.title)}</p>
+              <p className={`mt-1 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{plain(g.fact)}</p>
+              <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>→ {plain(g.consequence)}</p>
+              {g.evidence && <p className={`mt-0.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>확인 근거 — {plain(g.evidence)}</p>}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <p className="mt-4">
+        <span className={`${TYPE.cap} ${TEXT.faint}`}>
+          출처 {plain(paths.sources[0]?.name)} 외 {nf(paths.sources.length - 1)}종 · 링크 생존 확인 {paths.builtAt} ·{' '}
+        </span>
+        <OutLink href={paths.sources[0]?.url}>이산가족정보통합시스템</OutLink>
+      </p>
+    </Block>
+  )
+}
+
+/* ══════════════════════ 보기 방식 전환 ══════════════════════
+   "저런 정보가 한번에 쏟아지면 머리를 아파하는 노인 층과 어린이 층을 위한" 모드가
+   따로 있다는 것을, 그 노인·어린이가 직접 찾을 수 있어야 한다.
+   그래서 표제 바로 아래에 큰 단추 두 개로 둔다(최소 터치 영역 44px 이상). */
+
+function ViewSwitch({ view, onChange }: { view: View; onChange: (v: View) => void }) {
+  return (
+    <div role="group" aria-label="보기 방식 고르기" className="mt-6 grid gap-2.5 sm:grid-cols-2 sm:max-w-2xl">
+      {([
+        ['all', '한눈에 보기', '지도·통계·연표가 한 화면에 모두 나옵니다'],
+        ['step', '한걸음씩 보기', '큰 글씨로, 한 번에 한 가지씩만 나옵니다'],
+      ] as const).map(([k, label, desc]) => (
+        <button
+          key={k}
+          type="button"
+          onClick={() => onChange(k)}
+          aria-pressed={view === k}
+          className={`min-h-[64px] rounded-md border px-5 py-3.5 text-left ${FOCUS} ${
+            view === k
+              ? 'border-[#1a4e9c] bg-[#eef3fb] dark:border-[#2f5f9f] dark:bg-[#16202c]'
+              : `${SURFACE.line} bg-white hover:border-[#1a4e9c] dark:bg-transparent`
+          }`}
+        >
+          <span className={`block text-[1.0625rem] font-bold ${view === k ? TEXT.blue : TEXT.ink}`}>
+            {view === k ? '● ' : '○ '}{label}
+          </span>
+          <span className={`mt-0.5 block ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{desc}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/* ══════════════════════ 한걸음씩 모드 ══════════════════════
+
+   같은 데이터를 **한 번에 하나씩만** 보여준다. 새 데이터는 없다 — 밀도만 다르다.
+
+   설계 규칙
+     · 한 카드에 수치 1~2개까지만. 문장은 짧은 쉬운 말 하나로 노인·어린이 둘 다 읽힌다
+       (문구를 두 벌 관리하면 반드시 한쪽이 낡는다).
+     · 순서는 사람이 궁금해하는 순서다: ①몇 명 남았나 →②어디가 고향인가 →③오늘 그곳 날씨
+       →④무슨 일이 있었나 →⑤그곳의 사진 →⑥몇 년 남았나 →⑦후손이 할 수 있는 일 →⑧출처.
+     · 넘기는 길이 세 개다 — [이전]/[다음] 큰 단추(56px), 키보드 ↑↓, 스크롤(snap).
+       스크롤 전용으로 만들면 접근성이 깨진다. IntersectionObserver 는 진행 표시만 맡는다.
+     · prefers-reduced-motion 이면 smooth 스크롤을 끈다.
+     · 활자는 대시보드보다 한 급 위(STEP_TYPE). 색·표면은 theme 토큰 그대로다. */
+
+const STEPS = [
+  { id: 'count', title: '몇 분이 남아 계십니까' },
+  { id: 'region', title: '고향이 어디십니까' },
+  { id: 'weather', title: '그 고향의 오늘 날씨' },
+  { id: 'events', title: '그 고향의 최근 기록' },
+  { id: 'museum', title: '그 고향에서 온 기록물' },
+  { id: 'clock', title: '앞으로 몇 년 남았습니까' },
+  { id: 'action', title: '후손이 지금 할 수 있는 일' },
+  { id: 'sources', title: '이 화면이 쓴 자료' },
+] as const
+type StepId = (typeof STEPS)[number]['id']
+
+/* 본문 활자 한 급 위 — 크기만 다르고 색은 전부 TEXT 토큰을 쓴다 */
+const STEP_TYPE = {
+  title: 'text-[1.5rem] font-bold leading-snug sm:text-[1.75rem]',
+  body: 'text-[1.125rem] leading-[1.9] sm:text-[1.1875rem]',
+  cap: 'text-[0.9375rem] leading-[1.75]',
+  figure: 'text-[3.25rem] font-bold leading-none tracking-[-0.03em] tabular-nums sm:text-[4rem]',
+} as const
+
+/* GuideBox next.target → 카드 번호 */
+const STEP_TARGET: Record<string, number> = { weather: 2, events: 3, museum: 4, clock: 5, action: 6 }
+
+/* 카드마다 붙는 도우미 한 문장 — 전부 규칙 문장(nk-guide.cardHint). 이 모드의 안내 역할이다. */
+function StepHint({ id, facts }: { id: StepId; facts: unknown }) {
+  const line = cardHint(id, facts) as string
+  if (!line) return null
+  return (
+    <div className={`mt-auto rounded-md border border-dashed ${SURFACE.line} ${SURFACE.inset} px-4 py-3`} role="note">
+      <p className={`${TYPE.cap} font-semibold ${TEXT.faint}`}>고향 안내인</p>
+      <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.soft} ${PROSE}`}>{line}</p>
+      <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>이 안내문은 위 자료만 근거로 자동 작성됐습니다.</p>
+    </div>
+  )
+}
+
+function StepMode({ pack, oldRanked, onExit }: {
+  pack: Pack
+  oldRanked: Array<{ id: string; name: string; n: number }>
+  onExit: (anchor?: string) => void
+}) {
+  const [cur, setCur] = useState(0)
+  const [home, setHome] = useState<Sel | null>(null)
+  const boxRef = useRef<HTMLDivElement>(null)
+  const cardRefs = useRef<Array<HTMLElement | null>>([])
+
+  const isan = pack.isan
+  const homeName = home && home.mode === 'old' ? (oldRanked.find(o => o.id === home.id)?.name ?? '') : ''
+  const homeFacts = useMemo(() => (home ? buildGuideFacts(home, pack) : null), [home, pack])
+  const baseFacts = useMemo(
+    () => ({ aliveTotal: { n: isan.latest.overview.cumulative.alive, asOf: isan.latest.asOf } }),
+    [isan],
+  )
+  const panel = useMemo(() => (home ? buildPanel(home, pack) : null), [home, pack])
+  const museum = useMemo(() => (home ? museumFor(home, pack) : null), [home, pack])
+  const museumRows = museum ? [...museum.hometown, ...museum.venue, ...museum.historic].slice(0, 3) : []
+  const wxNames = home ? membersOf(home, pack.region) : []
+  const { rows: wx, state: wxState } = useLiveWeather(wxNames)
+
+  const go = (i: number) => {
+    const n = Math.max(0, Math.min(STEPS.length - 1, i))
+    const box = boxRef.current
+    const el = cardRefs.current[n]
+    /* scrollIntoView 는 snap-mandatory 컨테이너에서 간헐적으로 원위치로 되튄다(실측: Chromium).
+       카드의 스냅 위치를 직접 계산해 컨테이너만 스크롤한다 — 페이지는 움직이지 않는다. */
+    if (box && el) {
+      const top = el.getBoundingClientRect().top - box.getBoundingClientRect().top + box.scrollTop
+      box.scrollTo({ top, behavior: prefersReduced() ? 'auto' : 'smooth' })
+      /* smooth 는 rAF 로 움직인다 — 백그라운드 탭·저사양 기기에서 멈춘 채 끝날 수 있다(실측).
+         잠시 뒤 도착을 확인하고, 못 갔으면 즉시 이동한다. 단추가 눌렀는데 안 넘어가는 화면이
+         노인 사용자에게 주는 혼란이 부드러운 움직임보다 훨씬 크다. */
+      window.setTimeout(() => {
+        if (Math.abs(box.scrollTop - top) > 4) box.scrollTo({ top })
+      }, 600)
+    }
+    setCur(n)
+  }
+  const pickHome = (id: string) => { setHome({ mode: 'old', id }); go(2) }
+
+  /* 스크롤로 넘겨도 '지금 몇 번째'가 따라오게 — 한 장씩 고정은 CSS snap-mandatory 가 맡고,
+     IntersectionObserver 는 현재 카드 번호만 센다. */
+  useEffect(() => {
+    const root = boxRef.current
+    if (!root || typeof IntersectionObserver === 'undefined') return
+    const io = new IntersectionObserver(
+      entries => {
+        for (const e of entries) {
+          if (!e.isIntersecting) continue
+          const i = Number((e.target as HTMLElement).dataset.step)
+          if (Number.isFinite(i)) setCur(i)
+        }
+      },
+      { root, threshold: 0.6 },
+    )
+    cardRefs.current.forEach(el => el && io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
+  /* 키보드 ↑↓ — 스크롤 전용으로 만들면 접근성이 깨진다. 반드시 키보드로도 넘어간다. */
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (!['ArrowDown', 'ArrowUp', 'PageDown', 'PageUp'].includes(e.key)) return
+      const t = e.target as HTMLElement | null
+      if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return
+      e.preventDefault()
+      go(cur + (e.key === 'ArrowDown' || e.key === 'PageDown' ? 1 : -1))
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cur])
+
+  const needHome = (
+    <div>
+      <p className={`${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>먼저 고향을 골라 주세요. 그래야 그곳의 이야기를 보여 드릴 수 있습니다.</p>
+      <p className="mt-4">
+        <button type="button" onClick={() => go(1)} className={`${BTN.primary} min-h-[56px] px-7 text-[1.0625rem]`}>
+          고향 고르러 가기
+        </button>
+      </p>
+    </div>
+  )
+
+  function renderBody(id: StepId): ReactNode {
+    switch (id) {
+      case 'count':
+        return (
+          <div>
+            <p className={`${STEP_TYPE.figure} ${TEXT.stale}`}>
+              {nf(isan.latest.overview.cumulative.alive)}
+              <span className="ml-2 align-baseline text-[1.75rem] font-bold">명</span>
+            </p>
+            <p className={`mt-4 max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+              북녘 고향의 가족을 찾겠다고 등록하신 분 가운데, 지금 살아 계신 분의 수입니다.
+              {' '}{ymKo(isan.latest.asOf)}에 센 숫자입니다.
+            </p>
+            <p className={`mt-2 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              평균 나이는 {nf1(isan.monthly.at(-1)?.avgAge)}세입니다.
+            </p>
+            <p className="mt-3"><AsOfPill level="live" /></p>
+          </div>
+        )
+      case 'region':
+        return (
+          <div>
+            <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+              집안에서 들은 고향 이름을 눌러 주세요. 이산가족의 고향은 광복 당시 이름으로 적혀 있습니다.
+            </p>
+            <div role="group" aria-label="고향 고르기" className="mt-4 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {oldRanked.map(o => (
+                <button
+                  key={o.id}
+                  type="button"
+                  onClick={() => pickHome(o.id)}
+                  aria-pressed={home?.mode === 'old' && home.id === o.id}
+                  className={`min-h-[56px] rounded-md border px-4 py-3 text-[1.125rem] font-medium ${FOCUS} ${
+                    home?.mode === 'old' && home.id === o.id
+                      ? 'border-[#1a4e9c] bg-[#eef3fb] text-[#1a4e9c] dark:border-[#2f5f9f] dark:bg-[#16202c] dark:text-[#7aa9e8]'
+                      : `${SURFACE.line} bg-white ${TEXT.ink} hover:border-[#1a4e9c] dark:bg-transparent`
+                  }`}
+                >
+                  {o.name}
+                </button>
+              ))}
+            </div>
+            {home && homeFacts != null && (
+              <div className="mt-4">
+                <GuideBox pack={pack} sel={home} onGo={t => go(STEP_TARGET[t] ?? 0)} />
+              </div>
+            )}
+          </div>
+        )
+      case 'weather': {
+        if (!home) return needHome
+        const w = wx[0]
+        return (
+          <div>
+            {wxState === 'loading' && (
+              <p className={`${STEP_TYPE.body} ${TEXT.faint} ${PROSE}`}>지금 그곳의 날씨를 받아오는 중입니다…</p>
+            )}
+            {wxState === 'ok' && w && (
+              <>
+                <p className={`${STEP_TYPE.figure} ${TEXT.ink}`}>
+                  {nf1(w.tempC)}
+                  <span className="ml-1 align-baseline text-[1.75rem] font-bold">℃</span>
+                </p>
+                <p className={`mt-4 max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+                  지금 {w.name} 하늘 아래의 기온입니다.
+                  {Number.isFinite(w.maxC) && <> 오늘 낮에는 {nf1(w.maxC)}도까지 오릅니다.</>}
+                </p>
+                <p className="mt-3"><AsOfPill level="live" /></p>
+                <p className={`mt-2 ${TYPE.cap} ${TEXT.faint}`}>출처 Open-Meteo (무료·인증 없음)</p>
+              </>
+            )}
+            {(wxState === 'fail' || wxState === 'idle') && (
+              <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+                지금은 날씨를 받아오지 못했습니다. 이 칸만 비고, 다른 자료는 그대로입니다.
+              </p>
+            )}
+          </div>
+        )
+      }
+      case 'events': {
+        if (!home || !panel) return needHome
+        const ev = panel.events.slice(0, 3)
+        return (
+          <div>
+            {ev.length ? (
+              <ol className="space-y-4">
+                {ev.map((e, i) => (
+                  <li key={`${e.date}-${i}`} className={`border-l-[3px] border-[#1a4e9c] pl-3.5 dark:border-[#7aa9e8] ${PROSE}`}>
+                    <time className={`${STEP_TYPE.cap} font-semibold tabular-nums ${TEXT.blue}`} dateTime={e.date}>{ymdKo(e.date)}</time>
+                    <p className={`mt-0.5 ${STEP_TYPE.body} ${TEXT.ink}`}>{clean(e.title)}</p>
+                  </li>
+                ))}
+              </ol>
+            ) : (
+              <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>날짜가 확인되는 최근 기록이 없습니다.</p>
+            )}
+            <p className={`mt-4 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              통일부 공식 기록에 {homeName || '이 지역'}{josa(homeName || '이 지역', '이', '가')} 언급된 것 가운데 가장 최근 세 건입니다.
+            </p>
+          </div>
+        )
+      }
+      case 'museum': {
+        if (!home || !museum) return needHome
+        return (
+          <div>
+            {museumRows.length ? (
+              <>
+                <ul className="grid gap-3 sm:grid-cols-3">
+                  {museumRows.map(r => <MuseumCard key={r.iId} r={r} mark={null} />)}
+                </ul>
+                <p className={`mt-4 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+                  이 고향에 걸린 기록물은 모두 {nf(museum.total)}건입니다. 사진은 박물관 원본을 그대로 불러온 것이며,
+                  보이지 않으면 박물관이 외부 참조를 막은 것입니다.
+                </p>
+              </>
+            ) : (
+              <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+                이 고향의 기록물은 아직 공개 목록에서 확인되지 않았습니다. 없다는 뜻이 아니라, 공개된 자료의 글에서
+                이 지역 이름이 확인되지 않았다는 뜻입니다.
+              </p>
+            )}
+          </div>
+        )
+      }
+      case 'clock':
+        return (
+          <div>
+            <p className={`${STEP_TYPE.figure} ${TEXT.ink}`}>
+              {pack.proj.milestoneRange.below10000}
+              <span className="ml-2 align-baseline text-[1.75rem] font-bold">년</span>
+            </p>
+            <p className={`mt-4 max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+              이 무렵이 되면, 살아 계신 신청자가 1만 명보다 적어질 것으로 계산됩니다.
+            </p>
+            <p className={`mt-2 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              이 숫자는 통일부 발표가 아니라 이 화면이 통계로 계산한 값입니다.
+            </p>
+            <p className="mt-3">
+              <span className={`rounded-full border border-[#dcdfe4] px-2.5 py-1 ${TYPE.cap} font-semibold ${TEXT.faint} dark:border-[#2a2f36]`}>
+                공식 통계 아님 · 계산 결과
+              </span>
+            </p>
+          </div>
+        )
+      case 'action': {
+        const actionable = pack.paths.paths.filter(p => p.actionable)
+        const donation = DONATION_FIRST.map(pid => actionable.find(p => p.id === pid)).filter((p): p is PathItem => Boolean(p))
+        return (
+          <div>
+            <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+              할아버지·할머니의 사진과 편지를 나라에 맡기는 일부터 하실 수 있습니다.
+            </p>
+            <ul className="mt-4 space-y-3">
+              {donation.map(p => (
+                <li key={p.id} className={`${SURFACE.card} p-5`}>
+                  <p className={`text-[1.125rem] font-bold ${TEXT.ink} ${PROSE}`}>{plain(p.title)}</p>
+                  <p className={`mt-1.5 ${STEP_TYPE.cap} ${TEXT.soft} ${PROSE}`}>{plain(p.what)}</p>
+                  <p className="mt-3">
+                    <a href={p.applyUrl || p.url} target="_blank" rel="noreferrer" className={`${BTN.primary} min-h-[52px] px-6 text-[1.0625rem]`}>
+                      신청·안내 페이지 열기 <span aria-hidden="true">↗</span>
+                    </a>
+                  </p>
+                </li>
+              ))}
+            </ul>
+            <p className={`mt-4 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              지금 열려 있는 창구는 모두 {nf(actionable.length)}곳입니다({pack.paths.builtAt} 확인).
+            </p>
+            <p className="mt-2">
+              <button type="button" onClick={() => onExit('actions')} className={`${BTN.ghost} min-h-[48px]`}>
+                전체 목록을 「한눈에 보기」에서 보기
+              </button>
+            </p>
+          </div>
+        )
+      }
+      case 'sources': {
+        const rows: Array<{ name: string; end: string; fresh: Level; outside?: boolean }> = [
+          { name: '이산가족 신청 현황 공표 (통일부)', end: isan.latest.asOf, fresh: 'live' },
+          { name: '등록현황 월별 통계 (공공데이터포털)', end: isan.monthly.at(-1)?.month ?? '', fresh: 'live' },
+          { name: '연표·보도·동향 기록 (통일부)', end: pack.region.sources.find(s => s.coverageEnd)?.coverageEnd ?? pack.region.builtAt, fresh: 'live' },
+          { name: '디지털박물관 공개 사료 (통일부)', end: pack.paths.meta.measured?.archiveNewestProducedOn ?? pack.museum.builtAt, fresh: 'stale' },
+          { name: '통일의식조사 (서울대학교 — 통일부 자료 아님)', end: pack.opinion.reports.at(-1)?.fieldPeriod?.to ?? '', fresh: 'stale', outside: true },
+        ]
+        return (
+          <div>
+            <p className={`max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+              이 화면의 모든 숫자는 아래 자료에서 왔습니다. 자료마다 기준일이 다릅니다.
+            </p>
+            <ul className={`mt-4 divide-y ${SURFACE.hair}`}>
+              {rows.map(s => (
+                <li key={s.name} className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 py-3">
+                  <AsOfPill level={s.fresh} size="sm" />
+                  <span className={`min-w-0 flex-1 ${STEP_TYPE.cap} ${TEXT.soft} ${PROSE}`}>{s.name}</span>
+                  <span className={`shrink-0 ${TYPE.cap} tabular-nums ${TEXT.faint}`}>기준 {s.end || '미상'}</span>
+                </li>
+              ))}
+            </ul>
+            <p className={`mt-3 max-w-prose ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              북한 관련 정보 특성상 공식자료에 수록되지 않은 사실이 존재할 수 있습니다.
+              원본 링크 전부는 「한눈에 보기」 맨 아래에 있습니다.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2.5">
+              <button type="button" onClick={() => go(0)} className={`${BTN.ghost} min-h-[48px]`}>처음으로 돌아가기</button>
+              <button type="button" onClick={() => onExit()} className={`${BTN.ghost} min-h-[48px]`}>한눈에 보기로 전환</button>
+            </div>
+          </div>
+        )
+      }
+    }
+  }
+
+  const stepBtn = (disabled: boolean) =>
+    `inline-flex min-h-[56px] min-w-[104px] items-center justify-center gap-1 rounded-md border px-6 text-[1.125rem] font-bold ${FOCUS} ` +
+    (disabled
+      ? `cursor-default border-[#eaecef] bg-[#f5f7fa] text-[#b6bcc5] dark:border-[#252a31] dark:bg-[#14181e] dark:text-[#39414c]`
+      : 'border-[#1a4e9c] bg-[#1a4e9c] text-white hover:bg-[#14407f] dark:border-[#2f5f9f]')
+
+  return (
+    <div className="mt-6">
+      {/* ── 진행 표시 + 큰 단추 — 카드 위에 항상 보인다 ── */}
+      <div className="flex items-center justify-between gap-3">
+        <button type="button" onClick={() => go(cur - 1)} disabled={cur === 0} className={stepBtn(cur === 0)}>
+          <span aria-hidden="true">↑</span> 이전
+        </button>
+        <div className="min-w-0 text-center" aria-live="polite">
+          <p className={`text-[1.0625rem] font-bold tabular-nums ${TEXT.ink}`}>{cur + 1} / {STEPS.length}</p>
+          <p className={`truncate ${TYPE.cap} ${TEXT.faint}`}>{STEPS[cur].title}</p>
+        </div>
+        <button type="button" onClick={() => go(cur + 1)} disabled={cur === STEPS.length - 1} className={stepBtn(cur === STEPS.length - 1)}>
+          다음 <span aria-hidden="true">↓</span>
+        </button>
+      </div>
+
+      {/* ── 카드 묶음 — snap 으로 한 장씩 고정. 키보드·단추로도 같은 곳에 간다 ── */}
+      <div
+        ref={boxRef}
+        className={`mt-3 h-[min(76vh,720px)] snap-y snap-mandatory overflow-y-auto overscroll-contain ${SURFACE.card}`}
+        aria-label={`한걸음씩 보기 — 카드 ${STEPS.length}장`}
+      >
+        {STEPS.map((s, i) => (
+          <section
+            key={s.id}
+            ref={el => { cardRefs.current[i] = el }}
+            data-step={i}
+            aria-label={`${i + 1} / ${STEPS.length} — ${s.title}`}
+            className={`flex h-full snap-start flex-col gap-5 overflow-y-auto border-b p-5 last:border-0 sm:p-8 ${SURFACE.hair}`}
+          >
+            <div>
+              <p className={`${TYPE.eyebrow} ${TEXT.faint} tabular-nums`}>{i + 1} / {STEPS.length}</p>
+              <h3 className={`mt-1.5 ${STEP_TYPE.title} ${TEXT.ink} ${PROSE}`}>{s.title}</h3>
+            </div>
+            {renderBody(s.id)}
+            <StepHint id={s.id} facts={homeFacts ?? baseFacts} />
+          </section>
+        ))}
+      </div>
+
+      <p className={`mt-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        [이전]·[다음] 단추, 키보드 위·아래 화살표, 스크롤 어느 것으로든 넘길 수 있습니다.
+      </p>
+    </div>
+  )
+}
+
 export default function GohyangOn() {
   const [pack, setPack] = useState<Pack | null>(null)
   const [err, setErr] = useState<string | null>(null)
@@ -1485,8 +2751,23 @@ export default function GohyangOn() {
   const [sel, setSel] = useState<Sel | null>(null)
   const panelRef = useRef<HTMLDivElement>(null)
 
+  /* 보기 방식 — localStorage 에 저장해 다시 와도 유지한다. 저장 실패(사생활 모드)는 무해하다. */
+  const [view, setView] = useState<View>(() => {
+    try { return localStorage.getItem(VIEW_KEY) === 'step' ? 'step' : 'all' } catch { return 'all' }
+  })
+  function switchView(v: View, anchor?: string) {
+    setView(v)
+    try { localStorage.setItem(VIEW_KEY, v) } catch { /* 저장 실패해도 이번 방문에는 적용된다 */ }
+    if (anchor) {
+      window.setTimeout(() => scrollToId(anchor), 60)
+    } else {
+      window.scrollTo({ top: 0, behavior: prefersReduced() ? 'auto' : 'smooth' })
+    }
+  }
+
   /* 데이터는 scripts/nk-gohyang-pack.mjs 가 public/gohyang/ 로 복사해 둔 것을 받는다.
-     4개 파일 합계 약 450KB — 검색 인덱스(13.5MB)와 달리 통째로 받아도 부담이 없다.
+     8개 파일 합계 약 1.4MB(gzip 약 177KB) — 검색 인덱스(13.5MB)와 달리 통째로 받아도 부담이 없다.
+     박물관 사료만 5.4MB → 771KB 로 **행을 골라** 줄였다(지역 태그가 붙은 1,445건). 계산은 팩이 하지 않는다.
      하나라도 실패하면 화면을 절반만 그리지 않고 오류를 말한다(없는 값을 0으로 그리면 거짓말이 된다). */
   useEffect(() => {
     let alive = true
@@ -1495,8 +2776,13 @@ export default function GohyangOn() {
         if (!r.ok) throw new Error(`${n}.json 로드 실패 (${r.status})`)
         return r.json()
       })
-    Promise.all([grab('map'), grab('region'), grab('isan'), grab('projection'), grab('descendant')])
-      .then(([map, region, isan, proj, desc]) => { if (alive) setPack({ map, region, isan, proj, desc }) })
+    Promise.all([
+      grab('map'), grab('region'), grab('isan'), grab('projection'), grab('descendant'),
+      grab('museum'), grab('paths'), grab('opinion'),
+    ])
+      .then(([map, region, isan, proj, desc, museum, paths, opinion]) => {
+        if (alive) setPack({ map, region, isan, proj, desc, museum, paths, opinion })
+      })
       .catch(e => { if (alive) setErr(e?.message ?? '데이터를 불러오지 못했습니다.') })
     return () => { alive = false }
   }, [])
@@ -1522,8 +2808,9 @@ export default function GohyangOn() {
     }
   }
 
-  /* 선택 전 안내에 쓸 상위 지역 — 아무 데이터도 만들지 않고 실측 상위만 고른다 */
-  const topOld = useMemo(() => {
+  /* 구행정구역 7종을 생존자 수 내림차순으로 — 고향 찾기 진입과 선택 전 안내가 같은 목록을 쓴다.
+     아무 데이터도 만들지 않고 실측 순서만 매긴다. */
+  const oldRanked = useMemo(() => {
     if (!pack) return []
     const byOrigin = new Map(pack.isan.latest.survivors.byOrigin.entries.map(e => [e.label, e.n]))
     return pack.map.regionsOld
@@ -1533,8 +2820,8 @@ export default function GohyangOn() {
         return { id: o.id, name: o.name, n: key ? (byOrigin.get(key) ?? 0) : 0 }
       })
       .sort((a, b) => b.n - a.n)
-      .slice(0, 4)
   }, [pack])
+  const topOld = oldRanked.slice(0, 4)
 
   if (err) {
     return (
@@ -1566,6 +2853,17 @@ export default function GohyangOn() {
       <header className={PROSE}>
         <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>통일부 공공데이터 · 이산가족과 고향</p>
 
+        {view === 'step' ? (
+          /* 한걸음씩 모드의 표제 — 숫자를 여기서 쏟지 않는다. 첫 카드가 하나씩 말한다. */
+          <>
+            <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>한 걸음씩 보여 드리겠습니다</h1>
+            <p className={`mt-3 max-w-prose ${TYPE.body} ${TEXT.soft}`}>
+              화면 하나에 한 가지씩만 나옵니다. [다음] 단추나 키보드 위·아래 화살표,
+              또는 스크롤 어느 것으로든 넘기실 수 있습니다.
+            </p>
+          </>
+        ) : (
+          <>
         <h1 className={`mt-3 ${TYPE.h1} ${TEXT.ink}`}>고향을 기억하는 사람이<br className="hidden sm:block" />
           {' '}
           <span className="whitespace-nowrap">
@@ -1593,11 +2891,59 @@ export default function GohyangOn() {
           </a>
           <a href="#descendant" className={BTN.ghost}>후손 다리 <span aria-hidden="true">↓</span>
           </a>
+          <a href="#actions" className={BTN.ghost}>지금 할 수 있는 일 <span aria-hidden="true">↓</span>
+          </a>
         </div>
+          </>
+        )}
+
+        {/* ── 보기 방식 — 같은 데이터, 두 밀도. 선택은 저장되어 다음 방문에도 유지된다 ── */}
+        <ViewSwitch view={view} onChange={v => switchView(v)} />
       </header>
 
+      {view === 'step' && (
+        <StepMode pack={pack} oldRanked={oldRanked} onExit={anchor => switchView('all', anchor)} />
+      )}
+
+      {view === 'all' && (
+      <>
+
+      {/* ── 고향 찾기 진입 ──
+          지도를 읽을 줄 아는 사람만 들어올 수 있는 화면이면 후손은 못 들어온다.
+          후손이 아는 것은 지도가 아니라 **집안에서 들은 고향 이름** 하나다.
+          그래서 이름만으로 들어오는 문을 표제 바로 아래에 둔다. */}
+      <div className={`mt-8 ${SURFACE.slab} p-5`}>
+        <h2 className={`${TYPE.h2} ${TEXT.ink} ${PROSE}`}>할아버지 고향이 어디십니까?</h2>
+        <p className={`mt-1 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
+          이산가족 출신지는 광복 당시 구행정구역 {nf(pack.map.regionsOld.length)}종으로만 공표됩니다.
+          {' '}지도를 몰라도 고향 이름을 누르면 그곳이 열립니다.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          {oldRanked.map(o => (
+            <button
+              key={o.id}
+              type="button"
+              onClick={() => { setMode('old'); select({ mode: 'old', id: o.id }) }}
+              aria-pressed={sel?.mode === 'old' && sel.id === o.id}
+              className={`inline-flex items-baseline gap-1.5 rounded-md border px-3 py-2 ${TYPE.sub} font-medium ${FOCUS} ${
+                sel?.mode === 'old' && sel.id === o.id
+                  ? 'border-[#1a4e9c] bg-[#eef3fb] text-[#1a4e9c] dark:border-[#2f5f9f] dark:bg-[#16202c] dark:text-[#7aa9e8]'
+                  : `${SURFACE.line} bg-white ${TEXT.ink} hover:border-[#1a4e9c] dark:bg-transparent`
+              }`}
+            >
+              {o.name}
+              <span className={`${TYPE.cap} tabular-nums ${TEXT.faint}`}>{o.n > 0 ? `${nf(o.n)}명` : '집계 없음'}</span>
+            </button>
+          ))}
+        </div>
+        <p className={`mt-2.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          옆의 인원은 그 고향이 출신지인 이산가족 생존 신청자 수입니다 ({ymKo(pack.isan.latest.asOf)} 기준).
+          {' '}「기타」 {nf(pack.isan.latest.survivors.byOrigin.entries.find(e => e.label === '기타')?.n)}명은 이 {nf(pack.map.regionsOld.length)}종에 속하지 않아 여기에 없습니다.
+        </p>
+      </div>
+
       {/* ── 지도 + 패널 ── */}
-      <div className="mt-5 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
+      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
         <div className="min-w-0">
           <div className={`overflow-hidden ${CARD}`}>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
@@ -1684,14 +3030,27 @@ export default function GohyangOn() {
         <ExtinctionClock isan={pack.isan} proj={pack.proj} />
       </div>
 
+      {/* ── 통일 필요성 19년 — 소멸 시계 **바로 아래**.
+             두 곡선을 나란히 두는 것이 요지라 사이에 다른 구획을 끼우지 않는다.
+             단, 출처가 다르므로(서울대 통일평화연구원) 배지·문장으로 갈라 표시한다. */}
+      <div className="mt-6">
+        <OpinionTrend opinion={pack.opinion} isan={pack.isan} />
+      </div>
+
       {/* ── 후손 다리 — 소멸 시계 바로 뒤에 온다.
              "언제까지 남아 있는가" 다음 질문이 "그 다음은 누구인가"이기 때문이다. */}
       <div id="descendant" className="mt-8 scroll-mt-24">
         <DescendantBridge desc={pack.desc} isan={pack.isan} />
       </div>
 
+      {/* ── 진단 다음에 행동. 후손 다리가 "수단이 없다"고 말했으니
+             바로 아래에서 "그래도 오늘 할 수 있는 것"을 준다. */}
+      <div id="actions" className="mt-6 scroll-mt-24">
+        <DescendantActions paths={pack.paths} desc={pack.desc} />
+      </div>
+
       {/* ── 이 화면이 쓴 자료 전부 ── */}
-      <section className={`mt-6 overflow-hidden ${CARD}`}>
+      <section className={`mt-8 overflow-hidden ${CARD}`}>
         <div className="flex items-start gap-2.5 border-b border-slate-100 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-800/50">
           <ClauseTag>출처</ClauseTag>
           <div className="min-w-0 flex-1">
@@ -1711,6 +3070,9 @@ export default function GohyangOn() {
             { name: '북한이탈주민 재북 출신지역별 현황', org: '통일부', end: pack.region.regions['평양']?.defectorOrigin?.asOf ?? '', fresh: 'stale' as Level, url: 'https://www.data.go.kr/data/15090949/fileData.do' },
             { name: '남북이산가족 관련 연표 (파일데이터)', org: '공공데이터포털 — 통일부', end: pack.isan.chronology.at(-1)?.date ?? '', fresh: 'stale' as Level, url: pack.isan.sources[3]?.landing },
             { name: '개성공단 · 금강산 관광', org: '통일부 (주제 종료)', end: '2016-02-10', fresh: 'frozen' as Level, url: null, reason: '개성공단은 2016-02-10, 금강산 관광은 2008-07-11 이후 신규 데이터가 생성되지 않습니다.' },
+            { name: `남북이산가족 디지털박물관 공개 사료 ${nf(pack.museum.archive.totCnt)}건`, org: '통일부 이산가족정보통합시스템', end: pack.paths.meta.measured?.archiveNewestProducedOn ?? pack.museum.builtAt, fresh: 'stale' as Level, url: pack.museum.sources[0]?.url ?? null },
+            { name: `후손이 신청할 수 있는 제도 ${nf(pack.paths.summary.totalPaths)}종 (창구 링크 실측)`, org: '통일부 · 법제처 국가법령정보', end: pack.paths.builtAt, fresh: 'live' as Level, url: pack.paths.sources[0]?.url ?? null },
+            { name: '통일의식조사 — 남북한 통일의 필요성', org: '서울대학교 통일평화연구원', end: pack.opinion.reports.at(-1)?.fieldPeriod?.to ?? '', fresh: 'stale' as Level, url: pack.opinion.licenseUrl, outside: true },
           ].map(s => {
             const n = s.end ? notice(s.end, s.fresh, (s as { reason?: string }).reason) : null
             return (
@@ -1719,6 +3081,9 @@ export default function GohyangOn() {
                 <span className={`min-w-0 flex-1 text-sm text-slate-700 dark:text-slate-200 ${PROSE}`}>
                   {s.name}
                   <span className="ml-1 text-[11px] text-slate-400">{s.org}</span>
+                  {(s as { outside?: boolean }).outside && (
+                    <span className={`ml-1.5 rounded px-1.5 py-0.5 ${TYPE.cap} font-semibold ${ASOF.stale.chip}`}>통일부 자료 아님</span>
+                  )}
                 </span>
                 <span className="shrink-0 text-[11px] tabular-nums text-slate-500">기준 {s.end || '미상'}</span>
                 <OutLink href={s.url}>원본</OutLink>
@@ -1727,11 +3092,19 @@ export default function GohyangOn() {
           })}
         </div>
         <div className="border-t border-slate-100 p-3 dark:border-slate-800">
-          <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt}.
+          <p className={`text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>데이터 팩 생성일 {pack.map.builtAt} · 지도 {pack.map.builtAt} · 지역 {pack.region.builtAt} · 이산가족 {pack.isan.builtAt} · 추계 {pack.proj.builtAt} · 박물관 사료 {pack.museum.builtAt} · 후손 경로 {pack.paths.builtAt} · 통일의식조사 {pack.opinion.builtAt}.
             북한 관련 정보 특성상 공식자료에 수록되지 않은 사실이 존재할 수 있습니다.
+          </p>
+          <p className={`mt-1 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
+            박물관 사료는 공개 {nf(pack.museum.archive.totCnt)}건 가운데 본문에서 지역명이 확인된 {nf(pack.museum.meta.slim.keptRecords)}건만 이 화면에 실려 있습니다
+            {' '}— 나머지 {nf(pack.museum.meta.slim.droppedRecords)}건은 고향이 없어서가 아니라 본문에 지명이 적혀 있지 않아 지도에 걸 자리가 없는 것입니다.
+            {' '}사료 이미지는 저장하지 않고 박물관 원본을 그대로 참조합니다.
+            {' '}통일의식조사만 통일부 자료가 아닙니다 — {pack.opinion.licenseFullText}
           </p>
         </div>
       </section>
+      </>
+      )}
     </div>
   )
 }

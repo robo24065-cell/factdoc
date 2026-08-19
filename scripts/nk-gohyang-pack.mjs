@@ -12,8 +12,14 @@
    ① **가공하지 않는다.** 원본 바이트를 그대로 복사한다.
       화면에서 쓸 값을 여기서 미리 계산하면, 데이터 에이전트가 검증한 수치와
       화면 수치가 서로 다른 계보를 갖게 된다. 조인·집계는 화면에서 한다.
-   ② **조인 전제를 빌드 타임에 검증한다.** 4개 파일은 서로 다른 스크립트가 만든다.
-      화면이 기대하는 키 대응(mapRegionId·isanOrigin·출신지 라벨)이 깨지면
+
+      ★ 예외 하나 — museum.json (5.4MB) 만 **행 선별**한다. 첫 로드 비용 때문이다.
+        · 계산은 하지 않는다. 지역 태그가 붙은 행만 남기고 화면이 안 쓰는 필드를 뗀다.
+        · 수치를 새로 만들지 않는다. venueOnly 플래그 하나만 붙이는데, 그것도
+          원본 meta.kangwonVenueOnly.count 와 대조해 같은 수(280)가 나오는지 검산한다.
+        · 무엇을 뺐는지는 meta.slim 에 그대로 적어 화면이 "전량이 아니다"라고 말할 수 있게 한다.
+   ② **조인 전제를 빌드 타임에 검증한다.** 8개 파일은 서로 다른 스크립트가 만든다.
+      화면이 기대하는 키 대응(mapRegionId·isanOrigin·출신지 라벨·byRegion·구도명)이 깨지면
       런타임에 조용히 undefined 가 되므로, 여기서 걸러 exit 1 로 죽는다.
    ③ **Cloudflare Pages 자산 상한 25 MiB/파일**을 매 실행 확인한다.
       (넘으면 배포가 거부되고 이전 버전이 조용히 서빙된다 — 실제로 겪은 사고)
@@ -56,8 +62,85 @@ function die(msg) {
   process.exit(1)
 }
 
+/* ══════════ 구(舊)도명 ↔ 구행정구역 폴리곤 대응 ══════════
+   museum.json 의 regionsHistoric 은 광복 당시 표기("황해도(구)")이고,
+   지도(map.json)의 regionsOld 는 이산가족 공표 출신지 축이다. 둘은 같은 것이 아니다.
+
+   ★ 함경도(구) 는 남·북 분도 이전 표기라 함남/함북 어느 쪽인지 확정할 수 없다.
+     그래서 억지로 한쪽에 배정하지 않고 **두 구역 모두에 보이되 화면이 그 사실을 밝히도록**
+     양쪽에 건다. 화면은 이 목록을 "구(舊)도명 표기 사료"라는 별도 묶음으로만 쓴다. */
+const HISTORIC_TO_OLD = {
+  '황해도(구)': ['hwanghae-old'],
+  '미수복경기': ['gyeonggi-unrec'],
+  '함경도(구)': ['hamgyong-s-old', 'hamgyong-n-old'],
+}
+const HISTORIC_NOTE =
+  '구(舊)도명 표기는 남·북 분도 이전 명칭이라 현행 13지역 축으로 확정할 수 없다. ' +
+  '특히 「함경도(구)」는 함경남도·함경북도 어느 쪽인지 원문만으로 판정할 수 없어 양쪽에 함께 걸었다 — ' +
+  '지역 확정이 아니라 "이 표기로 적힌 사료가 있다"는 표시다.'
+
+/* 강원도 태깅의 함정 — 근거 지명이 금강산/장전항/갈마뿐이면 '고향'이 아니라
+   이산가족면회소가 있는 '상봉 장소'다(museum.meta.kangwonVenueOnly). 화면이 걸러 쓸 수 있게 플래그로 남긴다. */
+const VENUE_CITIES = new Set(['금강산', '장전항', '갈마'])
+
+/** museum.json 슬림 — 계산하지 않고 **행을 고르고 필드를 뗀다**. */
+function slimMuseum(m) {
+  const kept = m.records.filter((r) => (r.regions?.length ?? 0) > 0 || (r.regionsHistoric?.length ?? 0) > 0)
+  const records = kept.map((r) => ({
+    iId: r.iId,
+    title: r.title,
+    producedOn: r.producedOn ?? null,
+    form: r.form ?? null,
+    donor: r.donor ?? null,
+    imageUrl: r.imageUrl ?? null,
+    recordUrl: r.recordUrl ?? null,
+    regions: r.regions ?? [],
+    regionCities: r.regionCities ?? [],
+    regionsHistoric: r.regionsHistoric ?? [],
+    source: r.source,
+    /* 강원도로 태깅됐지만 근거 지명이 상봉 장소뿐인 건 */
+    venueOnly:
+      (r.regions ?? []).includes('강원도') &&
+      (r.regionCities ?? []).length > 0 &&
+      (r.regionCities ?? []).every((c) => VENUE_CITIES.has(c)),
+  }))
+  const keptIds = new Set(records.map((r) => r.iId))
+  const prune = (idx) =>
+    Object.fromEntries(Object.entries(idx ?? {}).map(([k, ids]) => [k, ids.filter((id) => keptIds.has(id))]))
+
+  return {
+    builtAt: m.builtAt,
+    sources: m.sources,
+    license: m.license,
+    endpoints: { image: m.endpoints?.image ?? null, record: m.endpoints?.record ?? null },
+    archive: { totCnt: m.archive?.totCnt ?? null, note: m.archive?.note ?? null },
+    records,
+    byRegion: prune(m.byRegion),
+    byRegionHistoric: prune(m.byRegionHistoric),
+    meta: {
+      historicToOld: HISTORIC_TO_OLD,
+      historicNote: HISTORIC_NOTE,
+      kangwonVenueOnly: m.meta?.kangwonVenueOnly ?? null,
+      fieldCoverage: m.meta?.fieldCoverage ?? null,
+      bySource: m.meta?.bySource ?? null,
+      caveats: m.meta?.caveats ?? [],
+      slim: {
+        totalRecords: m.records.length,
+        keptRecords: records.length,
+        droppedRecords: m.records.length - records.length,
+        keptRule: '제목·내용에서 북한 지역명 또는 구(舊)도명이 확인된 사료만 남겼다. 나머지는 지도 위에 놓을 자리가 없다.',
+        droppedFields: ['content', 'colId', 'colIds', 'regNo', 'producer', 'origin', 'fileIds', 'archiveRecordUrl', 'inCollections'],
+        droppedFieldsNote: '화면이 쓰지 않는 필드다. 전량·전필드는 북한자료-api/museum.json 에 그대로 있다.',
+        addedFields: ['venueOnly'],
+        addedFieldsNote: '원본 meta.kangwonVenueOnly 판정 규칙(근거 지명이 금강산·장전항·갈마뿐)을 행 단위로 재현한 플래그. 이 스크립트가 매 실행 원본 count 와 대조한다.',
+      },
+    },
+  }
+}
+
 /* ══════════ 입력 정의 ══════════
-   asOfPath : 그 파일이 스스로 밝힌 '자료 기준일'을 뽑는 경로(화면 배지의 근거) */
+   asOfPath : 그 파일이 스스로 밝힌 '자료 기준일'을 뽑는 경로(화면 배지의 근거)
+   slim     : 있으면 원본 바이트 대신 이 함수의 결과를 쓴다(원칙 ①의 예외) */
 const INPUTS = [
   {
     out: 'map.json',
@@ -89,6 +172,25 @@ const INPUTS = [
     require: ['builtAt', 'sources', 'survey', 'descendants', 'recordPrograms', 'homeland', 'gaps', 'scale'],
     role: '후손 세대 — 제4차 실태조사의 후손 문항·기록사업 선호도·세대 간극 3종',
   },
+  {
+    out: 'museum.json',
+    src: '북한자료-api/museum.json',
+    require: ['builtAt', 'sources', 'license', 'endpoints', 'collections', 'archive', 'records', 'byRegion', 'byRegionHistoric', 'meta'],
+    role: '남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)',
+    slim: slimMuseum,
+  },
+  {
+    out: 'paths.json',
+    src: '북한자료-api/descendant-paths.json',
+    require: ['builtAt', 'sources', 'paths', 'summary', 'gaps', 'meta'],
+    role: '후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종',
+  },
+  {
+    out: 'opinion.json',
+    src: '북한자료-api/unification-opinion.json',
+    require: ['builtAt', 'sources', 'license', 'licenseFullText', 'series', 'headline', 'meta'],
+    role: '통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)',
+  },
 ]
 
 /* ══════════ 읽기 ══════════ */
@@ -104,15 +206,24 @@ const loaded = INPUTS.map((spec) => {
   }
   const missing = spec.require.filter((k) => !(k in json))
   if (missing.length) die(`${spec.src} 에 필수 키가 없다: ${missing.join(', ')}`)
-  return { ...spec, abs, buf, json }
+  /* data : 화면이 실제로 받는 객체. slim 이 없으면 원본 그대로다(바이트 동일).
+     outBuf : 디스크에 쓸 바이트. 슬림일 때만 원본과 달라진다. */
+  const data = spec.slim ? spec.slim(json) : json
+  const outBuf = spec.slim ? Buffer.from(JSON.stringify(data) + '\n', 'utf8') : buf
+  return { ...spec, abs, buf, json, data, outBuf }
 })
 
-const byOut = Object.fromEntries(loaded.map((l) => [l.out, l.json]))
+const byOut = Object.fromEntries(loaded.map((l) => [l.out, l.data]))
+const raw = Object.fromEntries(loaded.map((l) => [l.out, l.json]))
 const map = byOut['map.json']
 const region = byOut['region.json']
 const isan = byOut['isan.json']
 const proj = byOut['projection.json']
 const desc = byOut['descendant.json']
+const museum = byOut['museum.json']       // 슬림본 — 화면이 받는 바로 그 객체
+const museumRaw = raw['museum.json']      // 원본 — 슬림이 원본을 배신하지 않았는지 대조할 때만 쓴다
+const paths = byOut['paths.json']
+const opinion = byOut['opinion.json']
 
 /* ══════════ 조인 무결성 검사 ══════════
    화면이 하는 조인을 그대로 여기서 먼저 해 본다.
@@ -215,18 +326,108 @@ const latestOriginLabels = new Set((isan.latest.survivors.byOrigin.entries ?? []
   ok(wx.length > 0 && dated.length === wx.length, `NOAA 관측 ${wx.length}건 전부 관측일 보유`, `관측일 없음 ${wx.length - dated.length}건`)
 }
 
+/* ── 박물관 사료 (12~17) ──
+   화면은 지역 패널에서 byRegion / byRegionHistoric 으로 사료를 끌어온다.
+   여기가 끊기면 "사료 0건"이라는 **거짓 정직**이 화면에 뜬다 — 진짜 0건과 구분되지 않는다. */
+{
+  const regionKeySet = new Set(regionKeys)
+  const bad = Object.keys(museum.byRegion).filter((k) => !regionKeySet.has(k))
+  ok(bad.length === 0, `museum.byRegion ${Object.keys(museum.byRegion).length}축 → 지역 데이터 키`, `없는 지역: ${bad.join(', ')}`)
+}
+{
+  const ids = new Set(museum.records.map((r) => r.iId))
+  const dangling = [...Object.values(museum.byRegion), ...Object.values(museum.byRegionHistoric)]
+    .flat()
+    .filter((id) => !ids.has(id))
+  ok(dangling.length === 0, `museum 색인 → records ${museum.records.length}행 참조`, `끊긴 iId ${dangling.length}건`)
+}
+{
+  const oldIdSet = new Set(map.regionsOld.map((r) => r.id))
+  const badVal = Object.values(museum.meta.historicToOld).flat().filter((id) => !oldIdSet.has(id))
+  const badKey = Object.keys(museum.meta.historicToOld).filter((k) => !(k in museum.byRegionHistoric))
+  ok(
+    badVal.length === 0 && badKey.length === 0,
+    `구(舊)도명 ${Object.keys(museum.meta.historicToOld).length}종 → 구행정구역 폴리곤`,
+    `없는 폴리곤 ${badVal.join(', ')} / 없는 구도명 ${badKey.join(', ')}`,
+  )
+}
+{
+  /* 화면이 <img src> 로 박물관 원본을 **직접** 참조한다(우리가 저장·재배포하지 않는다).
+     상대경로나 http 가 섞이면 배포본(https)에서 혼합콘텐츠로 조용히 차단된다. */
+  const withImg = museum.records.filter((r) => r.imageUrl)
+  const badImg = withImg.filter((r) => !/^https:\/\//.test(r.imageUrl))
+  const badRec = museum.records.filter((r) => !r.recordUrl || !/^https:\/\//.test(r.recordUrl))
+  ok(
+    badImg.length === 0 && badRec.length === 0,
+    `사료 URL 절대 https — 이미지 ${withImg.length}건 · 원문 ${museum.records.length}건`,
+    `이미지 ${badImg.length}건 / 원문 ${badRec.length}건이 https 절대 URL 이 아니다`,
+  )
+}
+{
+  /* 슬림이 원본 판정을 재현하는가 — 우리가 수치를 새로 만든 게 아님을 매 실행 증명한다 */
+  const mine = museum.records.filter((r) => r.venueOnly).length
+  const theirs = museumRaw.meta?.kangwonVenueOnly?.count ?? null
+  ok(mine === theirs, `강원도 상봉장소 태깅 ${mine}건 = 원본 meta.kangwonVenueOnly ${theirs}건`, `슬림 ${mine} vs 원본 ${theirs}`)
+}
+{
+  const total = museumRaw.records.length
+  const kept = museum.records.length
+  const tagged = museumRaw.records.filter((r) => (r.regions?.length ?? 0) > 0 || (r.regionsHistoric?.length ?? 0) > 0).length
+  ok(
+    kept === tagged && museum.meta.slim.totalRecords === total,
+    `슬림 선별 ${kept}행 = 원본 지역태깅 ${tagged}행 (전량 ${total}행)`,
+    `슬림 ${kept} vs 태깅 ${tagged} / 전량 ${museum.meta.slim.totalRecords} vs ${total}`,
+  )
+}
+
+/* ── 후손 경로 (18~19) ── */
+{
+  const act = paths.paths.filter((p) => p.actionable)
+  ok(
+    act.length === paths.summary.actionableCount && paths.gaps.length === paths.summary.gapCount,
+    `후손 경로 actionable ${act.length}건 · 간극 ${paths.gaps.length}건 = summary`,
+    `actionable ${act.length}/${paths.summary.actionableCount} · gaps ${paths.gaps.length}/${paths.summary.gapCount}`,
+  )
+}
+{
+  /* 화면이 카드마다 링크·문의처·자격을 찍는다. 하나라도 비면 "빈 칸이 있는 안내"가 된다. */
+  const bad = paths.paths.filter((p) => !p.title || !p.what || !p.eligibility || !p.url || !p.contact)
+  ok(bad.length === 0, `후손 경로 ${paths.paths.length}건 전부 제목·설명·자격·링크·문의처 보유`, `결측: ${bad.map((p) => p.id).join(', ')}`)
+}
+
+/* ── 통일의식조사 (20~21) ── ★ 이것만 통일부 자료가 아니다. 화면이 출처를 갈라 표시해야 한다. */
+{
+  const s = opinion.series.find((x) => x.titleKey === 'Uni01' && x.group?.menu === 1)
+  const ext = s?.extended
+  const lenOk = ext && ext.rows.every((r) => r.values.length === ext.years.length)
+  const srcOk = ext && ext.years.every((y) => ext.sourceByYear?.[String(y)])
+  ok(
+    Boolean(lenOk && srcOk && ext.rows.length === 3),
+    `통일 필요성 시계열 ${ext?.years.length ?? 0}개 연도 × ${ext?.rows.length ?? 0}행 + 연도별 출처 표기`,
+    '연도/행 길이 불일치 또는 sourceByYear 결측',
+  )
+}
+{
+  ok(
+    typeof opinion.license === 'string' && opinion.license.includes('통일평화연구원'),
+    `통일의식조사 출처 표기 문구 보유 — "${String(opinion.license).slice(0, 30)}…"`,
+    'license 문구가 없다 — 출처 표기 의무를 화면이 지킬 수 없다',
+  )
+}
+
 if (fails.length) die(`조인 무결성 ${fails.length}건 실패 — 복사하지 않았다.\n  ${fails.join('\n  ')}`)
 
 /* ══════════ 크기 확인 ══════════ */
 console.log('\n[2] 파일 크기 (Cloudflare Pages 자산 상한 25 MiB/파일)')
 let total = 0
 for (const l of loaded) {
-  const gz = zlib.gzipSync(l.buf).length
-  total += l.buf.length
-  const pct = ((l.buf.length / MAX_BYTES) * 100).toFixed(2)
-  if (l.buf.length > MAX_BYTES) die(`${l.out} 이 상한을 넘는다: ${l.buf.length} > ${MAX_BYTES}`)
+  const gz = zlib.gzipSync(l.outBuf).length
+  total += l.outBuf.length
+  const pct = ((l.outBuf.length / MAX_BYTES) * 100).toFixed(2)
+  if (l.outBuf.length > MAX_BYTES) die(`${l.out} 이 상한을 넘는다: ${l.outBuf.length} > ${MAX_BYTES}`)
+  const slimTag = l.slim ? `  ← 슬림 (원본 ${l.buf.length.toLocaleString('en-US')} B)` : ''
   console.log(
-    `  ✓ ${l.out.padEnd(15)} ${String(l.buf.length).padStart(9)} B  (gzip ${String(gz).padStart(8)} B · 상한의 ${pct}%)`,
+    `  ✓ ${l.out.padEnd(15)} ${String(l.outBuf.length).padStart(9)} B  (gzip ${String(gz).padStart(8)} B · 상한의 ${pct}%)${slimTag}`,
   )
 }
 console.log(`  합계 ${total.toLocaleString('en-US')} B — 페이지 1회 로드 시 내려받는 총량`)
@@ -283,8 +484,50 @@ const manifest = {
       upstream: (desc.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, asOf: s.asOf ?? null })),
       caution: '요약자료가 이미지 PDF라 이 수치는 사람이 판독해 옮긴 값이다. 조사 회차가 바뀌면 손으로 갱신할 것.',
     },
+    {
+      file: 'museum.json',
+      role: INPUTS[5].role,
+      builtAt: museum.builtAt,
+      asOf: {
+        수집일: museum.builtAt,
+        공개사료최신생산일: paths.meta?.measured?.archiveNewestProducedOn ?? null,
+      },
+      upstream: (museum.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, asOf: s.asOf ?? null })),
+      slim: museum.meta.slim,
+      caution:
+        '개방형 라이선스 표기를 찾지 못했다(원본 license 필드 참조). 사료 원본은 기증자 저작물이므로 ' +
+        '이미지 바이너리를 저장·재배포하지 않는다. 화면은 박물관 원본 URL 을 <img> 로 직접 참조하고 recordUrl 로 링크만 건다.',
+    },
+    {
+      file: 'paths.json',
+      role: INPUTS[6].role,
+      builtAt: paths.builtAt,
+      asOf: paths.builtAt,
+      upstream: (paths.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, asOf: s.asOf ?? null })),
+      linkCheck: { checked: paths.meta?.checkedUrls ?? null, live: paths.meta?.liveUrls ?? null, confirmedDead: paths.meta?.confirmedDead ?? null },
+      caution:
+        "eligibility '후손 가능' 다수는 법령 정의(8촌 이내)에서 도출한 것이지 페이지가 \"후손도 됩니다\"라고 쓴 것이 아니다. " +
+        '화면에 걸 때 「법적으로는 이미 대상」과 「안내에는 없음」을 함께 보여야 오해가 없다.',
+    },
+    {
+      file: 'opinion.json',
+      role: INPUTS[7].role,
+      builtAt: opinion.builtAt,
+      asOf: opinion.reports?.at(-1)?.fieldPeriod?.to ?? null,
+      upstream: (opinion.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, org: s.org ?? null, asOf: s.asOf ?? null })),
+      license: opinion.license,
+      licenseFullText: opinion.licenseFullText,
+      caution:
+        '★ 이 파일만 통일부 자료가 아니다(서울대학교 통일평화연구원). 화면은 반드시 출처가 다르다는 것을 배지·문장으로 구분 표시하고, ' +
+        '소멸 곡선과 나란히 놓더라도 인과를 주장하지 말 것 — "같은 기간에 함께 내려갔다"까지만.',
+    },
   ],
-  files: loaded.map((l) => ({ name: l.out, from: l.src.replace(/\\/g, '/'), bytes: l.buf.length })),
+  files: loaded.map((l) => ({
+    name: l.out,
+    from: l.src.replace(/\\/g, '/'),
+    bytes: l.outBuf.length,
+    ...(l.slim ? { slim: true, sourceBytes: l.buf.length } : {}),
+  })),
   limits: { perFileBytes: MAX_BYTES, note: 'Cloudflare Pages 자산 상한' },
 }
 
@@ -298,11 +541,11 @@ fs.mkdirSync(OUT_DIR, { recursive: true })
 console.log('\n[3] 복사')
 for (const l of loaded) {
   const dst = path.join(OUT_DIR, l.out)
-  fs.writeFileSync(dst, l.buf) // 원본 바이트 그대로
-  console.log(`  → frontend/public/gohyang/${l.out}`)
+  fs.writeFileSync(dst, l.outBuf) // slim 이 없으면 원본 바이트 그대로
+  console.log(`  → frontend/public/gohyang/${l.out}${l.slim ? ' (슬림)' : ''}`)
 }
 const mBuf = Buffer.from(JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 fs.writeFileSync(path.join(OUT_DIR, 'manifest.json'), mBuf)
 console.log(`  → frontend/public/gohyang/manifest.json  (${mBuf.length} B)`)
 
-console.log(`\n✓ 완료 — 5개 파일, 총 ${(total + mBuf.length).toLocaleString('en-US')} B\n`)
+console.log(`\n✓ 완료 — ${loaded.length}개 파일, 총 ${(total + mBuf.length).toLocaleString('en-US')} B\n`)

@@ -1,0 +1,1143 @@
+{
+ "builtAt": "2026-08-19",
+ "sources": [
+  {
+   "name": "이산가족정보통합시스템 — 이산가족 신청/교류안내",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "이산가족정보통합시스템 — 이산가족 신청 및 취소",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "이산가족정보통합시스템 — 북한주민접촉신고·방문신청",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "이산가족정보통합시스템 — 교류안내 > 재북가족과의 접촉",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/5.do?mid=SM00000131",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "이산가족정보통합시스템 — 교류안내 > 교류주선 및 지원",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/4.do?mid=SM00000131",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "남북이산가족 디지털박물관 — 기증현황(기증 안내)",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "이산가족정보통합시스템 — 각종서식관리(별지 서식)",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/list.do?mid=SM00000133",
+   "asOf": "2024-09-05"
+  },
+  {
+   "name": "이산가족정보통합시스템 — FAQ",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/faq/list_t1.do?mid=SM00000142",
+   "asOf": "2026-08-19"
+  },
+  {
+   "name": "통일부 — 주요사업 > 이산가족 > 교류기반 구축(유전자검사·영상편지)",
+   "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_build",
+   "asOf": "2025-07-30"
+  },
+  {
+   "name": "통일부 — 주요사업 > 이산가족 > 교류촉진 기본계획 및 실태조사",
+   "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_Promotion",
+   "asOf": "2025-07-30"
+  },
+  {
+   "name": "통일부 — 주요사업 > 이산가족 > 민간교류 지원",
+   "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_private",
+   "asOf": "2025-07-30"
+  },
+  {
+   "name": "남북 이산가족 생사확인 및 교류 촉진에 관한 법률 [법률 제20184호]",
+   "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=259607&type=XML",
+   "asOf": "2024-08-07"
+  },
+  {
+   "name": "같은 법 시행령 [대통령령] — 제4조·제4조의2·제4조의3",
+   "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=263503&type=XML",
+   "asOf": "2024-08-07"
+  },
+  {
+   "name": "통일부 공고 제2026-92호 — 2026 DMZ 평화걷기 참여 신청자 모집",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5931&mid=SM00000138",
+   "asOf": "2026-04-30"
+  },
+  {
+   "name": "통일부 보도자료 — 청소년ㆍ대학생 대상 남북 이산가족 영상편지 공모전",
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5905&mid=SM00000138",
+   "asOf": "2024-06-11"
+  }
+ ],
+ "paths": [
+  {
+   "id": "isan-apply",
+   "title": "이산가족찾기 신청(신규 등록)",
+   "org": "통일부 이산가족납북자과 · 대한적십자사 남북교류팀",
+   "what": "북에 있는 가족을 찾겠다고 국가에 등록하는 절차로, 여기서 받는 관리번호가 유전자검사·영상편지 신청의 열쇠가 된다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "신규신청 : 이산가족 1세대 본인 또는 가족으로 1인이상 신청 가능",
+   "eligibilityQuote2": "신청하신 분이 사망하셨다면 자식, 형제분 등 다른 가족분이 이산가족찾기 신청을 하실 수 있습니다. (FAQ)",
+   "counterQuote": "이산가족 상봉자 선정시 고령자와 직계가족에 가중치를 부여하므로, 가급적 이산 1세대를 신청인으로 하여야 컴퓨터 추첨에 유리합니다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119",
+   "checkIds": [
+    "reunion.registee",
+    "reunion.applyInfo",
+    "reunion.faq"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896 · 대한적십자사 남북교류팀 02-3705-3652~3",
+   "legalBasis": "남북 이산가족 생사확인 및 교류 촉진에 관한 법률 제7조제1항 · 같은 법 시행령 제4조제1항 · 별지 제1호서식",
+   "how": [
+    "온라인: 국내거주신청 / 해외거주신청 버튼 → 6단계 입력 → 등록신청(관리자 승인)",
+    "우편·팩스: 별지 제1호서식 작성 후 대한적십자사 남북교류팀 또는 통일부 이산가족납북자과",
+    "방문: 전국 265개 접수상담창구(대한적십자사·민주평통 지역협의회·이북5도 시도사무소·통일부)"
+   ],
+   "note": "신청인은 후손 본인이 될 수 있다(본인 성명·주민등록번호로 등록). 다만 상봉 대상자 추첨에서는 고령·직계가족에 가중치가 붙어 후손 명의 신청이 불리하다고 안내 페이지가 명시한다 — 즉 \"등록은 되는데 뽑히지는 않는\" 구조다.",
+   "linkStatus": [
+    {
+     "id": "reunion.registee",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.applyInfo",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.faq",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "dna-test",
+   "title": "이산가족 유전자검사",
+   "org": "통일부 이산가족납북자과",
+   "what": "1세대가 세상을 떠난 뒤에도 가족관계를 증명할 수 있도록 유전정보를 국가가 보관하는 사업으로, 통일부가 대상을 2~3세대로 넓히겠다고 공식 문서에 적어 둔 유일한 제도다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "이산가족 고령화를 고려하여 이산가족 2~3세대로 유전자 검사 대상을 점차 확대하여 나갈 계획입니다.",
+   "eligibilityQuote2": "통일부장관은 남북 이산가족의 가족관계 확인을 위하여 남북 이산가족의 신청이 있는 경우 … 유전자검사를 실시할 수 있다. (법 제8조의2제1항) / \"남북 이산가족\"이란 … 8촌 이내의 친척ㆍ인척 및 배우자 또는 배우자이었던 자를 말한다. (법 제2조제1호)",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/cmm/login_product.do?mid=SM00000125",
+   "checkIds": [
+    "reunion.vleDnaLogin",
+    "mou.reunionBuild",
+    "reunion.formDna",
+    "law.isan"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": "이산가족법 제8조의2 · 시행령 제4조의2 · 별지 제2호의2서식(유전자검사 동의서), 별지 제2호의3서식(자료 폐기 요청서)",
+   "how": [
+    "이산가족찾기 신청으로 관리번호를 먼저 받는다",
+    "「신청·안내 → 영상편지/유전자 정보 신청」에 관리번호로 로그인해 신청",
+    "또는 별지 제2호의2서식(유전자검사 동의서)을 통일부장관 앞으로 제출"
+   ],
+   "purpose": "이산가족이 사후에라도 가족관계를 확인할 수 있도록",
+   "stats": {
+    "cumulativePersons": 29319,
+    "asOf": "2024-12-31",
+    "byYear": {
+     "2014": 1211,
+     "2015": 10274,
+     "2016": 10030,
+     "2017": 1178,
+     "2018": 1410,
+     "2019": 20,
+     "2020": 6,
+     "2021": 1020,
+     "2022": 1533,
+     "2023": 1112,
+     "2024": 1525
+    }
+   },
+   "note": "통일부 페이지의 문구는 \"점차 확대하여 나갈 계획\"이다. 몇 년부터 몇 명까지인지는 이 페이지에도, 이산가족법·시행령에도 적혀 있지 않다. 후손 대상 연도별 배정 인원은 이번 조사에서 통일부 원자료로 확인하지 못했다(추정치를 넣지 않았다).",
+   "linkStatus": [
+    {
+     "id": "reunion.vleDnaLogin",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "mou.reunionBuild",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.formDna",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "law.isan",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "life-record-donation",
+   "title": "생애기록물 수집 동의(조부모의 사진·편지 기증)",
+   "org": "통일부 이산가족납북자과",
+   "what": "조부모가 남긴 사진·편지·자서전·소장품을 국가 기록으로 넘겨 보존시키는 절차로, 시행령이 신청 주체에 신분 제한을 두지 않은 유일한 조항이다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "법 제8조의3제1항제2호에 따른 생애기록물의 수집을 신청하려는 자는 별지 제2호의5서식의 생애기록물 수집 동의서를 통일부장관에게 제출해야 한다. (시행령 제4조의3제2항)",
+   "eligibilityQuote2": "같은 조 제1항은 영상편지에 대해 \"신청하려는 남한의 이산가족\"으로 주체를 한정하는데, 제2항(생애기록물)은 \"신청하려는 자\"라고만 쓴다 — 조문 안에서 주체 한정이 의도적으로 빠져 있다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/view.do?id=62&mid=SM00000133",
+   "checkIds": [
+    "reunion.formLife",
+    "law.isanDecree",
+    "reunion.formList"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5916(기증 문의) · 02-2100-5896(대표)",
+   "legalBasis": "이산가족법 제8조의3제1항제2호 · 시행령 제4조의3제2항·제4항 · 별지 제2호의5서식(2024-07-02 신설)",
+   "how": [
+    "별지 제2호의5서식 「남북이산가족 생애기록물 수집 동의서」를 내려받아 작성",
+    "수집 유형을 고른다: 수증(소유권 이전) / 수탁(기간 지정) / 기타",
+    "제공 목록(명칭·연도·수량·크기·설명)을 적어 통일부장관 앞으로 제출",
+    "대리 제출 시 동의인·대리인 신분증 사본과 위임장 등 대리관계 증명서류 첨부"
+   ],
+   "scope": "이산가족의 생애와 관련된 문서, 사진, 시청각자료, 도서ㆍ간행물 및 박물(博物) (시행령 제4조의3제4항)",
+   "note": "★ 후손이 조부모의 유품을 이어받는 가장 직접적인 법적 통로다. 그런데 서식은 「각종서식관리」 게시판 16번 글에만 있고, 정작 「기증현황」 안내 페이지는 이 서식을 링크하지 않는다. 제도와 안내가 서로를 모른다.",
+   "linkStatus": [
+    {
+     "id": "reunion.formLife",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "law.isanDecree",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.formList",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "museum-donation",
+   "title": "디지털박물관 기록물 기증(안내 창구)",
+   "org": "통일부 이산가족납북자과 · 남북이산가족 디지털박물관",
+   "what": "이산을 기록한 자료를 연중 아무 때나 받겠다는 박물관의 상시 창구로, 접수 방법은 전화번호 한 줄이 전부다.",
+   "eligibility": "불명",
+   "eligibilityQuote": "이산가족 여러분께서 가지고 계신 각종 기록물을 모아 소중히 보존하고 후대에 전달하려고 합니다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+   "checkIds": [
+    "reunion.donation",
+    "reunion.donor"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5916",
+   "legalBasis": null,
+   "how": [
+    "페이지에 안내된 유일한 방법: 02-2100-5916 으로 전화 문의"
+   ],
+   "scope": "이산을 기록하는 모든 기록물 — 사진, 편지, 자서전, 소장품 등 / 정책·연구·회담 자료, 구술채록, 보도물 등",
+   "period": "연중",
+   "note": "문구가 \"이산가족 여러분께서\"라 후손 포함 여부를 페이지만으로는 판정할 수 없다(그래서 불명). 온라인 신청 폼·이메일·접수 주소가 없고, 기증 절차 4단계(기증신청→소장여부확인→수집→정리 및 보존)는 HTML 주석으로 감춰져 화면에 뜨지 않는다 — 이번 실행에서 소스로 확인했다.",
+   "linkStatus": [
+    {
+     "id": "reunion.donation",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.donor",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "video-letter",
+   "title": "영상편지 제작 신청",
+   "org": "통일부 이산가족납북자과",
+   "what": "북의 가족에게 보낼 영상을 국가 비용으로 찍어 보관하는 사업으로, 남북이 열리면 전달되고 열리지 않아도 기록으로 남는다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "법 제8조의3제1항제1호에 따른 영상편지의 제작을 신청하려는 남한의 이산가족은 별지 제2호의4서식의 영상편지 제작 신청서를 통일부장관에게 제출해야 한다. (시행령 제4조의3제1항)",
+   "eligibilityQuote2": "\"남한의 이산가족\"의 범위는 법 제2조제1호가 정한 8촌 이내의 친척ㆍ인척이다 — 손자녀는 재북 종조부와 4촌 안쪽이므로 정의상 포함된다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/cmm/login_product.do?mid=SM00000125",
+   "checkIds": [
+    "reunion.vleDnaLogin",
+    "reunion.formVle",
+    "mou.reunionBuild",
+    "law.isanDecree"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896 · 대한적십자사 02-3705-3652~3",
+   "legalBasis": "이산가족법 제8조의3제1항제1호 · 시행령 제4조의3제1항 · 별지 제2호의4서식",
+   "how": [
+    "이산가족찾기 관리번호로 로그인 후 「영상편지/유전자 정보 신청」에서 신청",
+    "또는 별지 제2호의4서식 제출(대리 신청 가능 — 위임장 등 대리관계 증명서류 첨부)"
+   ],
+   "stats": {
+    "cumulativePersons": 27102,
+    "asOf": "2024-12-31"
+   },
+   "note": "신청서가 \"영상편지를 받는 북한의 가족(1명 이상)\"과 \"신청인과의 관계\"를 요구한다 — 후손도 재북 친척을 특정할 수 있으면 채울 수 있는 칸이다. 다만 제도가 후손을 대상으로 명시한 문구는 어디에도 없고, 2005년 이후 제작 실적 27,102명이 세대별로 공표되지 않아 후손 참여분을 분리해 셀 수 없다.",
+   "linkStatus": [
+    {
+     "id": "reunion.vleDnaLogin",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.formVle",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "mou.reunionBuild",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "law.isanDecree",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "nk-contact-report",
+   "title": "북한주민 접촉신고",
+   "org": "통일부 (남북교류협력시스템)",
+   "what": "재북 친척과 편지·전화·만남 등 어떤 형태로든 연락하려면 미리 내야 하는 신고로, 신고 주체를 \"남한의 주민\"이라고만 규정해 세대 제한이 없다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "『남북교류협력에 관한 법률』제9조의2제1항에 따라 미리 신고하려는 남한의 주민은 접촉 7일 전까지 <북한주민접촉 신고서>에 아래의 서류를 첨부하여 제출하여야 함.",
+   "eligibilityQuote2": "가족인 북한주민과 회합ㆍ통신하거나 가족의 생사 확인을 위하여 북한주민과 접촉한 경우 … <북한주민사후접촉 신고서>로 사후 신고 가능. (시행령 제16조제2항)",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
+   "applyUrl": "https://www.tongtong.go.kr/",
+   "checkIds": [
+    "reunion.visiting",
+    "reunion.contactProc",
+    "tongtong"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": "남북교류협력에 관한 법률 제9조의2 · 같은 법 시행령 제16조 · 이산가족법 시행령 제4조",
+   "how": [
+    "남북교류협력시스템(tongtong.go.kr)에서 인터넷 신고 — 방문·우편·FAX·재외공관 접수도 가능",
+    "접촉 7일 전까지 사전신고, 처리기간 근무일 7일",
+    "접촉 후 7일 이내 <북한주민접촉 결과보고서> 제출(서신·사진 사본 첨부)"
+   ],
+   "note": "신고 유효기간 5년, 기간 중에는 신고한 목적 범위 안에서 횟수 제한 없이 접촉할 수 있다. 후손이 조부모를 대신해 재북 친척과 연락하는 법적 통로는 여기가 유일하다.",
+   "linkStatus": [
+    {
+     "id": "reunion.visiting",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "reunion.contactProc",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "tongtong",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "nk-visit",
+   "title": "북한방문 신청(북한방문증명서)",
+   "org": "통일부 (남북교류협력시스템)",
+   "what": "북한 지역을 직접 방문하려면 받아야 하는 통일부장관 명의 증명서로, 신청 자격은 남한주민이면 되지만 실제 왕래는 사실상 닫혀 있다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "[남북교류협력에관한법률] 제9조 제1항은 남한과 북한의 주민이 남한과 북한을 왕래하고자 할 때에는 통일부장관이 발급한 증명서를 소지하여야 한다고 규정하고 있습니다. 따라서, 북한지역을 방문하는 남한주민은 <북한방문증명서>를 … 발급받아 소지하여야 합니다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
+   "applyUrl": "https://www.tongtong.go.kr/",
+   "checkIds": [
+    "reunion.visiting",
+    "tongtong"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": "남북교류협력에 관한 법률 제9조제1항",
+   "how": [
+    "남북교류협력시스템(tongtong.go.kr)에서 북한방문 신청"
+   ],
+   "note": "창구는 살아 있고 자격에도 세대 제한이 없다. 그러나 통일부 스스로 \"이산가족 상봉 행사 등 남북 당국간 이산가족 교류는 북한의 거부로 2018년 8월 이후 중단된 상황\"이라고 적고 있다. 신청은 되지만 성사를 기대할 수 있는 상태가 아니다 — actionable 은 창구 생존만 뜻한다.",
+   "linkStatus": [
+    {
+     "id": "reunion.visiting",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "tongtong",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "exchange-subsidy",
+   "title": "남북 이산가족 민간교류경비 지원",
+   "org": "통일부 이산가족납북자과",
+   "what": "민간 경로로 재북 가족의 생사를 확인하거나 만났을 때 든 비용을 국가가 사후에 되돌려주는 제도다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "통일부장관은 남한의 이산가족(「북한이탈주민의 보호 및 정착지원에 관한 법률」 제2조제2호에 따른 보호대상자나 보호대상자이었던 사람은 제외한다)이 민간차원에서 다음 각 호의 어느 하나에 해당하는 교류활동을 한 경우 … 민간교류경비를 지원할 수 있다.",
+   "eligibilityQuote2": "제외 대상으로 명시된 것은 북한이탈주민(보호대상자)뿐이며, 세대에 관한 제한은 없다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/4.do?mid=SM00000131",
+   "checkIds": [
+    "reunion.subsidy",
+    "mou.reunionPrivate"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896 · 대한적십자사 남북교류팀 02-3705-3652",
+   "legalBasis": "이산가족법 제11조 · 시행령 제6조 · 별지 제3호서식(교류경비 지원금 신청서)",
+   "how": [
+    "교류활동일로부터 3개월 이내 신청",
+    "첨부: 북한주민접촉결과보고서, 재북가족과의 관계를 확인할 수 있는 가족관계기록사항 증명서, 편지·사진·여권 사본 등 교류 증빙"
+   ],
+   "amounts": {
+    "생사확인": 3000000,
+    "상봉": 6000000,
+    "교류지속": 800000,
+    "unit": "KRW",
+    "note": "각 1회 한정"
+   },
+   "note": "⚠ 같은 사이트 안에서 금액이 어긋난다 — 「교류안내」와 통일부 본청 페이지는 300/600/80만원인데, 같은 사이트 FAQ 는 아직 200/500/50만원으로 남아 있다(이번 실행에서 양쪽 실측). 후손이 FAQ 를 먼저 읽으면 틀린 금액을 믿게 된다.",
+   "linkStatus": [
+    {
+     "id": "reunion.subsidy",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "mou.reunionPrivate",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "qna-minwon",
+   "title": "질문과 답변(국민신문고 민원 등록)",
+   "org": "통일부 · 국민권익위원회 국민신문고",
+   "what": "이산가족 제도에 대해 후손이 자기 사정을 적어 공식 답변을 받아낼 수 있는, 자격 심사가 전혀 없는 유일한 창구다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "질문과 답변 게시판이 국민신문고(epeople.go.kr) 민원신청 폼을 그대로 끼워 넣어 운영된다 — 신청 자격 요건이 페이지에 제시돼 있지 않다.",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/qna/list_qna.do?mid=SM00000143",
+   "checkIds": [
+    "reunion.qna"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": null,
+   "how": [
+    "PC 브라우저에서 「민원등록」 버튼 → 국민신문고 민원신청 폼(통일부 기관코드 1250000)"
+   ],
+   "note": "모바일·태블릿에서는 제공하지 않는다고 페이지가 명시한다. 제도 문의용이지 이어받기 수단은 아니다.",
+   "linkStatus": [
+    {
+     "id": "reunion.qna",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "dmz-walk",
+   "title": "2026 DMZ 평화걷기",
+   "org": "통일부 (통일부 공고 제2026-92호)",
+   "what": "접경지역 510km를 걸으며 분단을 몸으로 겪게 하는 통일부 사업으로, 오늘 기준 후손이 실제로 접수할 수 있는 몇 안 되는 참여형 프로그램이다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "관심있는 국민 여러분의 많은 참여 바랍니다. … 4차: 2026.9.7.(월) ~ 9.20.(일) (통일부 공고 제2026-92호)",
+   "actionable": true,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5931&mid=SM00000138",
+   "applyUrl": "https://www.dmzpeace.co.kr/",
+   "checkIds": [
+    "reunion.dmzWalk2026",
+    "dmzpeace"
+   ],
+   "contact": "2026 DMZ 평화걷기 운영사무국 033-452-0250 · dmzcamp155@naver.com",
+   "legalBasis": null,
+   "how": [
+    "통일부 누리집 공지사항 또는 dmzpeace.co.kr 에서 신청",
+    "모집 인원 초과 시 성별·연령·참가 동기를 종합 고려해 확정"
+   ],
+   "rounds": [
+    {
+     "round": 1,
+     "target": "청년, 대학생",
+     "when": "2026-06-08~06-14",
+     "route": "고성~철원",
+     "apply": "2026-05-01~05-14"
+    },
+    {
+     "round": 2,
+     "target": "중·고등학생(교사 및 보호자 동반), 대학생, 청년 등",
+     "when": "2026-07-04~07-10",
+     "route": "고성~파주",
+     "apply": "2026-06-01~06-14"
+    },
+    {
+     "round": 3,
+     "target": "외국인, 일반인 등",
+     "when": "2026-09-06~09-12",
+     "route": "고성~파주",
+     "apply": "2026-08-03~08-16"
+    },
+    {
+     "round": 4,
+     "target": "일반 국민",
+     "when": "2026-10-18~10-30",
+     "route": "고성~강화(12박13일)",
+     "apply": "2026-09-07~09-20"
+    }
+   ],
+   "note": "이산가족 후손 전용 프로그램이 아니라 일반 국민 대상이다. 4차 접수(2026-09-07~09-20)는 이 파일의 builtAt 기준으로 아직 시작 전이다.",
+   "linkStatus": [
+    {
+     "id": "reunion.dmzWalk2026",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "dmzpeace",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "story-hometown",
+   "title": "「나의 살던 고향은」 (박물관 스토리)",
+   "org": "통일부 남북이산가족 디지털박물관",
+   "what": "함경·평안·황해·경기·강원 다섯 지역의 고향 사진을 보여주는 열람 전용 코너다.",
+   "eligibility": "불명",
+   "eligibilityQuote": "'나의 살던 고향은' 코너는 고향을 떠나게 된 이산가족, 실향민분들이 사진으로나마 그리운 고향을 만나보실 수 있도록 기획하였습니다.",
+   "actionable": false,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/info.do?mid=SM00000283",
+   "checkIds": [
+    "reunion.hometownStory"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": null,
+   "how": [],
+   "note": "\"만나보실 수 있도록\"이라고 쓰여 있듯 보는 코너다. 이번 실행에서 본문 영역에 기고·투고·등록 버튼이 없음을 확인했다(페이지 안의 등록/신청 문자열은 전부 공통 헤더의 로그인·관리번호 모달에서 나온 것). 후손이 조부모의 고향 사진을 여기에 올릴 방법은 없다. 자격 요건 자체가 게시돼 있지 않아 판정 불가 — 그래서 불명이다.",
+   "linkStatus": [
+    {
+     "id": "reunion.hometownStory",
+     "status": 200,
+     "ok": true
+    }
+   ]
+  },
+  {
+   "id": "video-contest",
+   "title": "남북 이산가족 영상편지 공모전(청소년·대학생)",
+   "org": "통일부",
+   "what": "초·중·고·대학생이 직접 이산가족 영상편지를 만들어 내는 공모전으로, 후손 세대를 정면으로 겨냥한 유일한 통일부 사업이었으나 2024년 한 번으로 끝났다.",
+   "eligibility": "후손 가능",
+   "eligibilityQuote": "이번 공모전은 전국의 초등ㆍ중고등ㆍ대학생 등 3개 부문으로 진행되며, 오는 7.1.(월)~31.(수)까지 공모전 홈페이지(http://www.isanfilm.or.kr)를 통해 접수 가능합니다.",
+   "eligibilityQuote2": "올해는 처음으로 공모전을 통해 청소년들도 직접 영상편지 제작과정에 참여할 수 있도록 사업방식을 다변화하였습니다. (2024-06-04 보도자료)",
+   "actionable": false,
+   "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5905&mid=SM00000138",
+   "applyUrl": "http://www.isanfilm.or.kr/",
+   "checkIds": [
+    "reunion.contest2024",
+    "contest.isanfilm"
+   ],
+   "contact": "통일부 이산가족납북자과 02-2100-5896",
+   "legalBasis": null,
+   "how": [],
+   "note": "★ 접수 홈페이지 isanfilm.or.kr 는 DNS 조회 자체가 실패한다(이번 실행에서 실측 — 같은 .or.kr 대조군 koreahana.or.kr 는 정상 응답). 공지사항 368건 전체를 훑어도 2025·2026년 공모전 공고가 없다. 후손을 위해 만들어진 단 하나의 제도가 1회로 끝나고 창구까지 사라진 상태다.",
+   "linkStatus": [
+    {
+     "id": "reunion.contest2024",
+     "status": 200,
+     "ok": true
+    },
+    {
+     "id": "contest.isanfilm",
+     "status": null,
+     "ok": false,
+     "error": "EAI_AGAIN"
+    }
+   ]
+  }
+ ],
+ "summary": {
+  "actionableCount": 10,
+  "gen1OnlyCount": 0,
+  "unknownCount": 2,
+  "descendantEligibleCount": 10,
+  "totalPaths": 12,
+  "gapCount": 11
+ },
+ "gaps": [
+  {
+   "id": "no-descendant-registry",
+   "title": "후손을 후손으로 등록하는 칸이 없다",
+   "fact": "이산가족찾기 신청서(별지 제1호서식)에는 신청인·신청인의 부모·남한의 가족·찾으려는 북한의 가족 칸만 있다. \"신청인이 이산 몇 세대인가\"를 적는 칸이 없다.",
+   "consequence": "통일부의 등록 데이터로는 후손 신청자가 몇 명인지 셀 수 없다. 실태조사가 후손 문항을 1세대에게 대신 물어야 했던 이유가 여기 있다.",
+   "evidence": "별지 제1호서식(2024-07-02 개정) 전문 확인"
+  },
+  {
+   "id": "eligible-but-unaware",
+   "title": "법적으로는 이미 이산가족인데, 그렇게 말해 주는 화면이 없다",
+   "fact": "이산가족법 제2조제1호는 이산가족을 \"8촌 이내의 친척ㆍ인척\"으로 정의한다. 1세대의 손자녀는 재북 종조부와 4촌 안쪽이므로 정의상 이산가족이다. 그러나 이산가족정보통합시스템의 어느 페이지도 \"손자녀도 이산가족입니다\"라고 쓰지 않는다.",
+   "consequence": "자격 있는 사람이 자격 없다고 생각하고 돌아간다. 제도의 문제가 아니라 안내의 문제다.",
+   "evidence": "법 제2조제1호 원문 · reunion.unikorea.go.kr 전 메뉴 문구 확인"
+  },
+  {
+   "id": "donation-has-no-procedure",
+   "title": "가장 직접적인 이어받기 통로에 절차가 없다",
+   "fact": "「기증현황」 안내 페이지에는 수집 대상·기간·전화번호만 있다. 기증 절차 4단계(기증신청→소장여부확인→수집→정리 및 보존)는 HTML 주석 안에 들어가 화면에 렌더링되지 않는다. 온라인 신청 폼도, 접수 이메일도, 우편 주소도 없다.",
+   "consequence": "후손이 조부모의 사진 상자를 들고도 무엇을 어떻게 해야 하는지 알 수 없다. 유일한 방법이 근무시간 전화 한 통이다.",
+   "evidence": "DonationInfo.do 소스 내 <!-- ordinary-step --> 주석 블록"
+  },
+  {
+   "id": "donation-form-not-linked",
+   "title": "기증 서식과 기증 안내가 서로를 링크하지 않는다",
+   "fact": "생애기록물 수집 동의서(별지 제2호의5서식, 2024-07-02 신설)는 「각종서식관리」 게시판 16번 글에만 있다. 「기증현황」 안내 페이지는 이 서식을 언급하지도 링크하지도 않는다.",
+   "consequence": "법이 만들어 준 통로가 사이트 구조 때문에 닫혀 있다. 서식의 존재를 아는 사람만 쓸 수 있다.",
+   "evidence": "formula/view.do?id=62 · DonationInfo.do 양쪽 본문 대조"
+  },
+  {
+   "id": "archive-frozen-since-2018",
+   "title": "기증받은 자료의 공개가 2018년에 멈춰 있는데, 화면은 오늘 날짜를 찍는다",
+   "fact": "「기증현황」 표의 기준일은 자바스크립트 new Date() 로 접속일이 찍힌다(실행 시 확인됨). 표의 수치는 HTML 에 하드코딩돼 있고, 소스에는 원래 문구 \"(2018년 12월 15일 현재)\"가 주석으로 남아 있다. 표의 공개건수 합계 4,342건은 기록관 실제 조회 결과 4,342건과 정확히 일치하며, 기록관 자료의 최신 생산일은 2018-07-27 다.",
+   "consequence": "후손이 기증해도 공개까지 이어진 흔적이 여러 해째 보이지 않는다. 그런데 화면은 오늘 집계한 것처럼 보인다 — 이 서비스가 잡아내려는 as-of 오류의 교과서적 사례다.",
+   "evidence": "DonationInfo.do 의 $(\"#chk-date\").text(today) · ArchivesList.do totCnt · 최신 생산일 (모두 이번 실행에서 재측정)"
+  },
+  {
+   "id": "no-contribution-channel",
+   "title": "박물관 스토리 코너에 일반인·후손이 기고할 길이 없다",
+   "fact": "「나의 살던 고향은」·「손편지」·「컬렉션」·「시간여행」은 모두 열람 전용이다. 본문 영역에 투고·등록 기능이 없다.",
+   "consequence": "제4차 실태조사에서 이산가족이 1순위로 요구한 사업이 \"사진, 물건 등 기록물 수집 보존\"(59.9%)인데, 정작 국민이 자료를 밀어 넣을 입구가 없다.",
+   "evidence": "htgallery/info.do 본문 영역 확인 · isan-descendant.json recordPrograms"
+  },
+  {
+   "id": "youth-program-died",
+   "title": "후손 세대를 겨냥한 단 하나의 사업이 1회로 끝났다",
+   "fact": "2024년 「남북 이산가족 영상편지 공모전」(초·중·고·대학생 3개 부문)이 유일한 후손 세대 전용 사업이었다. 접수 홈페이지 isanfilm.or.kr 는 현재 DNS 조회에 실패한다. 공지사항 368건에 2025·2026년 후속 공고가 없다.",
+   "consequence": "후손 수요(세대 간 교류 희망 55.7%)를 향해 정부가 낸 유일한 문이 닫혔고, 그 자리를 대신하는 상시 프로그램이 없다.",
+   "evidence": "공지사항 id=5905/5911 · isanfilm.or.kr DNS 실패 실측"
+  },
+  {
+   "id": "dna-scale-undisclosed",
+   "title": "후손 유전자검사의 규모가 공표되지 않는다",
+   "fact": "통일부는 \"이산가족 2~3세대로 유전자 검사 대상을 점차 확대하여 나갈 계획\"이라고만 쓴다. 연도별 후손 배정 인원, 신청 자격의 세부 요건, 후손 신청 실적은 통일부 페이지·이산가족법·시행령 어디에도 없다. 연도별 실적표(2014~2024, 누계 29,319명)도 세대 구분이 없다.",
+   "consequence": "후손이 \"나도 대상인가\"를 확인할 방법이 공식 자료 안에 없다. 확인 경로는 전화 문의뿐이다.",
+   "evidence": "unikorea.go.kr/web/unikorea/contents/reunion_build · 이산가족법 제8조의2 · 시행령 제4조의2"
+  },
+  {
+   "id": "faq-stale-amounts",
+   "title": "같은 사이트가 서로 다른 금액을 말한다",
+   "fact": "민간교류경비 지원금이 「교류안내」와 통일부 본청에서는 생사확인 300만원·상봉 600만원·교류지속 80만원인데, 같은 사이트 FAQ 에는 200만원·500만원·50만원으로 남아 있다.",
+   "consequence": "어느 쪽이 최신인지 화면이 말해 주지 않는다. 기준일 없는 안내가 만드는 전형적 오류다.",
+   "evidence": "interchange/4.do · reunion_private · faq/list_t1.do 3자 대조"
+  },
+  {
+   "id": "selection-penalizes-descendants",
+   "title": "등록은 되지만 뽑히지는 않는다",
+   "fact": "상봉 대상자 선정은 고령자와 직계가족에 가중치를 준다(가족관계별 가중치: 부모/부부/자식 3, 형제자매 3, 기타 1). 안내 페이지는 \"가급적 이산 1세대를 신청인으로 하여야 컴퓨터 추첨에 유리합니다\"라고 명시한다.",
+   "consequence": "후손이 신청인이 되는 순간 추첨에서 불리해진다. 후손에게 열린 것은 등록이지 상봉이 아니다.",
+   "evidence": "uf_info/view.do · interchange/view.do 인선 기준"
+  },
+  {
+   "id": "no-descendant-survey",
+   "title": "후손에게 직접 물어본 조사가 아직 없다",
+   "fact": "제4차 실태조사(2024)의 후손 문항은 자손이 있는 1세대 4,042명이 자기 자손을 대신 평가한 값이다.",
+   "consequence": "후손 세대의 실제 인식·수요를 정부가 직접 측정한 데이터가 존재하지 않는다.",
+   "evidence": "isan-descendant.json caveats"
+  }
+ ],
+ "meta": {
+  "actionableCriterion": "후손이 자기 이름으로 신청 주체가 될 수 있고(①), 접수 창구가 이번 실행에서 실측으로 살아 있을 때(②) true. 성사 가능성(실효성)은 판정에 넣지 않고 note 와 gaps 로 따로 말한다.",
+  "eligibilityRule": "'1세대만' | '후손 가능' | '불명' 3값. 판정은 반드시 원문 인용을 동반하며, 인용이 없으면 '불명'으로 남긴다.",
+  "legalRoot": "이산가족법 제2조제1호 — \"남북 이산가족\"이란 이산의 사유와 경위를 불문하고, 현재 군사분계선 이남지역과 이북지역으로 흩어져 있는 8촌 이내의 친척ㆍ인척 및 배우자 또는 배우자이었던 자를 말한다.",
+  "checkedUrls": 29,
+  "liveUrls": 28,
+  "deadUrls": [],
+  "confirmedDead": [
+   "http://www.isanfilm.or.kr/"
+  ],
+  "revived": [],
+  "checks": [
+   {
+    "id": "reunion.home",
+    "url": "https://reunion.unikorea.go.kr/reuni/",
+    "status": 200,
+    "bytes": 389,
+    "ms": 189,
+    "expectHits": [
+     "이산가족"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.applyInfo",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118",
+    "status": 200,
+    "bytes": 262847,
+    "ms": 477,
+    "expectHits": [
+     "이산가족 1세대 본인 또는 가족으로 1인이상 신청 가능",
+     "이산가족 상봉자 선정시 고령자와 직계가족에 가중치를 부여하므로"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.registee",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119",
+    "status": 200,
+    "bytes": 334958,
+    "ms": 475,
+    "expectHits": [
+     "국내거주신청",
+     "해외거주신청"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.visiting",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
+    "status": 200,
+    "bytes": 253904,
+    "ms": 445,
+    "expectHits": [
+     "북한주민 접촉신고",
+     "북한방문증명서"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.contactProc",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/5.do?mid=SM00000131",
+    "status": 200,
+    "bytes": 261428,
+    "ms": 320,
+    "expectHits": [
+     "제9조의2제1항에 따라 미리 신고하려는 남한의 주민",
+     "북한주민접촉 결과보고서"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.subsidy",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/4.do?mid=SM00000131",
+    "status": 200,
+    "bytes": 257154,
+    "ms": 237,
+    "expectHits": [
+     "민간교류경비",
+     "최대 600만원"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.vleDnaLogin",
+    "url": "https://reunion.unikorea.go.kr/reuni/cmm/login_product.do?mid=SM00000125",
+    "status": 200,
+    "bytes": 318230,
+    "ms": 265,
+    "expectHits": [
+     "관리번호",
+     "영상편지 제작신청"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.donation",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+    "status": 200,
+    "bytes": 247954,
+    "ms": 497,
+    "expectHits": [
+     "여러분의 기록물 기증을 기다립니다",
+     "이산을 기록하는 모든 기록물",
+     "02-2100-5916"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.donor",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/Donor.do?mid=SM00000265",
+    "status": 200,
+    "bytes": 310202,
+    "ms": 485,
+    "expectHits": [
+     "기증자 명단",
+     "개인 기증자"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.formLife",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/view.do?id=62&mid=SM00000133",
+    "status": 200,
+    "bytes": 252832,
+    "ms": 403,
+    "expectHits": [
+     "생애기록물 수집 동의서"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.formVle",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/view.do?id=61&mid=SM00000133",
+    "status": 200,
+    "bytes": 252925,
+    "ms": 400,
+    "expectHits": [
+     "영상편지 제작 신청서"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.formDna",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/view.do?id=60&mid=SM00000133",
+    "status": 200,
+    "bytes": 254034,
+    "ms": 389,
+    "expectHits": [
+     "유전자검사 동의서"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.formList",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/list.do?mid=SM00000133",
+    "status": 200,
+    "bytes": 267563,
+    "ms": 613,
+    "expectHits": [
+     "각종서식관리"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.counsel",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/counsel/list.do?mid=SM00000132",
+    "status": 200,
+    "bytes": 258195,
+    "ms": 517,
+    "expectHits": [
+     "접수상담창구안내"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.faq",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/faq/list_t1.do?mid=SM00000142",
+    "status": 200,
+    "bytes": 287641,
+    "ms": 302,
+    "expectHits": [
+     "자식, 형제분 등 다른 가족분이 이산가족찾기 신청을 하실 수 있습니다"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.qna",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/qna/list_qna.do?mid=SM00000143",
+    "status": 200,
+    "bytes": 252284,
+    "ms": 373,
+    "expectHits": [
+     "민원등록",
+     "epeople.go.kr"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.hometownStory",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/info.do?mid=SM00000283",
+    "status": 200,
+    "bytes": 252979,
+    "ms": 202,
+    "expectHits": [
+     "나의 살던 고향은",
+     "사진으로나마 그리운 고향을 만나보실 수 있도록"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.archive",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/FrmRecord.do?mid=SM00000264",
+    "status": 200,
+    "bytes": 254553,
+    "ms": 259,
+    "expectHits": [
+     "기록관"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.contest2024",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5905&mid=SM00000138",
+    "status": 200,
+    "bytes": 257555,
+    "ms": 514,
+    "expectHits": [
+     "초등ㆍ중고등ㆍ대학생 등 3개 부문",
+     "isanfilm.or.kr"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "reunion.dmzWalk2026",
+    "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/view.do?id=5931&mid=SM00000138",
+    "status": 200,
+    "bytes": 256972,
+    "ms": 598,
+    "expectHits": [
+     "2026 DMZ 평화걷기 참여 신청자 모집"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "mou.reunionOverview",
+    "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_current",
+    "status": 200,
+    "bytes": 83535,
+    "ms": 278,
+    "expectHits": [
+     "이산의 사유와 경위를 불문하고"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "mou.reunionBuild",
+    "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_build",
+    "status": 200,
+    "bytes": 86273,
+    "ms": 246,
+    "expectHits": [
+     "이산가족 2~3세대로 유전자 검사 대상을 점차 확대하여 나갈 계획",
+     "사후에라도 가족관계를 확인"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "mou.reunionPlan",
+    "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_Promotion",
+    "status": 200,
+    "bytes": 83049,
+    "ms": 254,
+    "expectHits": [
+     "이산가족 2~3세대 참여에 관한 사항"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "mou.reunionPrivate",
+    "url": "https://www.unikorea.go.kr/web/unikorea/contents/reunion_private",
+    "status": 200,
+    "bytes": 86164,
+    "ms": 304,
+    "expectHits": [
+     "생사확인 300만원, 상봉 600만원"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "tongtong",
+    "url": "https://www.tongtong.go.kr/",
+    "status": 200,
+    "bytes": 167,
+    "ms": 332,
+    "expectHits": [
+     "unikoreaWeb"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "dmzpeace",
+    "url": "https://www.dmzpeace.co.kr/",
+    "status": 200,
+    "bytes": 131022,
+    "ms": 428,
+    "expectHits": [
+     "2026 DMZ 평화걷기",
+     "참가신청"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "law.isan",
+    "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=259607&type=XML",
+    "status": 200,
+    "bytes": 29768,
+    "ms": 549,
+    "expectHits": [
+     "8촌 이내의 친척ㆍ인척",
+     "제8조의3(영상편지 제작ㆍ수집 등)"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "law.isanDecree",
+    "url": "https://www.law.go.kr/DRF/lawService.do?OC=test&target=law&MST=263503&type=XML",
+    "status": 200,
+    "bytes": 150182,
+    "ms": 602,
+    "expectHits": [
+     "생애기록물의 수집을 신청하려는 자",
+     "영상편지의 제작을 신청하려는 남한의 이산가족"
+    ],
+    "expectMiss": [],
+    "ok": true,
+    "error": null
+   },
+   {
+    "id": "contest.isanfilm",
+    "url": "http://www.isanfilm.or.kr/",
+    "status": null,
+    "bytes": null,
+    "ms": 1,
+    "expectHits": [],
+    "expectMiss": [],
+    "ok": false,
+    "error": "EAI_AGAIN",
+    "expectedDead": true
+   }
+  ],
+  "notApplicable": [
+   {
+    "org": "남북하나재단(북한이탈주민지원재단)",
+    "url": "https://www.koreahana.or.kr/welcome.do",
+    "finding": "전 사업이 북한이탈주민 및 그 자녀 대상이다(장학사업·디딤돌사업·의료지원 등 사업명에 전부 \"북한이탈주민\"이 붙는다). 홈페이지 전문에 \"이산가족\" 문자열이 0회 등장한다(실측). 이산가족 후손 대상 프로그램은 확인되지 않았다."
+   },
+   {
+    "org": "하나원(통일부 소속기관)",
+    "url": null,
+    "finding": "북한이탈주민 정착교육기관으로 일반인·후손이 신청하는 프로그램이 아니다. 독립 신청 도메인도 확인되지 않았다(hanawon.unikorea.go.kr 연결 실패)."
+   },
+   {
+    "org": "이북5도위원회(행정안전부)",
+    "url": "https://www.ibuk5do.go.kr/",
+    "finding": "통일부 소속이 아니다. 「이북5도 등 명예도민증 수여 규정」이 2025-09-11 제정된 것은 확인했으나, 후손 대상 여부와 신청 절차를 사이트에서 확인하지 못했다 — 판정 불가로 남긴다(추정하지 않았다)."
+   }
+  ],
+  "measured": {
+   "donationTable": {
+    "rows": [
+     {
+      "label": "문서류",
+      "collected": 5684,
+      "disclosed": 1386
+     },
+     {
+      "label": "사진류",
+      "collected": 5269,
+      "disclosed": 2500
+     },
+     {
+      "label": "동영상 · 음성류",
+      "collected": 3963,
+      "disclosed": 40
+     },
+     {
+      "label": "도서 · 간행물류",
+      "collected": 119,
+      "disclosed": 113
+     },
+     {
+      "label": "박물류",
+      "collected": 269,
+      "disclosed": 223
+     },
+     {
+      "label": "신문류",
+      "collected": 95,
+      "disclosed": 80
+     }
+    ],
+    "collectedSum": 15399,
+    "disclosedSum": 4342
+   },
+   "donationAsOfIsClientDate": true,
+   "donationStepBlockCommentedOut": true,
+   "donationLegacyAsOfInComment": "2018년 12월 15일 현재",
+   "archivePublicTotal": 4342,
+   "archiveNewestProducedOn": "2018-07-27",
+   "disclosedSumMatchesArchive": true,
+   "counselWindows": 265,
+   "errors": [],
+   "measuredAt": "2026-08-19",
+   "formsAddedOn": "2024-07-02 (별지 제2호의2~제2호의5서식 신설·개정)"
+  },
+  "caveats": [
+   "이 파일은 공개 웹페이지·법령 원문에서만 만들었다. 통일부 내부 지침·연도별 사업계획은 열람하지 못했다.",
+   "유전자검사의 후손 대상 연도·규모(예: 2025년 1,550명)는 통일부 공개 페이지·법령에서 확인되지 않았다. 확인되지 않은 수치를 채워 넣지 않았다.",
+   "「나의 살던 고향은」의 기고 가능 여부는 페이지에 규정이 없어 불명으로 두었다. 기능 부재는 실측했으나 정책상 금지인지는 알 수 없다.",
+   "이북5도위원회 명예도민증의 후손 대상 여부는 확인하지 못했다."
+  ]
+ }
+}
