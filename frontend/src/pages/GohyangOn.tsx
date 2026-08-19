@@ -2712,26 +2712,120 @@ function StepMode({ pack, oldRanked, onExit }: {
           </div>
         )
       }
-      case 'clock':
+      case 'clock': {
+        /* 이 카드가 거의 비어 있었다(실측 지적 2026-08-19). 두 가지를 더 놓는다 —
+           전체 수치와 **고른 고향의 수치**. 지역 몫은 추정하지 않는다:
+           등록현황 월별 98개월에 고향별(origin) 열이 실재하므로 그대로 읽는다. */
+        const mFirst = isan.monthly[0]
+        const mLast = isan.monthly.at(-1)
+        const key = panel?.isanKey ?? null
+        const rFirst = key && mFirst ? mFirst.origin[key.monthlyKey] : null
+        const rLast = key && mLast ? mLast.origin[key.monthlyKey] : null
+        const rNow = key
+          ? isan.latest.survivors.byOrigin.entries.find(e => e.label === key.latestKey)?.n ?? null
+          : null
+        const dropPct = (a?: number | null, b?: number | null) =>
+          a && b ? Math.round((1 - b / a) * 100) : null
+
+        /* 전체 추이 미니 그래프 — 실측(98개월) + 추계(2026~2050) */
+        const W = 640, H = 150, PADL = 8, PADR = 8, PADT = 10, PADB = 22
+        const yTop = 62000
+        const tOf = (iso: string) => {
+          const m = iso.match(/^(\d{4})-(\d{2})/)
+          return m ? Number(m[1]) + (Number(m[2]) - 1) / 12 : NaN
+        }
+        const X0 = 2017.4, X1 = 2050.7
+        const px = (t: number) => PADL + ((t - X0) / (X1 - X0)) * (W - PADL - PADR)
+        const py = (v: number) => H - PADB - (v / yTop) * (H - PADT - PADB)
+        const realPath = isan.monthly
+          .map((m, i) => `${i ? 'L' : 'M'}${px(tOf(m.month)).toFixed(1)},${py(m.total).toFixed(1)}`).join(' ')
+        const projPath = pack.proj.byYear
+          .map((r, i) => `${i ? 'L' : 'M'}${px(tOf(r.asOf)).toFixed(1)},${py(r.expected).toFixed(1)}`).join(' ')
+
         return (
           <div>
             <p className={`${STEP_TYPE.figure} ${TEXT.ink}`}>
               {pack.proj.milestoneRange.below10000}
               <span className="ml-2 align-baseline text-[1.75rem] font-bold">년</span>
             </p>
-            <p className={`mt-4 max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+            <p className={`mt-3 max-w-prose ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
               이 무렵이 되면, 살아 계신 신청자가 1만 명보다 적어질 것으로 계산됩니다.
             </p>
-            <p className={`mt-2 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-              이 숫자는 통일부 발표가 아니라 이 화면이 통계로 계산한 값입니다.
+
+            {/* 지금 숫자 — 전체와 그 고향을 나란히 */}
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <div className={`${SURFACE.inset} p-4`}>
+                <p className={`${STEP_TYPE.cap} ${TEXT.faint}`}>지금 전체</p>
+                <p className={`mt-1 ${TYPE.figureSm} ${TEXT.ink}`}>
+                  {nf(isan.latest.overview.cumulative.alive)}<span className="ml-1 text-base font-bold">명</span>
+                </p>
+                <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.faint}`}>{ymKo(isan.latest.asOf)} 기준</p>
+              </div>
+              <div className={`${SURFACE.inset} p-4`}>
+                <p className={`${STEP_TYPE.cap} ${TEXT.faint}`}>
+                  {key ? `이 고향(${key.name}) 출신` : '이 고향 출신'}
+                </p>
+                {rNow != null ? (
+                  <>
+                    <p className={`mt-1 ${TYPE.figureSm} ${TEXT.blue}`}>
+                      {nf(rNow)}<span className="ml-1 text-base font-bold">명</span>
+                    </p>
+                    <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.faint}`}>
+                      전체의 {Math.round((rNow / isan.latest.overview.cumulative.alive) * 100)}%
+                    </p>
+                  </>
+                ) : (
+                  <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+                    이 고향은 출신지 통계에 따로 집계되지 않습니다.
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* 지나온 8년 — 여기까지는 계산이 아니라 실제로 센 값이다 */}
+            <div className={`mt-3 ${SURFACE.card} p-4`}>
+              <p className={`${STEP_TYPE.cap} font-bold ${TEXT.ink}`}>지나온 8년 (실제로 센 값)</p>
+              <p className={`mt-1.5 ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+                전체는 {ymKo(mFirst?.month)} {nf(mFirst?.total)}명에서
+                {' '}{ymKo(mLast?.month)} {nf(mLast?.total)}명으로 줄었습니다
+                {' '}(<b className={`font-bold ${TEXT.ink}`}>{dropPct(mFirst?.total, mLast?.total)}% 감소</b>).
+              </p>
+              {rFirst != null && rLast != null && (
+                <p className={`mt-2 ${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>
+                  {key!.name} 출신은 {nf(rFirst)}명에서 {nf(rLast)}명으로 줄었습니다
+                  {' '}(<b className={`font-bold ${TEXT.blue}`}>{dropPct(rFirst, rLast)}% 감소</b>).
+                </p>
+              )}
+              <div className="mt-3 overflow-x-auto">
+                <svg viewBox={`0 0 ${W} ${H}`} className="h-[150px] w-full min-w-[420px]" role="img"
+                  aria-label="전체 생존 신청자 추이와 앞으로의 추계">
+                  <line x1={PADL} y1={H - PADB} x2={W - PADR} y2={H - PADB} stroke="#dcdfe4" />
+                  <line x1={px(tOf(isan.latest.asOf))} y1={PADT} x2={px(tOf(isan.latest.asOf))} y2={H - PADB}
+                    stroke="#b6bcc5" strokeDasharray="3 3" />
+                  <path d={realPath} fill="none" stroke="#1a4e9c" strokeWidth="2.5" />
+                  <path d={projPath} fill="none" stroke="#767676" strokeWidth="2" strokeDasharray="5 4" />
+                  <text x={PADL + 4} y={H - 6} fontSize="11" fill="#767676">2017</text>
+                  <text x={px(tOf(isan.latest.asOf)) - 14} y={H - 6} fontSize="11" fill="#767676">지금</text>
+                  <text x={W - PADR - 26} y={H - 6} fontSize="11" fill="#767676">2050</text>
+                </svg>
+              </div>
+              <p className={`mt-1 ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+                진한 선은 실제로 센 값(2017~2025), 점선은 앞으로의 계산입니다.
+              </p>
+            </div>
+
+            <p className={`mt-3 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              앞으로의 숫자는 통일부 발표가 아니라 이 화면이 통계청 생명표로 계산한 값입니다.
+              {' '}지나온 값은 통일부가 매월 공표한 실제 수치입니다.
             </p>
             <p className="mt-3">
               <span className={`rounded-full border border-[#dcdfe4] px-2.5 py-1 ${TYPE.cap} font-semibold ${TEXT.faint} dark:border-[#2a2f36]`}>
-                공식 통계 아님 · 계산 결과
+                앞으로의 값 — 공식 통계 아님 · 계산 결과
               </span>
             </p>
           </div>
         )
+      }
       case 'action': {
         const actionable = pack.paths.paths.filter(p => p.actionable)
         const donation = DONATION_FIRST.map(pid => actionable.find(p => p.id === pid)).filter((p): p is PathItem => Boolean(p))
