@@ -16,6 +16,15 @@
      [6] 기억 카드: 고향 고르기 → 답 입력 → 미리보기 → PNG 생성
          (canvas.toDataURL 이 data:image/png 로 시작하는 문자열을 돌려주는지 실측)
      [7] 기억 카드 입력이 localStorage 에만 남는가 — 네트워크 요청에 답이 실려 나가지 않았는가
+     [8] 덱 상단 「기계가 쓴 요약」이 실제로 렌더되는가 · 줄마다 기준일이 붙는가 ·
+         근거 단추를 누르면 그 카드로 실제로 건너뛰는가 (파일의 cardIds 와 대조)
+     [9] 기억 카드가 **지정한 글꼴로 그려지는가** — 폭 실측.
+         "명조로 그린다"는 코드가 있다는 말이지 그려졌다는 말이 아니다. 웹폰트가 막히면
+         조용히 폴백으로 떨어지고 오류도 안 난다(실측: 같은 문장이 로드 전 738.45px →
+         로드 후 697.54px). 그래서 캔버스에서 직접 재서 판정한다.
+    [10] 기억 카드 기준일이 **보여 준 것의 출처**와 같은가 (카탈로그와 대조)
+    [11] 인쇄본에 기증 문의 창구가 남는가 — 내려받기가 막힌 PC 의 유일한 출구다
+    [12] 캔버스 줄바꿈 규칙(lib/wrapLines.mjs) — 단어를 쪼개지 않고 줄 앞에 공백을 남기지 않는가
 
    사용법
      node scripts/nk-verify-deck.mjs [--base http://localhost:5178] [--json] [--png 경로.png]
@@ -90,6 +99,13 @@ function connect(wsUrl) {
 
 /* ── 원본 자료 — 화면이 이 파일과 같은 말을 하는지 대조한다 ── */
 const analysis = JSON.parse(fs.readFileSync(path.join(root, 'frontend/public/gohyang/analysis.json'), 'utf8'))
+const SUM_PATH = path.join(root, 'frontend/public/gohyang/deck-summary.json')
+const summary = fs.existsSync(SUM_PATH) ? JSON.parse(fs.readFileSync(SUM_PATH, 'utf8')) : null
+
+/* 기준일의 단일 진실 소스 — 화면이 대는 날짜를 여기에 대고 잰다 */
+const { DATASETS } = await import('./nk-catalog.mjs')
+/* 캔버스 줄바꿈 규칙 — 브라우저 없이 곧바로 잰다(눈으로는 안 보이는 사고다) */
+const { wrapLines } = await import('../frontend/src/lib/wrapLines.mjs')
 
 const profile = fs.mkdtempSync(path.join(os.tmpdir(), 'nk-verify-'))
 const chrome = spawn(
@@ -216,6 +232,77 @@ try {
   check(`그래프·표가 있는 카드 ${withFigure}장이 전부 그려진다`, drawn === withFigure, `그려진 카드 ${drawn}장`)
   check('모든 카드에 기준일이 붙는다', sweep.every((r) => r.hasAsOf), `누락 ${sweep.filter((r) => !r.hasAsOf).length}장`)
   check('모든 카드에 출처 줄이 붙는다', sweep.every((r) => r.hasSource), `누락 ${sweep.filter((r) => !r.hasSource).length}장`)
+
+  /* ══════════ ①b 덱 상단 「기계가 쓴 요약」 ══════════
+     이 구획은 **없어도 되는 파일**로 만들어져 있다(deck-summary.json 이 없으면 화면이
+     그 자리를 조용히 비운다). 그래서 "요약이 안 뜬다"가 오류로 드러나지 않는다 —
+     여기서 재지 않으면 조용히 사라져도 아무도 모른다. */
+  if (!AS_JSON) console.log(`\n▶ 덱 상단 요약`)
+  if (!summary) {
+    check('덱 요약 파일이 있다', false, 'frontend/public/gohyang/deck-summary.json 이 없다')
+  } else {
+    await cdp.send('Page.navigate', { url: `${BASE}/deck` })
+    await waitFor(`document.body.innerText.includes('재본 것과')`)
+    const sumUp = await evl(`(() => {
+      const sec = document.querySelector('section[aria-label="기계가 쓴 요약"]')
+      if (!sec) return null
+      const chips = [...sec.querySelectorAll('button[data-summary-chip]')]
+      return {
+        head: sec.querySelector('h2')?.textContent?.trim() ?? null,
+        text: sec.innerText,
+        lines: sec.querySelectorAll('ul > li').length,
+        chips: chips.length,
+        asOfs: chips.map(b => b.getAttribute('data-summary-chip')),
+        chipText: chips.map(b => b.textContent.replace(/\\s+/g, ' ').trim()),
+      }
+    })()`)
+    const wantLines = summary.sections.reduce((s, x) => s + x.lines.length, 0)
+    check('덱 상단에 요약 구획이 렌더된다', Boolean(sumUp) && sumUp.head === '이 덱이 말하는 것',
+      sumUp ? `머리글 "${sumUp.head}" · 줄 ${sumUp.lines}개` : '구획 없음')
+    check(`요약 ${wantLines}줄이 전부 그려진다`, sumUp?.lines === wantLines, `화면 ${sumUp?.lines}줄`)
+    check('머리 문장이 파일과 한 글자도 다르지 않다',
+      Boolean(sumUp) && sumUp.text.includes(summary.headline.text), summary.headline.text.slice(0, 30) + '…')
+
+    /* ★ as-of — 요약 구획만 기준일이 빠져 있던 자리다(CLAUDE.md §9-1).
+       칩에 적힌 날짜가 그 카드의 asOf 와 같아야 한다. 「붙어 있다」가 아니라 「맞다」를 잰다. */
+    const cited = [summary.headline, ...summary.sections.flatMap((s) => s.lines)]
+    const wantAsOf = cited.flatMap((l) => l.cardIds.map((id) => analysis.cards.find((c) => c.id === id)?.asOf ?? '?'))
+    check(
+      `요약 ${cited.length}줄에 기준일 칩이 전부 붙고 카드 기준일과 일치한다`,
+      JSON.stringify(sumUp?.asOfs) === JSON.stringify(wantAsOf),
+      `화면 ${JSON.stringify(sumUp?.asOfs)} vs 자료 ${JSON.stringify(wantAsOf)}`,
+    )
+    check('기준일이 사람이 읽는 문구로도 적힌다',
+      (sumUp?.chipText ?? []).every((t) => /기준 \d{4}-\d{2}-\d{2}/.test(t)), (sumUp?.chipText ?? [])[0] ?? '')
+
+    /* 근거 단추 → 그 카드로 실제로 건너뛰는가.
+       고지가 "문장 아래의 카드 단추를 누르시면 그 근거로 넘어갑니다"라고 적혀 있으므로
+       그 문장이 참인지 화면에서 확인한다. 첫 구획의 마지막 줄을 고른다(1번 카드가 아닌 곳). */
+    const target = summary.sections[0].lines.at(-1)
+    const targetId = target.cardIds[0]
+    const targetIdx = analysis.cards.findIndex((c) => c.id === targetId)
+    await evl(`(() => {
+      const sec = document.querySelector('section[aria-label="기계가 쓴 요약"]')
+      const re = /(^|[^0-9])${targetIdx + 1}번 카드/
+      const b = [...sec.querySelectorAll('button[data-summary-chip]')].find(x => re.test(x.textContent))
+      if (b) b.click(); return Boolean(b)
+    })()`)
+    await sleep(400)
+    const jumped = await evl(`(() => ({
+      p: [...document.querySelectorAll('p')].find(p => /^\\d+ \\/ \\d+$/.test(p.textContent.trim()))?.textContent.trim(),
+      h2: document.querySelector('article h2')?.textContent?.trim(),
+    }))()`)
+    check(
+      '요약의 근거 단추를 누르면 그 카드로 건너뛴다',
+      jumped.p === `${targetIdx + 1} / ${total}` && jumped.h2 === analysis.cards[targetIdx].question,
+      `${jumped.p} · "${String(jumped.h2).slice(0, 24)}…"`,
+    )
+    /* 고지 문구가 화면 동작과 어긋나면 안 된다 — 주 사용자가 고령이라 거짓 안내의 대가가 크다.
+       본문은 일부러 링크가 아니다(잘못 눌러 화면이 튀는 것을 막는다). */
+    check('고지가 문장이 아니라 카드 단추를 가리킨다',
+      summary.notice.checked.includes('문장 아래의 카드 단추') && !/문장을 누르/.test(summary.notice.checked),
+      summary.notice.checked.slice(-34))
+  }
 
   /* ══════════ ② 기억 카드 ══════════ */
   if (!AS_JSON) console.log(`\n▶ 기억 카드 (후손 다리 구획 안)`)
@@ -361,6 +448,64 @@ try {
     check('그림 파일을 저장했다', fs.statSync(out).size > 10000, `${out} (${Math.round(fs.statSync(out).size / 1024)}KB)`)
   }
 
+  /* ★ 글꼴 실측 — "명조로 그린다"는 코드가 있다는 말이지 그려졌다는 말이 아니다.
+     웹폰트가 막히면 조용히 폴백으로 떨어지고 오류가 나지 않는다. 그래서 캔버스에서 폭을 잰다.
+       ① document.fonts.check 가 그 글자들에 대해 참인가 (서브셋까지 실제로 왔는가)
+       ② 명조 폭 ≠ 고딕 폭 (같은 face 로 조용히 떨어지지 않았는가)
+       ③ paint() 가 쓰는 **폴백까지 붙은 스택**의 폭 = 웹폰트 단독 폭 (스택의 첫 패밀리가 이겼는가)
+     ③ 이 이 검사의 핵심이다 — 스택 순서를 잘못 고치면 오류 없이 글꼴만 바뀐다. */
+  const fontProbe = await evl(`(async () => {
+    const S = '고향 기억 카드 재령벌 큰내 썰매 0123'
+    const WEB = '"Noto Serif KR"'
+    const STACK = getComputedStyle(document.querySelector('.memcard-print dd')).fontFamily
+    await document.fonts.load('400 21px ' + WEB, S)
+    const cv = document.createElement('canvas')
+    const ctx = cv.getContext('2d')
+    const w = (f) => { ctx.font = '400 21px ' + f; return ctx.measureText(S).width }
+    return {
+      stack: STACK,
+      loaded: document.fonts.check('400 21px ' + WEB, S),
+      web: w(WEB),
+      stackW: w(STACK),
+      gothic: w('"Malgun Gothic", sans-serif'),
+      qFont: getComputedStyle(document.querySelector('.memcard-print dt')).fontFamily,
+    }
+  })()`)
+  check(
+    '명조 웹폰트가 실제로 로드됐다(서브셋 포함)',
+    fontProbe.loaded === true, `document.fonts.check → ${fontProbe.loaded}`,
+  )
+  check(
+    '답변이 지정한 명조로 그려진다 — 폭이 고딕과 다르다',
+    Math.abs(fontProbe.web - fontProbe.gothic) > 1,
+    `명조 ${fontProbe.web.toFixed(2)}px vs 고딕 ${fontProbe.gothic.toFixed(2)}px`,
+  )
+  check(
+    '폴백까지 붙은 글꼴 스택이 웹폰트로 착지한다',
+    Math.abs(fontProbe.stackW - fontProbe.web) < 0.01,
+    `스택 ${fontProbe.stackW.toFixed(2)}px vs 웹폰트 ${fontProbe.web.toFixed(2)}px`,
+  )
+  check(
+    '질문은 고딕, 답은 명조 — 묻는 쪽과 답한 쪽이 글꼴로 갈린다',
+    /Noto Serif KR/.test(fontProbe.stack) && !/Noto Serif KR/.test(fontProbe.qFont),
+    `답 "${fontProbe.stack.slice(0, 20)}…" · 질문 "${fontProbe.qFont.slice(0, 20)}…"`,
+  )
+
+  /* ★ 기준일 — 화면이 대는 날짜가 **보여 준 것의 출처**의 것인가.
+     전에는 region.json sources 를 앞에서부터 훑어 「coverageEnd 가 있는 첫 항목」
+     (북한정보포털 동향)을 집었다. 사건 목록은 남북관계연표에서만 오는데도. */
+  const wantEventsAsOf = DATASETS.timeline.coverageEnd
+  const trendAsOf = DATASETS.nkinfoTrend.coverageEnd
+  const asOfSeen = await evl(`(() => {
+    const t = document.querySelector('#memory-card')?.innerText ?? ''
+    return { hasTimeline: t.includes('${wantEventsAsOf}'), hasTrend: t.includes('${trendAsOf}'), sample: (t.match(/기준일 — [^\\n]*/) ?? [''])[0] }
+  })()`)
+  check(
+    `기억 카드의 연표 기준일이 카탈로그와 같다 (${wantEventsAsOf})`,
+    asOfSeen.hasTimeline && !asOfSeen.hasTrend,
+    `연표 ${asOfSeen.hasTimeline} · 무관한 동향 기준일(${trendAsOf}) 노출 ${asOfSeen.hasTrend} · "${asOfSeen.sample}"`,
+  )
+
   /* 인쇄 경로 — 내려받기가 막힌 환경의 대체 경로가 실제로 있는가 */
   const printable = await evl(`(() => {
     const b = [...document.querySelector('#memory-card').querySelectorAll('button')].find(x => x.textContent.includes('인쇄하기'))
@@ -386,6 +531,26 @@ try {
     '인쇄하면 기억 카드만 남는다',
     printView.card === 'visible' && printView.cardText === 'visible' && printView.buttons === 'none' && printView.header === 'hidden',
     JSON.stringify(printView),
+  )
+  /* ★ 인쇄물에 무엇이 실려 나가는가 — 「인쇄 단추가 있다」와 「인쇄하면 다 나온다」는 다른 말이다.
+     내려받기가 막힌 PC 를 위해 둔 것이 인쇄 경로인데, 정작 그 종이에서 기증 창구가
+     빠져 있었다(꼬리말 3줄 중 2줄과 표제가 미리보기에 없었다). */
+  const printed = await evl(`(() => {
+    const el = document.querySelector('.memcard-print')
+    const t = el ? el.innerText : ''
+    return {
+      title: t.includes('고향 기억 카드'),
+      sub: t.includes('고향잇기 — 이산가족 기록을 후손에게 잇습니다'),
+      donate: t.includes('02-2100-5916'),
+      basis: t.includes('기록의 근거는 통일부 공공데이터'),
+      privacy: t.includes('서버로 전송되지 않았습니다'),
+      len: t.length,
+    }
+  })()`)
+  check(
+    '인쇄본에 표제·부제·꼬리말 3줄(기증 문의 전화 포함)이 그대로 실린다',
+    printed.title && printed.sub && printed.donate && printed.basis && printed.privacy,
+    JSON.stringify(printed),
   )
   await cdp.send('Emulation.setEmulatedMedia', { media: '' })
 
@@ -418,6 +583,30 @@ try {
     /* 박물관 원본 이미지가 개발 서버 경유로에서 502 로 막히는 것은 화면 밖의 일이다(이미지는 감춰진다) */
     .filter((t) => !/museum-img|favicon/.test(t))
   check('콘솔 오류 0건', errs.length === 0, errs.slice(0, 3).join(' | '))
+
+  /* ══════════ ③ 캔버스 줄바꿈 규칙 (브라우저 없이) ══════════
+     오류가 안 나서 눈에 안 띄는 종류의 사고다 — 글자가 한 칸 밀리거나 단어가 중간에서 끊길 뿐이라
+     캡처를 봐도 넘어간다. 그래서 자로 잰다. 가짜 measureText 는 라틴 10px · 그 밖 20px 로 둔다. */
+  if (!AS_JSON) console.log(`\n▶ 캔버스 줄바꿈 규칙 (lib/wrapLines.mjs)`)
+  const ruler = { measureText: (s) => ({ width: [...String(s)].reduce((w, ch) => w + (/[ -~]/.test(ch) ? 10 : 20), 0) }) }
+  /* 두 문단이 각각 한 가지 실패를 겨눈다 — 고치기 전 코드로 돌리면 둘 다 재현된다:
+       1문단 → ["…파하 A", "BC123456 끝."]        (단어 중간 절단)
+       2문단 → ["…파하하", " 다음 줄입니다."]      (줄 앞 공백) */
+  const wrapped = wrapLines(
+    ruler,
+    '가나다라마바사아자차카타파하 ABC123456 끝.\n가나다라마바사아자차카타파하하 다음 줄입니다.',
+    300,
+  )
+  check('어느 줄도 공백으로 시작하지 않는다', wrapped.every((l) => !/^\s/.test(l)), JSON.stringify(wrapped))
+  /* 쪼개졌다면 어느 줄에도 'ABC123456' 이 통째로 남지 않는다 — 그 한 줄이 판정이다 */
+  check('라틴·숫자 덩어리가 단어 중간에서 쪼개지지 않는다',
+    wrapped.some((l) => l.includes('ABC123456')),
+    JSON.stringify(wrapped))
+  check('한 줄도 폭을 넘지 않는다', wrapped.every((l) => ruler.measureText(l).width <= 300),
+    `최대 ${Math.max(...wrapped.map((l) => ruler.measureText(l).width))}px`)
+  const longTok = wrapLines(ruler, 'A'.repeat(80), 300)
+  check('줄보다 긴 덩어리는 그때만 쪼갠다(넘쳐 잘리지 않는다)',
+    longTok.length === 3 && longTok.join('') === 'A'.repeat(80), JSON.stringify(longTok.map((l) => l.length)))
 
   failed = results.filter((r) => !r.pass).length
 } catch (e) {

@@ -36,4 +36,7 @@ export function search(ix: any, q: string, opts?: any): { Q: any; hits: any[] }
 export function answer(ix: any, q: string, opts?: any): NkAnswer
 export function answerAsync(ix: any, q: string, opts?: any): Promise<NkAnswer>
 export function asOfNotice(rec: NkRecord, askedAt?: Date): Notice
+/** 카탈로그의 coverageEnd — 여러 계열을 합쳐 보여 준 자리는 **가장 오래된 쪽**이 기준일이다 */
+export function coverageEndOf(...ids: string[]): string | null
+export function datasetLabel(id: string): string
 export function topicNotice(Q: any): any

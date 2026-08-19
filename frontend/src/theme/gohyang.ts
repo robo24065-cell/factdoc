@@ -46,12 +46,46 @@ export const SURFACE = {
   line: 'border-[#dcdfe4] dark:border-[#2a2f36]',
 } as const
 
+/* ══════════ 글꼴 ══════════
+   두 벌을 **역할로** 나눈다. 하나를 고르는 것이 아니다.
+
+     명조 = 사람이 기억해서 남긴 말   — 표제 · 고향 이름 · 답변 · 이름줄
+     고딕 = 기계가 공공데이터에서 붙인 값 — 질문 · 수치 · 기준일 · 출처 · 꼬리말
+
+   as-of 규약(기준일이 붙는 것과 안 붙는 것)을 활자로 한 겹 더 부호화하는 것이지
+   새 규칙을 만드는 게 아니다. 질문은 우리가 만든 것이므로 고딕이고, 답은 사람의
+   것이므로 명조다 — 화면에서 '묻는 쪽'과 '답한 쪽'이 한눈에 갈린다.
+
+   ★ 명조는 19px 미만에 쓰지 않는다.
+     1x 화면에서 획이 픽셀 격자 아래로 내려가 회색이 된다(실측 solid-ink 비율:
+     14px 명조 9.2% 대 고딕 29.0% · 21px 명조 26.0%). 실사용자 평균 83.0세라
+     취향 문제가 아니다. 그래서 42/34/21/19 는 명조, 17/16/15/14 는 고딕이다.
+
+   ★ 이 상수가 화면(HTML)과 그림 파일(canvas)의 **공통 원본**이다.
+     canvas 의 ctx.font 은 CSS font 단축 파서를 그대로 쓰므로 같은 문자열을 넘긴다.
+     두 벌로 두면 미리보기와 내려받은 PNG 의 줄바꿈이 갈라진다.
+
+   폴백 경로(웹폰트가 막힌 경우): 함초롬바탕(한컴오피스) → 바탕(한국어 Windows
+   보조 글꼴) → AppleMyungjo(macOS 선탑재) → 한국어 명조가 없는 기기는 고딕으로
+   **명시적으로** 착지시킨다. serif 키워드는 한글 글리프를 못 내므로 어디로
+   떨어질지를 우리가 정해 두는 것이다. 명조는 장식이지 의미 전달 수단이 아니다. */
+export const FONT = {
+  serif: '"Noto Serif KR", "HCR Batang", "함초롬바탕", Batang, "바탕", AppleMyungjo, "Apple SD Gothic Neo", "Malgun Gothic", serif',
+  gothic: '"Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo", "Noto Sans KR", system-ui, sans-serif',
+} as const
+
+/** document.fonts.load()·check() 에 넘기는 패밀리 — 폴백을 **빼고** 웹폰트 하나만.
+ *  폴백을 섞으면 반환 배열이 "웹폰트가 살아 있다"는 신호로 못 쓴다(시스템 글꼴도 함께 세어진다). */
+export const WEBFONT_SERIF = '"Noto Serif KR"'
+
 /* ══════════ 활자 ══════════ */
 export const TYPE = {
   h1: 'text-[1.625rem] font-bold leading-[1.35] tracking-[-0.02em] sm:text-[2rem]',
   h2: 'text-[1.1875rem] font-bold leading-snug tracking-[-0.01em]',
   h3: 'text-[0.9375rem] font-bold leading-snug',
   body: 'text-[0.9375rem] leading-[1.75]',
+  /** 사람이 적은 답변 — 명조로 찍는 자리라 21px 아래로 내리지 않는다(위 글꼴 주석) */
+  answer: 'text-[1.3125rem] leading-[1.8]',
   sub: 'text-sm leading-[1.7]',
   cap: 'text-[11px] leading-[1.6]',
   /** 수치 — 주인공. tabular-nums 로 자리가 흔들리지 않게 */

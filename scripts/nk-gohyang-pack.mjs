@@ -36,6 +36,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import zlib from 'node:zlib'
 import { fileURLToPath } from 'node:url'
+import { recheckSummary } from './nk-summary-verify.mjs'
 
 /* 오늘 날짜는 인자/환경변수 우선, 없으면 프로젝트 고정 기준일.
    new Date() 를 기본값으로 쓰지 않는다 — 산출물 메타가 실행 시각에 따라 흔들린다. */
@@ -480,6 +481,33 @@ const coordsOf = (s) => s.points ?? s.rows ?? null
     `meta ${analysis.meta.tried}/${analysis.meta.accepted}/${analysis.meta.weak}/${analysis.meta.rejectedCount} vs 실제 ${analysis.cards.length}/${cnt('성립')}/${cnt('약함')}/${cnt('불가')}`)
 }
 
+
+/* -- 덱 요약 (선택 입력) --
+   * 이것만 **없어도 되는 입력**이다. INPUTS 에 넣지 않은 이유가 그것이다 —
+     INPUTS 는 없으면 죽는 1:1 표이고, 요약은 없으면 그냥 없는 대로 화면이 완결된다.
+   nk-deck-summary.mjs 가 굽고, 여기서는 **복사 전에 같은 검사를 다시 돌린다.**
+   통과하지 못하면 복사하지 않고(요약만 건너뛴다) 이미 public 에 있던 옛 요약은 지운다.
+   낡은 요약이 새 카드 위에 남는 것이 요약이 없는 것보다 훨씬 나쁘다(as-of 규약). */
+const SUMMARY_SRC = path.join(root, '북한자료-api/deck-summary.json')
+const SUMMARY_OUT = 'deck-summary.json'
+let summary = null
+console.log('\n[1b] 덱 요약 (선택 — 없으면 화면이 그 구획을 그리지 않는다)')
+if (!fs.existsSync(SUMMARY_SRC)) {
+  console.log('  · 요약 파일 없음 — 건너뛴다 (node scripts/nk-deck-summary.mjs 로 구울 수 있다)')
+} else {
+  let parsed = null
+  try { parsed = JSON.parse(fs.readFileSync(SUMMARY_SRC, 'utf8')) } catch (e) { console.log(`  ✗ JSON 파싱 실패 — ${e.message}`) }
+  const rc = parsed ? recheckSummary(parsed, analysis) : { ok: false, problems: [{ where: '파일', why: '읽지 못했다' }], stats: null }
+  if (rc.ok) {
+    summary = { data: parsed, outBuf: Buffer.from(JSON.stringify(parsed, null, 2) + '\n', 'utf8') }
+    console.log(`  ✓ 재검 통과 — 문장 ${rc.stats.lines}개 · 수치 ${rc.stats.figures}개(전부 카드까지 되짚음) · 인용 카드 ${rc.stats.cardsCited}장`)
+    console.log(`    구운 날 ${parsed.builtAt} · 모델 ${parsed.model} · ${parsed.attempt}번째 시도`)
+  } else {
+    console.log(`  ✗ 재검 실패 ${rc.problems.length}건 — 복사하지 않는다 (나머지 팩은 그대로 간다)`)
+    for (const q of rc.problems.slice(0, 5)) console.log(`      · ${q.where} — ${q.why}`)
+  }
+}
+
 if (fails.length) die(`조인 무결성 ${fails.length}건 실패 — 복사하지 않았다.\n  ${fails.join('\n  ')}`)
 
 /* ══════════ 크기 확인 ══════════ */
@@ -494,6 +522,12 @@ for (const l of loaded) {
   console.log(
     `  ✓ ${l.out.padEnd(15)} ${String(l.outBuf.length).padStart(9)} B  (gzip ${String(gz).padStart(8)} B · 상한의 ${pct}%)${slimTag}`,
   )
+}
+if (summary) {
+  const gz = zlib.gzipSync(summary.outBuf).length
+  total += summary.outBuf.length
+  if (summary.outBuf.length > MAX_BYTES) die(`${SUMMARY_OUT} 이 상한을 넘는다: ${summary.outBuf.length} > ${MAX_BYTES}`)
+  console.log(`  ✓ ${SUMMARY_OUT.padEnd(15)} ${String(summary.outBuf.length).padStart(9)} B  (gzip ${String(gz).padStart(8)} B · 상한의 ${((summary.outBuf.length / MAX_BYTES) * 100).toFixed(2)}%)`)
 }
 console.log(`  합계 ${total.toLocaleString('en-US')} B — 페이지 1회 로드 시 내려받는 총량`)
 
@@ -608,13 +642,42 @@ const manifest = {
         '「약함」·「불가」 카드를 숨기지 말 것 — 무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이다. ' +
         '기준일이 다른 계열을 이은 카드는 카드 안에 그 사실이 적혀 있다.',
     },
+    ...(summary
+      ? [{
+          file: SUMMARY_OUT,
+          role: '분석 덱 상단 요약 — 생성형 AI(Gemini)가 카드가 이미 확정한 문장·수치만 옮겨 이어 쓴 것',
+          builtAt: summary.data.builtAt,
+          asOf: summary.data.sourceBuiltAt,
+          model: summary.data.model,
+          verified: summary.data.verified,
+          upstream: [{ name: 'analysis.json (같은 팩)', url: null, asOf: summary.data.sourceBuiltAt }],
+          caution:
+            '통일부의 공식 서술이 아니고 본 시제품의 해석이다. 화면은 이 사실을 접지 않은 고지 상자로 항상 밝혀야 한다. ' +
+            '요약의 수치는 전부 scripts/nk-summary-verify.mjs 가 카드 원문까지 되짚어 대조한 것이며, ' +
+            '이 팩은 그 재검을 통과하지 못한 요약을 복사하지 않는다.',
+        }]
+      : []),
   ],
-  files: loaded.map((l) => ({
-    name: l.out,
-    from: l.src.replace(/\\/g, '/'),
-    bytes: l.outBuf.length,
-    ...(l.slim ? { slim: true, sourceBytes: l.buf.length } : {}),
-  })),
+  files: [
+    ...loaded.map((l) => ({
+      name: l.out,
+      from: l.src.replace(/\\/g, '/'),
+      bytes: l.outBuf.length,
+      ...(l.slim ? { slim: true, sourceBytes: l.buf.length } : {}),
+    })),
+    ...(summary ? [{ name: SUMMARY_OUT, from: '북한자료-api/deck-summary.json', bytes: summary.outBuf.length, optional: true }] : []),
+  ],
+  summary: summary
+    ? {
+        present: true,
+        builtAt: summary.data.builtAt,
+        sourceBuiltAt: summary.data.sourceBuiltAt,
+        model: summary.data.model,
+        attempt: summary.data.attempt,
+        verified: summary.data.verified,
+        recheckedAt: TODAY,
+      }
+    : { present: false, note: '요약이 없거나 재검을 통과하지 못했다. 화면은 요약 구획을 그리지 않는다 — 정상 동작이다.' },
   limits: { perFileBytes: MAX_BYTES, note: 'Cloudflare Pages 자산 상한' },
 }
 
@@ -631,8 +694,20 @@ for (const l of loaded) {
   fs.writeFileSync(dst, l.outBuf) // slim 이 없으면 원본 바이트 그대로
   console.log(`  → frontend/public/gohyang/${l.out}${l.slim ? ' (슬림)' : ''}`)
 }
+/* 요약은 통과했을 때만 놓는다. 실패했는데 옛 파일이 남아 있으면 지운다 —
+   낡은 요약이 새 카드 위에 남는 것이 요약이 없는 것보다 나쁘다. */
+{
+  const dst = path.join(OUT_DIR, SUMMARY_OUT)
+  if (summary) {
+    fs.writeFileSync(dst, summary.outBuf)
+    console.log(`  → frontend/public/gohyang/${SUMMARY_OUT} (덱 요약 · 재검 통과본)`)
+  } else if (fs.existsSync(dst)) {
+    fs.rmSync(dst)
+    console.log(`  ✗ frontend/public/gohyang/${SUMMARY_OUT} 를 지웠다 — 지금 카드에 맞는 요약이 아니다`)
+  }
+}
 const mBuf = Buffer.from(JSON.stringify(manifest, null, 2) + '\n', 'utf8')
 fs.writeFileSync(path.join(OUT_DIR, 'manifest.json'), mBuf)
 console.log(`  → frontend/public/gohyang/manifest.json  (${mBuf.length} B)`)
 
-console.log(`\n✓ 완료 — ${loaded.length}개 파일, 총 ${(total + mBuf.length).toLocaleString('en-US')} B\n`)
+console.log(`\n✓ 완료 — ${loaded.length + (summary ? 1 : 0)}개 파일, 총 ${(total + mBuf.length).toLocaleString('en-US')} B\n`)

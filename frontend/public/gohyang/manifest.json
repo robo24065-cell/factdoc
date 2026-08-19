@@ -451,6 +451,28 @@
         }
       ],
       "caution": "카드의 수치는 이 시제품이 계산한 결과이지 통일부 공표 통계가 아니다. 화면은 판정(성립·약함·불가)을 배지로 구분해 표시하고, 「약함」·「불가」 카드를 숨기지 말 것 — 무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이다. 기준일이 다른 계열을 이은 카드는 카드 안에 그 사실이 적혀 있다."
+    },
+    {
+      "file": "deck-summary.json",
+      "role": "분석 덱 상단 요약 — 생성형 AI(Gemini)가 카드가 이미 확정한 문장·수치만 옮겨 이어 쓴 것",
+      "builtAt": "2026-08-19",
+      "asOf": "2026-08-19",
+      "model": "gemini-3.1-flash-lite",
+      "verified": {
+        "lines": 9,
+        "figures": 27,
+        "cardsCited": 8,
+        "checks": 14,
+        "passed": true
+      },
+      "upstream": [
+        {
+          "name": "analysis.json (같은 팩)",
+          "url": null,
+          "asOf": "2026-08-19"
+        }
+      ],
+      "caution": "통일부의 공식 서술이 아니고 본 시제품의 해석이다. 화면은 이 사실을 접지 않은 고지 상자로 항상 밝혀야 한다. 요약의 수치는 전부 scripts/nk-summary-verify.mjs 가 카드 원문까지 되짚어 대조한 것이며, 이 팩은 그 재검을 통과하지 못한 요약을 복사하지 않는다."
     }
   ],
   "files": [
@@ -505,8 +527,29 @@
       "name": "analysis.json",
       "from": "북한자료-api/analysis.json",
       "bytes": 234909
+    },
+    {
+      "name": "deck-summary.json",
+      "from": "북한자료-api/deck-summary.json",
+      "bytes": 12865,
+      "optional": true
     }
   ],
+  "summary": {
+    "present": true,
+    "builtAt": "2026-08-19",
+    "sourceBuiltAt": "2026-08-19",
+    "model": "gemini-3.1-flash-lite",
+    "attempt": 2,
+    "verified": {
+      "lines": 9,
+      "figures": 27,
+      "cardsCited": 8,
+      "checks": 14,
+      "passed": true
+    },
+    "recheckedAt": "2026-08-15"
+  },
   "limits": {
     "perFileBytes": 26214400,
     "note": "Cloudflare Pages 자산 상한"

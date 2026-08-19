@@ -6,7 +6,7 @@
 
 import { extractTime, timeWindow, needsLLM } from './nk-time.mjs'
 import { normalizeByRule } from './nk-normalize.mjs'
-import { TOPIC_STATUS, CUMULATIVE, pendingSourceFor } from '../../../scripts/nk-catalog.mjs'
+import { TOPIC_STATUS, CUMULATIVE, DATASETS, pendingSourceFor } from '../../../scripts/nk-catalog.mjs'
 import { buildGraph, relationAnswer } from './nk-relation.mjs'
 import { candidatesOf, KEEP_MIN as JUDGE_KEEP_MIN } from './nk-judge.mjs'
 import { buildLexicon, lexiconAnswer } from './nk-lexicon.mjs'
@@ -899,6 +899,24 @@ export function aggregate(ix, Q, hits) {
     peak: { key: mx.m.dims[dimName], value: mx.m.value },
     low: { key: mn.m.dims[dimName], value: mn.m.value },
     dataset: ix.data.datasets[pool[0].rec.datasetId], record: pool[0].rec }
+}
+
+/* ── 계열 기준일 ─────────────────────────────────────────────
+   화면이 "이 값은 언제 것인가"를 물을 때 카탈로그(단일 진실 소스)에서 곧장 뽑아 쓴다.
+
+   ★ 여러 계열을 **합쳐** 보여 준 것의 기준일은 가장 오래된 쪽이다.
+     합친 것 중 하나라도 낡았으면 합친 결과도 그만큼만 최신이기 때문이다.
+     이 함수가 없던 자리에서 사고가 났다: 화면이 nk-region.json 의 sources 를 앞에서부터
+     훑어 「coverageEnd 가 있는 첫 항목」(북한정보포털 동향 2026-08-11)을 집었는데,
+     정작 화면에 뜬 사건의 출처인 남북관계연표에는 그 키가 없어 건너뛰었다.
+     기준일이 291일 과대로 찍혔고, 그 날짜가 기억 카드 PNG·인쇄본에 그대로 남았다. */
+export function coverageEndOf(...ids) {
+  const ends = ids.map(id => DATASETS[id]?.coverageEnd).filter(Boolean).sort()
+  return ends.length ? ends[0] : null
+}
+/** 그 데이터셋이 카탈로그에서 뭐라고 불리는지 — 화면이 계열 이름을 지어내지 않게 한다 */
+export function datasetLabel(id) {
+  return DATASETS[id]?.name ?? id
 }
 
 // ── 시점 문구 ───────────────────────────────────────────────

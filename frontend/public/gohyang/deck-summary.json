@@ -1,0 +1,399 @@
+{
+  "schema": "gohyang.deck-summary/1",
+  "builtAt": "2026-08-19",
+  "sourceBuiltAt": "2026-08-19",
+  "sourceHash": "sha256:56b17ac992545dd2f7d9f010baa3c4bd5ae6a61f59949d83ab590ed70699e0c9",
+  "model": "gemini-3.1-flash-lite",
+  "attempt": 2,
+  "promptVersion": 2,
+  "verifierVersion": 2,
+  "verified": {
+    "lines": 9,
+    "figures": 27,
+    "cardsCited": 8,
+    "checks": 14,
+    "passed": true
+  },
+  "shape": {
+    "tried": 21,
+    "accepted": 11,
+    "weak": 4,
+    "rejected": 6
+  },
+  "headline": {
+    "text": "당국차원 교류는 2018년을 끝으로 89개월 동안 0건입니다.",
+    "cardIds": [
+      "exchange-terminus"
+    ],
+    "figures": [
+      {
+        "raw": "2018년",
+        "value": 2018,
+        "cardId": "exchange-terminus",
+        "findingIndex": 0,
+        "matchedIn": "finding",
+        "sourceText": "2018년 462건 · 2,829명",
+        "match": "exact"
+      },
+      {
+        "raw": "89",
+        "value": 89,
+        "cardId": "exchange-terminus",
+        "findingIndex": 1,
+        "matchedIn": "finding",
+        "sourceText": "2019년~2026-05-31 (89개월)",
+        "match": "exact"
+      },
+      {
+        "raw": "0",
+        "value": 0,
+        "cardId": "exchange-terminus",
+        "findingIndex": null,
+        "matchedIn": "method",
+        "sourceText": "각각 합산. 가공·보간 없음. 마지막 비(非)0 연도와 이후 연속 0 구간을 실측.",
+        "match": "exact"
+      }
+    ]
+  },
+  "sections": [
+    {
+      "key": "established",
+      "label": "재어진 것",
+      "verdict": "성립",
+      "lines": [
+        {
+          "id": "e1",
+          "text": "당국차원 마지막 실적은 2018년 462건이며 그 뒤 2019년부터 2026년 5월 31일까지 89개월 동안 실적은 0건이다.",
+          "cardIds": [
+            "exchange-terminus"
+          ],
+          "verdicts": [
+            "성립"
+          ],
+          "figures": [
+            {
+              "raw": "2018년",
+              "value": 2018,
+              "cardId": "exchange-terminus",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "2018년 462건 · 2,829명",
+              "match": "exact"
+            },
+            {
+              "raw": "462",
+              "value": 462,
+              "cardId": "exchange-terminus",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "2018년 462건 · 2,829명",
+              "match": "exact"
+            },
+            {
+              "raw": "2019년",
+              "value": 2019,
+              "cardId": "exchange-terminus",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "2019년~2026-05-31 (89개월)",
+              "match": "exact"
+            },
+            {
+              "raw": "2026년 5월 31일",
+              "value": 20260531,
+              "cardId": "exchange-terminus",
+              "findingIndex": null,
+              "matchedIn": "asOf",
+              "sourceText": "2026-05-31",
+              "match": "exact"
+            },
+            {
+              "raw": "89",
+              "value": 89,
+              "cardId": "exchange-terminus",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "2019년~2026-05-31 (89개월)",
+              "match": "exact"
+            },
+            {
+              "raw": "0",
+              "value": 0,
+              "cardId": "exchange-terminus",
+              "findingIndex": null,
+              "matchedIn": "method",
+              "sourceText": "각각 합산. 가공·보간 없음. 마지막 비(非)0 연도와 이후 연속 0 구간을 실측.",
+              "match": "exact"
+            }
+          ]
+        },
+        {
+          "id": "e2",
+          "text": "출처 연결 자료에 따르면 2018년 8월 31일부터 2026년 5월 31일까지 93개월 동안 25,252명이 세상을 떠나셨다.",
+          "cardIds": [
+            "deaths-since-last-reunion"
+          ],
+          "verdicts": [
+            "성립"
+          ],
+          "figures": [
+            {
+              "raw": "2018년 8월 31일",
+              "value": 20180831,
+              "cardId": "deaths-since-last-reunion",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "2018-08-31 → 2025-08-31, 84개월. 월평균 276명",
+              "match": "exact"
+            },
+            {
+              "raw": "2026년 5월 31일",
+              "value": 20260531,
+              "cardId": "deaths-since-last-reunion",
+              "findingIndex": null,
+              "matchedIn": "method",
+              "sourceText": " 2025-08-31)와 ②출처 연결(HWP 2026-05-31) 두 값을 나란히 낸다.",
+              "match": "exact"
+            },
+            {
+              "raw": "93",
+              "value": 93,
+              "cardId": "deaths-since-last-reunion",
+              "findingIndex": null,
+              "matchedIn": "n",
+              "sourceText": "93",
+              "match": "exact"
+            },
+            {
+              "raw": "25,252",
+              "value": 25252,
+              "cardId": "deaths-since-last-reunion",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "25,252명",
+              "match": "exact"
+            }
+          ]
+        },
+        {
+          "id": "e3",
+          "text": "평안북도 원적 생존자는 53.1% 감소하였고 기록은 0.4건/인으로 1순위 고향이다.",
+          "cardIds": [
+            "legacy-priority"
+          ],
+          "verdicts": [
+            "성립"
+          ],
+          "figures": [
+            {
+              "raw": "53.1",
+              "value": 53.1,
+              "cardId": "legacy-priority",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "생존 53.1% 감소 · 기록 0.4건/인 · 식별사료 0.018건/인 (순위합 4)",
+              "match": "exact"
+            },
+            {
+              "raw": "0.4",
+              "value": 0.4,
+              "cardId": "legacy-priority",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "생존 53.1% 감소 · 기록 0.4건/인 · 식별사료 0.018건/인 (순위합 4)",
+              "match": "exact"
+            },
+            {
+              "raw": "1",
+              "value": 1,
+              "cardId": "legacy-priority",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "1순위",
+              "match": "exact"
+            }
+          ]
+        },
+        {
+          "id": "e4",
+          "text": "황해도 원적 생존자는 6,851명으로 전체의 37.4%를 차지하지만 기록 밀도는 0.121건/인으로 가장 낮다.",
+          "cardIds": [
+            "record-density-gap"
+          ],
+          "verdicts": [
+            "성립"
+          ],
+          "figures": [
+            {
+              "raw": "6,851",
+              "value": 6851,
+              "cardId": "record-density-gap",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "기록 829건 ÷ 생존자 6,851명",
+              "match": "exact"
+            },
+            {
+              "raw": "37.4",
+              "value": 37.4,
+              "cardId": "record-density-gap",
+              "findingIndex": 3,
+              "matchedIn": "finding",
+              "sourceText": "도(구) 생존자 6,851명 (원적 확인분의 37.4%)",
+              "match": "exact"
+            },
+            {
+              "raw": "0.121",
+              "value": 0.121,
+              "cardId": "record-density-gap",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "황해도(구) 0.121건/인",
+              "match": "exact"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "weak",
+      "label": "방향만 보이는 것",
+      "verdict": "약함",
+      "lines": [
+        {
+          "id": "w1",
+          "text": "생존자 35,311명과 통일 필요성 41.1%는 같은 기간 함께 내려갔다까지만 말할 수 있다.",
+          "cardIds": [
+            "opinion-vs-survivors"
+          ],
+          "verdicts": [
+            "약함"
+          ],
+          "figures": [
+            {
+              "raw": "35,311",
+              "value": 35311,
+              "cardId": "opinion-vs-survivors",
+              "findingIndex": 0,
+              "matchedIn": "finding",
+              "sourceText": "60,076명 → 35,311명",
+              "match": "exact"
+            },
+            {
+              "raw": "41.1",
+              "value": 41.1,
+              "cardId": "opinion-vs-survivors",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "53.8% → 41.1%",
+              "match": "exact"
+            }
+          ]
+        },
+        {
+          "id": "w2",
+          "text": "겨울 사망률이 여름보다 1.23배 높다는 방향은 7년 중 6년 일치하지만 표본이 얇아 우연을 배제할 수 없다.",
+          "cardIds": [
+            "death-seasonality"
+          ],
+          "verdicts": [
+            "약함"
+          ],
+          "figures": [
+            {
+              "raw": "1.23",
+              "value": 1.23,
+              "cardId": "death-seasonality",
+              "findingIndex": 1,
+              "matchedIn": "finding",
+              "sourceText": "1.23배",
+              "match": "exact"
+            },
+            {
+              "raw": "7",
+              "value": 7,
+              "cardId": "death-seasonality",
+              "findingIndex": null,
+              "matchedIn": "title",
+              "sourceText": "더 많이 떠나시는가 — 방향은 맞지만 표본이 7년뿐이다",
+              "match": "exact"
+            },
+            {
+              "raw": "6",
+              "value": 6,
+              "cardId": "death-seasonality",
+              "findingIndex": null,
+              "matchedIn": "method",
+              "sourceText": ")에 대해 겨울(12·1·2월) 평균과 여름(6·7·8월) 평균을 짝지어 비교. 유의성은 부호검정 정확 p ",
+              "match": "exact"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "impossible",
+      "label": "잴 수 없었던 것",
+      "verdict": "불가",
+      "lines": [
+        {
+          "id": "i1",
+          "text": "남북회담 인도 분야는 2018년 2건을 끝으로 이후는 확인되지 않는다.",
+          "cardIds": [
+            "talks-humanitarian"
+          ],
+          "verdicts": [
+            "불가"
+          ],
+          "figures": [
+            {
+              "raw": "2018년",
+              "value": 2018,
+              "cardId": "talks-humanitarian",
+              "findingIndex": null,
+              "matchedIn": "title",
+              "sourceText": "남북회담 「인도」 분야 — 이 계열은 2018년에서 끊긴 자료다",
+              "match": "exact"
+            },
+            {
+              "raw": "2",
+              "value": 2,
+              "cardId": "talks-humanitarian",
+              "findingIndex": 2,
+              "matchedIn": "finding",
+              "sourceText": "2018년 2건",
+              "match": "exact"
+            }
+          ]
+        },
+        {
+          "id": "i2",
+          "text": "후손 실태조사는 36,017명 규모의 전국 단일 비율만 공표되어 지역별로 쪼개어 말할 수 없다.",
+          "cardIds": [
+            "descendant-by-region"
+          ],
+          "verdicts": [
+            "불가"
+          ],
+          "figures": [
+            {
+              "raw": "36,017",
+              "value": 36017,
+              "cardId": "descendant-by-region",
+              "findingIndex": null,
+              "matchedIn": "n",
+              "sourceText": "36017",
+              "match": "exact"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "closing": "성립하지 않은 카드도 지우지 않았습니다. 무엇이 재어지지 않았는지가 이 덱의 내용입니다.",
+  "notice": {
+    "who": "이 요약은 생성형 AI(Google Gemini)가 아래 카드가 이미 확정한 문장과 수치만을 옮겨 이어 쓴 것입니다. 통일부의 공식 서술이 아니며, 본 시제품의 해석입니다.",
+    "when": "화면을 열 때 만들지 않습니다. 빌드 때 한 번 만들어, 검사를 통과한 것을 그대로 담아 두었습니다.",
+    "checked": "요약에 나오는 수치는 전부 기계 검사로 카드까지 되짚었습니다. 새 수치도, 새 판정도 들어 있지 않습니다. 문장 아래의 카드 단추를 누르시면 그 근거로 넘어갑니다."
+  }
+}

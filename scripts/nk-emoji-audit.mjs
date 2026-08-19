@@ -49,6 +49,10 @@ const TARGETS = [
   'frontend/src/lib/gohyangWeather.ts',
   'frontend/src/theme/gohyang.ts',
   'frontend/src/layouts/SasilOnLayout.tsx',
+  /* 덱 요약의 고지·맺음·구획 라벨은 이 파일의 규칙 문자열이 그대로 화면에 뜬다.
+     산출물(public/gohyang/deck-summary.json)은 아래 디렉터리 검사로 이미 걸리지만,
+     문구의 출처인 이 파일도 함께 본다 — 굽기 전에 새는 것을 여기서 잡는다. */
+  'frontend/src/engine/nk-summary.mjs',
   'frontend/public/gohyang',
   ...extra,
 ]

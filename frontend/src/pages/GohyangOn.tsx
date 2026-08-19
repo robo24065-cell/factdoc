@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { ReactNode, MouseEvent as ReactMouseEvent } from 'react'
 import { Link } from 'react-router-dom'
-import { asOfNotice, type NkRecord, type Notice } from '../engine/nk-search.mjs'
+import { asOfNotice, coverageEndOf, type NkRecord, type Notice } from '../engine/nk-search.mjs'
 
 /* ────────────────────────────────────────────────────────────────
    고향잇기 — 지도 위의 as-of
@@ -2159,7 +2159,10 @@ function DescendantBridge({ desc, isan, pack }: { desc: DescData; isan: IsanData
           relicsTotal: mu.total,
         }
       })
-      .sort((a, b) => b.survivors - a.survivors)
+    /* ★ 정렬하지 않는다 — regionsOld 의 차례가 곧 이산가족 공표 축의 차례다
+         (황해·평남·평북·함남·함북·경기·강원).
+       생존자 수 내림차순으로 늘어놓으면 「내 고향을 고르는 자리」가
+       「어느 고향에 몇 분 남았나 둘러보는 순위표」가 된다. 당사자는 자기 고향을 이미 안다. */
   }, [pack, isan])
 
   /* 기증 2경로 — 실태조사 1순위 요청(기록물 수집 보존)에 직접 답하는 창구다.
@@ -2172,10 +2175,18 @@ function DescendantBridge({ desc, isan, pack }: { desc: DescData; isan: IsanData
     [pack],
   )
 
+  /* ★ 기억 카드의 기준일 — **보여 준 것의 출처**에서 뽑는다.
+       여기 실리는 사건(events)은 nk-build-region 이 timeline 레코드만 모은 것이다
+       (보도자료는 건수만 세고 사건 목록에는 들어가지 않는다). 그러므로 기준일은
+       남북관계연표의 coverageEnd 이고, 카탈로그가 그 단일 진실 소스다.
+       전에는 region.json 의 sources 를 앞에서부터 훑어 「coverageEnd 가 있는 첫 항목」
+       (북한정보포털 동향 2026-08-11)을 집었다 — 화면에 뜬 사건과 무관한 계열이라
+       기준일이 291일 과대로 찍혔고 그 날짜가 PNG·인쇄본에 그대로 남았다.
+       museum 은 coverageEnd 가 아니라 **우리가 수집을 돌린 날**이다 — 이름을 갈라 부른다. */
   const memoryAsOf = {
     survivors: isan.latest.asOf,
-    events: pack.region.sources.find(s => s.coverageEnd)?.coverageEnd ?? pack.region.builtAt,
-    museum: pack.museum.builtAt,
+    events: coverageEndOf('timeline') ?? pack.region.builtAt,
+    museumCollected: pack.museum.builtAt,
   }
 
   return (

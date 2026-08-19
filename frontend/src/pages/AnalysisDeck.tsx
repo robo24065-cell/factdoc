@@ -80,9 +80,40 @@ type Analysis = {
   }
 }
 
+/* ── 덱 요약 (선택) — scripts/nk-deck-summary.mjs 가 구워 둔 파일. 없으면 그리지 않는다 ──
+   화면은 이 파일을 **읽기만** 한다. 문장도 수치도 근거 포인터도 여기서 만들지 않는다.
+   figures 는 LLM 이 아니라 빌드 때 검증기가 채운 「규칙의 대조 결과」다(nk-summary.mjs). */
+type SumFigure = {
+  raw: string
+  value: number
+  cardId: string | null
+  findingIndex: number | null
+  matchedIn: string
+  sourceText: string
+  match: 'exact' | 'rounded'
+}
+type SumLine = { id?: string; text: string; cardIds: string[]; verdicts?: Verdict[]; figures: SumFigure[] }
+type DeckSummary = {
+  schema: string
+  builtAt: string
+  sourceBuiltAt: string
+  sourceHash?: string
+  model: string
+  attempt: number
+  promptVersion: number
+  verifierVersion: number
+  verified: { lines: number; figures: number; cardsCited: number; checks: number; passed: boolean }
+  shape: { tried: number; accepted: number; weak: number; rejected: number }
+  headline: SumLine
+  sections: Array<{ key: string; label: string; verdict: Verdict; lines: SumLine[] }>
+  closing: string
+  notice: { who: string; when: string; checked: string }
+}
+
 /* ══════════════════════ 상수 ══════════════════════ */
 
 const PACK = '/gohyang'
+const SUMMARY_SCHEMA = 'gohyang.deck-summary/1'
 
 /* 판정 — as-of 3상태(live/stale/frozen)와 **다른 축**이다. 그래서 기능색(초록·주황·보라)을
    빌려 쓰지 않고 남색·먹색 계열로만 만든다. 두 축이 같은 색을 쓰면 화면에서 섞인다. */
@@ -811,10 +842,191 @@ function DeckCard({ card, index, total, sources }: { card: Card; index: number; 
   )
 }
 
+/* ══════════════════════ 덱 요약 구획 ══════════════════════
+   labeling 원칙
+     ① 고지를 접어 두지 않는다. 「자세히」 뒤에 숨기지 않는다.
+     ② 아래 카드와 다른 질감으로 만든다 — 눈으로도 "이건 데이터가 아니라 서술"임을 알게 한다.
+        왼쪽 굵은 세로선 + SURFACE.inset 바탕. 색은 theme 의 값만 쓴다(새 색 없음).
+     ③ 「AI 요약」을 강조하는 배지·반짝임을 쓰지 않는다. 이 화면에서 그건 자랑거리가 아니라 주의사항이다.
+     ④ 「불가」 구획이 요약 안에 같은 크기로 들어 있는 것 자체가 라벨의 일부다 —
+        요약이 성공담만 옮기지 않았다는 것을 문구가 아니라 배치가 보인다.
+   기존 고지("이 화면의 수치는 … 계산한 결과입니다")와 합치지 않는다.
+   그것은 「수치의 출처」에 대한 고지이고, 이것은 「문장을 누가 썼는가」에 대한 고지다. */
+
+/** 런타임 정합 — 하나라도 어긋나면 요약을 그리지 않는다.
+    CDN 이 analysis.json 과 deck-summary.json 의 다른 세대를 서빙하는 사고를 막는다.
+    sha256 은 빌드 때만 보고, 런타임은 이 두 가지(기준일 대조 · 카드 실재)로 충분하다. */
+function usableSummary(s: DeckSummary | null, data: Analysis | null): DeckSummary | null {
+  if (!s || !data) return null
+  if (s.schema !== SUMMARY_SCHEMA || !s.verified?.passed) return null
+  if (s.sourceBuiltAt !== data.builtAt) return null
+  const ids = new Set(data.cards.map(c => c.id))
+  const lines = [s.headline, ...(s.sections ?? []).flatMap(x => x.lines ?? [])]
+  if (lines.length < 2) return null
+  if (lines.some(l => !l?.text || !l.cardIds?.length || l.cardIds.some(id => !ids.has(id)))) return null
+  return s
+}
+
+/** 인용 수치를 굵게. match='rounded' 인 항목만 앞에 근사 표시를 붙인다(실측상 거의 나오지 않는다). */
+function Figured({ line }: { line: SumLine }) {
+  const parts: Array<{ t: string; fig?: SumFigure }> = []
+  let cur = 0
+  for (const f of line.figures ?? []) {
+    const at = line.text.indexOf(f.raw, cur)
+    if (at < 0) continue
+    if (at > cur) parts.push({ t: line.text.slice(cur, at) })
+    parts.push({ t: f.raw, fig: f })
+    cur = at + f.raw.length
+  }
+  if (cur < line.text.length) parts.push({ t: line.text.slice(cur) })
+  return (
+    <>
+      {parts.map((p, i) =>
+        p.fig ? (
+          <b key={i} className={`font-bold tabular-nums ${TEXT.ink}`} title={`${p.fig.cardId ?? '덱 요약'} · ${p.fig.sourceText}`}>
+            {p.fig.match === 'rounded' && (
+              <>
+                <span className="sr-only">근사치 </span>
+                <span aria-hidden="true">≈</span>
+              </>
+            )}
+            {p.t}
+          </b>
+        ) : (
+          <span key={i}>{p.t}</span>
+        ),
+      )}
+    </>
+  )
+}
+
+/** 근거 칩 — 문장 전체가 아니라 칩만 링크로 한다.
+    본문 전체를 링크로 만들면 고령 사용자가 문장을 읽는 중 잘못 눌러 화면이 튄다.
+    (덱 요약 고지의 "문장 아래의 카드 단추를 누르시면"이 가리키는 것이 이 단추다.)
+
+    ★ 기준일을 칩에 함께 적는다 — 요약 구획만 as-of 가 빠져 있었다(CLAUDE.md §9-1).
+      카드 본체는 「기준일 2025-08-31」을 늘 그리는데 요약 줄에는 아무 표시가 없어서,
+      기준 2026-05-31 문장 바로 아래에 기준 2025-08-31 문장이 붙으면 같은 시점 값으로 읽혔다.
+      한 줄이 여러 카드를 인용하면 칩이 여럿 생기므로 기준일도 저절로 갈라 적힌다. */
+function SourceChip({ cards, id, onGo }: { cards: Card[]; id: string; onGo: (i: number) => void }) {
+  const i = cards.findIndex(c => c.id === id)
+  if (i < 0) return null
+  const v = VERDICT[cards[i].verdict] ?? VERDICT['불가']
+  return (
+    <button
+      type="button"
+      onClick={() => onGo(i)}
+      data-summary-chip={cards[i].asOf}
+      aria-label={`근거 카드 ${i + 1}번 ${v.label} 판정, 기준일 ${cards[i].asOf} 으로 이동`}
+      className={
+        /* Tailwind 는 소스에 문자 그대로 있는 클래스만 만든다 — 값은 전부 theme 팔레트와 같다 */
+        `inline-flex min-h-[48px] items-center gap-1.5 rounded border border-[#dcdfe4] bg-white px-3 text-[11px] font-bold ` +
+        `text-[#555555] hover:border-[#1a4e9c] hover:text-[#1a4e9c] ${FOCUS}`
+      }
+    >
+      <span aria-hidden="true">{v.glyph}</span>
+      {i + 1}번 카드 · {v.label}
+      <span className="font-semibold tabular-nums">· 기준 {cards[i].asOf}</span>
+      <span aria-hidden="true">→</span>
+    </button>
+  )
+}
+
+function SummaryLine({ line, cards, onGo }: { line: SumLine; cards: Card[]; onGo: (i: number) => void }) {
+  return (
+    <li className="py-2.5">
+      <p className={`${TYPE.body} ${TEXT.soft} ${PROSE}`}>
+        <Figured line={line} />
+      </p>
+      <div className="mt-1.5 flex flex-wrap gap-2">
+        {line.cardIds.map(id => (
+          <SourceChip key={id} cards={cards} id={id} onGo={onGo} />
+        ))}
+      </div>
+    </li>
+  )
+}
+
+function SummaryBlock({ sum, cards, onGo }: { sum: DeckSummary; cards: Card[]; onGo: (i: number) => void }) {
+  /* 구획별 개수는 meta 에서 온 shape 값이다 — LLM 무관 */
+  const count: Record<string, number> = {
+    established: sum.shape.accepted,
+    weak: sum.shape.weak,
+    impossible: sum.shape.rejected,
+  }
+  return (
+    <section
+      aria-label="기계가 쓴 요약"
+      className={`mt-4 rounded-md border border-l-[6px] border-l-[#1a4e9c] ${SURFACE.line} ${SURFACE.inset} p-5 sm:p-6`}
+    >
+      <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>기계가 쓴 요약 · 통일부 공식 서술이 아닙니다</p>
+      <h2 className={`mt-2 ${TYPE.h2} ${TEXT.ink} ${PROSE}`}>이 덱이 말하는 것</h2>
+
+      {/* ── 머리 문장 ── */}
+      <p className={`mt-3 text-[1.0625rem] font-bold leading-snug ${TEXT.ink} ${PROSE}`}>
+        <Figured line={sum.headline} />
+      </p>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {sum.headline.cardIds.map(id => (
+          <SourceChip key={id} cards={cards} id={id} onGo={onGo} />
+        ))}
+      </div>
+
+      {/* ── 고지 — 항상 펼쳐져 있다 ── */}
+      <div className={`mt-4 rounded-md border bg-white ${SURFACE.line} p-4`}>
+        <p className={`${TYPE.cap} ${TEXT.soft} ${PROSE}`}>{sum.notice.who}</p>
+        <p className={`mt-1.5 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>{sum.notice.when}</p>
+        <p className={`mt-1.5 ${TYPE.cap} ${TEXT.soft} ${PROSE}`}>{sum.notice.checked}</p>
+        <dl className={`mt-2.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2.5 ${SURFACE.hair}`}>
+          {[
+            ['만든 날', ymdKo(sum.builtAt)],
+            ['쓴 모델', sum.model],
+            ['카드까지 되짚은 수치', `${nf(sum.verified.figures)}개`],
+            ['통과한 검사', `${nf(sum.verified.checks)}종`],
+            ['근거 카드', `${nf(sum.verified.cardsCited)}장`],
+          ].map(([k, v]) => (
+            <div key={k} className="flex items-baseline gap-1.5">
+              <dt className={`${TYPE.cap} ${TEXT.faint}`}>{k}</dt>
+              <dd className={`${TYPE.cap} font-semibold tabular-nums ${TEXT.ink}`}>{v}</dd>
+            </div>
+          ))}
+        </dl>
+      </div>
+
+      {/* ── 세 구획 — 「불가」가 같은 크기로 들어 있는 것이 라벨의 일부다 ── */}
+      {sum.sections.map(sec => {
+        const v = VERDICT[sec.verdict] ?? VERDICT['불가']
+        return (
+          <div key={sec.key} className="mt-5">
+            {/* 판정 배지는 덱의 다른 자리와 같은 토큰을 쓴다 — 도형 + 한국어 라벨 + 색 3중 부호화 */}
+            <h3 className={`flex flex-wrap items-baseline gap-x-2 gap-y-1 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>
+              <span className={`rounded px-2 py-0.5 ${TYPE.cap} font-bold ${v.chip}`}>
+                <span aria-hidden="true">{v.glyph}</span> {v.label}
+              </span>
+              {sec.label}
+              <span className={`${TYPE.cap} font-normal tabular-nums ${TEXT.faint}`}>
+                {nf(count[sec.key] ?? sec.lines.length)}건
+              </span>
+            </h3>
+            <ul className={`mt-1 divide-y ${SURFACE.hair}`}>
+              {sec.lines.map(l => (
+                <SummaryLine key={l.id ?? l.text} line={l} cards={cards} onGo={onGo} />
+              ))}
+            </ul>
+          </div>
+        )
+      })}
+
+      <p className={`mt-5 border-t pt-3 ${TYPE.sub} ${TEXT.soft} ${PROSE} ${SURFACE.hair}`}>{sum.closing}</p>
+    </section>
+  )
+}
+
 /* ══════════════════════ 화면 ══════════════════════ */
 
 export default function AnalysisDeck() {
   const [data, setData] = useState<Analysis | null>(null)
+  const [sum, setSum] = useState<DeckSummary | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [cur, setCur] = useState(0)
   const topRef = useRef<HTMLDivElement>(null)
@@ -828,6 +1040,18 @@ export default function AnalysisDeck() {
       })
       .then((j: Analysis) => { if (alive) setData(j) })
       .catch(e => { if (alive) setErr(e?.message ?? '분석 자료를 불러오지 못했습니다.') })
+    return () => { alive = false }
+  }, [])
+
+  /* 요약은 **없어도 되는 파일**이다. 실패해도 err 를 세우지 않는다 —
+     빈 상자·"요약을 불러올 수 없습니다"·스켈레톤을 두지 않고 그 자리를 조용히 비운다.
+     자리를 비워 두면 고장 난 화면이 되고, 그건 요약이 없는 것보다 나쁘다. */
+  useEffect(() => {
+    let alive = true
+    fetch(`${PACK}/deck-summary.json`)
+      .then(r => (r.ok ? r.json() : null))
+      .then((j: DeckSummary | null) => { if (alive) setSum(j) })
+      .catch(() => { if (alive) setSum(null) })
     return () => { alive = false }
   }, [])
 
@@ -892,6 +1116,9 @@ export default function AnalysisDeck() {
     )
   }
 
+  /* 요약을 그릴지 말지 — 여기서 한 번만 판정한다(파일 유무 · 세대 일치 · 인용 카드 실재) */
+  const ok = usableSummary(sum, data)
+
   /* 넘김 단추 — 한걸음씩 모드의 [이전]/[다음]과 같은 크기·같은 색이다.
      Tailwind 는 소스에 문자 그대로 있는 클래스만 만들어서 색을 변수로 넣을 수 없다.
      쓰인 값은 전부 theme 의 팔레트이고, 비활성 회색만 GohyangOn 의 단추와 같은 값을 맞춰 뒀다. */
@@ -931,6 +1158,9 @@ export default function AnalysisDeck() {
           </p>
         </div>
       </header>
+
+      {/* ── 기계가 쓴 요약 — 파일이 없거나 계보가 어긋나면 이 자리는 조용히 비워진다 ── */}
+      {ok && <SummaryBlock sum={ok} cards={data.cards} onGo={go} />}
 
       {/* ── 진행 표시 + 넘김 단추 (카드 위) ── */}
       <div className="mt-6 flex items-center justify-between gap-3">
