@@ -1105,7 +1105,7 @@ function MuseumBlock({ pack, sel }: { pack: Pack; sel: Sel }) {
     ...b.venue.map(r => ({ r, mark: '상봉 장소 표기' })),
     ...b.historic.map(r => ({ r, mark: `${b.historicKeys.join('·')} 표기` })),
   ]
-  const shown = open ? rows : rows.slice(0, 6)
+  const shown = open ? rows : rows.slice(0, 12)   // 전폭 4열 격자 — 첫 화면에 세 줄
 
   return (
     <Block
@@ -1130,18 +1130,18 @@ function MuseumBlock({ pack, sel }: { pack: Pack; sel: Sel }) {
             {b.historic.length > 0 && <> · {nf(b.historic.length)}건은 광복 당시 구(舊)도명으로만 적힌 것입니다</>}
           </p>
 
-          <ul className="mt-3 grid grid-cols-2 gap-2.5">
+          <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3 xl:grid-cols-4">
             {shown.map(({ r, mark }) => <MuseumCard key={r.iId} r={r} mark={mark} />)}
           </ul>
 
-          {rows.length > 6 && (
+          {rows.length > 12 && (
             <button
               type="button"
               onClick={() => setOpen(v => !v)}
               className={`mt-3 w-full ${BTN.ghost}`}
               aria-expanded={open}
             >
-              {open ? '접기' : `나머지 ${nf(rows.length - 6)}건 더 보기`}
+              {open ? '접기' : `나머지 ${nf(rows.length - 12)}건 더 보기`}
             </button>
           )}
 
@@ -1322,9 +1322,11 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
   const events = allEvents ? p.events : p.events.slice(0, 8)
 
   return (
-    <div className="space-y-5">
+    /* 전폭에서는 2열 그리드 — 좁은 기둥에 길게 쌓이는 대신 나란히 놓인다.
+       머리·종료 공지·안내인·사료는 전폭(col-span-2), 관측·이산가족·탈북민·기록은 반폭. */
+    <div className="space-y-5 lg:grid lg:grid-cols-2 lg:items-start lg:gap-5 lg:space-y-0">
       {/* ── 머리 ── */}
-      <div className={`${CARD} p-4`}>
+      <div className={`${CARD} p-4 lg:col-span-2`}>
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <p className="text-[11px] font-semibold tracking-wide text-blue-700 dark:text-blue-400">
@@ -1352,7 +1354,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       {p.frozen.map(f => {
         const n = notice(f.since, 'frozen', f.reason)
         return (
-          <div key={f.topic} className={`overflow-hidden ${CARD}`}>
+          <div key={f.topic} className={`overflow-hidden ${CARD} lg:col-span-2`}>
             <div className={`flex items-center gap-2 p-3 ${TONE.violet.band}`}>
               <AsOfPill level="frozen" />
               <span className={`text-sm font-semibold ${TONE.violet.text} ${PROSE}`}>
@@ -1367,7 +1369,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       })}
 
       {/* ── 고향 안내인 — AI/규칙 문장은 점선 상자에만 산다. 공식 수치와 섞이지 않는다 ── */}
-      <GuideBox pack={pack} sel={sel} />
+      <div className="lg:col-span-2"><GuideBox pack={pack} sel={sel} /></div>
 
       {/* ── 날씨 ── */}
       <div id="g-weather" className="scroll-mt-24">
@@ -1585,7 +1587,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
       {/* ── 박물관 사료 ──
           위의 '기록'이 이 지역이 **몇 번 언급됐는지**를 세는 것이라면,
           이 구획은 이 지역에서 실제로 나온 **물건**을 보여준다. 숫자 다음에 얼굴이 와야 한다. */}
-      <div id="g-museum" className="scroll-mt-24">
+      <div id="g-museum" className="scroll-mt-24 lg:col-span-2">
         <MuseumBlock pack={pack} sel={sel} />
       </div>
     </div>
@@ -2410,7 +2412,7 @@ function StepMode({ pack, oldRanked, onExit }: {
   )
   const panel = useMemo(() => (home ? buildPanel(home, pack) : null), [home, pack])
   const museum = useMemo(() => (home ? museumFor(home, pack) : null), [home, pack])
-  const museumRows = museum ? [...museum.hometown, ...museum.venue, ...museum.historic].slice(0, 3) : []
+  const museumRows = museum ? [...museum.hometown, ...museum.venue, ...museum.historic].slice(0, 6) : []   // 3건은 418건 옆에서 너무 헐거웠다(실측 지적) — 두 줄 여섯 장
   const wxNames = home ? membersOf(home, pack.region) : []
   const { rows: wx, state: wxState } = useLiveWeather(wxNames)
 
@@ -2942,8 +2944,12 @@ export default function GohyangOn() {
         </p>
       </div>
 
-      {/* ── 지도 + 패널 ── */}
-      <div className="mt-8 lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]">
+      {/* ── 지도 + 패널 ──
+          지역을 고르기 전에는 지도 옆 좁은 안내 기둥이 맞다. 그런데 고른 뒤에도
+          그 기둥에 모든 구획을 쌓으면 좁은 곳에 길게 늘어지고 지도 아래가 통째로
+          빈다(실측 지적, 2026-08-19). 선택 후에는 패널이 지도 아래 전폭으로 내려와
+          2열 그리드로 펼쳐진다. */}
+      <div className={`mt-8 ${sel ? '' : 'lg:grid lg:grid-cols-[minmax(0,1fr)_24rem] lg:items-start lg:gap-6 xl:grid-cols-[minmax(0,1fr)_26rem]'}`}>
         <div className="min-w-0">
           <div className={`overflow-hidden ${CARD}`}>
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 p-3 dark:border-slate-800">
@@ -2968,7 +2974,10 @@ export default function GohyangOn() {
             </div>
 
             <div className="p-3">
-              <NkMapView pack={pack} mode={mode} sel={sel} onSelect={select} />
+              {/* 전폭이 되면 지도가 화면 높이를 넘겨 버린다(가로 800×세로 834 비율) — 폭을 묶는다 */}
+              <div className="mx-auto w-full max-w-3xl">
+                <NkMapView pack={pack} mode={mode} sel={sel} onSelect={select} />
+              </div>
             </div>
 
             <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-800">
@@ -2990,8 +2999,8 @@ export default function GohyangOn() {
           </div>
         </div>
 
-        {/* ── 우측(모바일은 아래) 패널 ── */}
-        <div ref={panelRef} className="mt-4 min-w-0 lg:mt-0">
+        {/* ── 패널: 선택 전엔 우측 기둥, 선택 후엔 지도 아래 전폭 ── */}
+        <div ref={panelRef} className={sel ? 'mt-6 min-w-0' : 'mt-4 min-w-0 lg:mt-0'}>
           {sel ? (
             <RegionPanel pack={pack} sel={sel} onClose={() => setSel(null)} />
           ) : (

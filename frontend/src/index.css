@@ -1,7 +1,16 @@
 @import "tailwindcss";
 
+/* ── 라이트 전용 ──
+   고향ON 은 통일부 누리집 톤(흰 바탕·남색)을 따른다. 정부 누리집에 다크 모드가
+   없고, 시스템이 다크인 사용자에게 옛 다크 팔레트가 떠서 "디자인이 안 바뀌었다"고
+   보이는 사고가 실제로 났다(2026-08-19). dark: 변형을 .dark 클래스 조건으로
+   바꿔 두고 그 클래스를 어디에도 붙이지 않는다 — 수천 개의 dark: 유틸을
+   지우지 않고 전부 무력화하는 가장 안전한 방법이다. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 html {
   -webkit-text-size-adjust: 100%;
+  color-scheme: light;
 }
 
 body {
