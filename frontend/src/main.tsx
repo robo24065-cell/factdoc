@@ -1,6 +1,6 @@
 import { StrictMode, lazy } from 'react'
 import { createRoot } from 'react-dom/client'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Navigate, Routes, Route } from 'react-router-dom'
 import './index.css'
 import ConsumerLayout from './layouts/ConsumerLayout'
 import SasilOnLayout from './layouts/SasilOnLayout'
@@ -37,6 +37,11 @@ createRoot(document.getElementById('root')!).render(
           <Route path="gohyang" element={<GohyangOn />} />
           {/* 분석 덱 — 재본 것과 재보지 못한 것을 한 장씩 넘긴다 */}
           <Route path="deck" element={<AnalysisDeck />} />
+          {/* 사이트구조.md 시절 주소 — 화면이 한 장으로 합쳐져 홈으로 보낸다 */}
+          <Route path="map" element={<Navigate to="/" replace />} />
+          <Route path="clock" element={<Navigate to="/" replace />} />
+          <Route path="action" element={<Navigate to="/" replace />} />
+          <Route path="archive" element={<Navigate to="/" replace />} />
           {/* 사실은ON 팩트체커 — 사이드 화면 */}
           <Route path="factcheck" element={<SasilOn />} />
         </Route>
@@ -45,7 +50,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="legacy" element={<Home />} />
           <Route path="trending" element={<Trending />} />
           <Route path="forecast" element={<Forecast />} />
-          <Route path="map" element={<InfectiousMap />} />
+          <Route path="legacy/map" element={<InfectiousMap />} />
           <Route path="disease/:name" element={<Disease />} />
           <Route path="me" element={<Me />} />
         </Route>

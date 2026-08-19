@@ -18,8 +18,9 @@
      [7] 기억 카드 입력이 localStorage 에만 남는가 — 네트워크 요청에 답이 실려 나가지 않았는가
 
    사용법
-     node scripts/nk-verify-deck.mjs [--base http://localhost:5178] [--json]
+     node scripts/nk-verify-deck.mjs [--base http://localhost:5178] [--json] [--png 경로.png]
      (개발 서버가 떠 있어야 한다: .claude/launch.json 의 sasilon, 포트 5178)
+     --png 를 주면 검증 중 만들어진 기억 카드 그림을 그 경로에 저장한다(기획서 별첨용).
 
    나가는 값: 전부 통과면 0, 하나라도 실패면 1.
    ────────────────────────────────────────────────────────────────────────── */
@@ -34,6 +35,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const argv = process.argv.slice(2)
 const AS_JSON = argv.includes('--json')
 const BASE = (argv.includes('--base') ? argv[argv.indexOf('--base') + 1] : '') || 'http://localhost:5178'
+const PNG_OUT = argv.includes('--png') ? argv[argv.indexOf('--png') + 1] : null
 const PORT = 9224
 
 const CHROME = [
@@ -241,14 +243,49 @@ try {
   const prompts = await evl(`(() => {
     const t = document.querySelector('#memory-card')?.innerText ?? ''
     return {
-      event: t.includes('이 무렵 집안에서 들으신 이야기가 있습니까'),
-      relic: t.includes('비슷한 사진이나 물건이 댁에 있습니까'),
+      event: t.includes('그 무렵 집안에서 들으신 이야기가 있습니까'),
+      relic: t.includes('그 시절 사진이나 물건이 댁에 있습니까'),
       season: t.includes('어떤 계절의 이야기를 들으셨습니까'),
       place: t.includes('마을·거리·산·강 이름'),
       timeline: /\\d{4}년 \\d{1,2}월 \\d{1,2}일/.test(t),
     }
   })()`)
   check('질문 4종이 데이터 단서와 함께 뜬다', Object.values(prompts).every(Boolean), JSON.stringify(prompts))
+
+  /* ★ 목소리 축 — 1세대 당사자가 직접 적으면 질문과 이름표가 함께 바뀌는가.
+     후손 전용으로 만들어 두면 살아 계신 당사자에게 "들으셨습니까"라고 묻게 된다. */
+  const voiced = await evl(`(() => {
+    const sec = document.querySelector('#memory-card')
+    if (!sec) return { ok: false, why: 'no-section' }
+    const b = [...sec.querySelectorAll('button')].find((x) => x.textContent.includes('제가 고향을 기억합니다'))
+    if (!b) return { ok: false, why: 'no-voice-button' }
+    b.click()
+    return { ok: true }
+  })()`)
+  await sleep(400)
+  const selfQ = await evl(`(() => {
+    const t = document.querySelector('#memory-card')?.innerText ?? ''
+    return {
+      selfEvent: t.includes('그 무렵 고향에서 있었던 일 가운데 기억나시는 것'),
+      selfRelic: t.includes('고향에서 가져오셨거나 지금 간직하고 계신'),
+      selfSeason: t.includes('어느 계절이 가장 자주 떠오르십니까'),
+      selfWho: t.includes('이 기억의 주인'),
+      noHeard: !t.includes('집안에서 들으신 이야기') && !t.includes('들려주신 분'),
+      noRelation: !t.includes('적으시는 분과의 관계'),
+    }
+  })()`)
+  check('당사자가 직접 적으면 질문과 이름표가 함께 바뀐다',
+    voiced.ok && Object.values(selfQ).every(Boolean), JSON.stringify(selfQ))
+
+  await evl(`(() => {
+    const sec = document.querySelector('#memory-card')
+    const b = [...(sec?.querySelectorAll('button') ?? [])].find((x) => x.textContent.includes('집안 어른께 들었습니다'))
+    if (b) b.click()
+    return true
+  })()`)
+  await sleep(400)
+  const backQ = await evl(`document.querySelector('#memory-card')?.innerText.includes('그 무렵 집안에서 들으신 이야기가 있습니까') ?? false`)
+  check('다시 「들었습니다」로 되돌릴 수 있다', backQ)
 
   /* 답 입력 — React 상태에 들어가도록 네이티브 setter 로 값을 넣고 input 이벤트를 쏜다 */
   const typed = await evl(`(() => {
@@ -315,12 +352,42 @@ try {
     pngInfo ? `${pngInfo.prefix}… ${Math.round(pngInfo.len / 1024)}KB · 파일명 ${pngInfo.download}` : '링크 없음',
   )
 
+  /* 만들어진 그림을 파일로 남긴다(요청이 있을 때만) — 기획서 별첨에 그대로 쓴다 */
+  if (PNG_OUT && pngInfo) {
+    const b64 = await evl(`document.querySelector('[data-memcard-png]').getAttribute('href').split(',')[1]`)
+    const out = path.isAbsolute(PNG_OUT) ? PNG_OUT : path.join(root, PNG_OUT)
+    fs.mkdirSync(path.dirname(out), { recursive: true })
+    fs.writeFileSync(out, Buffer.from(b64, 'base64'))
+    check('그림 파일을 저장했다', fs.statSync(out).size > 10000, `${out} (${Math.round(fs.statSync(out).size / 1024)}KB)`)
+  }
+
   /* 인쇄 경로 — 내려받기가 막힌 환경의 대체 경로가 실제로 있는가 */
   const printable = await evl(`(() => {
     const b = [...document.querySelector('#memory-card').querySelectorAll('button')].find(x => x.textContent.includes('인쇄하기'))
     return Boolean(b) && Boolean(document.querySelector('.memcard-print'))
   })()`)
   check('인쇄 경로가 함께 있다', printable)
+
+  /* 인쇄 화면을 실제로 흉내 내 본다 — 인쇄 CSS 가 카드만 남기고 나머지를 지우는지.
+     "인쇄 단추가 있다"와 "인쇄하면 카드가 나온다"는 다른 말이다. */
+  await cdp.send('Emulation.setEmulatedMedia', { media: 'print' })
+  await sleep(300)
+  const printView = await evl(`(() => {
+    const vis = el => el ? getComputedStyle(el).visibility : null
+    const disp = el => el ? getComputedStyle(el).display : null
+    return {
+      card: vis(document.querySelector('.memcard-print')),
+      cardText: vis(document.querySelector('.memcard-print h4')),
+      buttons: disp(document.querySelector('.memcard-noprint')),
+      header: vis(document.querySelector('header nav')),
+    }
+  })()`)
+  check(
+    '인쇄하면 기억 카드만 남는다',
+    printView.card === 'visible' && printView.cardText === 'visible' && printView.buttons === 'none' && printView.header === 'hidden',
+    JSON.stringify(printView),
+  )
+  await cdp.send('Emulation.setEmulatedMedia', { media: '' })
 
   const donation = await evl(`document.querySelector('#memory-card')?.innerText.includes('이 기록을 국가 기록으로 남기시려면') ?? false`)
   check('완성 카드 아래에 기증 경로가 붙는다', donation)

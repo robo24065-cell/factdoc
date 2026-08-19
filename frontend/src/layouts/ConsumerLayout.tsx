@@ -7,7 +7,7 @@ const TABS = [
   { to: '/legacy', label: '홈', Icon: HomeIcon, end: true },
   { to: '/trending', label: '유행', Icon: FireIcon, end: false },
   { to: '/forecast', label: '예보', Icon: RadarIcon, end: false },
-  { to: '/map', label: '감염병지도', Icon: MapIcon, end: false },
+  { to: '/legacy/map', label: '감염병지도', Icon: MapIcon, end: false },
   { to: '/me', label: '내정보', Icon: UserIcon, end: false },
 ]
 

@@ -890,7 +890,7 @@ function LiveWeatherRows({ names }: { names: string[] }) {
           </li>
         ))}
       </ul>
-      <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>고향을 눈으로 볼 수는 없어도, <b className="font-medium">오늘 그곳이 더운지 추운지는 알 수 있습니다.</b>
+      <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>오늘 고향의 날씨입니다. <b className="font-medium">지금 관측된 값을 그대로 가져왔습니다.</b>
         {' '}이 값만은 저장하지 않고 화면을 열 때마다 새로 받습니다.
       </p>
       <p className="mt-1.5">
@@ -2110,6 +2110,27 @@ function DescendantBridge({ desc, isan, pack }: { desc: DescData; isan: IsanData
      여기서는 팩에서 재료만 뽑아 넘긴다 — 계산하지 않는다(패널·사료 조인은 기존 함수 그대로). */
   const memoryHomes = useMemo<MemoryHome[]>(() => {
     const byOrigin = new Map(isan.latest.survivors.byOrigin.entries.map(e => [e.label, e.n]))
+    /* 기억을 끌어내는 단서로 쓸 사건을 고른다.
+       그냥 최신순으로 두면 미사일 발사·현지지도가 앞에 오는데, 그건 후손이 집안에서
+       들었을 이야기의 실마리가 되지 못한다. 그래서 ① 이산가족·교류가 걸린 사건,
+       ② 그다음 왕래·개성공단·금강산처럼 사람이 오간 사건, ③ 그래도 없으면 가장 오래된 사건
+       순으로 고른다. **사건을 만들어 내지 않는다** — 순서만 바꾼다. */
+    const STRONG = /이산가족|상봉|방문단|적십자|면회소|서신|왕래|교류/
+    const WEAK = /개성공단|금강산|방북|방남|협력|경의선|동해선|철도/
+    const cueEvents = (evs: Array<{ date: string; title: string }>) => {
+      const asc = [...evs].sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0))
+      const strong = asc.filter(e => STRONG.test(e.title))
+      const weak = asc.filter(e => !STRONG.test(e.title) && WEAK.test(e.title))
+      const seen = new Set<string>()
+      return [...strong, ...weak, ...asc]
+        .filter(e => {
+          const k = `${e.date}|${e.title}`
+          if (seen.has(k)) return false
+          seen.add(k)
+          return true
+        })
+        .slice(0, 2)
+    }
     return pack.map.regionsOld
       .map(o => {
         const sel: Sel = { mode: 'old', id: o.id }
@@ -2125,7 +2146,7 @@ function DescendantBridge({ desc, isan, pack }: { desc: DescData; isan: IsanData
           name: o.name,
           survivors: latestKey ? (byOrigin.get(latestKey) ?? 0) : 0,
           members: p?.memberNames ?? [],
-          events: (p?.events ?? []).slice(0, 2).map(e => ({ date: e.date, title: clean(e.title) })),
+          events: cueEvents(p?.events ?? []).map(e => ({ date: e.date, title: clean(e.title) })),
           eventsTotal: p?.eventsTotal ?? 0,
           relics: relics.map(({ r, historic }) => ({
             iId: r.iId,
@@ -2397,8 +2418,8 @@ function DescendantActions({ paths, desc }: { paths: PathData; desc: DescData })
     <Block
       tag="행동"
       tone="blue"
-      title="지금 할 수 있는 일 — 후손 이름으로 신청되는 창구"
-      sub={`${nf(paths.summary.totalPaths)}건을 확인해 ${nf(actionable.length)}건이 열려 있었습니다 · 링크 ${nf(paths.meta.checkedUrls)}개 중 ${nf(paths.meta.liveUrls)}개 생존 (${paths.builtAt} 실측)`}
+      title="지금 하실 수 있는 일 — 가족 이름으로 신청할 수 있는 창구"
+      sub={`${nf(paths.summary.totalPaths)}건을 확인해 ${nf(actionable.length)}건이 열려 있었습니다 · 링크 ${nf(paths.meta.checkedUrls)}개 가운데 ${nf(paths.meta.liveUrls)}개가 지금도 열립니다 (${paths.builtAt} 실측)`}
     >
       {/* ── ★ 기증 경로 먼저 ── */}
       <div className={`${SURFACE.slab} p-4`}>
@@ -2680,7 +2701,7 @@ function StepMode({ pack, oldRanked, onExit }: {
 
   const needHome = (
     <div>
-      <p className={`${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>먼저 고향을 골라 주세요. 그래야 그곳의 이야기를 보여 드릴 수 있습니다.</p>
+      <p className={`${STEP_TYPE.body} ${TEXT.soft} ${PROSE}`}>먼저 고향을 골라 주세요. 그래야 그 고향의 자료를 모아 보여 드릴 수 있습니다.</p>
       <p className="mt-4">
         <button type="button" onClick={() => go(1)} className={`${BTN.primary} min-h-[56px] px-7 text-[1.0625rem]`}>
           고향 고르러 가기
@@ -3271,7 +3292,7 @@ export default function GohyangOn() {
           {' '}추계로는 <b className={`font-semibold ${TEXT.ink}`}>{pack.proj.milestoneRange.below10000}년</b>에 1만 명을 밑돕니다.
         </p>
         <p className={`mt-1.5 max-w-2xl ${TYPE.sub} ${TEXT.faint}`}>아래 지도에서 고향을 누르면 그곳의 이산가족·탈북민·공식 기록·오늘 날씨가 한자리에 모입니다.
-          네 계열의 기준일이 서로 다르며, 그 차이를 숨기지 않고 함께 표시합니다.
+          네 자료는 조사한 날짜가 서로 다릅니다. 그래서 값마다 기준일을 함께 적었습니다.
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
@@ -3280,6 +3301,9 @@ export default function GohyangOn() {
           <a href="#extinction" className={BTN.ghost}>기록 골든타임 보기 <span aria-hidden="true">↓</span>
           </a>
           <a href="#descendant" className={BTN.ghost}>후손 다리 <span aria-hidden="true">↓</span>
+          </a>
+          {/* 후손이 직접 남기는 자리로 바로 간다 — 통계만 읽다 나가지 않게 */}
+          <a href="#memory-card" className={BTN.ghost}>기억 카드 만들기 <span aria-hidden="true">↓</span>
           </a>
           <a href="#actions" className={BTN.ghost}>지금 할 수 있는 일 <span aria-hidden="true">↓</span>
           </a>
@@ -3364,7 +3388,7 @@ export default function GohyangOn() {
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] text-slate-400">지역 위에 커서를 올리면 요약, 누르면 상세</p>
+              <p className="text-[11px] text-slate-400">지역을 누르면 그 지역의 자료가 아래에 열립니다</p>
             </div>
 
             <div className="p-3">
@@ -3399,9 +3423,9 @@ export default function GohyangOn() {
             <RegionPanel pack={pack} sel={sel} onClose={() => { setSel(null); syncUrl(null) }} />
           ) : (
             <div className={`${CARD} p-4`}>
-              <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>지역을 선택하세요
+              <p className={`text-base font-semibold text-slate-900 dark:text-white ${PROSE}`}>고향을 하나 골라 보세요
               </p>
-              <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>지도에서 지역을 누르면 이 자리에 그 지역의 이산가족·탈북민·공식 기록·기상 관측이 기준일과 함께 표시됩니다.
+              <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>지도에서 고향을 누르면 이 자리에 그 고향의 자료가 열립니다. 이산가족 신청 현황, 그 지역이 출신지인 북한이탈주민, 공식 기록에 남은 일, 오늘 날씨까지 — 자료마다 기준일이 달라 날짜를 함께 적습니다.
               </p>
               <p className={`mt-4 text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>이산가족 생존 신청자가 많은 고향 ({ymKo(pack.isan.latest.asOf)} 기준)
               </p>

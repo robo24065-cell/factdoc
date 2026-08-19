@@ -253,14 +253,14 @@ const XY = (x, y) => ({ x, y })
 
   push({
     id: 'deaths-since-last-reunion',
-    title: '마지막 상봉 이후 2만 5천 분이 세상을 떠나셨습니다',
+    title: '마지막 상봉 이후 2만 5천 분이 세상을 떠나셨다',
     question: '당국차원 교류가 끊긴 뒤 등록 이산가족은 몇 명이나 사망했나?',
     verdict: '성립',
     method: '월별 등록현황의 사망자 누계 증분. 제21차 상봉행사가 있던 2018년 8월 말을 기준선으로 잡고, ①단일 출처(CSV 2025-08-31)와 ②출처 연결(HWP 2026-05-31) 두 값을 나란히 낸다.',
     n: monthsHwp,
     findings: [
-      F('단일 출처(CSV)', `${(d1 - d0).toLocaleString()}분`, `2018-08-31 → ${CSV_ASOF}, ${monthsCsv}개월. 월평균 ${Math.round((d1 - d0) / monthsCsv).toLocaleString()}명`),
-      F('출처 연결(CSV→HWP)', `${(dHwp - d0).toLocaleString()}분`, `2018-08-31 → ${HWP_ASOF}, ${monthsHwp}개월. 월평균 ${Math.round((dHwp - d0) / monthsHwp).toLocaleString()}명`),
+      F('단일 출처(CSV)', `${(d1 - d0).toLocaleString()}명`, `2018-08-31 → ${CSV_ASOF}, ${monthsCsv}개월. 월평균 ${Math.round((d1 - d0) / monthsCsv).toLocaleString()}명`),
+      F('출처 연결(CSV→HWP)', `${(dHwp - d0).toLocaleString()}명`, `2018-08-31 → ${HWP_ASOF}, ${monthsHwp}개월. 월평균 ${Math.round((dHwp - d0) / monthsHwp).toLocaleString()}명`),
       F('같은 기간 당국차원 교류', '0명', '카드 exchange-terminus 참조'),
       F('생존자 감소', `${base.total.toLocaleString()}명 → ${csvEnd.total.toLocaleString()}명 (${survDrop.toLocaleString()}명, ${r1((survDrop / base.total) * 100)}%)`, '감소분 < 사망자인 이유는 같은 기간 신규 등록 유입이 있기 때문'),
     ],
@@ -387,7 +387,7 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
     caveats: [
       'n=7 이다. 순위합은 정렬 보조이며 점수로 해석하면 안 된다.',
       '세 축을 동일 가중으로 두었다 — 정책적으로 어느 축이 더 급한지는 이 데이터가 답할 수 없다.',
-      '소멸 속도는 원적이 확인된 생존자만의 값이다. 「기타」(남한 출생 등)는 고향 축이 없어 빠진다.',
+      '감소 축은 원적이 확인된 생존자만의 값이다. 「기타」(남한 출생 등)는 고향 축이 없어 빠진다.',
       '기록 밀도의 분자에는 북한정보포털 동향이 들어간다 — 이산가족 기록이 아니라 그 지역 관련 기록이다. 동향을 뺀 보수 집계로도 순위가 바뀌지 않음은 record-density-gap 카드에서 확인했다.',
     ],
     asOf: CSV_ASOF,
@@ -552,16 +552,16 @@ const TOT = (f) => oldTable.reduce((s, r) => s + r[f], 0)
 
   push({
     id: 'aging-deficit',
-    title: '여덟 해가 지났는데 평균 나이는 2.25세만 올랐습니다',
+    title: '여덟 해가 지났는데 평균 나이는 2.25세만 올랐다',
     question: '평균 나이가 흐른 시간만큼 오르지 않는 것은 무엇을 뜻하는가?',
     verdict: '성립',
     method: `월별 공표 평균연령(연나이 — 1월 1일에 전원 +1)의 실측 계단. ${monthly.length}개월 전 구간에서 1월 증분과 나머지 달 증분을 분리해 평균낸다. 닫힌 코호트라면 1월에 정확히 +1.0, 나머지 달은 0 이어야 한다.`,
     n: monthly.length,
     findings: [
       F('평균연령', `${M0.avgAge}세 → ${M1.avgAge}세`, `${M0.month} → ${M1.month}, ${r2(spanYears)}년 동안 +${r2(ageRise)}세`),
-      F('흐른 시간 대비', `${pct(ageRise, spanYears)}%`, '여덟 해가 흘렀지만 평균은 그 4분의 1만 올랐습니다. 가장 연로하신 분들이 그사이 세상을 떠나셨기 때문입니다'),
-      F('1월 계단', `평균 +${r2(janMean)}세`, `연나이라면 +1.00 이어야 합니다. 모자란 ${r2(1 - janMean)}세만큼 그 한 달 사이에 어르신들이 떠나셨다는 뜻입니다 (n=${janJumps.length})`),
-      F('나머지 11개월', `평균 ${r2(otherMean)}세/월`, `해마다 ${r2(otherMean * 11)}세씩 내려갑니다. 연로하신 분부터 떠나시는 만큼 남은 분들의 평균이 낮아집니다 (n=${otherDeltas.length})`),
+      F('흐른 시간 대비', `${pct(ageRise, spanYears)}%`, '흐른 시간의 4분의 1만큼만 평균이 올랐다. 가장 연로하신 분들이 그사이 세상을 떠나셨기 때문이다'),
+      F('1월 계단', `평균 +${r2(janMean)}세`, `연나이는 1월 1일에 모두 한 살을 먹으므로 +1.00 이어야 한다. ${r2(1 - janMean)}세가 모자란 것은 그 한 달 사이에도 돌아가신 분들이 있었기 때문이다 (n=${janJumps.length})`),
+      F('나머지 11개월', `평균 ${r2(otherMean)}세/월`, `해마다 ${r2(otherMean * 11)}세만큼 평균이 낮아진다. 연로하신 분부터 돌아가시는 만큼, 남아 계신 분들의 평균 나이가 내려간다 (n=${otherDeltas.length})`),
       F('같은 기간 생존자', `${M0.total.toLocaleString()}명 → ${M1.total.toLocaleString()}명`, `${r1((M1.total / M0.total - 1) * 100)}%`),
     ],
     series: [
@@ -694,7 +694,7 @@ const breaks = []
 
   push({
     id: 'relation-shift',
-    title: '직접 헤어진 분들이 먼저 떠나시고, 3촌 이상이 남습니다',
+    title: '직접 헤어진 가족이 줄고, 조카·사촌 등 3촌 이상의 비중이 커진다',
     question: '생존 이산가족의 관계 구성은 어떻게 바뀌고 있는가?',
     verdict: '성립',
     method: `관계 3종(부모=부부/부모/자녀 · 형제자매 · 3촌이상)의 감소율 비교. ${breakMonth} 재분류(카드 series-breaks) 때문에 전 구간을 이어 읽을 수 없어 **재분류 다음 달(${start.month})부터 ${end.month}까지** 82개월만 쓴다.`,
@@ -703,7 +703,7 @@ const breaks = []
       ...rows.map((r) => F(r.key === '부모' ? '부부/부모/자녀' : r.key, `${r.from.toLocaleString()}명 → ${r.to.toLocaleString()}명 (${r.change}%)`, `비중 ${r.shareFrom.toFixed(1)}% → ${r.shareTo.toFixed(1)}%`)),
       F('총계', `${start.total.toLocaleString()}명 → ${end.total.toLocaleString()}명`, `${r1((end.total / start.total - 1) * 100)}%`),
       F('★ 가장 천천히 주는 관계', slowest.key === '3촌이상' ? '3촌 이상' : slowest.key, `${slowest.change}% — 다른 두 관계 평균(${r1(mean(rows.filter((r) => r.key !== slowest.key).map((r) => r.change)))}%)의 ${pct(Math.abs(slowest.change), Math.abs(mean(rows.filter((r) => r.key !== slowest.key).map((r) => r.change))))}% 속도`),
-      F('구성 이동', `3촌이상 비중 ${rows.find((r) => r.key === '3촌이상').shareFrom.toFixed(1)}% → ${rows.find((r) => r.key === '3촌이상').shareTo.toFixed(1)}%`, '직접 이산을 겪은 세대가 빠지면서 남는 자리를 방계가 채운다'),
+      F('구성 이동', `3촌이상 비중 ${rows.find((r) => r.key === '3촌이상').shareFrom.toFixed(1)}% → ${rows.find((r) => r.key === '3촌이상').shareTo.toFixed(1)}%`, '헤어짐을 직접 겪으신 분이 줄면서, 조카·사촌처럼 이야기를 전해 들은 친족의 몫이 커진다'),
     ],
     series: keys.map((k) => ({
       key: `rel_${k}`,
@@ -759,16 +759,21 @@ if (exists(corpusPath)) {
 
     push({
       id: 'words-vs-deeds',
-      title: '말은 줄지 않았다. 실적만 0이 됐다',
-      question: '교류가 끊긴 뒤 통일부의 이산가족 언급도 함께 줄었는가?',
+      title: '교류가 멈춘 뒤에도 이산가족은 정책 의제에서 밀려나지 않았다',
+      question: '당국차원 교류가 멈춘 뒤, 정부 발표에서 이산가족을 다루는 빈도도 함께 줄었는가?',
       verdict: '성립',
       method: `통일부 보도자료·보도설명자료 ${brRecs.length.toLocaleString()}건의 제목+본문에서 '이산가족' 문자열을 세어 연도별 건수와 그해 보도자료 대비 비중을 낸다. 같은 연도 축에 이산가족 교류현황의 당국차원 인원을 나란히 놓는다. 부분 연도(${covEnd} 까지만 수집된 ${covEnd.slice(0, 4)}년)는 제외.`,
       n: A.length + B.length,
       findings: [
         F('교류 있던 시기(2010~2018)', `연평균 ${r1(meanA)}건 언급`, `보도자료 대비 평균 ${r1(shareA)}%`),
-        F(`교류 끊긴 시기(2019~${lastFull})`, `연평균 ${r1(meanB)}건 언급`, `보도자료 대비 평균 ${r1(shareB)}% — 건수는 ${meanB >= meanA ? '오히려 늘었다' : '줄었다'}`),
-        F('같은 기간 당국차원 교류 인원', `${govP(2010, 2018).toLocaleString()}명 → ${govP(2019, lastFull).toLocaleString()}명`, '말의 양은 그대로인데 실적만 0이 됐다'),
-        F('언급 최다 연도', (() => { const t = ys.reduce((a, b) => (cnt(b) > cnt(a) ? b : a)); return `${t}년 ${cnt(t)}건` })(), '교류가 완전히 끊긴 뒤에도 최다 구간에 든다'),
+        F(`교류 끊긴 시기(2019~${lastFull})`, `연평균 ${r1(meanB)}건 언급`, `보도자료 대비 평균 ${r1(shareB)}% — 교류가 멈춘 뒤에도 다루는 건수는 ${meanB >= meanA ? '줄지 않았다' : '줄었다'}`),
+        F('같은 기간 당국차원 교류 인원', `${govP(2010, 2018).toLocaleString()}명 → ${govP(2019, lastFull).toLocaleString()}명`, '다루는 빈도는 유지됐지만 성사된 교류는 없다. 교류는 상대가 있어야 성립하므로, 이 0은 남측 노력의 성적표가 아니다'),
+        F('언급 최다 연도', (() => { const t = ys.reduce((a, b) => (cnt(b) > cnt(a) ? b : a)); return `${t}년 ${cnt(t)}건` })(), (() => {
+          const post = ys.filter((y) => y >= 2019)
+          if (!post.length) return '비교 구간 전체 기준'
+          const t2 = post.reduce((a, b) => (cnt(b) > cnt(a) ? b : a))
+          return `교류가 멈춘 뒤 구간에서는 ${t2}년 ${cnt(t2)}건이 가장 많다`
+        })()),
       ],
       series: [
         { key: 'briefingIsan', label: "보도자료 중 '이산가족' 언급(건)", unit: '건', points: ys.map((y) => XY(y, cnt(y))) },
@@ -780,7 +785,7 @@ if (exists(corpusPath)) {
         `${covEnd.slice(0, 4)}년은 ${covEnd} 까지만 수집돼 부분 연도라 계열에서 뺐다.`,
         "'이산가족' 단순 문자열 매칭이다. 다른 표현('흩어진 가족' 등)은 잡지 못하고, 관련 없는 맥락의 언급도 함께 잡힌다.",
         '연도별 보도자료 총량이 89~370건으로 흔들린다. 그래서 건수와 비중을 함께 냈다.',
-        '★ "말만 하고 안 한다"는 평가가 아니다. 교류는 상대가 있어야 성립한다 — 이 카드는 두 계열이 갈라졌다는 사실까지만 말한다.',
+        '★ 이 카드는 정부를 평가하지 않는다. 교류 성사는 남측만으로 결정되지 않으므로, 발표 빈도와 교류 실적을 성과로 견주면 안 된다 — 두 계열이 갈라졌다는 사실까지만 말한다.',
       ],
       asOf: covEnd,
     })
@@ -858,7 +863,7 @@ if (exists(corpusPath)) {
     })
   }
 } else {
-  for (const [id, title] of [['words-vs-deeds', '말은 줄지 않았다. 실적만 0이 됐다'], ['talks-humanitarian', '남북회담 「인도」 분야'], ['trend-timeseries', '동향 시계열']]) {
+  for (const [id, title] of [['words-vs-deeds', '교류가 멈춘 뒤에도 이산가족은 정책 의제에서 밀려나지 않았다'], ['talks-humanitarian', '남북회담 「인도」 분야'], ['trend-timeseries', '동향 시계열']]) {
     push({
       id, title, question: '(코퍼스 미적재)', verdict: '불가',
       rejectWhy: `frontend/src/data/nk-index.json 이 없어 계산하지 못했다 — node scripts/ingest-nk.mjs 를 먼저 돌려야 한다.`,

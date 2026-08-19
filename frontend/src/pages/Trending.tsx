@@ -40,7 +40,7 @@ export default function Trending() {
       <p className="mt-1.5 text-sm text-slate-500">유행 중인 감염병과 떠도는 가짜정보를 모았어요.</p>
 
       {/* 감염병 현황판 디스커버리 배너 */}
-      <Link to="/map"
+      <Link to="/legacy/map"
         className="mt-4 flex items-center gap-3 rounded-2xl border border-blue-200 bg-gradient-to-r from-blue-50 to-sky-50 p-4 transition hover:shadow-md dark:border-blue-900/50 dark:from-blue-950/40 dark:to-slate-900">
         <span className="text-2xl">🗺️</span>
         <span className="flex-1">

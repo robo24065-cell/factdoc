@@ -260,7 +260,7 @@ export default function Dashboard() {
                   )
                 })}
               </ul>
-              <Link to="/map" className="mt-3 inline-block text-xs font-medium text-blue-600 dark:text-blue-400">감염병 현황판에서 지도·추이 보기 →</Link>
+              <Link to="/legacy/map" className="mt-3 inline-block text-xs font-medium text-blue-600 dark:text-blue-400">감염병 현황판에서 지도·추이 보기 →</Link>
             </Panel>
           )
         })()}

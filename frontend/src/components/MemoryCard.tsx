@@ -72,15 +72,46 @@ type Props = {
    (두 벌로 두면 인쇄물과 화면의 질문이 갈라진다). */
 
 type QKey = 'event' | 'relic' | 'season' | 'place'
-const QUESTION: Record<QKey, string> = {
-  place: '고향에서 기억나는 마을·거리·산·강 이름이 있으십니까? 정확하지 않아도 됩니다.',
-  event: '이 무렵 집안에서 들으신 이야기가 있습니까?',
-  relic: '비슷한 사진이나 물건이 댁에 있습니까? 있다면 무엇인지 적어 주십시오.',
-  season: '어떤 계절의 이야기를 들으셨습니까?',
+type Voice = 'self' | 'heard'
+
+const QUESTIONS: Record<Voice, Record<QKey, string>> = {
+  /* 고향을 직접 기억하시는 분 — 겪으신 일을 그대로 여쭙는다 */
+  self: {
+    place: '고향에서 기억나시는 마을·거리·산·강 이름이 있으십니까? 정확하지 않아도 됩니다.',
+    event: '그 무렵 고향에서 있었던 일 가운데 기억나시는 것을 적어 주십시오.',
+    relic: '고향에서 가져오셨거나 지금 간직하고 계신 사진·물건이 있습니까?',
+    season: '고향의 어느 계절이 가장 자주 떠오르십니까?',
+  },
+  /* 집안 어른께 전해 들으신 분 — 조카·사촌도 같은 자격이라 「어른」으로만 부른다 */
+  heard: {
+    place: '집안 어른께서 말씀하신 마을·거리·산·강 이름이 있습니까? 정확하지 않아도 됩니다.',
+    event: '그 무렵 집안에서 들으신 이야기가 있습니까?',
+    relic: '그 시절 사진이나 물건이 댁에 있습니까? 있다면 무엇인지 적어 주십시오.',
+    season: '어떤 계절의 이야기를 들으셨습니까?',
+  },
+}
+
+/* 이름 칸의 이름표도 목소리를 따라간다 — 본인이 적는데 「들려주신 분」이면 어긋난다 */
+const WHO: Record<Voice, { heading: string; note: string; nameLabel: string; relLabel: string | null; cardLabel: string }> = {
+  self: {
+    heading: '이 기억의 주인',
+    note: '비워 두셔도 됩니다. 적으신 내용은 이 기기 밖으로 나가지 않습니다.',
+    nameLabel: '성함 (선택)',
+    relLabel: null,
+    cardLabel: '기록하신 분',
+  },
+  heard: {
+    heading: '이 기억을 들려주신 분',
+    note: '비워 두셔도 됩니다. 적으신 내용은 이 기기 밖으로 나가지 않습니다.',
+    nameLabel: '성함 (선택)',
+    relLabel: '적으시는 분과의 관계 (선택)',
+    cardLabel: '들려주신 분',
+  },
 }
 
 type Draft = {
   homeId: string
+  voice: Voice
   elder: string
   relation: string
   place: string
@@ -89,15 +120,10 @@ type Draft = {
   season: string
   savedAt: string
 }
-const EMPTY: Draft = { homeId: '', elder: '', relation: '', place: '', event: '', relic: '', season: '', savedAt: '' }
+const EMPTY: Draft = { homeId: '', voice: 'heard', elder: '', relation: '', place: '', event: '', relic: '', season: '', savedAt: '' }
 const STORE_KEY = 'gohyang_memory_card_v1'
 
-const FIELDS: Array<{ k: 'place' | 'event' | 'relic' | 'season'; q: string }> = [
-  { k: 'place', q: QUESTION.place },
-  { k: 'event', q: QUESTION.event },
-  { k: 'relic', q: QUESTION.relic },
-  { k: 'season', q: QUESTION.season },
-]
+const FIELD_KEYS: QKey[] = ['place', 'event', 'relic', 'season']
 
 /* ══════════════════════ 유틸 ══════════════════════ */
 
@@ -129,6 +155,7 @@ type CardModel = {
   survivors: number
   survivorsAsOf: string
   elder: string
+  elderLabel: string
   relation: string
   qa: Array<{ q: string; a: string }>
   context: string[]
@@ -190,7 +217,7 @@ function paint(ctx: CanvasRenderingContext2D, m: CardModel, W: number, measure: 
   if (m.elder || m.relation) {
     y += 8
     line(
-      [m.elder ? `들려주신 분  ${m.elder}` : '', m.relation ? `관계  ${m.relation}` : ''].filter(Boolean).join('        '),
+      [m.elder ? `${m.elderLabel}  ${m.elder}` : '', m.relation ? `관계  ${m.relation}` : ''].filter(Boolean).join('        '),
       19,
       '600',
       C.soft,
@@ -238,6 +265,55 @@ function paint(ctx: CanvasRenderingContext2D, m: CardModel, W: number, measure: 
 }
 
 /** 그려서 data URL 을 돌려준다. 실패하면 null — 화면은 인쇄 경로로 안내한다. */
+/* 고향 이름에서 색조를 정한다 — 난수를 쓰지 않아 같은 고향은 늘 같은 종이가 된다. */
+function paperHue(name: string): number {
+  let h = 0
+  for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) % 360
+  // 미색~담청 사이만 쓴다. 원색이 나오면 공문서 톤이 깨진다.
+  return 26 + (h % 5) * 42
+}
+
+/* 한지 느낌의 바탕 — 사진이 아니라 결이다. 재현하지 않으므로 기록과 혼동될 수 없다. */
+function paintPaper(ctx: CanvasRenderingContext2D, W: number, H: number, homeName: string) {
+  const hue = paperHue(homeName)
+  const g = ctx.createLinearGradient(0, 0, W * 0.35, H)
+  g.addColorStop(0, '#ffffff')
+  g.addColorStop(0.55, `hsl(${hue} 38% 97.4%)`)
+  g.addColorStop(1, `hsl(${hue} 34% 95.4%)`)
+  ctx.fillStyle = g
+  ctx.fillRect(0, 0, W, H)
+
+  /* 섬유결 — 결정적인 의사난수라 다시 그려도 같은 종이가 나온다 */
+  let seed = 0
+  for (let i = 0; i < homeName.length; i++) seed = (seed * 131 + homeName.charCodeAt(i)) % 100000
+  const rnd = () => ((seed = (seed * 1103515245 + 12345) % 2147483648) / 2147483648)
+  ctx.save()
+  ctx.globalAlpha = 0.10
+  ctx.strokeStyle = `hsl(${hue} 24% 46%)`
+  ctx.lineWidth = 0.7
+  for (let i = 0; i < 420; i++) {
+    const x = rnd() * W
+    const y = rnd() * H
+    const len = 8 + rnd() * 34
+    const dy = (rnd() - 0.5) * 3
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    ctx.lineTo(x + len, y + dy)
+    ctx.stroke()
+  }
+  ctx.restore()
+
+  /* 아래쪽에 아주 옅은 색면 하나 — 여백이 허전해 보이지 않게만 */
+  ctx.save()
+  ctx.globalAlpha = 0.5
+  const b = ctx.createLinearGradient(0, H - 240, 0, H)
+  b.addColorStop(0, 'rgba(255,255,255,0)')
+  b.addColorStop(1, `hsl(${hue} 36% 93.4%)`)
+  ctx.fillStyle = b
+  ctx.fillRect(0, H - 240, W, 240)
+  ctx.restore()
+}
+
 function renderPng(m: CardModel): { url: string; bytes: number } | null {
   try {
     const W = 1000
@@ -247,7 +323,9 @@ function renderPng(m: CardModel): { url: string; bytes: number } | null {
     probe.height = 10
     const pctx = probe.getContext('2d')
     if (!pctx) return null
-    const need = Math.max(1414, Math.ceil(paint(pctx, m, W, true)))
+    /* 높이는 내용에 맞춘다 — A4 비율로 고정하면 답이 짧을 때 아래가 절반이나 비어
+       "덜 만들어진 종이"처럼 보인다. 대신 최소 높이를 두어 쪽지처럼 납작해지지도 않게 한다. */
+    const need = Math.max(1000, Math.ceil(paint(pctx, m, W, true)))
 
     const cv = document.createElement('canvas')
     cv.width = W * dpr
@@ -255,8 +333,7 @@ function renderPng(m: CardModel): { url: string; bytes: number } | null {
     const ctx = cv.getContext('2d')
     if (!ctx) return null
     ctx.scale(dpr, dpr)
-    ctx.fillStyle = '#ffffff'
-    ctx.fillRect(0, 0, W, need)
+    paintPaper(ctx, W, need, m.homeName)
     ctx.textBaseline = 'alphabetic'
     paint(ctx, m, W, false)
     const url = cv.toDataURL('image/png')
@@ -302,14 +379,16 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
   const { rows: wx, state: wxState } = useLiveWeather(home ? home.members : [])
   const wxRow = wx[0] ?? null
 
-  const answered = FIELDS.filter(f => draft[f.k].trim()).length
+  const voice: Voice = draft.voice === 'self' ? 'self' : 'heard'   // 옛 임시저장본에는 이 칸이 없다
+  const Q = QUESTIONS[voice]
+  const answered = FIELD_KEYS.filter(k => draft[k].trim()).length
   const set = (k: keyof Draft, v: string) => setDraft(d => ({ ...d, [k]: v }))
 
   const model: CardModel | null = useMemo(() => {
     if (!home) return null
-    const qa = FIELDS.filter(f => draft[f.k].trim()).map(f => ({ q: QUESTION[f.k], a: draft[f.k].trim() }))
+    const qa = FIELD_KEYS.filter(k => draft[k].trim()).map(k => ({ q: Q[k], a: draft[k].trim() }))
     const context: string[] = []
-    for (const e of home.events.slice(0, 2)) context.push(`남북관계 연표 — ${ymdKo(e.date)} ${e.title}`)
+    for (const e of home.events.slice(0, 2)) context.push(`공식 기록에 남은 이 고향 — ${ymdKo(e.date)} ${e.title}`)
     for (const r of home.relics.slice(0, 2)) {
       context.push(`디지털박물관 사료 — ${r.title}${r.producedOn ? ` (${r.producedOn})` : ''}`)
     }
@@ -326,7 +405,8 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
       survivors: home.survivors,
       survivorsAsOf: asOf.survivors,
       elder: draft.elder.trim(),
-      relation: draft.relation.trim(),
+      elderLabel: WHO[voice].cardLabel,
+      relation: WHO[voice].relLabel ? draft.relation.trim() : '',
       qa,
       context,
       madeAt: nowStamp(),
@@ -438,13 +518,38 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             </button>
           </div>
 
-          {/* 들려주신 분 */}
+          {/* 누가 적으시는가 — 이 선택이 아래 질문 네 개의 말을 바꾼다 */}
           <div className={`${SURFACE.card} p-4`}>
-            <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>이 기억을 들려주신 분</p>
-            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>비워 두셔도 됩니다. 적으신 내용은 이 기기 밖으로 나가지 않습니다.</p>
+            <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>이 기억은 누구의 것입니까?</p>
+            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>고르시는 대로 아래 질문이 바뀝니다.</p>
+            <div role="group" aria-label="기억의 주인 고르기" className="mt-2.5 grid gap-2.5 sm:grid-cols-2">
+              {([
+                ['self', '제가 고향을 기억합니다', '고향에서 지내신 일을 직접 적으십니다'],
+                ['heard', '집안 어른께 들었습니다', '자녀·손자녀뿐 아니라 조카·사촌도 적으실 수 있습니다'],
+              ] as Array<[Voice, string, string]>).map(([v, label, hint]) => (
+                <button
+                  key={v}
+                  type="button"
+                  onClick={() => set('voice', v)}
+                  aria-pressed={voice === v}
+                  className={`min-h-[56px] rounded-md border px-3.5 py-2.5 text-left ${FOCUS} ${
+                    voice === v ? 'border-[#1a4e9c] bg-[#eef3fb]' : SURFACE.line
+                  }`}
+                >
+                  <span className={`block ${TYPE.body} font-semibold ${voice === v ? TEXT.blue : TEXT.ink}`}>{label}</span>
+                  <span className={`mt-0.5 block ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{hint}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 이름 — 이름표가 위 선택을 따라간다 */}
+          <div className={`${SURFACE.card} p-4`}>
+            <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{WHO[voice].heading}</p>
+            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>{WHO[voice].note}</p>
             <div className="mt-2.5 grid gap-3 sm:grid-cols-2">
               <label className="block">
-                <span className={`${TYPE.sub} font-medium ${TEXT.soft}`}>성함 (선택)</span>
+                <span className={`${TYPE.sub} font-medium ${TEXT.soft}`}>{WHO[voice].nameLabel}</span>
                 <input
                   type="text"
                   value={draft.elder}
@@ -453,22 +558,24 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
                   className={`mt-1 w-full rounded-md border px-3 py-2.5 ${TYPE.body} ${TEXT.ink} ${SURFACE.line} ${FOCUS}`}
                 />
               </label>
-              <label className="block">
-                <span className={`${TYPE.sub} font-medium ${TEXT.soft}`}>적으시는 분과의 관계 (선택)</span>
-                <input
-                  type="text"
-                  value={draft.relation}
-                  onChange={e => set('relation', e.target.value)}
-                  placeholder="예: 할아버지, 어머니, 본인"
-                  className={`mt-1 w-full rounded-md border px-3 py-2.5 ${TYPE.body} ${TEXT.ink} ${SURFACE.line} ${FOCUS}`}
-                />
-              </label>
+              {WHO[voice].relLabel && (
+                <label className="block">
+                  <span className={`${TYPE.sub} font-medium ${TEXT.soft}`}>{WHO[voice].relLabel}</span>
+                  <input
+                    type="text"
+                    value={draft.relation}
+                    onChange={e => set('relation', e.target.value)}
+                    placeholder="예: 할아버지, 어머니, 큰아버지, 이모"
+                    className={`mt-1 w-full rounded-md border px-3 py-2.5 ${TYPE.body} ${TEXT.ink} ${SURFACE.line} ${FOCUS}`}
+                  />
+                </label>
+              )}
             </div>
           </div>
 
           {/* 마을·거리 이름 */}
           <div className={`${SURFACE.card} p-4`}>
-            <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{QUESTION.place}</p>
+            <p className={`${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{Q.place}</p>
             <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
               {home.name}
               {josa(home.name, '은', '는')} 현행 행정구역으로 {home.members.join('·')}에 해당합니다. 옛 지명 그대로 적으셔도 됩니다.
@@ -484,7 +591,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
 
           {/* 연표 사건에서 출발하는 질문 */}
           <div className={`${SURFACE.card} p-4`}>
-            <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>이 고향의 공식 기록 {nf(home.eventsTotal)}건 중</p>
+            <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>이 고향이 공식 기록에 나온 {nf(home.eventsTotal)}번 가운데</p>
             {home.events.length ? (
               <ul className={`mt-1.5 space-y-1.5 border-l-[3px] border-[#1a4e9c] pl-3`}>
                 {home.events.slice(0, 2).map(e => (
@@ -496,7 +603,10 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             ) : (
               <p className={`mt-1.5 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>이 고향으로 걸리는 연표 사건이 자료에 없습니다. 그래도 들으신 이야기가 있으면 적어 주십시오.</p>
             )}
-            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{QUESTION.event}</p>
+            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{Q.event}</p>
+            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+              위는 남북관계 연표·통일부 보도자료에 <b className="font-medium">고향 이름이 적힌 때</b>입니다. 그 무렵 이야기가 아니어도 좋습니다 — 언제 일인지 아시는 대로 적어 주십시오.
+            </p>
             <textarea
               rows={3}
               value={draft.event}
@@ -504,7 +614,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
               placeholder="들으신 대로 적어 주십시오. 날짜가 정확하지 않아도 됩니다."
               className={`mt-2 w-full rounded-md border px-3 py-2.5 ${TYPE.body} ${TEXT.ink} ${SURFACE.line} ${FOCUS}`}
             />
-            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>연표 기준일 {asOf.events}.</p>
+            <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>기록 기준일 {asOf.events}.</p>
           </div>
 
           {/* 사료에서 출발하는 질문 */}
@@ -544,7 +654,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             ) : (
               <p className={`mt-1.5 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>이 고향으로 걸리는 공개 사료가 없습니다.</p>
             )}
-            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{QUESTION.relic}</p>
+            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{Q.relic}</p>
             <textarea
               rows={3}
               value={draft.relic}
@@ -571,7 +681,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             ) : (
               <p className={`mt-1 ${TYPE.sub} ${TEXT.faint} ${PROSE}`}>오늘 날씨를 불러오지 못했습니다. 그래도 계절 이야기는 적으실 수 있습니다.</p>
             )}
-            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{QUESTION.season}</p>
+            <p className={`mt-3 ${TYPE.h3} ${TEXT.ink} ${PROSE}`}>{Q.season}</p>
             <textarea
               rows={3}
               value={draft.season}
@@ -610,7 +720,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
             </p>
             {(model.elder || model.relation) && (
               <p className={`mt-2.5 ${TYPE.body} font-semibold ${TEXT.soft} ${PROSE}`}>
-                {model.elder && <>들려주신 분 {model.elder}</>}
+                {model.elder && <>{model.elderLabel} {model.elder}</>}
                 {model.elder && model.relation && <span className="mx-2" aria-hidden="true">·</span>}
                 {model.relation && <>관계 {model.relation}</>}
               </p>

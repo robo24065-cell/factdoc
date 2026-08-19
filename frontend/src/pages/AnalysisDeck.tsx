@@ -124,13 +124,15 @@ function nf(v: unknown): string {
   const n = typeof v === 'number' ? v : Number(v)
   return Number.isFinite(n) ? n.toLocaleString('ko-KR') : '—'
 }
+/* 자릿수는 값의 크기가 정한다. 원자료가 0.121·1.878 처럼 소수 셋째 자리까지 의미를 갖는
+   밀도 값이라, 작은 값에서 자리를 깎으면 카드 본문의 수치와 그래프의 수치가 어긋난다.
+   반대로 꼬리 0(4.30)은 없는 정밀도를 있는 것처럼 보이게 하므로 떼어 낸다. */
 function nfAuto(v: number): string {
   if (!Number.isFinite(v)) return '—'
   const a = Math.abs(v)
   if (a >= 1000) return Math.round(v).toLocaleString('ko-KR')
-  if (a >= 100) return v.toFixed(a % 1 === 0 ? 0 : 1)
-  if (a >= 1) return v.toFixed(a % 1 === 0 ? 0 : a >= 10 ? 1 : 2)
-  return v.toFixed(3).replace(/0+$/, '').replace(/\.$/, '')
+  const digits = a >= 100 ? 1 : a >= 10 ? 2 : 3
+  return String(Number(v.toFixed(digits)))
 }
 /** '2026-05-31' → '2026년 5월 31일' */
 function ymdKo(d?: string | null): string {
@@ -401,7 +403,7 @@ function LinePanel({ panel, cardTitle }: { panel: Panel; cardTitle: string }) {
         </svg>
       </div>
       <figcaption className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-        단위 {panel.unit || '표기 없음'} · 관측점 {nf(xsAll.length)}개 · 손가락이나 커서로 짚으면 그 시점의 값이 나옵니다(그래프에 초점을 두고 좌우 화살표로도 움직입니다).
+        {panel.unit ? `단위 ${panel.unit} · ` : ''}관측점 {nf(xsAll.length)}개 · 손가락이나 커서로 짚으면 그 시점의 값이 나옵니다(그래프에 초점을 두고 좌우 화살표로도 움직입니다).
         {zoomed && ' 세로축이 0에서 시작하지 않습니다 — 변화 폭이 좁아 확대한 축입니다.'}
       </figcaption>
     </figure>
@@ -428,16 +430,15 @@ function BarPanel({ panel, cardTitle }: { panel: Panel; cardTitle: string }) {
 
   return (
     <figure className="mt-3">
-      {panel.series.length > 1 && (
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          {panel.series.map((s, i) => (
-            <li key={s.key} className={`flex items-center gap-1.5 ${TYPE.cap} ${TEXT.soft}`}>
-              <span aria-hidden="true" className="inline-block h-3 w-3 rounded-[2px]" style={{ backgroundColor: BARS[i % BARS.length], outline: `1px solid ${C.line}` }} />
-              {s.label}
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* 계열이 하나뿐이어도 이름표를 지우지 않는다 — 막대가 무엇을 재는지가 이름표에만 있다 */}
+      <ul className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        {panel.series.map((s, i) => (
+          <li key={s.key} className={`flex items-center gap-1.5 ${TYPE.cap} ${TEXT.soft}`}>
+            <span aria-hidden="true" className="inline-block h-3 w-3 rounded-[2px]" style={{ backgroundColor: BARS[i % BARS.length], outline: `1px solid ${C.line}` }} />
+            {s.label}
+          </li>
+        ))}
+      </ul>
       <div className="mt-1 overflow-x-auto">
         <svg viewBox={`0 0 ${W} ${H}`} className="h-auto w-full min-w-[520px]" role="img" aria-label={aria}>
           {cats.map((cat, r) => {
@@ -466,7 +467,7 @@ function BarPanel({ panel, cardTitle }: { panel: Panel; cardTitle: string }) {
         </svg>
       </div>
       <figcaption className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-        단위 {panel.unit || '표기 없음'} · 범주 {nf(cats.length)}개 · 막대 길이는 같은 판 안에서만 비교됩니다.
+        {panel.unit ? `단위 ${panel.unit} · ` : ''}범주 {nf(cats.length)}개 · 막대 길이는 같은 판 안에서만 비교됩니다.
       </figcaption>
     </figure>
   )
@@ -555,6 +556,13 @@ function ScatterPanel({ panel, cardTitle }: { panel: Panel; cardTitle: string })
 
 /* ══════════════════════ 표 ══════════════════════ */
 
+/* 표 머리 — 원자료의 열 이름이 영문인 표가 섞여 있다. 화면에서는 한국어로 읽히게 한다
+   (값은 손대지 않는다 — 이름표만 붙인다). */
+const COL_KO: Record<string, string> = {
+  axis: '축', key: '항목', month: '월', delta: '증감', monthlyMedianAbs: '월 증감 중앙값', ratio: '중앙값 대비 배수',
+  date: '날짜', event: '사건', region: '고향', era: '시대', n: '건수',
+}
+
 function DataTable({ rows }: { rows: Array<Record<string, string | number | null>> }) {
   const cols = Object.keys(rows[0] ?? {})
   return (
@@ -564,7 +572,7 @@ function DataTable({ rows }: { rows: Array<Record<string, string | number | null
           <tr className="bg-[#f5f7fa]">
             {cols.map(c => (
               <th key={c} scope="col" className={`whitespace-nowrap border-b px-2.5 py-2 text-left ${TYPE.cap} font-bold ${TEXT.soft} ${SURFACE.hair}`}>
-                {c}
+                {COL_KO[c] ?? c}
               </th>
             ))}
           </tr>
@@ -884,6 +892,9 @@ export default function AnalysisDeck() {
     )
   }
 
+  /* 넘김 단추 — 한걸음씩 모드의 [이전]/[다음]과 같은 크기·같은 색이다.
+     Tailwind 는 소스에 문자 그대로 있는 클래스만 만들어서 색을 변수로 넣을 수 없다.
+     쓰인 값은 전부 theme 의 팔레트이고, 비활성 회색만 GohyangOn 의 단추와 같은 값을 맞춰 뒀다. */
   const navBtn = (disabled: boolean) =>
     `inline-flex min-h-[56px] min-w-[104px] items-center justify-center gap-1.5 rounded-md border px-5 text-[1.0625rem] font-bold ${FOCUS} ` +
     (disabled
