@@ -2402,6 +2402,7 @@ function StepMode({ pack, oldRanked, onExit }: {
   const [home, setHome] = useState<Sel | null>(null)
   const boxRef = useRef<HTMLDivElement>(null)
   const cardRefs = useRef<Array<HTMLElement | null>>([])
+  const touchX = useRef<number | null>(null)   // 사료 묶음 가로 스와이프 시작점
 
   const isan = pack.isan
   const homeName = home && home.mode === 'old' ? (oldRanked.find(o => o.id === home.id)?.name ?? '') : ''
@@ -2412,7 +2413,20 @@ function StepMode({ pack, oldRanked, onExit }: {
   )
   const panel = useMemo(() => (home ? buildPanel(home, pack) : null), [home, pack])
   const museum = useMemo(() => (home ? museumFor(home, pack) : null), [home, pack])
-  const museumRows = museum ? [...museum.hometown, ...museum.venue, ...museum.historic].slice(0, 6) : []   // 3건은 418건 옆에서 너무 헐거웠다(실측 지적) — 두 줄 여섯 장
+  /* 한걸음씩 모드의 사료는 **묶음으로 넘긴다.**
+     이 모드는 카드 하나가 화면 하나라, 목록을 아래로 펼치면(더 보기) 스냅 구조가
+     무너지고 노인·어린이가 길을 잃는다. 그래서 6장씩 끊어 좌우로 넘긴다 —
+     화면 높이는 그대로 두고 [이전 6장]/[다음 6장] 큰 단추와 손가락 스와이프로만
+     움직인다. 6장에서 멈춰 있고 더 볼 방법이 없던 문제(실측 지적)의 답이다. */
+  const museumAll = useMemo(
+    () => (museum ? [...museum.hometown, ...museum.venue, ...museum.historic] : []),
+    [museum],
+  )
+  const MUSEUM_PER_PAGE = 6
+  const [mPage, setMPage] = useState(0)
+  const mPages = Math.max(1, Math.ceil(museumAll.length / MUSEUM_PER_PAGE))
+  useEffect(() => { setMPage(0) }, [home])
+  const museumRows = museumAll.slice(mPage * MUSEUM_PER_PAGE, mPage * MUSEUM_PER_PAGE + MUSEUM_PER_PAGE)
   const wxNames = home ? membersOf(home, pack.region) : []
   const { rows: wx, state: wxState } = useLiveWeather(wxNames)
 
@@ -2588,9 +2602,50 @@ function StepMode({ pack, oldRanked, onExit }: {
           <div>
             {museumRows.length ? (
               <>
-                <ul className="grid gap-3 sm:grid-cols-3">
-                  {museumRows.map(r => <MuseumCard key={r.iId} r={r} mark={null} />)}
-                </ul>
+                {/* 손가락으로도 넘길 수 있게 — 가로 스와이프를 묶음 넘김으로 옮긴다 */}
+                <div
+                  onTouchStart={e => { touchX.current = e.touches[0]?.clientX ?? null }}
+                  onTouchEnd={e => {
+                    const x0 = touchX.current; touchX.current = null
+                    const x1 = e.changedTouches[0]?.clientX
+                    if (x0 == null || x1 == null) return
+                    const dx = x1 - x0
+                    if (Math.abs(dx) < 48) return          // 세로 스크롤과 다투지 않게 문턱을 둔다
+                    setMPage(p => Math.max(0, Math.min(mPages - 1, p + (dx < 0 ? 1 : -1))))
+                  }}
+                >
+                  <ul className="grid gap-3 sm:grid-cols-3">
+                    {museumRows.map(r => <MuseumCard key={r.iId} r={r} mark={null} />)}
+                  </ul>
+                </div>
+
+                {mPages > 1 && (
+                  <div className="mt-4 flex items-center justify-between gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setMPage(p => Math.max(0, p - 1))}
+                      disabled={mPage === 0}
+                      className={`${BTN.ghost} min-h-[52px] px-5 text-base disabled:opacity-35`}
+                    >
+                      ← 이전 {MUSEUM_PER_PAGE}장
+                    </button>
+                    <p className={`shrink-0 text-center ${STEP_TYPE.cap} ${TEXT.soft}`} aria-live="polite">
+                      <b className={`block text-base font-bold tabular-nums ${TEXT.ink}`}>
+                        {mPage * MUSEUM_PER_PAGE + 1}–{mPage * MUSEUM_PER_PAGE + museumRows.length}
+                      </b>
+                      / 모두 {nf(museumAll.length)}장
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setMPage(p => Math.min(mPages - 1, p + 1))}
+                      disabled={mPage >= mPages - 1}
+                      className={`${BTN.primary} min-h-[52px] px-5 text-base disabled:opacity-35`}
+                    >
+                      다음 {MUSEUM_PER_PAGE}장 →
+                    </button>
+                  </div>
+                )}
+
                 <p className={`mt-4 max-w-prose ${STEP_TYPE.cap} ${TEXT.faint} ${PROSE}`}>
                   이 고향에 걸린 기록물은 모두 {nf(museum.total)}건입니다. 사진은 박물관 원본을 그대로 불러온 것이며,
                   보이지 않으면 박물관이 외부 참조를 막은 것입니다.

@@ -34,6 +34,14 @@ const SHOTS = [
     pre: `localStorage.setItem('gohyang_view','step')`,
     steps: [{ wait: 1200 }],
   },
+  {
+    name: '06-한걸음씩-사료묶음',
+    pre: `localStorage.setItem('gohyang_view','step')`,
+    steps: [
+      { click: '황해도(구)' }, { wait: 1400 },
+      { scrollText: '그 고향에서 온 기록물' }, { wait: 900 },
+    ],
+  },
 ]
 
 const sleep = ms => new Promise(r => setTimeout(r, ms))
@@ -98,6 +106,14 @@ try {
           window.scrollBy(0, -70)   // sticky 헤더만큼 되올림
         })()`)
         await sleep(500)
+      }
+      if (st.scrollText) {
+        await evl(`(() => {
+          const p = [...document.querySelectorAll('h2,h3,p')].find(e => e.textContent.includes(${JSON.stringify(st.scrollText)}))
+          const card = p && p.closest('section, article, [data-step]') || p
+          if (card) card.scrollIntoView({ block: 'center' })
+        })()`)
+        await sleep(600)
       }
       if (st.wait) await sleep(st.wait)
     }
