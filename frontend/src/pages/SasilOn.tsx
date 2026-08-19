@@ -2009,7 +2009,7 @@ export default function SasilOn() {
               to="/"
               className={`mt-2 inline-flex items-center gap-1 rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 ${FOCUS}`}
             >
-              <span aria-hidden="true">🗺</span> 고향ON — 지도로 보기
+              <span aria-hidden="true">🗺</span> 고향잇기 — 고향으로 보기
               <span aria-hidden="true">→</span>
             </Link>
           </header>

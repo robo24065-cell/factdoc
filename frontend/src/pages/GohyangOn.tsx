@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom'
 import { asOfNotice, type NkRecord, type Notice } from '../engine/nk-search.mjs'
 
 /* ────────────────────────────────────────────────────────────────
-   고향ON — 지도 위의 as-of
+   고향잇기 — 지도 위의 as-of
 
    사실은ON 이 "이 답이 언제 것인지"를 문장으로 말한다면,
    이 화면은 같은 것을 **공간**으로 말한다.
@@ -1594,7 +1594,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
   )
 }
 
-/* ══════════════════════ 소멸 시계 ══════════════════════
+/* ══════════════════════ 기록 골든타임 ══════════════════════
    실측(2017-07~2025-08 등록현황 CSV 98개월 + 2026-03~05 공표 HWP 3개월)과
    추계(2026~2050)를 한 축 위에 올린다.
     추계는 통일부 공표 통계가 아니라 이 시제품의 계산 결과다 — 선 모양·배지·각주 3중으로 구분한다. */
@@ -1640,7 +1640,7 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
         <ClauseTag>추계</ClauseTag>
         <div className="min-w-0 flex-1">
           <h2 className={`text-base font-semibold leading-snug text-slate-900 dark:text-white ${PROSE}`}>
-            <span aria-hidden="true"></span> 소멸 시계 — 고향을 기억하는 사람이 남아 있는 시간
+            <span aria-hidden="true"></span> 기록 골든타임 — 고향을 기억하는 사람이 남아 있는 시간
           </h2>
           <p className={`mt-0.5 text-sm leading-relaxed text-slate-500 ${PROSE}`}>실측 {nf(isan.monthly.length)}개월(2017~2025) + 공표 3개월(2026) 위에 생잔 추계를 얹은 것입니다.
           </p>
@@ -1774,7 +1774,7 @@ function ExtinctionClock({ isan, proj }: { isan: IsanData; proj: ProjData }) {
 
 /* ══════════════════════ 통일 필요성 19년 ══════════════════════
 
-   소멸 시계 바로 아래에 온다. 두 곡선을 나란히 두는 것이 요지다 —
+   기록 골든타임 바로 아래에 온다. 두 곡선을 나란히 두는 것이 요지다 —
    1세대가 줄어드는 선과, 통일이 필요하다는 응답이 내려가는 선.
 
    ★★ 이 구획만 통일부 자료가 아니다. 서울대학교 통일평화연구원의 통일의식조사다.
@@ -1829,7 +1829,7 @@ function OpinionTrend({ opinion, isan }: { opinion: OpinionData; isan: IsanData 
       <div className="p-4">
         {/* ── 두 곡선을 잇는 한 문장 ── */}
         <p className={`${SURFACE.inset} p-3 ${TYPE.body} ${TEXT.soft} ${PROSE}`}>
-          위 소멸 시계에서 고향을 기억하는 사람은 {ymKo(isanFirst?.month)}{' '}
+          위 「기록 골든타임」에서 고향을 기억하는 사람은 {ymKo(isanFirst?.month)}{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanFirst?.total)}명</b>에서 {ymKo(isanLast.asOf)}{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanLast.survivors.total)}명</b>으로 줄었습니다.
           {' '}같은 기간 「통일이 필요하다」는 응답은 {H0.first.year}년{' '}
@@ -1958,7 +1958,7 @@ function OpinionTrend({ opinion, isan }: { opinion: OpinionData; isan: IsanData 
 
 /* ══════════════════════ 후손 다리 ══════════════════════
 
-   소멸 시계가 "언제까지 남아 있는가"를 말한다면, 이 층은 "그 다음은 누구인가"를 말한다.
+   기록 골든타임이 "언제까지 남아 있는가"를 말한다면, 이 층은 "그 다음은 누구인가"를 말한다.
 
    왜 이 층이 정당한가 — 우리가 만들고 싶어서가 아니라, **통일부 자신의 조사가 요구했다**:
      · 이산가족이 1순위로 원한 사업 = 「사진·물건 등 기록물 수집 보존」 59.9%
@@ -2944,7 +2944,7 @@ export default function GohyangOn() {
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link to="/factcheck" className={BTN.primary}>지도에 없는 것은 물어보세요
           </Link>
-          <a href="#extinction" className={BTN.ghost}>소멸 시계 보기 <span aria-hidden="true">↓</span>
+          <a href="#extinction" className={BTN.ghost}>기록 골든타임 보기 <span aria-hidden="true">↓</span>
           </a>
           <a href="#descendant" className={BTN.ghost}>후손 다리 <span aria-hidden="true">↓</span>
           </a>
@@ -3095,19 +3095,19 @@ export default function GohyangOn() {
         </div>
       </div>
 
-      {/* ── 소멸 시계 (지도 아래, 전폭) ── */}
+      {/* ── 기록 골든타임 (지도 아래, 전폭) ── */}
       <div id="extinction" className="mt-8 scroll-mt-24">
         <ExtinctionClock isan={pack.isan} proj={pack.proj} />
       </div>
 
-      {/* ── 통일 필요성 19년 — 소멸 시계 **바로 아래**.
+      {/* ── 통일 필요성 19년 — 기록 골든타임 **바로 아래**.
              두 곡선을 나란히 두는 것이 요지라 사이에 다른 구획을 끼우지 않는다.
              단, 출처가 다르므로(서울대 통일평화연구원) 배지·문장으로 갈라 표시한다. */}
       <div className="mt-6">
         <OpinionTrend opinion={pack.opinion} isan={pack.isan} />
       </div>
 
-      {/* ── 후손 다리 — 소멸 시계 바로 뒤에 온다.
+      {/* ── 후손 다리 — 기록 골든타임 바로 뒤에 온다.
              "언제까지 남아 있는가" 다음 질문이 "그 다음은 누구인가"이기 때문이다. */}
       <div id="descendant" className="mt-8 scroll-mt-24">
         <DescendantBridge desc={pack.desc} isan={pack.isan} />

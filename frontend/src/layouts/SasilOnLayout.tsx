@@ -3,7 +3,7 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import FontScale from '../components/FontScale'
 import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C } from '../theme/gohyang'
 
-/* 고향ON 껍데기 — 통일부 누리집의 구조를 따른다.
+/* 고향잇기 껍데기 — 통일부 누리집의 구조를 따른다.
      ① 최상단 안내 띠(고지)  ② 흰 머리글 + 가로 주메뉴  ③ 본문  ④ 바닥글
    ㆍ고지는 지우지 않는다. 이 서비스가 통일부 공식 서비스가 아니라는 사실을
      화면 어디에서도 오해할 수 없게 두는 것이 이 프로젝트의 규약이다.
@@ -11,7 +11,7 @@ import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C } from '../theme/gohyang'
    ㆍ장식 이모지를 쓰지 않는다 — 관공서 화면에서 신뢰를 깎는다. */
 
 const NAV = [
-  { to: '/', label: '고향ON', alias: '/gohyang' },
+  { to: '/', label: '고향잇기', alias: '/gohyang' },
   { to: '/factcheck', label: '사실은ON 팩트체커' },
 ] as const
 
@@ -33,10 +33,10 @@ export default function SasilOnLayout() {
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-4 px-4 py-3 lg:max-w-6xl lg:px-6 xl:max-w-7xl">
           <NavLink to="/" className={`flex min-w-0 items-baseline gap-2.5 ${FOCUS}`}>
             <span className={`text-[1.125rem] font-bold tracking-[-0.02em] ${TEXT.ink}`}>
-              고향<span style={{ color: C.blue }}>ON</span>
+              고향<span style={{ color: C.blue }}>잇기</span>
             </span>
             <span className={`hidden truncate ${TYPE.cap} ${TEXT.faint} sm:inline`}>
-              통일부 공공데이터로 읽는 이산가족과 고향
+              고향을 축으로 이산가족 기록을 후손에게 잇습니다
             </span>
           </NavLink>
           <FontScale />

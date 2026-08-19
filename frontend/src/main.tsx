@@ -27,7 +27,7 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <BrowserRouter>
       <Routes>
-        {/* 고향ON — 이제 이쪽이 메인이다.
+        {/* 고향잇기 — 이제 이쪽이 메인이다.
             지도·소멸시계·후손 다리가 서비스의 얼굴이고, 팩트체커는 그 안의 한 기능으로 들어간다.
             (/gohyang 은 예전 주소 — 공유된 링크가 깨지지 않게 같은 화면으로 남겨 둔다) */}
         <Route element={<SasilOnLayout />}>
