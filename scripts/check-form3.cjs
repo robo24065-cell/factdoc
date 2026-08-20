@@ -29,7 +29,10 @@ const ROOT = path.resolve(__dirname, '..')
 const FONT = '휴먼명조'
 const SZ = 28          // 14pt (half-points)
 const LINE = 384       // 160% (240 × 1.6)
-const MAX_PAGES = 10
+/* 제출은 한글(HWP)로 한다. 같은 원고라도 한글이 docx 보다 적은 쪽에 담기므로
+   docx 쪽수는 참고치다 — 최종 판정은 한글에서 다시 해야 한다.
+   --max 로 docx 상한을 조절한다(기본 10). */
+const MAX_PAGES = Number((process.argv.find((a) => a.startsWith('--max=')) || '').split('=')[1]) || 10
 
 const argv = process.argv.slice(2)
 const AS_JSON = argv.includes('--json')

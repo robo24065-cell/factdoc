@@ -745,11 +745,20 @@ try {
 
   /* ── 최소 타깃 — 「누르는 것 ≥48px」. 지도 폴리곤만 예외다(지오메트리가 크기를 정한다;
        같은 화면에 지역명·인원이 적힌 48px 목록 단추가 등가 경로로 있다). ── */
-  const tiny = await evl(`(() => [...document.querySelectorAll('a[href],button,[role=button],input,select,summary')]
-    .filter(e => { const r = e.getBoundingClientRect(); return (r.width || r.height) && (r.height < 48 || r.width < 48) })
-    .filter(e => !e.closest('svg'))
-    .map(e => (e.tagName + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)))()`)
-  check('누르는 것은 전부 48px 이상이다 (지도 폴리곤 제외)', tiny.length === 0, tiny.slice(0, 3).join(' | ') || '0건')
+  /* 분모(보이는 타깃 수)도 함께 낸다 — 「0건」만 적으면 무엇 중의 0인지 파일에 남지 않는다.
+     기획서가 「누르는 자리 165개가 전부 48px 이상」이라고 쓰려면 이 165가 산출물에 있어야 한다. */
+  const taps = await evl(`(() => {
+    const all = [...document.querySelectorAll('a[href],button,[role=button],input,select,summary')]
+      .filter(e => { const r = e.getBoundingClientRect(); return (r.width || r.height) })
+      .filter(e => !e.closest('svg'))
+    const tiny = all.filter(e => { const r = e.getBoundingClientRect(); return r.height < 48 || r.width < 48 })
+    return { total: all.length,
+      tiny: tiny.map(e => (e.tagName + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)) }
+  })()`)
+  const tiny = taps.tiny
+  check('누르는 것은 전부 48px 이상이다 (지도 폴리곤 제외)', tiny.length === 0,
+    tiny.length ? `보이는 타깃 ${taps.total}개 중 ${tiny.length}개 미달: ${tiny.slice(0, 3).join(' | ')}`
+      : `보이는 타깃 ${taps.total}개 · 48px 미만 0건`)
 
   /* ── 가로 덱 — 세로 스크롤은 그냥 지나가고, 가로는 「덱과의 상호작용」에서만 나온다 ──
        ★ 2026-08-20 재계약. 옛 검사는 「페이지를 내리면 덱이 넘어간다」를 쟀다(sticky 런웨이가
