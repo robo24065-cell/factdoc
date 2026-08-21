@@ -62,3 +62,7 @@ frontend/src/data/nk-index.json
 # 원본 재다운로드 캐시 — 스크립트가 다시 받는다(3.4MB)
 북한자료-api/_cache/
 scripts/.cache/
+
+# 개인정보 — 영상편지 원자료(신청인 실명·자막 속 본적지·생년월일 포함). 로컬 보관만, 업로드 금지
+북한자료-api/reunion-vletter.json
+북한자료-api/_cache/reunion-story/
