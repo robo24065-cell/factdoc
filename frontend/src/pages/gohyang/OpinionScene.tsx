@@ -152,10 +152,10 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
                   strokeDasharray="3 3"
                 />
                 <text x={(x(switchAt - 1) + x(switchAt)) / 2 - 6} y={PAD.t + 12} textAnchor="end" className="text-[12px] fill-slate-500">
-                  ← 인포그래픽 XLSX
+                  ← 인포그래픽 자료
                 </text>
                 <text x={(x(switchAt - 1) + x(switchAt)) / 2 + 6} y={PAD.t + 12} className="text-[12px] fill-slate-500">
-                  기초보고서 PDF →
+                  기초보고서 →
                 </text>
               </>
             )}
@@ -198,7 +198,7 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
           위 「기록 골든타임」에서 고향을 기억하는 사람은 등록현황 월별 자료 한 계열로만 보면 {ymKo(isanFirst?.month)}{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanFirst?.total)}명</b>에서 {ymKo(isanLastCsv?.month)}{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf(isanLastCsv?.total)}명</b>으로 줄었습니다
-          {' '}(게시판 공표 HWP 는 채널이 달라 여기 끝점으로 섞지 않았습니다).
+          {' '}(게시판 공표는 채널이 달라 여기 끝점으로 섞지 않았습니다).
           {' '}같은 기간 「통일이 필요하다」는 응답은 {overlap?.from.year ?? H0.first.year}년{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(overlap?.from.pct ?? H0.first.pct)}%</b>에서 {overlap?.to.year ?? H0.last.year}년{' '}
           <b className={`font-semibold tabular-nums ${TEXT.ink}`}>{nf1(overlap?.to.pct ?? H0.last.pct)}%</b>로 내려갔습니다
@@ -221,7 +221,7 @@ export default function OpinionScene({ opinion, isan }: { opinion: OpinionData; 
           <p className="mt-1.5">
             <OutLink href={opinion.licenseUrl}>통일의식조사 데이터 아카이브</OutLink>
             <span className={`${TYPE.cap} ${TEXT.faint}`}> · </span>
-            <OutLink href={s.source.xlsx}>이 지표의 원본 XLSX</OutLink>
+            <OutLink href={s.source.xlsx}>이 지표의 원본 자료</OutLink>
           </p>
           <p className={`mt-2 rounded-md p-2 ${SURFACE.inset} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
             이 구획의 수치는 <b className="font-medium">통일부 공공데이터가 아닙니다.</b>

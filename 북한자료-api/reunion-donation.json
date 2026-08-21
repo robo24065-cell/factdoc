@@ -1,0 +1,2960 @@
+{
+ "source": "통일부 남북이산가족 디지털박물관 — 기증현황 · 기증자 명단",
+ "corner": "기증현황",
+ "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+ "collectedAt": "2026-08-21",
+ "collectedAtStamp": "2026-08-21 06:50:18 KST",
+ "total": 6,
+ "totalEvidence": "이 코너는 목록형이 아니라 통계표다. total 은 표의 형태 행 수(6)이며 사이트에 「총 N건」 문구는 없다. 건수 자체는 items[].collectedCount / openCount 와 meta.sums 에 있다.",
+ "items": [
+  {
+   "form": "문서류",
+   "collectedCountRaw": "5684건",
+   "openCountRaw": "1386건",
+   "collectedCount": 5684,
+   "openCount": 1386,
+   "unit": "건"
+  },
+  {
+   "form": "사진류",
+   "collectedCountRaw": "5269장",
+   "openCountRaw": "2500장",
+   "collectedCount": 5269,
+   "openCount": 2500,
+   "unit": "장"
+  },
+  {
+   "form": "동영상 · 음성류",
+   "collectedCountRaw": "3963건",
+   "openCountRaw": "40건",
+   "collectedCount": 3963,
+   "openCount": 40,
+   "unit": "건"
+  },
+  {
+   "form": "도서 · 간행물류",
+   "collectedCountRaw": "119권",
+   "openCountRaw": "113권",
+   "collectedCount": 119,
+   "openCount": 113,
+   "unit": "권"
+  },
+  {
+   "form": "박물류",
+   "collectedCountRaw": "269건",
+   "openCountRaw": "223건",
+   "collectedCount": 269,
+   "openCount": 223,
+   "unit": "건"
+  },
+  {
+   "form": "신문류",
+   "collectedCountRaw": "95건",
+   "openCountRaw": "80건",
+   "collectedCount": 95,
+   "openCount": 80,
+   "unit": "건"
+  }
+ ],
+ "donorRoster": [
+  {
+   "group": "기관 단체",
+   "count": 18,
+   "donors": [
+    {
+     "name": "(사)남북이산가족협회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)민족통일협의회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)우리겨레하나되기운동본부",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)우리누리평화운동",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)일천만이산가족위원회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)전후납북자피해가족연합회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)한민족통일여성협의회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "(사)흥남철수작전기념사업회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "경기도사이버도서관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "경제정의실천시민연합",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "국가기록원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "대한적십자사",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "북청군민회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "서울예술단",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "속초시립박물관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임시수도기념관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "평안남도 중앙도민회",
+     "divCode": "02",
+     "linked": true
+    },
+    {
+     "name": "함경북도 중앙도민회",
+     "divCode": "02",
+     "linked": true
+    }
+   ]
+  },
+  {
+   "group": "개인 기증자",
+   "count": 543,
+   "donors": [
+    {
+     "name": "강경춘",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강관호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강규만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강명칠",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강문옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강병순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강성민",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강진선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강진열",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강태원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강화자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강환준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "강흥열",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고근옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고락현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고문기",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고승기",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고승봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고승학",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고영희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고용철",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고정일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "고찬순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "공윤규",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "공춘화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "곽근회",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "곽대성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "곽대신",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "곽상조",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "곽호환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "구본술",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "구정희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권대근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권병제",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권영의",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권익수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권정수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "권종탁",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김경",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김경수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김광연",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김기남",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김기몽",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김기수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김대종",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김동원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김동호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김두영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김또재순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김명옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김명자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김문기",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김병옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김병일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김병환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김봉배",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김봉학",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김상국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김상운",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김선근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김성련",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김성완",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김성자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김송년",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김시동",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김신우",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김신자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김양한",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김연식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영구",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영래",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영신",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김영한",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김예권",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김오봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김옥란",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김옥순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김옥자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김용국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김용삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김용세",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김용순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김용연",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김우택",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김원규",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김원명",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김유태",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김은봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김은주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김응배",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김응하",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김의두",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김익제",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김인성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김인식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김인철",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김인호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김임분",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김재형",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김재흡",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김정만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김정순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김정춘",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김정현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김제성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김제수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김종갑",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김종웅",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김준원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김중환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김지호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김진규",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김진부",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김창옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김창일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김창준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김창현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김철삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김철호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김추자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김춘근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김춘영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김춘옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김태원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김태윤",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김학선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김한복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김항태",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김향순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김현숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김형만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김호덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김홍탁",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김홍태",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김화실",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김효성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김효영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김흥수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김흥영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김희묵",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "김희중",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "나운형",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "남긍우",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "남기성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "남용택",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "남태욱",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노선홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노선화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노성호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노세환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노수웅",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노승찬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노우영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노지홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "노태국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "도재하",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "도중은",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "류배근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "류정현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "마광일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "면양희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "문건식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "문영식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "문영애",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "문태삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "미영순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "민경자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "민성식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "민영식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박경숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박경애",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박경원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박근영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박달수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박미혜",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박복실",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박상신",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박상임",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박성곤",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박수영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박순녀",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박순애",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박순하",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박영호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박영희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박용관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박용득",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박우만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박율석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박인규",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박재풍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박정서",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박정제",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박찬호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박천수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박청자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박춘응",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박춘화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박태원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박한원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박형모",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박형식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박효만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박효천",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박희완",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "박희찬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "반홍섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "방관섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "방용구",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "배금자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "배정제",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "배호준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백계두",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백관흠",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백금숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백남성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백명현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백영우",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백영자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백완기",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백유섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백태용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "백호을",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "변영자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "변정자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "변제민",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "빈재섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서경자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서동국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서동석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서봉영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서정호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "서창교",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "석태순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "선우낙순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "성대동",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "성하정",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "성환병",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "손문규",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "손상모",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "손송자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "손승호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "손양영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "송성수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "송용호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "송정일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "송태천",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "송평림",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신가균",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신동수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신상열",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신영준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신유항",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신종균",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신현익",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "신홍식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "심구섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "심동명",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "심영숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안덕민",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안옥호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안완수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안응서",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안재옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안정의",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안종철",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "안지혜",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양영순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양용석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양원구",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양인호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양재준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양정자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "양희진",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "엄대섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "엄상순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "여상빈",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "여운협",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "염효식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오길환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오동걸",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오명호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오삼용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오소환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오연화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오윤경",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오창운",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "오형재",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "옥순애",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "왕능흡",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "우명주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "우영식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "원시운",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유갑용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유광렬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유근창",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유기진",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유명근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유성균",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유연동",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유임남",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "유창근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "육승권",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤갑열",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤기섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤만영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤무섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤부정",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤성식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤옥자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤윤자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤인순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤창원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤채금",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤태수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤현수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "윤희균",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이경연",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이경주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이경현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이관걸",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이근순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이근추",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이근혁",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이기화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이기훈",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이대석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이덕륭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이덕상",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이동분",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이동섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이동식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이두영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이득숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이만하",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이명호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이미숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이병국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이병덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이복순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이봉관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이부자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이상근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이상봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이상준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이석윤",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이선향",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이성환A",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이수관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이수일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이순덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이순주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이승재",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이신재",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이심태",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이연근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이영실",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이영옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이영우",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이영일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이오환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이운용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이원보",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이원용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이원재",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이원홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이유덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이윤복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이은희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이인구",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이재구",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이점식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이정신",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이정애",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종득",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종무",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종연",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종육",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이종환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이주동",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이주철",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이준배",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이창국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이창순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이창주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이창화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이춘성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이춘화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이택복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이학인",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이학현",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이헌호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이현삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이혜순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이홍준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이회수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이훈",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이희수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "이희영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임석주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임선항",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임성철",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임영자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임영희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임종덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임춘자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임태호",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "임화숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장경식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장계원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장금년",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장기홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장두찬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장병주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장봉남",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장재걸",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장재천",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장정순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장창열",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "장한수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전도일",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전상화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전선옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전선조",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전영수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "전진성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정경혜",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정광숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정기복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정기순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정기영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정동성",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정봉선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정순분",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정야순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정영배",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정영옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정용숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정용진",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정원석",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정인숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정장덕",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정재홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정재흠",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정준해",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정학선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정현모",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정호삼",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정흥산",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "정희경",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조동원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조란숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조만용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조병희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조복래",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조숙희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조승찬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조신국",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조양래",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조은",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조주찬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조증선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조충한",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조필원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조해수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조형만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "조흥상",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "주상복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "주영효",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "주재순",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "주종택",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "지갑섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "진교협",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "진숙희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "진용원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "진태환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "징덕봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "차용재",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "차종준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "차종진",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "채청자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최금주",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최기삼B",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최병관",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최병훈",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최봉근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최상민",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최상옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최선득",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최영환",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최영희",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최예근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최옥숙",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최원식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최인춘",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최재식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최정만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최정연",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최창림",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최청식",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "최호정",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "태영준",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "하상남",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "하옥강",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한금택",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한기출",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한기홍",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한덕기",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한상만",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한세창",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한영자",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한용근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한유용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한인수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한중섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한천우",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "한희섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "함정옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "허갑섬",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "허경옥",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "현기영",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "현병용",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍극표",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍도선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍문선",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍민표",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍세화",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍순복",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍용수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "홍필근",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "황광섭",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "황광수",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "황기봉",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "황원",
+     "divCode": null,
+     "linked": false
+    },
+    {
+     "name": "황정길",
+     "divCode": null,
+     "linked": false
+    }
+   ]
+  }
+ ],
+ "donationGuide": {
+  "수집 대상 자료": "이산을 기록하는 모든 기록물",
+  "수집 기간": "연중",
+  "문의": "통일부 이산가족납북자과 02-2100-5916",
+  "수집대상자료": [
+   "사진, 편지, 자서전, 소장품 등",
+   "정책·연구 ·회담 자료, 구술채록, 보도물 등"
+  ],
+  "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265"
+ },
+ "meta": {
+  "sums": {
+   "수집합계": 15399,
+   "공개합계": 4342
+  },
+  "openRatePct": 28.2,
+  "crossCheckWithArchive": {
+   "museumJsonRecords": 4342,
+   "openSumEqualsArchiveTotal": true,
+   "note": "공개합계와 기록관 총건수(4,342)가 같은지 대조한다. 같다면 「공개=기록관에 뜨는 것」이라는 해석이 성립하고, 수집 대비 공개율이 곧 우리가 볼 수 있는 자료의 비율이 된다."
+  },
+  "asOfTrap": {
+   "severity": "high",
+   "finding": "★ 표 위의 「사료 보존 및 공개 현황 (YYYY년 M월 D일)」은 서버가 준 기준일이 아니다. 페이지 스크립트가 var date = new Date() 로 브라우저의 오늘 날짜를 찍는다 — 언제 열어도 오늘로 보인다.",
+   "sourceEvidence": "var today=\"사료 보존 및 공개 현황 (\"+date.getFullYear() + \"년 \" + ( date.getMonth() + 1 ) + \"월 \" + date.getDate() + \"일\"+\")\";\r\n\t\t\t/* (2018년 12월 15일 현재)*/",
+   "commentedOutOriginal": "/* (2018년 12월 15일 현재)*/ — 소스에 주석으로 남아 있는 옛 표기",
+   "consequence": "이 표의 실제 기준일은 사이트가 알려주지 않는다. 화면에 뜬 날짜를 기준일로 인용하면 as-of 위반이다. 우리 화면에서는 「기준일 미상 · 수집일 2026-08-21」로만 적어야 한다.",
+   "weKnow": "우리가 아는 것은 수집일뿐이다. 자료의 기준일은 모른다 — 모른다고 적는다."
+  },
+  "donorCounts": {
+   "기관단체": 18,
+   "개인기증자": 543,
+   "합계": 561
+  },
+  "donorGroupsFound": [
+   {
+    "group": "기관 단체",
+    "count": 18
+   },
+   {
+    "group": "개인 기증자",
+    "count": 543
+   }
+  ],
+  "donorCrossCheckWithMuseumJson": {
+   "checked": true,
+   "rosterNames": 561,
+   "museumRecordDonorNames": 466,
+   "matchedByExactName": 466,
+   "onlyInMuseumRecords": 0,
+   "onlyInRoster": 95,
+   "note": "이름 문자열 완전일치 기준이다. 동명이인·표기차(괄호·공백·직함)를 구분하지 못하므로 동일인 판정 근거로 쓰면 안 된다. 규모 감각용 수치다.",
+   "interpretation": "onlyInRoster = 명단에는 있는데 공개 사료(museum.json 4,342건)의 기증자 칸에는 한 번도 안 나오는 이름이다. 기증은 했으나 그 사료가 아직 공개되지 않았다는 뜻으로 읽힌다 — 수집 15,399 대비 공개 4,342 라는 위 sums 와 같은 방향의 관측이다. 다만 이는 해석이지 사이트가 명시한 사실이 아니다."
+  },
+  "regionOrgsInRoster": [
+   "(사)흥남철수작전기념사업회",
+   "북청군민회",
+   "평안남도 중앙도민회",
+   "함경북도 중앙도민회"
+  ],
+  "hasRegionField": false,
+  "regionNote": "기증현황 표에는 지역 축이 전혀 없다. 다만 기증자 명단의 기관 이름에 향우 조직(도민회·군민회)이 있어 지역과 이어질 실마리가 된다 — 매핑은 여기서 하지 않고 원문 이름 그대로 넘긴다.",
+  "endpoints": {
+   "donationInfo": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
+   "donorRoster": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/Donor.do?mid=SM00000265",
+   "donorRecords": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DnrRecord.do (POST, i_donor=<이름>&auth_div=<01|02>)"
+  },
+  "notCollected": {
+   "donorRecords": "DnrRecord.do(기증자별 사료 목록)는 받지 않았다. 기증자↔사료 연결은 museum.json 의 donor 필드로 이미 가지고 있어 중복이다."
+  },
+  "license": "공공누리(KOGL) 등 개방형 라이선스 표기를 사이트에서 찾지 못했다. 푸터 표기는 \"COPYRIGHT 2020 (C) Integrated information system for separated families. ALL RIGHTS RESERVED.\" 뿐이다. 사료 원본은 기증자 저작물이므로 이 산출물은 메타데이터와 URL 만 담고 미디어 바이너리는 저장하지 않는다. 화면에서는 원문 페이지로 링크하고 제공처를 함께 표기할 것.",
+  "failed": [],
+  "network": {
+   "calls": 0,
+   "cacheHits": 2,
+   "failures": 0,
+   "bytes": 0,
+   "lastAt": 0,
+   "consecFail": 0
+  },
+  "note": "as-of: 수집일 2026-08-21. 표의 기준일은 위 asOfTrap 대로 확인 불가 — 두 날짜를 섞지 말 것."
+ }
+}

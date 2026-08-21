@@ -657,12 +657,10 @@ async function main() {
   const out = {
     builtAt: BUILT_AT,
     sources: [
-      { name: '통일부 남북이산가족 디지털박물관 — 박물관 진입(세션)',
-        url: URLS.session, asOf: BUILT_AT,
-        note: 'mid 파라미터가 없으면 302. 여기서 JSESSIONID 를 받아 이후 요청에 물린다.' },
-      { name: '디지털박물관 컬렉션 개요(제목)',
-        url: `${COL_BASE}/CollectionView.do?col_id={col_id}&mid=${MID_COLLECTION}`, asOf: BUILT_AT,
-        note: '정적 HTML 에 <title> 이 비어 있고, 본문 스크립트의 document.title = "… > 컬렉션 > 제목" 에서 추출.' },
+      { name: '통일부 남북이산가족 디지털박물관',
+        url: URLS.session, asOf: BUILT_AT },
+      { name: '디지털박물관 컬렉션',
+        url: `${COL_BASE}/CollectionView.do?col_id={col_id}&mid=${MID_COLLECTION}`, asOf: BUILT_AT },
       { name: '디지털박물관 컬렉션 사료 목록(JS 호출 엔드포인트)',
         url: `${COL_BASE}/CollectionViewList.do?mid=${MID_COLLECTION}`, asOf: BUILT_AT,
         note: 'POST · x-www-form-urlencoded · body: col_id=N&pageIndex=P. 응답은 HTML 조각. '
@@ -754,8 +752,8 @@ async function main() {
       regionDict: dict,
       cityMentions: Object.fromEntries(Object.entries(cityMentions).sort((a, b) => b[1] - a[1])),
       kangwonVenueOnly: { count: kangwonVenueOnly, venueCities: VENUE_CITIES,
-        note: '강원도로 태깅된 사료 중 근거 지명이 금강산/장전항/갈마뿐인 건수. '
-          + '이산가족 상봉이 금강산면회소에서 열려서 "고향"이 아니라 "상봉 장소"로 잡힌 것일 수 있다 — 고향 축으로 쓸 때 걸러낼 것.' },
+        note: '강원도로 분류된 사료 중 근거 지명이 금강산·장전항·갈마뿐인 건수다. '
+          + '이산가족 상봉이 금강산면회소에서 열려 「고향」이 아니라 「상봉 장소」로 잡힌 것일 수 있다.' },
       verification,
       imagesDownloaded: 0,
       caveats: [

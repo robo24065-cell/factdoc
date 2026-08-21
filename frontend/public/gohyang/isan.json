@@ -6,22 +6,21 @@
       "kind": "csv(CP949)",
       "landing": "https://www.data.go.kr/data/15034465/fileData.do",
       "download": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003242041&fileDetailSn=1",
-      "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+      "org": "공공데이터포털 — 통일부 파일데이터",
       "asOf": "2025-08-31",
       "accessedAt": "2026-08-15",
       "note": "월말 기준 누적 스냅샷. 2017-07·08 행은 사망자 5열 공란."
     },
     {
-      "name": "이산가족 신청 현황(월별 공표 HWP) — 최신 3건",
+      "name": "이산가족 신청 현황(월별 공표) — 최신 3건",
       "kind": "hwp",
       "landing": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
       "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
       "asOf": "2026-05-31",
-      "accessedAt": "2026-08-15",
-      "note": "HWP BodyText 표를 python olefile로 직접 파싱(PrvText는 1023자 절단이라 미사용)."
+      "accessedAt": "2026-08-15"
     },
     {
-      "name": "이산가족 교류 현황(월별 공표 HWP) — 최신 1건",
+      "name": "이산가족 교류 현황(월별 공표) — 최신 1건",
       "kind": "hwp",
       "landing": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list_exc.do?mid=SM00000129",
       "org": "통일부 이산가족정보통합시스템",
@@ -33,7 +32,7 @@
       "kind": "csv(CP949)",
       "landing": "https://www.data.go.kr/data/15129679/fileData.do",
       "download": "https://www.data.go.kr/cmm/cmm/fileDownload.do?atchFileId=FILE_000000003169500&fileDetailSn=1",
-      "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+      "org": "공공데이터포털 — 통일부 파일데이터",
       "asOf": "2021-12-16",
       "accessedAt": "2026-08-15",
       "note": "1954~2021 주요사건 1041건. 이후 연도는 원자료 미갱신."

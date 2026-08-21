@@ -8,7 +8,7 @@
       "builtAt": "2026-08-15",
       "upstream": [
         {
-          "name": "Natural Earth 1:10m Admin 1 – States, Provinces (martynafford GeoJSON)",
+          "name": "Natural Earth 1:10m 행정구역 경계",
           "url": "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/10m/cultural/ne_10m_admin_1_states_provinces.json",
           "license": "Public Domain (Natural Earth)"
         },
@@ -30,7 +30,7 @@
       },
       "upstream": [
         {
-          "name": "통합 인덱스(nk-index.json) — 남북관계연표·통일부 보도자료·북한이탈주민 재북 출신지역별 현황",
+          "name": "남북관계연표 · 통일부 보도자료 · 북한이탈주민 재북 출신지역별 현황",
           "url": "https://www.data.go.kr/data/15090949/fileData.do",
           "asOf": null
         },
@@ -45,17 +45,17 @@
           "asOf": "2026-08-12"
         },
         {
-          "name": "NOAA ISD 지점이력(CTRY=KN 현행 지점)",
+          "name": "NOAA 관측지점 이력(북한 지점)",
           "url": "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv",
           "asOf": null
         },
         {
-          "name": "NOAA GSOD 일별 요약(지점별 최신 관측일 1행)",
+          "name": "NOAA 일별 기상 요약",
           "url": "https://www.ncei.noaa.gov/data/global-summary-of-the-day/access/{year}/{USAF}{WBAN}.csv",
           "asOf": null
         },
         {
-          "name": "구행정구역 crosswalk(이산가족 출신지 축 대응)",
+          "name": "구행정구역 대응표(이산가족 출신지 축)",
           "url": "frontend/src/data/nk-map.json",
           "asOf": null
         }
@@ -75,17 +75,17 @@
         {
           "name": "통일부_이산가족찾기 등록현황 월별 통계 정보",
           "url": "https://www.data.go.kr/data/15034465/fileData.do",
-          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "org": "공공데이터포털 — 통일부 파일데이터",
           "asOf": "2025-08-31"
         },
         {
-          "name": "이산가족 신청 현황(월별 공표 HWP) — 최신 3건",
+          "name": "이산가족 신청 현황(월별 공표) — 최신 3건",
           "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
           "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
           "asOf": "2026-05-31"
         },
         {
-          "name": "이산가족 교류 현황(월별 공표 HWP) — 최신 1건",
+          "name": "이산가족 교류 현황(월별 공표) — 최신 1건",
           "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list_exc.do?mid=SM00000129",
           "org": "통일부 이산가족정보통합시스템",
           "asOf": "2026-05-31"
@@ -93,7 +93,7 @@
         {
           "name": "통일부_남북이산가족 관련 연표",
           "url": "https://www.data.go.kr/data/15129679/fileData.do",
-          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "org": "공공데이터포털 — 통일부 파일데이터",
           "asOf": "2021-12-16"
         }
       ]
@@ -101,11 +101,11 @@
     {
       "file": "projection.json",
       "role": "이산가족 생존자 소멸 추계(2026~2050) — 본 시제품의 계산 결과",
-      "builtAt": "2026-08-15",
+      "builtAt": "2026-08-21",
       "asOf": "2026-05-31",
       "upstream": [
         {
-          "name": "통계청 완전생명표(1세별) 2024년 — 성·연령별 사망확률(qx)·정지인구(Lx)",
+          "name": "통계청 완전생명표(1세별) 2024년 — 성·연령별 사망확률·정지인구",
           "url": "https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1B42",
           "org": "통계청(KOSIS)",
           "asOf": "2024"
@@ -119,7 +119,7 @@
         {
           "name": "통일부_이산가족찾기 등록현황 월별 통계 정보 (검증·교정용 실측)",
           "url": "https://www.data.go.kr/data/15034465/fileData.do",
-          "org": "공공데이터포털(data.go.kr) — 통일부 제공 파일데이터",
+          "org": "공공데이터포털 — 통일부 제공 파일데이터",
           "asOf": "2025-08-31"
         }
       ],
@@ -128,7 +128,7 @@
     {
       "file": "descendant.json",
       "role": "후손 세대 — 제4차 실태조사의 후손 문항·기록사업 선호도·세대 간극 3종",
-      "builtAt": "2026-08-19",
+      "builtAt": "2026-08-21",
       "asOf": "2025-01-24",
       "upstream": [
         {
@@ -150,8 +150,23 @@
       "caution": "요약자료가 이미지 PDF라 이 수치는 사람이 판독해 옮긴 값이다. 조사 회차가 바뀌면 손으로 갱신할 것."
     },
     {
-      "file": "museum.json",
+      "file": "museum-sections.json",
       "role": "박물관 묶음·코너 목록 — 둘러보기 화면이 링크로 넘길 카드",
+      "builtAt": "2026-08-19",
+      "asOf": "2026-08-19",
+      "upstream": [
+        {
+          "name": "통일부 남북이산가족 디지털박물관",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261",
+          "org": "통일부",
+          "asOf": "2026-08-19"
+        }
+      ],
+      "caution": "묶음·코너 목록은 박물관 화면 구성을 옮긴 것이지 사료 건수가 아니다. 링크로만 쓴다."
+    },
+    {
+      "file": "museum.json",
+      "role": "남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)",
       "builtAt": "2026-08-19",
       "asOf": {
         "수집일": "2026-08-19",
@@ -159,12 +174,12 @@
       },
       "upstream": [
         {
-          "name": "통일부 남북이산가족 디지털박물관 — 박물관 진입(세션)",
+          "name": "통일부 남북이산가족 디지털박물관",
           "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261",
           "asOf": "2026-08-19"
         },
         {
-          "name": "디지털박물관 컬렉션 개요(제목)",
+          "name": "디지털박물관 컬렉션",
           "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id={col_id}&mid=SM00000263",
           "asOf": "2026-08-19"
         },
@@ -220,39 +235,39 @@
     },
     {
       "file": "paths.json",
-      "role": "남북이산가족 디지털박물관 공개 사료 — 지역 태그가 붙은 행만(원본 4,342건 중)",
-      "builtAt": "2026-08-19",
-      "asOf": "2026-08-19",
+      "role": "후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종",
+      "builtAt": "2026-08-21",
+      "asOf": "2026-08-21",
       "upstream": [
         {
           "name": "이산가족정보통합시스템 — 이산가족 신청/교류안내",
           "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "이산가족정보통합시스템 — 이산가족 신청 및 취소",
           "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "이산가족정보통합시스템 — 북한주민접촉신고·방문신청",
           "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "이산가족정보통합시스템 — 교류안내 > 재북가족과의 접촉",
           "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/5.do?mid=SM00000131",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "이산가족정보통합시스템 — 교류안내 > 교류주선 및 지원",
           "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/interchange/4.do?mid=SM00000131",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "남북이산가족 디지털박물관 — 기증현황(기증 안내)",
           "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "이산가족정보통합시스템 — 각종서식관리(별지 서식)",
@@ -260,9 +275,9 @@
           "asOf": "2024-09-05"
         },
         {
-          "name": "이산가족정보통합시스템 — FAQ",
+          "name": "이산가족정보통합시스템 — 자주 묻는 질문",
           "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/faq/list_t1.do?mid=SM00000142",
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         },
         {
           "name": "통일부 — 주요사업 > 이산가족 > 교류기반 구축(유전자검사·영상편지)",
@@ -311,46 +326,48 @@
     },
     {
       "file": "opinion.json",
-      "role": "후손이 오늘 실제로 신청할 수 있는 제도 12종 + 아직 열려 있지 않은 것 11종",
+      "role": "통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)",
       "builtAt": "2026-08-19",
       "asOf": "2025-09-01",
       "upstream": [
         {
-          "name": "통일의식조사 인포그래픽 시계열 XLSX",
+          "name": "통일의식조사 인포그래픽 시계열",
           "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2022-12-31"
         },
         {
-          "name": "통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)",
+          "name": "통일의식조사 데이터 아카이브(연도별 기초보고서)",
           "url": "https://ipus.snu.ac.kr/data-archive",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2025-09-01"
         },
         {
-          "name": "2025 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)",
+          "name": "2025 통일의식조사 원자료",
           "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2025-09-01"
         }
       ],
       "license": "서울대학교 통일평화연구원에서 실시한 통일의식조사",
-      "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임을 명기해 주시길 부탁 드립니다.",
+      "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임.",
       "caution": "★ 이 파일만 통일부 자료가 아니다(서울대학교 통일평화연구원). 화면은 반드시 출처가 다르다는 것을 배지·문장으로 구분 표시하고, 소멸 곡선과 나란히 놓더라도 인과를 주장하지 말 것 — \"같은 기간에 함께 내려갔다\"까지만."
     },
     {
       "file": "analysis.json",
-      "role": "통일의식조사 시계열 — ★ 통일부 자료가 아니다(서울대학교 통일평화연구원)",
-      "builtAt": "2026-08-19",
+      "role": "분석 덱(/deck)이 넘기는 카드 — 성립·약함·불가를 한 벌로 싣는다(불가도 숨기지 않는다)",
+      "builtAt": "2026-08-21",
       "asOf": {
-        "이산가족 월별 등록현황(CSV)": "2025-08-31",
-        "이산가족 신청·교류현황(게시판 HWP)": "2026-05-31",
+        "이산가족 월별 등록현황(파일데이터)": "2025-08-31",
+        "이산가족 신청·교류현황(게시판 공표)": "2026-05-31",
         "이산가족 교류현황": "2026-05-31",
         "이산가족 연표": "2021-12-16",
         "디지털박물관 사료": "2026-08-19",
         "통일의식조사(기초보고서)": "2025-09-01",
         "생잔 추계": "2026-05-31",
-        "지역 인덱스": "2026-08-15"
+        "지역 인덱스": "2026-08-15",
+        "이산가족정보통합시스템 「나의 살던 고향은」(수집일)": "2026-08-21",
+        "이산가족정보통합시스템 영상편지(수집일)": "2026-08-21"
       },
       "cards": {
         "tried": 21,
@@ -360,19 +377,25 @@
       },
       "upstream": [
         {
+          "name": "이산가족정보통합시스템 — 나의 살던 고향은 · 영상편지",
+          "url": "https://reunion.unikorea.go.kr/",
+          "org": "통일부 이산가족정보통합시스템",
+          "asOf": "2026-08-21"
+        },
+        {
           "name": "통일부_이산가족찾기 등록현황 월별 통계 정보",
           "url": "https://www.data.go.kr/data/15034465/fileData.do",
-          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "org": "공공데이터포털 — 통일부 파일데이터",
           "asOf": "2025-08-31"
         },
         {
-          "name": "이산가족 신청 현황(월별 공표 HWP) — 최신 3건",
+          "name": "이산가족 신청 현황(월별 공표) — 최신 3건",
           "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129",
           "org": "통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)",
           "asOf": "2026-05-31"
         },
         {
-          "name": "이산가족 교류 현황(월별 공표 HWP) — 최신 1건",
+          "name": "이산가족 교류 현황(월별 공표) — 최신 1건",
           "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list_exc.do?mid=SM00000129",
           "org": "통일부 이산가족정보통합시스템",
           "asOf": "2026-05-31"
@@ -380,43 +403,43 @@
         {
           "name": "통일부_남북이산가족 관련 연표",
           "url": "https://www.data.go.kr/data/15129679/fileData.do",
-          "org": "공공데이터포털(data.go.kr) — 통일부 파일데이터",
+          "org": "공공데이터포털 — 통일부 파일데이터",
           "asOf": "2021-12-16"
         },
         {
-          "name": "통일부 남북이산가족 디지털박물관 — 박물관 진입(세션)",
+          "name": "통일부 남북이산가족 디지털박물관",
           "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261",
           "org": null,
           "asOf": "2026-08-19"
         },
         {
-          "name": "디지털박물관 컬렉션 개요(제목)",
+          "name": "디지털박물관 컬렉션",
           "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id={col_id}&mid=SM00000263",
           "org": null,
           "asOf": "2026-08-19"
         },
         {
-          "name": "통일의식조사 인포그래픽 시계열 XLSX",
+          "name": "통일의식조사 인포그래픽 시계열",
           "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2022-12-31"
         },
         {
-          "name": "통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)",
+          "name": "통일의식조사 데이터 아카이브(연도별 기초보고서)",
           "url": "https://ipus.snu.ac.kr/data-archive",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2025-09-01"
         },
         {
-          "name": "2025 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)",
+          "name": "2025 통일의식조사 원자료",
           "url": "https://ipus.snu.ac.kr/blog/archives/research/11790",
           "org": "서울대학교 통일평화연구원",
           "asOf": "2025-09-01"
         },
         {
-          "name": "통합 인덱스(nk-index.json) — 남북관계연표·통일부 보도자료·북한이탈주민 재북 출신지역별 현황",
+          "name": "남북관계연표 · 통일부 보도자료 · 북한이탈주민 재북 출신지역별 현황",
           "url": "https://www.data.go.kr/data/15090949/fileData.do",
-          "org": null,
+          "org": "통일부 · 공공데이터포털 파일데이터",
           "asOf": null
         },
         {
@@ -432,35 +455,66 @@
           "asOf": "2026-08-12"
         },
         {
-          "name": "NOAA ISD 지점이력(CTRY=KN 현행 지점)",
+          "name": "NOAA 관측지점 이력(북한 지점)",
           "url": "https://www.ncei.noaa.gov/pub/data/noaa/isd-history.csv",
-          "org": null,
+          "org": "미국 해양대기청(NOAA) 국립환경정보센터",
           "asOf": null
         },
         {
-          "name": "NOAA GSOD 일별 요약(지점별 최신 관측일 1행)",
+          "name": "NOAA 일별 기상 요약",
           "url": "https://www.ncei.noaa.gov/data/global-summary-of-the-day/access/{year}/{USAF}{WBAN}.csv",
-          "org": null,
+          "org": "미국 해양대기청(NOAA) 국립환경정보센터",
           "asOf": null
         },
         {
-          "name": "구행정구역 crosswalk(이산가족 출신지 축 대응)",
-          "url": "frontend/src/data/nk-map.json",
-          "org": null,
+          "name": "구행정구역 대응표(이산가족 출신지 축)",
+          "url": null,
+          "org": "본 시제품 작성",
           "asOf": null
         }
       ],
       "caution": "카드의 수치는 이 시제품이 계산한 결과이지 통일부 공표 통계가 아니다. 화면은 판정(성립·약함·불가)을 배지로 구분해 표시하고, 「약함」·「불가」 카드를 숨기지 말 것 — 무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이다. 기준일이 다른 계열을 이은 카드는 카드 안에 그 사실이 적혀 있다."
     },
     {
+      "file": "reunion.json",
+      "role": "이산가족정보통합시스템 신규 수집분 — 고향 축에 붙은 「나의 살던 고향은」 사진과 영상편지, 그리고 왜 그것만 셌는지의 판정 근거",
+      "builtAt": "2026-08-21T02:01:16.784Z",
+      "asOf": {
+        "htgallery": "2026-08-21",
+        "vletter": "2026-08-21",
+        "photo": "2026-08-21",
+        "timetravel": "2026-08-21",
+        "webtoon": "2026-08-21",
+        "handlttr": "2026-08-21",
+        "archive": "2026-08-21",
+        "yearbook": "2026-08-21",
+        "axis": "KST 달력 날짜",
+        "note": "수집일이다(KST). 사진의 촬영일·영상의 제작연도·사료의 생산연도와 섞지 말 것. 코너별 초 단위 시각은 각 원본 봉투의 collectedAt/collectedAtStamp 에 있다."
+      },
+      "counts": {
+        "htgalleryMapped": "125/129",
+        "vletterMapped": "307/4179",
+        "addedToNumerator": 435
+      },
+      "upstream": [
+        {
+          "name": "이산가족정보통합시스템(통일부) — 나의 살던 고향은 · 영상편지",
+          "url": "https://reunion.unikorea.go.kr/",
+          "org": "통일부",
+          "asOf": "2026-08-21"
+        }
+      ],
+      "caution": "★ 사진의 저작권자가 통일부가 아닌 것이 많다(제공처: 미디어한국학·평화문제연구소·영남통일교육센터·국가기록원 등). 화면에 걸 때 제공처 표기와 원문 링크가 반드시 따라붙어야 한다. 공공누리(KOGL) 표기는 원문 어디에도 없다. 영상편지의 지역은 자막 자유텍스트에서 뽑은 것이라 전체의 고향 분포가 아니다 — 확정된 건만 담았고 나머지는 미상이다. collectedAt 은 수집일이며 사진의 촬영일·영상의 제작연도와 다른 축이다."
+    },
+    {
       "file": "deck-summary.json",
       "role": "분석 덱 상단 요약 — 생성형 AI(Gemini)가 카드가 이미 확정한 문장·수치만 옮겨 이어 쓴 것",
       "builtAt": "2026-08-19",
-      "asOf": "2026-08-19",
+      "asOf": "2026-08-21",
       "model": "gemini-3.1-flash-lite",
       "verified": {
         "lines": 9,
-        "figures": 27,
+        "figures": 23,
         "cardsCited": 8,
         "checks": 14,
         "passed": true
@@ -469,7 +523,7 @@
         {
           "name": "analysis.json (같은 팩)",
           "url": null,
-          "asOf": "2026-08-19"
+          "asOf": "2026-08-21"
         }
       ],
       "caution": "통일부의 공식 서술이 아니고 본 시제품의 해석이다. 화면은 이 사실을 접지 않은 고지 상자로 항상 밝혀야 한다. 요약의 수치는 전부 scripts/nk-summary-verify.mjs 가 카드 원문까지 되짚어 대조한 것이며, 이 팩은 그 재검을 통과하지 못한 요약을 복사하지 않는다."
@@ -479,27 +533,27 @@
     {
       "name": "map.json",
       "from": "frontend/src/data/nk-map.json",
-      "bytes": 58758
+      "bytes": 58229
     },
     {
       "name": "region.json",
       "from": "북한자료-api/nk-region.json",
-      "bytes": 69134
+      "bytes": 68884
     },
     {
       "name": "isan.json",
       "from": "북한자료-api/isan.json",
-      "bytes": 313640
+      "bytes": 313494
     },
     {
       "name": "projection.json",
       "from": "북한자료-api/isan-projection.json",
-      "bytes": 34209
+      "bytes": 32868
     },
     {
       "name": "descendant.json",
       "from": "북한자료-api/isan-descendant.json",
-      "bytes": 8394
+      "bytes": 8010
     },
     {
       "name": "museum-sections.json",
@@ -509,41 +563,46 @@
     {
       "name": "museum.json",
       "from": "북한자료-api/museum.json",
-      "bytes": 771987,
+      "bytes": 771666,
       "slim": true,
-      "sourceBytes": 5632168
+      "sourceBytes": 5631835
     },
     {
       "name": "paths.json",
       "from": "북한자료-api/descendant-paths.json",
-      "bytes": 49712
+      "bytes": 48225
     },
     {
       "name": "opinion.json",
       "from": "북한자료-api/unification-opinion.json",
-      "bytes": 104841
+      "bytes": 104394
     },
     {
       "name": "analysis.json",
       "from": "북한자료-api/analysis.json",
-      "bytes": 234909
+      "bytes": 242659
+    },
+    {
+      "name": "reunion.json",
+      "from": "북한자료-api/reunion-region.json",
+      "bytes": 115549
     },
     {
       "name": "deck-summary.json",
       "from": "북한자료-api/deck-summary.json",
-      "bytes": 12865,
+      "bytes": 11420,
       "optional": true
     }
   ],
   "summary": {
     "present": true,
     "builtAt": "2026-08-19",
-    "sourceBuiltAt": "2026-08-19",
+    "sourceBuiltAt": "2026-08-21",
     "model": "gemini-3.1-flash-lite",
     "attempt": 2,
     "verified": {
       "lines": 9,
-      "figures": 27,
+      "figures": 23,
       "cardsCited": 8,
       "checks": 14,
       "passed": true

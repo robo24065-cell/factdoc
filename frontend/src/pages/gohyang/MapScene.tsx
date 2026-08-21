@@ -315,8 +315,8 @@ function LiveWeatherRows({ names }: { names: string[] }) {
         {' '}이 값만은 저장하지 않고 화면을 열 때마다 새로 받습니다.
       </p>
       <p className="mt-1.5">
-        <span className="text-[11px] text-[#767676]">출처 Open-Meteo (무료·인증 없음) · </span>
-        <OutLink href="https://open-meteo.com/">원본 API</OutLink>
+        <span className="text-[11px] text-[#767676]">출처 Open-Meteo · </span>
+        <OutLink href="https://open-meteo.com/">원본 자료</OutLink>
       </p>
     </div>
   )
@@ -524,6 +524,157 @@ function MuseumBlock({ pack, sel }: { pack: Pack; sel: Sel }) {
           사진은 <b className="font-medium">박물관 원본을 그대로 불러온 것</b>입니다.
           {' '}본 화면은 사료 이미지를 내려받아 저장하거나 다시 배포하지 않습니다 — 기증자의 저작물이기 때문입니다.
           {' '}이미지가 보이지 않으면 박물관이 외부 참조를 막은 것이며, 제목과 원문 링크는 그대로 남습니다.
+        </p>
+      </div>
+    </Block>
+  )
+}
+
+/* ══════════════════════ 이산가족정보통합시스템 신규 수집분 ══════════════════════
+
+   「나의 살던 고향은」 사진과 영상편지 — 박물관 사료와는 **다른 계열**이다.
+   저장소도 ID 체계도 다르고(atchfile/F·P 접두 vs HandLttrImageView file_id), 중복이 0건이다.
+
+   ★ 이미지 — 실측(2026-08-20)에 근거한 방침이다.
+     · 크기는 두 가지뿐이다: 썸네일 200x150(8~13KB) · 원본 최대 6742px(약 7.4MB).
+       중간 크기도 리사이즈 파라미터도 없다(?width= 는 무시되고 원본이 온다).
+     · 두 경로 모두 Content-Type: image/jpeg 로 정확히 오고, 우리 출처에서 교차출처로
+       실제 로드해 정상 표시되는 것을 확인했다(90~186ms). 박물관 사료와 달리 프록시가 필요 없다.
+     → 격자는 **썸네일 직접 링크**만 쓴다. 저장하지 않는다. 원본 7.4MB 는 화면에서 부르지 않는다.
+   ★ 저작권 — 통일부가 게시했으나 저작권자는 제공처다(미디어한국학·평화문제연구소·
+     영남통일교육센터·국가기록원 등). 그래서 카드마다 **제공처 표기와 원문 링크를 반드시** 붙인다.
+     둘 중 하나라도 빠지면 이 구획을 화면에 걸 수 없다(manifest.json reunion.json caution).
+   ★ 영상은 내려받지 않는다 — 제목·제작연도·원문 링크만 둔다. */
+
+function ReunionPhotoCard({ p }: { p: import('../../components/gohyang/pack-types').ReunionPhoto }) {
+  const [broken, setBroken] = useState(false)
+  return (
+    <li className={`overflow-hidden ${SURFACE.card}`}>
+      {!broken && (
+        <img
+          src={p.thumbUrl}
+          alt={`${p.placeName}${p.areaRaw ? ` (${p.areaRaw})` : ''}`}
+          loading="lazy"
+          decoding="async"
+          width={200}
+          height={150}
+          referrerPolicy="no-referrer"
+          onError={() => setBroken(true)}
+          className={`block h-32 w-full border-b object-cover ${SURFACE.hair}`}
+        />
+      )}
+      <div className="p-2.5">
+        <p className={`${TYPE.sub} font-medium ${TEXT.ink} ${PROSE}`}>{clean(p.placeName)}</p>
+        <p className={`mt-1 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          {p.areaRaw ? `${clean(p.areaRaw)} · ` : ''}제공 {p.provider ? clean(p.provider) : '표기 없음'}
+        </p>
+        <p className="mt-1.5">
+          <OutLink href={p.sourceUrl}>원문 보기</OutLink>
+        </p>
+      </div>
+    </li>
+  )
+}
+
+function ReunionBlock({ pack, sel }: { pack: Pack; sel: Sel }) {
+  const r = pack.reunion
+  /* 이 코너의 지역 축은 **광복 당시 구행정구역 7종** 하나뿐이다.
+     현행 지역을 고른 사람에게는 그 지역이 속한 구행정구역의 값이 온다(이산가족 수치와 같은 규칙). */
+  const oldKey = sel.mode === 'old' ? sel.id : (buildPanel(sel, pack)?.isanKey?.key ?? null)
+  const oldName = oldKey ? (r.axis.find(a => a.key === oldKey)?.name ?? null) : null
+
+  const photos = useMemo(
+    () => (oldKey ? (r.htgallery.items ?? []).filter(i => i.oldKeys.includes(oldKey)) : []),
+    [r, oldKey],
+  )
+  /* 영상편지는 개별 항목이 배포물에서 빠져 있을 수 있다(제목에 신청인 실명, 자막에 본적지).
+     그때는 items 가 없고 itemsWithheld 와 축별 집계(byOld)만 온다 — 목록 대신 건수만 쓴다.
+     items 를 그냥 읽으면 화면 전체가 죽는다(실제 사고). 없을 수 있는 것으로 읽는다. */
+  const letters = useMemo(
+    () => (oldKey ? (r.vletter.items ?? []).filter(i => i.oldKeys.includes(oldKey)) : []),
+    [r, oldKey],
+  )
+  const withheld = r.vletter.itemsWithheld ?? null
+  const letterCount = letters.length > 0 ? letters.length : (oldKey ? (r.vletter.byOld?.[oldKey] ?? 0) : 0)
+  const [moreLetters, setMoreLetters] = useState(false)
+  useEffect(() => { setMoreLetters(false) }, [sel])
+
+  if (!oldKey || (photos.length === 0 && letterCount === 0)) return null
+  const shown = moreLetters ? letters : letters.slice(0, 6)
+  const providers = [...new Set(photos.map(p => p.provider).filter(Boolean))] as string[]
+
+  return (
+    <Block
+      tag="사진·영상편지"
+      tone="violet"
+      title="이 고향의 사진과 영상편지"
+      sub={`통일부 이산가족정보통합시스템 「나의 살던 고향은」·「영상편지」 중 이 고향으로 확인된 것`}
+    >
+      <p className={`${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
+        <b className={`font-semibold tabular-nums ${TEXT.ink}`}>사진 {nf(photos.length)}장</b>
+        {' · '}
+        <b className={`font-semibold tabular-nums ${TEXT.ink}`}>영상편지 {nf(letterCount)}건</b>
+        {oldName && <> — 광복 당시 {oldName} 기준으로 걸린 것입니다.</>}
+      </p>
+
+      {photos.length > 0 && (
+        <ul className="mt-3 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+          {photos.map(p => <ReunionPhotoCard key={p.fileId} p={p} />)}
+        </ul>
+      )}
+
+      {letters.length === 0 && letterCount > 0 && (
+        <p className={`mt-3 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          영상편지는 제목에 신청인 성함이, 자막에 본적지가 들어 있어 이 화면에 목록을 싣지 않고 건수와 원문 자리만 둡니다.
+          {withheld?.seeOriginal && <> <OutLink href={withheld.seeOriginal}>영상편지 코너로 가기</OutLink></>}
+        </p>
+      )}
+
+      {letters.length > 0 && (
+        <div className="mt-4">
+          <p className={`${TYPE.sub} font-medium ${TEXT.ink} ${PROSE}`}>영상편지</p>
+          <ul className={`mt-2 divide-y ${SURFACE.hair}`}>
+            {shown.map(v => (
+              <li key={v.id} className="flex items-start justify-between gap-2 py-2">
+                <span className="min-w-0 flex-1">
+                  <span className={`block ${TYPE.sub} ${TEXT.ink} ${PROSE}`}>{clean(v.title)}</span>
+                  <span className={`block ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+                    {v.productionYear ? `${v.productionYear}년 제작` : '제작연도 미상'}
+                    {v.evidence?.[0] ? ` · 자막 근거 「${clean(v.evidence[0])}」` : ''}
+                  </span>
+                </span>
+                <span className="shrink-0 pt-0.5"><OutLink href={v.sourceUrl}>보러 가기</OutLink></span>
+              </li>
+            ))}
+          </ul>
+          {letters.length > 6 && (
+            <button
+              type="button"
+              onClick={() => setMoreLetters(v => !v)}
+              className={`${BTN.ghost} mt-2 min-h-[48px]`}
+            >
+              {moreLetters ? '접기' : `나머지 ${nf(letters.length - 6)}건 더 보기`}
+            </button>
+          )}
+        </div>
+      )}
+
+      <div className={`mt-3 space-y-1 border-t pt-2.5 ${SURFACE.hair}`}>
+        <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          출처 통일부 이산가족정보통합시스템 · 수집 {r.collectedAt.htgallery}(사진)·{r.collectedAt.vletter}(영상편지) ·{' '}
+          <OutLink href="https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/info.do">코너 원문</OutLink>
+        </p>
+        {providers.length > 0 && (
+          <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+            사진 제공 — {providers.join(' · ')}.
+            {' '}통일부가 게시했으나 <b className="font-medium">저작권자가 통일부가 아닌 것이 많습니다</b>.
+            {' '}본 화면은 사진을 내려받아 저장하거나 다시 배포하지 않고 원본 주소를 그대로 참조하며, 자세히 보기는 원문으로 보냅니다.
+          </p>
+        )}
+        <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+          영상편지의 고향은 <b className="font-medium">자막에 고향을 밝힌 건만</b> 셌습니다 —
+          {' '}수집한 {nf(r.vletter.collected)}건 가운데 자막이 있는 것이 {nf(r.vletter.withCaption)}건이고,
+          {' '}그중 도가 확정되는 {nf(r.vletter.mapped)}건입니다. 여기 실린 것은 이 고향의 영상편지 전부가 아닙니다.
         </p>
       </div>
     </Block>
@@ -776,7 +927,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
               {pack.region.meta.weather.asOfNote}
             </p>
             <p className="mt-1.5">
-              <span className="text-[11px] text-[#767676]">출처 NOAA Global Summary of the Day · </span>
+              <span className="text-[11px] text-[#767676]">출처 NOAA 일별 기상 요약 · </span>
               <OutLink href="https://www.ncei.noaa.gov/data/global-summary-of-the-day/">원본 데이터</OutLink>
             </p>
           </>
@@ -804,7 +955,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             <p className="mt-1.5">
               <span className="text-[11px] text-[#767676]">통일부 「{isan.latest.title}」 ({isan.latest.postedAt} 게시) ·{' '}
               </span>
-              <OutLink href={isan.latest.attachment}>공표 원문(HWP)</OutLink>
+              <OutLink href={isan.latest.attachment}>공표 원문</OutLink>
               <span className="text-[11px] text-[#767676]"> · </span>
               <OutLink href={isan.latest.boardUrl}>게시판 {nf(isan.latest.boardTotalPosts)}건</OutLink>
             </p>
@@ -812,7 +963,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
             {/*  같은 통계인데 채널이 둘이고 기준일이 9개월 다르다 — 이 화면이 보여주려는 것 */}
             {monthlyRows.length > 1 && (
               <div className="mt-4 border-t border-slate-100 pt-3 dark:border-slate-800">
-                <p className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>월별 추이 — 공공데이터포털 등록현황 CSV
+                <p className={`text-sm font-medium text-slate-700 dark:text-slate-200 ${PROSE}`}>월별 추이 — 공공데이터포털 등록현황
                 </p>
                 <Spark rows={monthlyRows} label={`${p.isanKey?.name ?? p.title} 출신 생존자`} />
                 <div className="mt-2">
@@ -943,7 +1094,7 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
           <p className="text-[11px] text-[#767676]">동향·북한개황 —{' '}
             <OutLink href="https://nkinfo.unikorea.go.kr">북한정보포털</OutLink>
           </p>
-          <p className={`mt-1 leading-relaxed text-[11px] text-[#767676] ${PROSE}`}>지역 귀속은 지역명·도시명 문자열 매칭 결과입니다. {pack.region.meta.matching.caveats[0]}
+          <p className={`mt-1 leading-relaxed text-[11px] text-[#767676] ${PROSE}`}>지역 귀속은 본문에 적힌 지역명·도시명을 찾아 붙인 결과입니다. {pack.region.meta.matching.caveats[0]}
           </p>
         </div>
 
@@ -959,6 +1110,13 @@ function RegionPanel({ pack, sel, onClose }: { pack: Pack; sel: Sel; onClose: ()
           이 구획은 이 지역에서 실제로 나온 **물건**을 보여준다. 숫자 다음에 얼굴이 와야 한다. */}
       <div id="g-museum" className="scroll-mt-24 lg:col-span-2">
         <MuseumBlock pack={pack} sel={sel} />
+      </div>
+
+      {/* ── 이산가족정보통합시스템 신규 수집분 ──
+          박물관 사료와 계열이 다르다(중복 0건). 사진은 썸네일을 그대로 참조하고
+          카드마다 제공처와 원문 링크가 함께 나간다 — 저작권자가 통일부가 아닌 것이 많다. */}
+      <div id="g-reunion" className="scroll-mt-24 lg:col-span-2">
+        <ReunionBlock pack={pack} sel={sel} />
       </div>
     </div>
   )
@@ -1020,16 +1178,16 @@ export default function MapScene({
           <div className="border-t border-slate-100 px-3 py-2.5 dark:border-slate-800">
             <p className={`text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
               {mode === 'old' ? (
-                <>구역 안의 가는 선은 <b className="font-medium">현행 도 경계</b>입니다 — 구행정구역 폴리곤이 따로 없어 현행 구역을 묶어 근사한 것입니다.
-                  {' '}미수복경기는 개성 위치의 <b className="font-medium">원형 마커</b>로 대신했습니다(별도 지오메트리 없음). {pack.map.crosswalk.note}
+                <>구역 안의 가는 선은 <b className="font-medium">현행 도 경계</b>입니다 — 구행정구역 경계가 따로 없어 현행 구역을 묶어 근사한 것입니다.
+                  {' '}미수복경기는 개성 위치의 <b className="font-medium">원형 표시</b>로 대신했습니다. {pack.map.crosswalk.note}
                 </>
               ) : (
-                <>남포·개성은 이 지오메트리 판본에 별도 폴리곤이 없어 <b className="font-medium">도시 점</b>으로 표시했습니다(각각 평안남도·황해북도 폴리곤에 포함).
+                <>남포·개성은 이 지도에 별도 경계가 없어 <b className="font-medium">도시 점</b>으로 표시했습니다(각각 평안남도·황해북도 안에 들어 있습니다).
                   {' '}검은 점은 주요 도시이며, 누르면 소속 지역이 열립니다.
                 </>
               )}
             </p>
-            <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>지도 지오메트리 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
+            <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>지도 경계 자료 — {pack.map.sources[0]?.name} ({pack.map.sources[0]?.license}) ·{' '}
               <OutLink href={pack.map.sources[0]?.url}>원본 데이터</OutLink>
             </p>
           </div>

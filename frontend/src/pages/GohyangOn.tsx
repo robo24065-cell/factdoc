@@ -458,7 +458,7 @@ function StepMode({ pack, oldRanked, onExit }: {
                   {Number.isFinite(w.maxC) && <> 오늘 낮에는 {nf1(w.maxC)}도까지 오릅니다.</>}
                 </p>
                 <p className="mt-3"><AsOfPill level="live" /></p>
-                <p className={`mt-2 ${TYPE.cap} ${TEXT.faint}`}>출처 Open-Meteo (무료·인증 없음)</p>
+                <p className={`mt-2 ${TYPE.cap} ${TEXT.faint}`}>출처 Open-Meteo</p>
               </>
             )}
             {(wxState === 'fail' || wxState === 'idle') && (
@@ -814,22 +814,26 @@ export default function GohyangOn() {
   }
 
   /* 데이터는 scripts/nk-gohyang-pack.mjs 가 public/gohyang/ 로 복사해 둔 것을 받는다.
-     8개 파일 합계 약 1.4MB(gzip 약 177KB) — 검색 인덱스(13.5MB)와 달리 통째로 받아도 부담이 없다.
+     10개 파일 합계 약 1.9MB(gzip 약 210KB) — 검색 인덱스(13.5MB)와 달리 통째로 받아도 부담이 없다.
      박물관 사료만 5.4MB → 771KB 로 **행을 골라** 줄였다(지역 태그가 붙은 1,445건). 계산은 팩이 하지 않는다.
      하나라도 실패하면 화면을 절반만 그리지 않고 오류를 말한다(없는 값을 0으로 그리면 거짓말이 된다). */
   useEffect(() => {
     let alive = true
     const grab = (n: string) =>
       fetch(`${PACK}/${n}.json`).then(r => {
-        if (!r.ok) throw new Error(`${n}.json 로드 실패 (${r.status})`)
+        if (!r.ok) throw new Error('자료를 불러오지 못했습니다.')
         return r.json()
       })
     Promise.all([
       grab('map'), grab('region'), grab('isan'), grab('projection'), grab('descendant'),
       grab('museum'), grab('paths'), grab('opinion'), grab('museum-sections'),
+      /* 이산가족정보통합시스템 신규 수집분 — 지역 패널의 「나의 살던 고향은」 사진 격자와
+         영상편지 목록이 이 파일을 쓴다. 팩에 실어 놓고 아무도 읽지 않으면
+         manifest 가 출처로 선언한 자료가 화면 어디에도 없게 된다(실측 지적 2026-08-21). */
+      grab('reunion'),
     ])
-      .then(([map, region, isan, proj, desc, museum, paths, opinion, tour]) => {
-        if (alive) setPack({ map, region, isan, proj, desc, museum, paths, opinion, tour })
+      .then(([map, region, isan, proj, desc, museum, paths, opinion, tour, reunion]) => {
+        if (alive) setPack({ map, region, isan, proj, desc, museum, paths, opinion, tour, reunion })
       })
       .catch(e => { if (alive) setErr(e?.message ?? '데이터를 불러오지 못했습니다.') })
     return () => { alive = false }
@@ -928,7 +932,7 @@ export default function GohyangOn() {
         </p>
         <p className={`mt-1.5 text-sm leading-relaxed text-slate-600 dark:text-slate-300 ${PROSE}`}>{err}</p>
         <p className={`mt-1.5 text-[11px] leading-relaxed text-slate-400 ${PROSE}`}>
-          <code>node scripts/nk-gohyang-pack.mjs</code> 를 실행해 <code>frontend/public/gohyang/</code> 를 채운 뒤 새로고침하세요.
+          잠시 뒤 다시 시도해 주세요.
         </p>
       </div>
     )

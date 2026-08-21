@@ -134,7 +134,7 @@ export function DescendantEvidenceScene({ desc, isan }: { desc: DescData; isan: 
         <p className={`mt-3 max-w-[46rem] ${TYPE.body} ${TEXT.soft}`}>
           이산가족이 1순위로 요청한 사업은 「{top?.label}」이었습니다.
           {' '}<b className={`font-semibold ${TEXT.ink}`}>이 화면이 하는 일이 곧 그 요청입니다</b> —
-          우리가 고른 주제가 아니라 이산가족이 고른 주제입니다.
+          이산가족이 고른 주제입니다.
         </p>
       </header>
 

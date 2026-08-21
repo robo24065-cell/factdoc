@@ -190,10 +190,10 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
         {/* 범례 */}
         <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-800/50">
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth="2.5" /></svg>실측 — 등록현황 CSV (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
+            <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-[#1a4e9c] dark:stroke-[#7aa9e8]" strokeWidth="2.5" /></svg>실측 — 등록현황 월별 자료 (2017.7~{ymKo(isan.monthly.at(-1)?.month)})
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
-            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-[#14407f] dark:fill-[#7aa9e8]" /></svg>실측 — 공표 HWP 3개월 (2026.3~5)
+            <svg width="22" height="8" aria-hidden="true"><circle cx="11" cy="4" r="3.5" className="fill-[#14407f] dark:fill-[#7aa9e8]" /></svg>실측 — 게시판 공표 3개월 (2026.3~5)
           </span>
           <span className="flex items-center gap-1.5 text-[11px] text-slate-600 dark:text-slate-300">
             <svg width="22" height="8" aria-hidden="true"><line x1="0" y1="4" x2="22" y2="4" className="stroke-slate-500" strokeWidth="2" strokeDasharray="7 5" /></svg>추계 범위 (생명표 원값 ~ 실측 교정)
@@ -224,12 +224,13 @@ export default function ClockScene({ isan, proj }: { isan: IsanData; proj: ProjD
               ))}
             </ul>
           </details>
-          <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>생명표: {proj.sources[0]?.name} (표 {proj.lifeTable.tblId} · {proj.lifeTable.year}년 · 최종수정 {proj.lifeTable.published}) ·{' '}
+          {/* 표 코드(tblId)는 통계청 내부 식별자다 — 화면에는 연도와 최종수정일만 남긴다 */}
+          <p className={`mt-2 text-[11px] leading-relaxed text-slate-500 ${PROSE}`}>생명표: {proj.sources[0]?.name} ({proj.lifeTable.year}년 · 최종수정 {proj.lifeTable.published}) ·{' '}
             <OutLink href={proj.sources[0]?.url}>원본 데이터</OutLink>
             {' · '}기준 인원: 통일부 이산가족 신청 현황 {proj.headline.asOf} ·{' '}
             <OutLink href={isan.latest.attachment}>공표 원문</OutLink>
           </p>
-          <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}><b className="font-medium">이 곡선의 미래 구간은 통일부가 발표한 값이 아니라 본 시제품이 계산한 추계</b>입니다.
+          <p className={`mt-1.5 rounded-lg bg-slate-50 p-2 text-[11px] leading-relaxed text-slate-500 dark:bg-slate-800/50 ${PROSE}`}><b className="font-medium">이 곡선의 미래 구간은 통일부가 발표한 값이 아니라 본 시제품이 계산한 추계</b>입니다.{' '}
             {proj.headline.note}
           </p>
         </div>

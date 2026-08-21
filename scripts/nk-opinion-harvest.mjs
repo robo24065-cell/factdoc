@@ -44,7 +44,7 @@ const URLS = {
 // 이용 조건 — 원문 표기를 그대로 보존한다. 화면·기획서 어디서든 이 문구가 따라붙어야 한다.
 const LICENSE = '서울대학교 통일평화연구원에서 실시한 통일의식조사'
 const LICENSE_FULL =
-  '본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임을 명기해 주시길 부탁 드립니다.'
+  '본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임.'
 
 // 인포그래픽 메뉴 라벨 — ipus.snu.ac.kr 메인 그래프 위젯 탭 표기 그대로(실측).
 const MENU = {
@@ -311,9 +311,9 @@ function harvestMicrodata(archive) {
       byCode: x.weighted.byCode,
       need: x.weighted.need, neutral: x.weighted.neutral, notNeed: x.weighted.notNeed,
       rawCount: x.rawCount,
-      note: '로데이터를 표준화 가중치(wt)로 재집계한 값. 같은 해 기초보고서 표2와 대조해 파서 정확도를 검증한다.',
+      note: '원자료를 표준화 가중치로 다시 집계한 값. 같은 해 기초보고서 표2와 대조해 확인했다.',
     } : null,
-    note: `전 연도 ZIP 을 받지 않는다(용량). 최신 ${latest.year}년분 1개만 실측한다.`,
+    note: `최신 ${latest.year}년분만 확인했다.`,
   }
 }
 
@@ -387,9 +387,9 @@ const extended = {
     { label: ROW.neutral, values: reorder(extRows.neutral) },
     { label: ROW.notNeed, values: reorder(extRows.notNeed) },
   ],
-  note: `${uni01.years[0]}~${infoLastYear} 은 인포그래픽 XLSX, 그 이후는 연도별 기초보고서 표2 전체 행. ` +
-    (maxDiff === null ? '중복 연도가 없어 두 출처를 대조하지 못했다.'
-      : `중복 ${overlap.length}개 연도 대조 결과 최대 ${maxDiff}%p 차이(산출 방식 상이) — extended.sourceByYear 로 출처를 구분할 것.`),
+  note: `${uni01.years[0]}~${infoLastYear} 은 인포그래픽 자료, 그 이후는 연도별 기초보고서다. ` +
+    (maxDiff === null ? '겹치는 연도가 없어 두 출처를 대조하지 못했다.'
+      : `겹치는 ${overlap.length}개 연도에서 두 출처의 값이 최대 ${maxDiff}%p 다르다.`),
 }
 uni01.extended = extended
 uni01.reportSeries = {
@@ -433,20 +433,20 @@ const out = {
   builtAt: TODAY,
   sources: [
     {
-      name: '통일의식조사 인포그래픽 시계열 XLSX', kind: 'xlsx',
+      name: '통일의식조사 인포그래픽 시계열', kind: 'xlsx',
       url: URLS.infographic, org: '서울대학교 통일평화연구원',
       asOf: `${infoLastYear}-12-31`, accessedAt: TODAY,
-      note: `지표 ${series.length}종. 파일 목록은 ${URLS.mainJs} 의 setDownload() 호출에서 실측 추출.`,
+      note: `지표 ${series.length}종.`,
     },
     {
-      name: '통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)', kind: 'pdf',
+      name: '통일의식조사 데이터 아카이브(연도별 기초보고서)', kind: 'pdf',
       url: URLS.archive, org: '서울대학교 통일평화연구원',
       asOf: reports.length ? (reports.at(-1).fieldPeriod?.to || `${reports.at(-1).year}-12-31`) : null,
       accessedAt: TODAY,
-      note: `${reports.length}개 연도 「표 2. 남북한 통일의 필요성」 전체 행. 열 순서가 연도마다 달라 좌표 기반 추출.`,
+      note: `${reports.length}개 연도 「표 2. 남북한 통일의 필요성」 전체 행.`,
     },
     {
-      name: `${microdata.year ?? '?'} 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)`, kind: 'zip',
+      name: `${microdata.year ?? '?'} 통일의식조사 원자료`, kind: 'zip',
       url: microdata.url ?? null, landing: microdata.landingUrl ?? null,
       org: '서울대학교 통일평화연구원',
       asOf: reports.find((r) => r.year === microdata.year)?.fieldPeriod?.to ?? null, accessedAt: TODAY,

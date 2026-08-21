@@ -1,0 +1,3144 @@
+{
+  "builtAt": "2026-08-21T02:01:16.784Z",
+  "builder": "scripts/nk-reunion-region.mjs",
+  "purpose": "이산가족정보통합시스템 12코너 신규 수집분의 중복 판정과 고향 7종 축 대응. nk-analysis.mjs 가 이 파일을 읽어 기록 밀도 분자를 만든다.",
+  "collectedAt": {
+    "htgallery": "2026-08-21",
+    "vletter": "2026-08-21",
+    "photo": "2026-08-21",
+    "timetravel": "2026-08-21",
+    "webtoon": "2026-08-21",
+    "handlttr": "2026-08-21",
+    "archive": "2026-08-21",
+    "yearbook": "2026-08-21",
+    "axis": "KST 달력 날짜",
+    "note": "수집일이다(KST). 사진의 촬영일·영상의 제작연도·사료의 생산연도와 섞지 말 것. 코너별 초 단위 시각은 각 원본 봉투의 collectedAt/collectedAtStamp 에 있다."
+  },
+  "axis": [
+    {
+      "key": "hwanghae-old",
+      "name": "황해도(구)"
+    },
+    {
+      "key": "pyongan-s-old",
+      "name": "평안남도(구)"
+    },
+    {
+      "key": "pyongan-n-old",
+      "name": "평안북도(구)"
+    },
+    {
+      "key": "hamgyong-s-old",
+      "name": "함경남도(구)"
+    },
+    {
+      "key": "hamgyong-n-old",
+      "name": "함경북도(구)"
+    },
+    {
+      "key": "gyeonggi-unrec",
+      "name": "미수복경기"
+    },
+    {
+      "key": "gangwon-unrec",
+      "name": "미수복강원"
+    }
+  ],
+  "crosswalk": {
+    "source": "frontend/public/gohyang/region.json — regions[].isanOrigin(현행 13지역→구7종), cities[](도시→현행 13지역)",
+    "modernToOld": {
+      "평양": {
+        "key": "pyongan-s-old",
+        "name": "평안남도(구)"
+      },
+      "남포": {
+        "key": "pyongan-s-old",
+        "name": "평안남도(구)"
+      },
+      "개성": {
+        "key": "gyeonggi-unrec",
+        "name": "미수복경기"
+      },
+      "라선": {
+        "key": "hamgyong-n-old",
+        "name": "함경북도(구)"
+      },
+      "평안남도": {
+        "key": "pyongan-s-old",
+        "name": "평안남도(구)"
+      },
+      "평안북도": {
+        "key": "pyongan-n-old",
+        "name": "평안북도(구)"
+      },
+      "자강도": {
+        "key": "pyongan-n-old",
+        "name": "평안북도(구)"
+      },
+      "황해남도": {
+        "key": "hwanghae-old",
+        "name": "황해도(구)"
+      },
+      "황해북도": {
+        "key": "hwanghae-old",
+        "name": "황해도(구)"
+      },
+      "강원도": {
+        "key": "gangwon-unrec",
+        "name": "미수복강원"
+      },
+      "함경남도": {
+        "key": "hamgyong-s-old",
+        "name": "함경남도(구)"
+      },
+      "함경북도": {
+        "key": "hamgyong-n-old",
+        "name": "함경북도(구)"
+      },
+      "량강도": {
+        "key": "hamgyong-s-old",
+        "name": "함경남도(구)"
+      }
+    },
+    "oldDirect": [
+      {
+        "term": "황해도",
+        "oldKey": "hwanghae-old",
+        "why": "남·북 어느 쪽으로 갈라져도 구 황해도 한 곳이다"
+      }
+    ],
+    "notMapped": [
+      {
+        "term": "함경도",
+        "why": "함남·함북 두 축으로 갈라진다 — 원문만으로 확정 불가"
+      },
+      {
+        "term": "평안도",
+        "why": "평남·평북 두 축으로 갈라진다 — 원문만으로 확정 불가"
+      },
+      {
+        "term": "경기도(단독)",
+        "why": "남측 경기가 압도적이다. 개성 등 북측 지명 근거가 있어야만 미수복경기로 붙인다"
+      },
+      {
+        "term": "강원도(단독)",
+        "why": "남북 동명. 북측 단서가 있고 남측 도시가 없을 때만(region.json kangwonRule 재사용)"
+      },
+      {
+        "term": "철원·옹진·고성·장단",
+        "why": "남북 양쪽에 같은 지명이 있다 — 도명 없이 단독으로는 붙이지 않는다"
+      }
+    ],
+    "reuseCheck": {
+      "cities": 56,
+      "ok": true,
+      "note": "region.json cities[] 와 이름·지역이 1:1 로 일치하지 않으면 빌드가 죽는다"
+    }
+  },
+  "dedup": {
+    "method": "iId(사료 일련번호) → fileId(첨부 식별자) → 제목 순으로 가장 강한 키를 쓴다. 제목은 단독 판정에 쓰지 않고 주의 표시로만 쓴다.",
+    "museumBaseline": {
+      "records": 4342,
+      "fileIds": 4508,
+      "titles": 4323
+    },
+    "corners": {
+      "htgallery": {
+        "key": "fileId",
+        "n": 129,
+        "duplicate": 0,
+        "novel": 129,
+        "samples": [],
+        "titleNote": {
+          "n": 129,
+          "titleMatches": 0,
+          "samples": []
+        },
+        "verdict": "겹치지 않음 — 저장소(/reuni/atchfile/)와 ID 체계(F/P 접두)가 박물관(HandLttrImageView.do?file_id=<정수>)과 다르다"
+      },
+      "vletter": {
+        "key": "없음(영상편지 id 는 사료 iId 와 다른 계열)",
+        "n": 4179,
+        "duplicate": 0,
+        "novel": 4179,
+        "titleNote": {
+          "n": 4179,
+          "titleMatches": 0,
+          "samples": []
+        },
+        "nameLevelWarning": "★ 이름 일치는 동일인 판정이 아니다. 한국어 성명은 동명이인이 흔하고 대조군 규모(수천 대 수백)에서 우연 일치가 다수 나온다. 근거로 쓰려면 이름 외 항목(고향·가족관계·연도)까지 맞춰 사람이 확인해야 한다.",
+        "verdict": "겹치지 않음 — 영상 자산이며 사료 iId 체계에 존재하지 않는다"
+      },
+      "photo": {
+        "key": "fileId",
+        "n": 2992,
+        "duplicate": 0,
+        "novel": 2992,
+        "samples": [],
+        "verdict": "겹치지 않음"
+      },
+      "timetravel": {
+        "n": 175,
+        "keyed": 175,
+        "duplicate": 175,
+        "novel": 0,
+        "key": "iId",
+        "verdict": "★ 전량 중복 — museum.json 안에 이미 있다. 분자에 더하면 이중계상이다"
+      },
+      "handlttr": {
+        "n": 752,
+        "keyed": 752,
+        "duplicate": 752,
+        "novel": 0,
+        "key": "iId",
+        "verdict": "★ 전량 중복 — 손편지는 사료 4,342건의 부분집합(문서류)이다"
+      },
+      "archive": {
+        "n": 4342,
+        "keyed": 4342,
+        "duplicate": 4342,
+        "novel": 0,
+        "key": "iId",
+        "verdict": "★ 전량 중복 — 기록관은 museum.json 그 자체다"
+      },
+      "collection": {
+        "n": 215,
+        "keyed": 215,
+        "duplicate": 215,
+        "novel": 0,
+        "key": "iId",
+        "verdict": "★ 전량 중복 — 컬렉션 소속 사료는 전부 기록관 안에 있다"
+      },
+      "search": {
+        "n": 1146,
+        "keyed": 1146,
+        "duplicate": 1146,
+        "novel": 0,
+        "key": "iId",
+        "verdict": "★ 전량 중복 — 검색 결과는 기존 사료의 색인이다"
+      },
+      "webtoon": {
+        "key": "없음(사료 계열이 아님)",
+        "n": 50,
+        "duplicate": 0,
+        "novel": 50,
+        "verdict": "겹치지 않음 — 다만 사료가 아니라 창작 서사물이다"
+      },
+      "yearbook": {
+        "key": "없음(사건 서술 계열)",
+        "n": 1041,
+        "duplicate": 0,
+        "novel": 1041,
+        "verdict": "겹치지 않음 — 다만 사료가 아니라 사건 서술이다"
+      },
+      "donation": {
+        "key": "해당 없음(통계표 6행 + 기증자 명단)",
+        "n": 6,
+        "duplicate": null,
+        "novel": null,
+        "verdict": "기록 건수 계열이 아니다 — 셀 수 있는 단위가 아님"
+      },
+      "museum-intro": {
+        "key": "해당 없음(허브 페이지)",
+        "n": 11,
+        "duplicate": null,
+        "novel": null,
+        "verdict": "사료 0건 — 입구 링크 수이지 기록 건수가 아니다"
+      }
+    }
+  },
+  "htgallery": {
+    "corner": "나의 살던 고향은",
+    "siteBadgeTotal": 141,
+    "collected": 129,
+    "mapped": 125,
+    "unmapped": 4,
+    "mappingRate": 96.9,
+    "multiRegion": 0,
+    "byOld": {
+      "hwanghae-old": 19,
+      "pyongan-s-old": 15,
+      "pyongan-n-old": 12,
+      "hamgyong-s-old": 13,
+      "hamgyong-n-old": 11,
+      "gyeonggi-unrec": 36,
+      "gangwon-unrec": 19
+    },
+    "unmappedReasons": [
+      {
+        "fileId": "F000280727",
+        "tab": "함경도",
+        "placeName": "칠보산 동굴",
+        "areaRaw": "함경도",
+        "evidence": null,
+        "why": "원문에 도·시 근거가 없다"
+      },
+      {
+        "fileId": "F000280346",
+        "tab": "함경도",
+        "placeName": "칠보산",
+        "areaRaw": "함경도",
+        "evidence": null,
+        "why": "원문에 도·시 근거가 없다"
+      },
+      {
+        "fileId": "F000280258",
+        "tab": "함경도",
+        "placeName": "두만강 하류 북중러 국경지대",
+        "areaRaw": "함경도",
+        "evidence": null,
+        "why": "원문에 도·시 근거가 없다"
+      },
+      {
+        "fileId": "F000280286",
+        "tab": "평안도",
+        "placeName": "묘향산(妙香山)",
+        "areaRaw": "평안도",
+        "evidence": null,
+        "why": "원문에 도·시 근거가 없다"
+      }
+    ],
+    "items": [
+      {
+        "fileId": "F000280741",
+        "tab": "함경도",
+        "placeName": "성천교(좌)와 만세교 교각(우)",
+        "areaRaw": "함흥시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280741.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280741.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "도시",
+        "evidence": "함흥,함흥,함흥",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280735",
+        "tab": "함경도",
+        "placeName": "개마고원",
+        "areaRaw": "양강도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280735.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280735.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280728",
+        "tab": "함경도",
+        "placeName": "도시풍경",
+        "areaRaw": "함경남도",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280728.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280728.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경남도,함경남도,함경남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280727",
+        "tab": "함경도",
+        "placeName": "칠보산 동굴",
+        "areaRaw": "함경도",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280727.jpeg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280727.jpeg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [],
+        "oldNames": [],
+        "via": null,
+        "evidence": null,
+        "tabAgrees": null
+      },
+      {
+        "fileId": "F000280726",
+        "tab": "함경도",
+        "placeName": "이순신 장군 승전대",
+        "areaRaw": "함경북도",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280726.jpeg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280726.jpeg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280346",
+        "tab": "함경도",
+        "placeName": "칠보산",
+        "areaRaw": "함경도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280346.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280346.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [],
+        "oldNames": [],
+        "via": null,
+        "evidence": null,
+        "tabAgrees": null
+      },
+      {
+        "fileId": "F000280344",
+        "tab": "함경도",
+        "placeName": "함흥시 전경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280344.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280344.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "도시",
+        "evidence": "함흥,함흥,함흥",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280284",
+        "tab": "함경도",
+        "placeName": "추수를 끝낸 농촌",
+        "areaRaw": "함경남도 이원군",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280284.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280284.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경남도,함경남도,함경남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280283",
+        "tab": "함경도",
+        "placeName": "회령국수집",
+        "areaRaw": "함경북도 회령시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280283.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280283.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,회령,회령,회령,회령,회령,회령",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280282",
+        "tab": "함경도",
+        "placeName": "혜산 외곽 마을",
+        "areaRaw": "함경남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280282.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280282.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경남도,함경남도,함경남도,혜산,혜산,혜산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280263",
+        "tab": "함경도",
+        "placeName": "이명수폭포",
+        "areaRaw": "함경남도 혜산시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280263.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280263.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경남도,함경남도,함경남도,혜산,혜산,혜산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280262",
+        "tab": "함경도",
+        "placeName": "칠보산(七寶山) 개심사 전경",
+        "areaRaw": "함경북도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280262.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280262.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280261",
+        "tab": "함경도",
+        "placeName": "혜산시 연풍동",
+        "areaRaw": "양강도 혜산시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280261.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280261.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도,양강도,혜산,혜산,혜산,혜산,혜산,혜산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280260",
+        "tab": "함경도",
+        "placeName": "청진시 수성천",
+        "areaRaw": "함경북도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280260.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280260.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,청진,청진,청진",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280259",
+        "tab": "함경도",
+        "placeName": "백두산 북한쪽에서 올라가서 본 천지",
+        "areaRaw": "함경도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280259.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280259.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "도시",
+        "evidence": "백두산,백두산,백두산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280258",
+        "tab": "함경도",
+        "placeName": "두만강 하류 북중러 국경지대",
+        "areaRaw": "함경도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280258.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280258.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [],
+        "oldNames": [],
+        "via": null,
+        "evidence": null,
+        "tabAgrees": null
+      },
+      {
+        "fileId": "F000280257",
+        "tab": "함경도",
+        "placeName": "무산군 서부지역",
+        "areaRaw": "함경북도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280257.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280257.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,무산,무산,무산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280248",
+        "tab": "함경도",
+        "placeName": "두만강 상류 북중 국경지역 풍경",
+        "areaRaw": "함경북도 무산군",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280248.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280248.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,무산,무산,무산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280247",
+        "tab": "함경도",
+        "placeName": "두만강 상류 북중 국경지역 풍경",
+        "areaRaw": "함경북도 무산군",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280247.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280247.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,무산,무산,무산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280240",
+        "tab": "함경도",
+        "placeName": "시장 풍경",
+        "areaRaw": "나선시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280240.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280240.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "나선,나선,나선",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280237",
+        "tab": "함경도",
+        "placeName": "나진항 풍경",
+        "areaRaw": "나선시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280237.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280237.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "나선,나선,나선,나진,나진,나진",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280236",
+        "tab": "함경도",
+        "placeName": "남새밭(채소밭) 풍경",
+        "areaRaw": "함경북도 김책시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280236.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280236.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도,김책,김책,김책",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280211",
+        "tab": "함경도",
+        "placeName": "백두산(白頭山) 이명수폭포(鯉明水瀑布)",
+        "areaRaw": "양강도 삼지연시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280211.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280211.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도,양강도,백두산,백두산,백두산,삼지연,삼지연,삼지연",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280205",
+        "tab": "함경도",
+        "placeName": "이명수폭포(鯉明水瀑布)",
+        "areaRaw": "양강도 삼지연시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280205.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280205.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도,양강도,삼지연,삼지연,삼지연",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280201",
+        "tab": "함경도",
+        "placeName": "백두산(白頭山)",
+        "areaRaw": "양강도 삼지연시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280201.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280201.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도,양강도,백두산,백두산,백두산,삼지연,삼지연,삼지연",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280192",
+        "tab": "함경도",
+        "placeName": "칠보산(七寶山)",
+        "areaRaw": "함경북도 명천군",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280192.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280192.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_01.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-n-old"
+        ],
+        "oldNames": [
+          "함경북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "함경북도,함경북도,함경북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280740",
+        "tab": "평안도",
+        "placeName": "청천강 승리다리 도로",
+        "areaRaw": "평안도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280740.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280740.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280739",
+        "tab": "평안도",
+        "placeName": "청천간의 봄",
+        "areaRaw": "자강도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280739.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280739.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280738",
+        "tab": "평안도",
+        "placeName": "청천강 상류",
+        "areaRaw": "자강도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280738.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280738.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도,자강도,희천",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280737",
+        "tab": "평안도",
+        "placeName": "낭림고원",
+        "areaRaw": "자강도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280737.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280737.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도,자강도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280736",
+        "tab": "평안도",
+        "placeName": "박천군 대령강 강변",
+        "areaRaw": "평안북도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280736.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280736.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도,평안북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280733",
+        "tab": "평안도",
+        "placeName": "대동강에 비친 석양",
+        "areaRaw": "평양시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280733.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280733.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280732",
+        "tab": "평안도",
+        "placeName": "남포 갑문1동 어촌마을",
+        "areaRaw": "남포시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280732.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280732.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "남포,남포,남포,남포,남포",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280731",
+        "tab": "평안도",
+        "placeName": "남강의 저녁 풍경",
+        "areaRaw": "평양시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280731.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280731.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280345",
+        "tab": "평안도",
+        "placeName": "평안북도 영변읍성 안 육승정 전경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280345.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280345.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도,평안북도,평안북도,영변,영변,영변",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280343",
+        "tab": "평안도",
+        "placeName": "모란봉 최승대에서 본 평양 전경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280343.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280343.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280306",
+        "tab": "평안도",
+        "placeName": "평양지역의 대동강 인근 수도다리",
+        "areaRaw": null,
+        "provider": "국가기록원, 출처 : 러시아 국립영상사진문서보관소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280306.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280306.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280279",
+        "tab": "평안도",
+        "placeName": "보통문",
+        "areaRaw": "평양시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280279.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280279.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280256",
+        "tab": "평안도",
+        "placeName": "묘향산 가는 길의 벌",
+        "areaRaw": "평안북도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280256.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280256.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도,평안북도,평안북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280255",
+        "tab": "평안도",
+        "placeName": "자강도 운봉호",
+        "areaRaw": "평안도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280255.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280255.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도,자강도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280254",
+        "tab": "평안도",
+        "placeName": "대동강 상류방향으로 능라도",
+        "areaRaw": "평안남도 대흥군",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280254.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280254.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안남도,평안남도,평안남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280253",
+        "tab": "평안도",
+        "placeName": "운봉호 떼몰이",
+        "areaRaw": "자강도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280253.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280253.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도,자강도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280249",
+        "tab": "평안도",
+        "placeName": "평안북도 의주군 옛 모습",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280249.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280249.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도,평안북도,평안북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280245",
+        "tab": "평안도",
+        "placeName": "삼지연시",
+        "areaRaw": "양강도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280245.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280245.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "hamgyong-s-old"
+        ],
+        "oldNames": [
+          "함경남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "양강도,양강도,양강도,삼지연,삼지연,삼지연",
+        "tabAgrees": false
+      },
+      {
+        "fileId": "F000280243",
+        "tab": "평안도",
+        "placeName": "대동강",
+        "areaRaw": "평양시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280243.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280243.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280241",
+        "tab": "평안도",
+        "placeName": "대동문(大同門)",
+        "areaRaw": "평양시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280241.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280241.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280239",
+        "tab": "평안도",
+        "placeName": "대동강",
+        "areaRaw": "평양시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280239.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280239.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280225",
+        "tab": "평안도",
+        "placeName": "평양시 대동문(大同門) 앞 거리 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280225.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280225.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280220",
+        "tab": "평안도",
+        "placeName": "묘향산(妙香山) 불영대(佛影臺)",
+        "areaRaw": "평안북도 향산군",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280220.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280220.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안북도,평안북도,평안북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280214",
+        "tab": "평안도",
+        "placeName": "평양성 동암문(東岩門)",
+        "areaRaw": "평양시 모란봉",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280214.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280214.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양,평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280212",
+        "tab": "평안도",
+        "placeName": "인풍루(仁風樓)",
+        "areaRaw": "자강도 강계시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280212.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280212.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-n-old"
+        ],
+        "oldNames": [
+          "평안북도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "자강도,자강도,자강도,강계,강계,강계",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280209",
+        "tab": "평안도",
+        "placeName": "백상루(百祥樓)",
+        "areaRaw": "평안남도 안주시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280209.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280209.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평안남도,평안남도,평안남도,안주,안주,안주",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280286",
+        "tab": "평안도",
+        "placeName": "묘향산(妙香山)",
+        "areaRaw": "평안도",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280286.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280286.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [],
+        "oldNames": [],
+        "via": null,
+        "evidence": null,
+        "tabAgrees": null
+      },
+      {
+        "fileId": "F000280194",
+        "tab": "평안도",
+        "placeName": "모란봉(牡丹峯) 애련정(愛蓮亭)",
+        "areaRaw": "평양시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280194.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280194.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280193",
+        "tab": "평안도",
+        "placeName": "청류벽(淸流璧) 청류정(淸流亭)",
+        "areaRaw": "평양시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280193.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280193.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_02.do?mid=SM00000283",
+        "oldKeys": [
+          "pyongan-s-old"
+        ],
+        "oldNames": [
+          "평안남도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "평양,평양,평양",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280723",
+        "tab": "황해도",
+        "placeName": "관산리 고인돌",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280723.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280723.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280722",
+        "tab": "황해도",
+        "placeName": "연백평야 전경",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280722.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280722.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도,연백,연백,연백",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280720",
+        "tab": "황해도",
+        "placeName": "귀진사 전경",
+        "areaRaw": "황해북도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280720.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280720.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해북도,황해북도,황해북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280718",
+        "tab": "황해도",
+        "placeName": "서흥호 전경",
+        "areaRaw": "황해북도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280718.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280718.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해북도,황해북도,황해북도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280717",
+        "tab": "황해도",
+        "placeName": "몽금포 전경",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280717.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280717.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280716",
+        "tab": "황해도",
+        "placeName": "과수농장 전경",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280716.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280716.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280715",
+        "tab": "황해도",
+        "placeName": "장수산 현암",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280715.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280715.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280336",
+        "tab": "황해도",
+        "placeName": "민속거리",
+        "areaRaw": "사리원시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280336.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280336.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "도시",
+        "evidence": "사리원,사리원,사리원",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280285",
+        "tab": "황해도",
+        "placeName": "구월산 전경",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280285.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280285.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280271",
+        "tab": "황해도",
+        "placeName": "녹차밭",
+        "areaRaw": "황해남도 강령군",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280271.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280271.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280270",
+        "tab": "황해도",
+        "placeName": "구월산 전경",
+        "areaRaw": "황해남도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280270.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280270.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280268",
+        "tab": "황해도",
+        "placeName": "구월산 월정사",
+        "areaRaw": "황해남도",
+        "provider": null,
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280268.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280268.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280238",
+        "tab": "황해도",
+        "placeName": "민속거리 시내 풍경",
+        "areaRaw": "황해북도 사리원시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280238.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280238.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해북도,황해북도,황해북도,사리원,사리원,사리원",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280218",
+        "tab": "황해도",
+        "placeName": "수양산성(首陽山城)",
+        "areaRaw": "황해남도 해주시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280218.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280218.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도,해주,해주,해주",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280217",
+        "tab": "황해도",
+        "placeName": "삼성사(三聖祠)",
+        "areaRaw": "황해남도 안악군",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280217.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280217.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해남도,황해남도,황해남도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280189",
+        "tab": "황해도",
+        "placeName": "경암루(景巖樓)",
+        "areaRaw": "황해북도 사리원시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280189.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280189.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해북도,황해북도,황해북도,사리원,사리원,사리원",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280188",
+        "tab": "황해도",
+        "placeName": "경암루(景巖樓)",
+        "areaRaw": "황해북도 사리원시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280188.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280188.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_03.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "현행도명",
+        "evidence": "황해북도,황해북도,황해북도,사리원,사리원,사리원",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280730",
+        "tab": "경기도",
+        "placeName": "한 농촌의 모내기 풍경",
+        "areaRaw": "개성시",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280730.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280730.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280725",
+        "tab": "경기도",
+        "placeName": "모내기 풍경",
+        "areaRaw": "개성시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280725.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280725.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280724",
+        "tab": "경기도",
+        "placeName": "한옥마을 풍경",
+        "areaRaw": "개성시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280724.jpeg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280724.jpeg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280719",
+        "tab": "경기도",
+        "placeName": "사리원 성불사 전경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280719.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280719.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "도시",
+        "evidence": "사리원,사리원,사리원",
+        "tabAgrees": false
+      },
+      {
+        "fileId": "F000280713",
+        "tab": "경기도",
+        "placeName": "사리원시 민속거리",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280713.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280713.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "hwanghae-old"
+        ],
+        "oldNames": [
+          "황해도(구)"
+        ],
+        "via": "도시",
+        "evidence": "사리원,사리원,사리원",
+        "tabAgrees": false
+      },
+      {
+        "fileId": "F000280712",
+        "tab": "경기도",
+        "placeName": "천마산 관음사 전경",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280712.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280712.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280340",
+        "tab": "경기도",
+        "placeName": "개성 외성 성곽과 통덕문터",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280340.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280340.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280339",
+        "tab": "경기도",
+        "placeName": "개성 선죽교와 표충각",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280339.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280339.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280337",
+        "tab": "경기도",
+        "placeName": "개성 만월대 전경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280337.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280337.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280335",
+        "tab": "경기도",
+        "placeName": "남대문과 중앙회관(감리교중앙예배당)",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280335.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280335.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280334",
+        "tab": "경기도",
+        "placeName": "개성 민속거리 (50년대)",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280334.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280334.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280333",
+        "tab": "경기도",
+        "placeName": "만월대터",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280333.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280333.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280327",
+        "tab": "경기도",
+        "placeName": "한옥마을",
+        "areaRaw": "개성시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280327.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280327.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280305",
+        "tab": "경기도",
+        "placeName": "개성 성균관 전경3",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280305.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280305.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280304",
+        "tab": "경기도",
+        "placeName": "개성 문묘 계성사",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280304.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280304.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280303",
+        "tab": "경기도",
+        "placeName": "개성 성균관 전경2",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280303.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280303.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280302",
+        "tab": "경기도",
+        "placeName": "개성 성균관 전경1",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280302.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280302.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280301",
+        "tab": "경기도",
+        "placeName": "남대문2",
+        "areaRaw": "개성시",
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280301.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280301.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280300",
+        "tab": "경기도",
+        "placeName": "남대문1",
+        "areaRaw": "개성시",
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280300.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280300.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280281",
+        "tab": "경기도",
+        "placeName": "예성강 하구",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280281.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280281.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280280",
+        "tab": "경기도",
+        "placeName": "만월대 옆 인삼농장 옛풍경",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280280.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280280.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280267",
+        "tab": "경기도",
+        "placeName": "송악산에서 내려다 본 전경",
+        "areaRaw": "개성시",
+        "provider": null,
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280267.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280267.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280266",
+        "tab": "경기도",
+        "placeName": "개성역",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280266.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280266.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성,개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280251",
+        "tab": "경기도",
+        "placeName": "관덕정(觀德亭)의 아이들",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280251.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280251.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280288",
+        "tab": "경기도",
+        "placeName": "연등회가 열린 개성 시가지 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280288.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280288.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280265",
+        "tab": "경기도",
+        "placeName": "용수산(龍首山)에서 바라 본 개성역 풍경",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280265.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280265.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성,개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280235",
+        "tab": "경기도",
+        "placeName": "개성 남대문 도교시장 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280235.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280235.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280234",
+        "tab": "경기도",
+        "placeName": "개성 송도중학교 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280234.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280234.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280233",
+        "tab": "경기도",
+        "placeName": "개성 좌견교(坐犬橋)",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280233.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280233.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280229",
+        "tab": "경기도",
+        "placeName": "단오날 그네 타는 개성 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280229.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280229.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280227",
+        "tab": "경기도",
+        "placeName": "개성나성(開城羅城)",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280227.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280227.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280226",
+        "tab": "경기도",
+        "placeName": "개성에 위치한 선죽교(善竹橋)",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280226.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280226.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280222",
+        "tab": "경기도",
+        "placeName": "연등회가 열린 개성 시가지 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280222.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280222.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280221",
+        "tab": "경기도",
+        "placeName": "화담 서경덕(花潭 徐敬德, 1489~1546)의 묘",
+        "areaRaw": "개성시 용흥동",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280221.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280221.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280216",
+        "tab": "경기도",
+        "placeName": "숭양서원(崧陽書院)",
+        "areaRaw": "개성시 선죽동",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280216.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280216.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280215",
+        "tab": "경기도",
+        "placeName": "개성성 도찰문",
+        "areaRaw": "개성시 송악동",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280215.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280215.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성,개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280213",
+        "tab": "경기도",
+        "placeName": "개성시 유암산 눌리문(肭里門) -",
+        "areaRaw": null,
+        "provider": null,
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280213.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280213.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280207",
+        "tab": "경기도",
+        "placeName": "박연폭포(朴淵瀑布)",
+        "areaRaw": "개성시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280207.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280207.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_04.do?mid=SM00000283",
+        "oldKeys": [
+          "gyeonggi-unrec"
+        ],
+        "oldNames": [
+          "미수복경기"
+        ],
+        "via": "현행도명",
+        "evidence": "개성,개성,개성",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280729",
+        "tab": "강원도",
+        "placeName": "임진강 떼몰이",
+        "areaRaw": "강원도",
+        "provider": "평화문제연구소",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280729.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280729.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "판교군,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280342",
+        "tab": "강원도",
+        "placeName": "신계사",
+        "areaRaw": "금강산",
+        "provider": null,
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280342.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280342.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280299",
+        "tab": "강원도",
+        "placeName": "금강산1",
+        "areaRaw": null,
+        "provider": "국가기록원, 출처 : 국정홍보처",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280299.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280299.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280298",
+        "tab": "강원도",
+        "placeName": "금강산2",
+        "areaRaw": null,
+        "provider": "국가기록원, 출처 : 국정홍보처",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280298.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280298.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280296",
+        "tab": "강원도",
+        "placeName": "금강산 장안사2",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280296.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280296.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280294",
+        "tab": "강원도",
+        "placeName": "금강산 장안사1",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280294.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280294.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280293",
+        "tab": "강원도",
+        "placeName": "금강산 신계사",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280293.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280293.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280292",
+        "tab": "강원도",
+        "placeName": "금강산 장안사",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280292.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280292.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280290",
+        "tab": "강원도",
+        "placeName": "금강산 휴정사",
+        "areaRaw": null,
+        "provider": "국가기록원",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280290.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280290.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280277",
+        "tab": "강원도",
+        "placeName": "금강산 삼일포",
+        "areaRaw": "강원도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280277.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280277.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280246",
+        "tab": "강원도",
+        "placeName": "원산항 풍경",
+        "areaRaw": "강원도 원산시",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280246.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280246.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "원산,원산,원산,원산,원산,원산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280287",
+        "tab": "강원도",
+        "placeName": "원산항 풍경",
+        "areaRaw": "강원도 원산시",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280287.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280287.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "원산,원산,원산,원산,원산,원산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280231",
+        "tab": "강원도",
+        "placeName": "금강산(金剛山) 천선대(天仙臺)에서 촬영된 수학여행",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280231.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280231.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280230",
+        "tab": "강원도",
+        "placeName": "강원도 원산 옛풍경",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280230.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280230.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "원산,원산,원산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280232",
+        "tab": "강원도",
+        "placeName": "외금강 구룡폭포(九龍瀑布)에서 촬영된 수학여행",
+        "areaRaw": null,
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280232.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280232.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "탭(도명 탭 단독)",
+        "evidence": "강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280204",
+        "tab": "강원도",
+        "placeName": "금강산(金剛山) 해금강(海金江)",
+        "areaRaw": "강원도 고성군",
+        "provider": "영남통일교육센터",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280204.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280204.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280202",
+        "tab": "강원도",
+        "placeName": "금강산(金剛山)",
+        "areaRaw": "강원도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280202.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280202.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280191",
+        "tab": "강원도",
+        "placeName": "금강산(金剛山)",
+        "areaRaw": "강원도",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280191.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280191.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산,강원도,강원도,강원도",
+        "tabAgrees": true
+      },
+      {
+        "fileId": "F000280190",
+        "tab": "강원도",
+        "placeName": "금강산(金剛山) 해금강(海金江)",
+        "areaRaw": "강원도 고성군",
+        "provider": "미디어한국학",
+        "thumbUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/thumb/F000280190.jpg",
+        "viewUrl": "https://reunion.unikorea.go.kr/reuni/atchfile/view/F000280190.jpg",
+        "sourceUrl": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/list_sub_05.do?mid=SM00000283",
+        "oldKeys": [
+          "gangwon-unrec"
+        ],
+        "oldNames": [
+          "미수복강원"
+        ],
+        "via": "도시",
+        "evidence": "금강산,금강산,금강산,강원도,강원도,강원도",
+        "tabAgrees": true
+      }
+    ]
+  },
+  "vletter": {
+    "corner": "영상편지",
+    "siteBadgeTotal": 4186,
+    "collected": 4179,
+    "withCaption": 766,
+    "mapped": 307,
+    "mappingRateOfAll": 7.3,
+    "mappingRateOfCaptioned": 40.1,
+    "multiRegion": 3,
+    "byOld": {
+      "hwanghae-old": 109,
+      "pyongan-s-old": 67,
+      "pyongan-n-old": 36,
+      "hamgyong-s-old": 50,
+      "hamgyong-n-old": 12,
+      "gyeonggi-unrec": 21,
+      "gangwon-unrec": 15
+    },
+    "rule": "자막 한 줄 안에서 고향/본적/원적/출생지 키워드 뒤 12자 이내에 북측 지명이 나올 때만 인정한다. 지명이 그냥 몇 번 나왔는지는 세지 않습니다 — 남측 거주지나 피난 경로가 섞이기 때문입니다.",
+    "ruleTradeoff": "재현율을 버리고 정확도를 택했다. 자막이 없는 건과 고향을 말하지 않는 건은 전부 미상으로 남는다 — 이 표본은 영상편지 전체의 고향 분포가 아니다.",
+    "itemsWithheld": {
+      "n": 307,
+      "why": "개별 항목에 신청인 실명과 자막 속 본적지가 들어 있어 공개 산출물에서 뺐습니다.",
+      "seeOriginal": "https://reunion.unikorea.go.kr/reuni/home/vle/vletter/promote/list_vle.do?mid=SM00000127"
+    }
+  },
+  "byOld": {
+    "hwanghae-old": {
+      "key": "hwanghae-old",
+      "name": "황해도(구)",
+      "htgallery": 19,
+      "vletter": 109,
+      "total": 128,
+      "htgalleryFileIds": [
+        "F000280723",
+        "F000280722",
+        "F000280720",
+        "F000280718",
+        "F000280717",
+        "F000280716",
+        "F000280715",
+        "F000280336",
+        "F000280285",
+        "F000280271",
+        "F000280270",
+        "F000280268",
+        "F000280238",
+        "F000280218",
+        "F000280217",
+        "F000280189",
+        "F000280188",
+        "F000280719",
+        "F000280713"
+      ]
+    },
+    "pyongan-s-old": {
+      "key": "pyongan-s-old",
+      "name": "평안남도(구)",
+      "htgallery": 15,
+      "vletter": 67,
+      "total": 82,
+      "htgalleryFileIds": [
+        "F000280733",
+        "F000280732",
+        "F000280731",
+        "F000280343",
+        "F000280306",
+        "F000280279",
+        "F000280254",
+        "F000280243",
+        "F000280241",
+        "F000280239",
+        "F000280225",
+        "F000280214",
+        "F000280209",
+        "F000280194",
+        "F000280193"
+      ]
+    },
+    "pyongan-n-old": {
+      "key": "pyongan-n-old",
+      "name": "평안북도(구)",
+      "htgallery": 12,
+      "vletter": 36,
+      "total": 48,
+      "htgalleryFileIds": [
+        "F000280740",
+        "F000280739",
+        "F000280738",
+        "F000280737",
+        "F000280736",
+        "F000280345",
+        "F000280256",
+        "F000280255",
+        "F000280253",
+        "F000280249",
+        "F000280220",
+        "F000280212"
+      ]
+    },
+    "hamgyong-s-old": {
+      "key": "hamgyong-s-old",
+      "name": "함경남도(구)",
+      "htgallery": 13,
+      "vletter": 50,
+      "total": 63,
+      "htgalleryFileIds": [
+        "F000280741",
+        "F000280735",
+        "F000280728",
+        "F000280344",
+        "F000280284",
+        "F000280282",
+        "F000280263",
+        "F000280261",
+        "F000280259",
+        "F000280211",
+        "F000280205",
+        "F000280201",
+        "F000280245"
+      ]
+    },
+    "hamgyong-n-old": {
+      "key": "hamgyong-n-old",
+      "name": "함경북도(구)",
+      "htgallery": 11,
+      "vletter": 12,
+      "total": 23,
+      "htgalleryFileIds": [
+        "F000280726",
+        "F000280283",
+        "F000280262",
+        "F000280260",
+        "F000280257",
+        "F000280248",
+        "F000280247",
+        "F000280240",
+        "F000280237",
+        "F000280236",
+        "F000280192"
+      ]
+    },
+    "gyeonggi-unrec": {
+      "key": "gyeonggi-unrec",
+      "name": "미수복경기",
+      "htgallery": 36,
+      "vletter": 21,
+      "total": 57,
+      "htgalleryFileIds": [
+        "F000280730",
+        "F000280725",
+        "F000280724",
+        "F000280712",
+        "F000280340",
+        "F000280339",
+        "F000280337",
+        "F000280335",
+        "F000280334",
+        "F000280333",
+        "F000280327",
+        "F000280305",
+        "F000280304",
+        "F000280303",
+        "F000280302",
+        "F000280301",
+        "F000280300",
+        "F000280281",
+        "F000280280",
+        "F000280267",
+        "F000280266",
+        "F000280251",
+        "F000280288",
+        "F000280265",
+        "F000280235",
+        "F000280234",
+        "F000280233",
+        "F000280229",
+        "F000280227",
+        "F000280226",
+        "F000280222",
+        "F000280221",
+        "F000280216",
+        "F000280215",
+        "F000280213",
+        "F000280207"
+      ]
+    },
+    "gangwon-unrec": {
+      "key": "gangwon-unrec",
+      "name": "미수복강원",
+      "htgallery": 19,
+      "vletter": 15,
+      "total": 34,
+      "htgalleryFileIds": [
+        "F000280729",
+        "F000280342",
+        "F000280299",
+        "F000280298",
+        "F000280296",
+        "F000280294",
+        "F000280293",
+        "F000280292",
+        "F000280290",
+        "F000280277",
+        "F000280246",
+        "F000280287",
+        "F000280231",
+        "F000280230",
+        "F000280232",
+        "F000280204",
+        "F000280202",
+        "F000280191",
+        "F000280190"
+      ]
+    }
+  },
+  "numeratorRule": {
+    "statement": "기록 밀도의 분자는 「그 고향 지역에 관한, 통일부가 게시한, 건 단위로 세어지는, 기존 분자와 겹치지 않는 기록」이다.",
+    "tests": [
+      {
+        "id": "A",
+        "name": "게시 주체",
+        "ask": "통일부(또는 통일부가 운영하는 시스템)가 게시한 기록물인가?",
+        "note": "제작·기증 주체가 외부여도 된다 — 기존 분자의 사료도 기증자가 외부다. 게시 주체를 본다."
+      },
+      {
+        "id": "B",
+        "name": "건 단위",
+        "ask": "건수가 정의되는 개별 기록인가?",
+        "note": "통계표 행·입구 링크·검색 질의는 기록 건이 아니다."
+      },
+      {
+        "id": "C",
+        "name": "지역 귀속",
+        "ask": "그 건이 그 고향에 속한다는 근거가 원문에 있는가?",
+        "note": "상봉 장소만 걸린 건은 제외한다 — 기존 venueOnly 규칙과 같다."
+      },
+      {
+        "id": "D",
+        "name": "비중복",
+        "ask": "기존 분자(사료 4,342·연표·보도자료·동향·개황)와 겹치지 않는가?",
+        "note": "겹치면 이중계상이며 대표 수치가 근거 없이 흔들린다."
+      }
+    ]
+  },
+  "judgement": [
+    {
+      "corner": "나의 살던 고향은(htgallery)",
+      "collected": 129,
+      "A": "O",
+      "B": "O",
+      "C": "O",
+      "D": "O",
+      "verdict": "포함",
+      "why": "이산가족정보통합시스템이 게시한 고향 풍경 사진이고, 탭(구도명)과 사진 설명(현행 지명)이라는 지역 근거가 원문에 있다. fileId 체계가 사료와 달라 중복 0건. 매핑된 125건만 분자에 넣고 미상 4건은 넣지 않는다."
+    },
+    {
+      "corner": "영상편지(vletter)",
+      "collected": 4179,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "O",
+      "verdict": "조건부 포함",
+      "why": "이산가족 본인의 기록물이며 통일부 시스템이 게시했다. 다만 지역은 구조화 필드가 없고 자막 자유텍스트뿐이다. 자막이 있는 건이 766건(전체의 18.3%)이고, 그중 고향 선언문으로 북측 도가 확정되는 307건만 분자에 넣는다. 나머지는 미상 — 지명이 나와도 남측 거주지·피난 경로일 수 있어 세지 않는다."
+    },
+    {
+      "corner": "이산가족상봉 이모저모(photo)",
+      "collected": 2992,
+      "A": "O",
+      "B": "O",
+      "C": "X",
+      "D": "O",
+      "verdict": "제외",
+      "why": "어떤 필드에도 고향 정보가 없다. 제목의 여수·속초는 남측 개최지이며 고향축에 붙이면 오류다. C 불충족."
+    },
+    {
+      "corner": "시간여행(timetravel)",
+      "collected": 175,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "X",
+      "verdict": "제외",
+      "why": "175건 전부가 museum.json 안에 이미 있다(iId 일치 175/175). D 불충족 — 더하면 순수 이중계상이다. 새로 얻은 해설문은 화면 텍스트로 쓰되 분자에는 넣지 않는다."
+    },
+    {
+      "corner": "웹툰(webtoon)",
+      "collected": 50,
+      "A": "△",
+      "B": "O",
+      "C": "X",
+      "D": "O",
+      "verdict": "제외",
+      "why": "창작 서사물이지 기록물이 아니고, 지역 귀속도 없다(대본의 지명은 이야기 배경). A·C 불충족."
+    },
+    {
+      "corner": "박물관 소개(museum-intro)",
+      "collected": 11,
+      "A": "O",
+      "B": "X",
+      "C": "X",
+      "D": "—",
+      "verdict": "제외",
+      "why": "사료 0건. 수집된 11은 입구 링크 수이지 기록 건수가 아니다. B 불충족."
+    },
+    {
+      "corner": "손편지(handlttr)",
+      "collected": 752,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "X",
+      "verdict": "제외",
+      "why": "752건 전부가 사료 4,342건의 부분집합이다(iId 일치 752/752). D 불충족."
+    },
+    {
+      "corner": "컬렉션(collection)",
+      "collected": 215,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "X",
+      "verdict": "제외",
+      "why": "고유 사료 215건이 전부 기록관 안에 있다. D 불충족."
+    },
+    {
+      "corner": "기록관(archive)",
+      "collected": 4342,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "X",
+      "verdict": "제외",
+      "why": "museum.json 그 자체다. 새로 얻은 형태(i_type) 6종은 필드 충실도를 올릴 뿐 건수를 늘리지 않는다. D 불충족."
+    },
+    {
+      "corner": "기증현황(donation)",
+      "collected": 6,
+      "A": "O",
+      "B": "X",
+      "C": "X",
+      "D": "—",
+      "verdict": "제외",
+      "why": "통계표 6행과 기증자 명단이다. 셀 수 있는 기록 건이 아니다. B 불충족. (표의 기준일도 사이트가 알려주지 않는다 — 화면에 기준일로 인용하면 as-of 위반)"
+    },
+    {
+      "corner": "연표(yearbook)",
+      "collected": 1041,
+      "A": "O",
+      "B": "O",
+      "C": "X",
+      "D": "O",
+      "verdict": "제외",
+      "why": "이산가족 관련 사건 서술 1,041건이다. 지역 필드가 없고 본문의 장소는 대부분 상봉 장소(금강산·서울·평양)다. 기존 분자가 상봉 장소만 걸린 건을 빼는데 여기를 넣으면 그 규칙과 정면으로 어긋난다. C 불충족."
+    },
+    {
+      "corner": "통합검색(search)",
+      "collected": 1146,
+      "A": "O",
+      "B": "O",
+      "C": "△",
+      "D": "X",
+      "verdict": "제외",
+      "why": "결과 1146건이 전부 기존 iId 다. 색인이지 새 기록이 아니다. D 불충족."
+    }
+  ],
+  "numeratorDelta": {
+    "note": "nk-analysis.mjs 가 이 값을 기존 분자(연표+보도자료+동향+개황+사료)에 더한다.",
+    "included": [
+      "htgallery",
+      "vletter"
+    ],
+    "excluded": [
+      "이산가족상봉 이모저모(photo)",
+      "시간여행(timetravel)",
+      "웹툰(webtoon)",
+      "박물관 소개(museum-intro)",
+      "손편지(handlttr)",
+      "컬렉션(collection)",
+      "기록관(archive)",
+      "기증현황(donation)",
+      "연표(yearbook)",
+      "통합검색(search)"
+    ],
+    "perOld": {
+      "hwanghae-old": 128,
+      "pyongan-s-old": 82,
+      "pyongan-n-old": 48,
+      "hamgyong-s-old": 63,
+      "hamgyong-n-old": 23,
+      "gyeonggi-unrec": 57,
+      "gangwon-unrec": 34
+    },
+    "totalAdded": 435,
+    "distinctRecordsAdded": 432,
+    "multiRegionNote": "축별 합(435)이 건수(432)보다 큰 이유는 한 건이 두 축에 걸리는 경우가 있기 때문이다(사진 0건 · 영상편지 3건). 기존 분자의 사료 집계도 같은 방식이다."
+  },
+  "caveats": [
+    "매핑률은 \"수집분 중 몇 %에 지역을 붙일 수 있었나\"이지 정확도가 아니다. 붙인 것이 맞는지는 evidence 필드로 감사해야 한다.",
+    "영상편지 표본은 자막이 있는 건에 쏠려 있다 — 자막 보유가 지역·연도에 따라 균등하다는 보장이 없다. 이 분포를 영상편지 전체의 고향 분포로 읽으면 안 된다.",
+    "「나의 살던 고향은」 강원도 탭의 금강산 사진은 명소 풍경이지 상봉 장소 기록이 아니다 — 사료의 venueOnly 규칙과는 성격이 다르므로 빼지 않았다.",
+    "수집 자체가 사이트 표시 총건수에 못 미치는 코너가 있다(사진 129/141 — <img> 미생성 12건). 분자에는 실제로 확보한 것만 들어간다.",
+    "권리: 공공누리(KOGL) 표기를 찾지 못했다. 화면에 쓸 때 제공처 표기와 원문 링크를 반드시 동반해야 한다."
+  ]
+}

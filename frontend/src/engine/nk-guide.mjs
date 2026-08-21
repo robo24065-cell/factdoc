@@ -43,7 +43,13 @@ export const GUIDE_PROMPT = `너는 「고향 안내인」이다. 북한에 고�
 · museum.collectedAt 은 자료의 기준일이 아니라 목록을 받아 온 **수집일**이다.
   museum 수치에 시점을 밝히려면 「collectedAt 수집 기준」이라고만 쓴다.
 · compare 는 **한 축이 아니다**. compare.maps.defectorPct 에는 compare.maps.defectorAsOf 를 쓰고,
-  그 밖의 compare 수치(순위합·감소율·밀도·isanPct)에는 compare.asOf 를 쓴다. 두 날짜를 바꿔 붙이지 마라.
+  감소율(drop.pct)·이산가족 원적 비중(maps.isanPct)·순위 축 생존자(survivorsInAxis)에는 compare.asOf 를 쓴다.
+· ★ compare.density 계열(density.v · density.min/max · density.gapX · priority.sum)에는
+  **어떤 기준일도 붙이지 마라.** 이 값들은 분모(생존자, density.asOfDenominator)와 분자(여러 계열)의
+  기준일이 서로 다른 나눗셈이라 단일 기준일이 존재하지 않는다(density.mixedAsOf=true).
+  시점을 밝혀야 하면 날짜 뒤에 「기준」을 쓰지 말고 축을 이름으로 밝혀라 —
+  예: 「분모는 2025년 8월 생존자 수이고, 분자는 계열마다 기준일이 다릅니다.」
+  이 규칙을 어긴 문장이 하나라도 있으면 출력 전체가 폐기된다.
 · compare 안에서도 기준일이 다른 값(예: isanPct 와 defectorPct)을 한 문장에 묶어 하나의 기준을 붙이지 마라.
 
 입력 JSON 필드의 뜻:
@@ -71,7 +77,8 @@ export const GUIDE_PROMPT = `너는 「고향 안내인」이다. 북한에 고�
      priority{sum 순위합, published 발표된 자리("1순위"|"2순위"|"가장 여유 있는 곳"|null), note},
      drop{pct,period} 그 기간 원적 생존자 감소율 %,
      density{v 생존자 1인당 남은 공식 기록 건수, rankLow 적은 순위(1=가장 적음), min{region,v}, max{region,v},
-     gapX 최고·최저 격차 배수},
+     gapX 최고·최저 격차 배수, mixedAsOf 항상 true — 단일 기준일이 없다는 표시,
+     asOfDenominator 분모(생존자)의 기준일, asOfNote 그 사실을 적은 원문},
      maps{isanPct 이산가족 원적 비중 %, isanAsOf, defectorPct 탈북민 재북 출신 비중 %, defectorAsOf}}
     · 순위는 published 에 이름이 붙은 자리(1순위·2순위·가장 여유 있는 곳)만 순위로 말한다.
       published 가 null 이면 「N위」라고 쓰지 마라 — 발표된 적이 없다.
@@ -175,12 +182,27 @@ function buildCompare(analysis, label, defectorAsOf = null) {
       note: '순위합은 정렬 보조이며 점수가 아니다. 발표된 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이다.',
     },
     drop: dropPct != null ? { pct: dropPct, period } : null,
+    /* ★ 밀도는 **단일 기준일이 없는 값**이다 (실측 지적 2026-08-21).
+         분모(생존자)는 2025-08-31 한 날짜인데 분자는 계열이 일곱이고 날짜가 전부 다르다
+         — 인덱스 빌드 2026-08-12 · 동향 확인 하한 2026-08-11 · 사료 수집 2026-08-19 ·
+         이산가족정보통합시스템 신규 수집분 2026-08-21. 그런데 예전에는 이 값이 compare.asOf
+         (=분모의 날짜) 축에 들어 있어서, 안내인이 「0.14건(2025년 8월 기준)」이라고 말해도
+         검증기가 통과시켰다. 카드 자신의 caveat 는 그 어긋남을 인정하는데 화면 문장만 지운 꼴이다.
+         그래서 밀도 계열을 **자기 축**으로 떼어 내고 그 축에는 **허용 날짜를 하나도 두지 않는다**
+         — 이 축의 수치가 든 문장에는 어떤 기준일 주장도 붙일 수 없다(guideAxes 참조).
+         분모의 날짜는 asOfDenominator 로 따로 넘겨, 문장이 「분모는 … 생존자 수」라고
+         축을 밝혀 쓸 수 있게 한다. */
     density: {
       v: row['밀도'],
       rankLow: rankAsc(den.table.map((r) => r['밀도']), row['밀도']),
       min: dMin ? { region: dMin.x, v: dMin.y } : null,
       max: dMax ? { region: dMax.x, v: dMax.y } : null,
       gapX: gapM ? Number(gapM[0]) : null,
+      /* 분자에 단일 기준일이 없다는 사실 자체. 화면·프롬프트가 이 값을 보고 문장을 나눈다. */
+      mixedAsOf: true,
+      asOfDenominator: den.asOfAxes?.denominator?.asOf ?? den.asOf ?? null,
+      asOfNote: den.asOfAxes?.note
+        ?? '분모와 분자의 기준일이 다르다 — 하나의 기준일을 붙일 수 없다.',
     },
     maps: isanPct != null || defectorPct != null
       ? { isanPct, isanAsOf: den.asOf ?? null, defectorPct, defectorAsOf: defectorAsOf ?? null }
@@ -323,14 +345,22 @@ const EMOJI = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/u
    소수·순위의 한 자리 조각('0.121'의 '0', 순위 '2')은 축 판별에 못 쓸 만큼 흔하다. */
 function guideAxes(facts) {
   const axes = []
+  /* ★ 날짜가 하나도 없는 축도 **축으로 세운다** (실측 지적 2026-08-21).
+       예전에는 `if (nums.size && ds.length)` 라 asOf 가 없는 축이 통째로 사라졌고,
+       그 축의 수치가 든 문장은 축 판별에 실패해 globalDates(사실 묶음이 아는 날짜 전부)로
+       느슨하게 검사됐다 — 남의 축 날짜를 빌려 써도 통과했다. 주석은 「축 자체가 빠진다 → 날짜 금지」
+       라고 적혀 있었지만 코드는 그 반대였다.
+       이제 dates: [] 인 축이 서고, `.some(...)` 이 빈 배열에서 false 라
+       **그 축의 수치가 든 문장에는 어떤 기준일 주장도 붙일 수 없다.** 이것이 의도된 뜻이다:
+       기준일을 모르는 값에는 기준일을 쓰지 않는다. */
   const push = (vals, dates) => {
     const nums = new Set()
     for (const v of vals) {
       if (v == null) continue
       for (const t of String(v).match(/\d+/g) ?? []) if (t.length >= 2) nums.add(t)
     }
-    const ds = dates.filter(Boolean)
-    if (nums.size && ds.length) axes.push({ nums, dates: ds })
+    const ds = (dates ?? []).filter(Boolean)
+    if (nums.size) axes.push({ nums, dates: ds })
   }
   const f = facts ?? {}
   if (f.survivors) push([f.survivors.n, f.survivors.pct], [f.survivors.asOf])
@@ -345,11 +375,18 @@ function guideAxes(facts) {
          한 축으로 묶으면 탈북민 비중에 이산가족 기준일이 붙는 문장이 통과하고
          올바른 날짜를 쓴 문장이 폐기된다(실측 사고). */
     push(
-      [c.survivorsInAxis, c.priority?.sum, c.drop?.pct, c.density?.v, c.density?.rankLow,
-       c.density?.min?.v, c.density?.max?.v, c.density?.gapX, c.maps?.isanPct],
+      [c.survivorsInAxis, c.drop?.pct, c.maps?.isanPct],
       [c.asOf],
     )
     push([c.maps?.defectorPct], [c.maps?.defectorAsOf])
+    /* ★ 밀도 계열(과 그 순위로 만든 순위합)은 **기준일이 없는 축**이다 — dates 를 비운다.
+         분모 2025-08-31 · 분자 7계열(2026-08-11~2026-08-21)의 나눗셈이라 어느 날짜를 붙여도
+         거짓이 된다. 문장이 시점을 밝히려면 「분모는 … 생존자 수」처럼 축을 나눠 써야 한다. */
+    push(
+      [c.density?.v, c.density?.rankLow, c.density?.min?.v, c.density?.max?.v, c.density?.gapX,
+       c.priority?.sum],
+      [],
+    )
   }
   return axes
 }
@@ -471,14 +508,24 @@ export function fallbackGuide(facts) {
      발표된 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이고, 나머지 지역은 순위합 원값 + caveat 로 간다
      (그 카드의 caveat: 「n=7 이다. 순위합은 정렬 보조이며 점수로 해석하면 안 된다」). */
   const c = f.compare
+  /* ★ 밀도·순위합에는 **단일 기준일을 붙이지 않는다** (실측 지적 2026-08-21).
+       예전 문장은 「…가장 적습니다(2025년 8월 기준)」였다. 그 0.14 의 분자에는 2026-08-21 수집분
+       128건과 2026-08-11 확인 하한의 동향 426건이 들어 있어, 분모의 날짜 하나로 덮은 것이
+       바로 이 프로젝트의 as-of 규약이 막으려던 형태였다.
+       그래서 수치 문장에는 날짜 주장을 두지 않고, 뒤에 **축을 밝히는 꼬리**를 붙인다.
+       꼬리는 「기준/수집/현재」를 쓰지 않으므로 날짜 주장으로 잡히지 않는다 — 그것이 옳다.
+       이 문장은 어느 한 날짜를 주장하지 않고 두 축이 다르다는 사실을 말할 뿐이기 때문이다. */
+  const mixTail = c?.density?.asOfDenominator
+    ? ` 분모는 ${ym(c.density.asOfDenominator)} 생존자 수이고, 분자는 계열마다 기준일이 다릅니다.`
+    : ' 분모와 분자의 기준일이 서로 다릅니다.'
   if (c?.density?.rankLow === 1) {
-    lines.push(`생존자 한 분당 남은 공식 기록은 ${c.density.v}건으로, 광복 당시 고향 ${c.of}곳 가운데 가장 적습니다(${ym(c.asOf)} 기준).`)
+    lines.push(`생존자 한 분당 남은 공식 기록은 ${c.density.v}건으로, 광복 당시 고향 ${c.of}곳 가운데 가장 적습니다.${mixTail}`)
   } else if (c?.priority?.published === '1순위' || c?.priority?.published === '2순위') {
-    lines.push(`기록을 우선 남겨야 할 곳으로, 광복 당시 고향 ${c.of}곳 가운데 ${c.priority.published}로 발표된 곳입니다(${ym(c.asOf)} 기준).`)
+    lines.push(`기록을 우선 남겨야 할 곳으로, 광복 당시 고향 ${c.of}곳 가운데 ${c.priority.published}로 발표된 곳입니다.${mixTail}`)
   } else if (c?.priority?.published === '가장 여유 있는 곳') {
-    lines.push(`광복 당시 고향 ${c.of}곳 가운데 기록이 가장 여유 있는 곳으로 발표되었습니다(${ym(c.asOf)} 기준).`)
+    lines.push(`광복 당시 고향 ${c.of}곳 가운데 기록이 가장 여유 있는 곳으로 발표되었습니다.${mixTail}`)
   } else if (c?.priority?.sum != null) {
-    lines.push(`기록 우선순위의 순위합은 ${c.priority.sum}입니다 — 광복 당시 고향 ${c.of}곳 가운데 순서를 돕는 값이며 점수가 아닙니다(${ym(c.asOf)} 기준).`)
+    lines.push(`기록 우선순위의 순위합은 ${c.priority.sum}입니다 — 광복 당시 고향 ${c.of}곳 가운데 순서를 돕는 값이며 점수가 아닙니다.${mixTail}`)
   }
 
   /* 사료·기록 건수 — 사료의 날짜는 자료의 기준일이 아니라 수집일이고,

@@ -158,6 +158,55 @@ ok(
   'compare 안에서도 축이 다른 두 값을 한 기준일로 묶으면 → 폐기',
 )
 
+/* ── ②-d2 밀도 축 — 분모·분자의 기준일이 달라 **어떤 기준일도 못 붙인다** ──
+   실측 사고 재현(2026-08-21): 화면의 고향 안내인이
+     「생존자 한 분당 남은 공식 기록은 0.14건으로 … 가장 적습니다(2025년 8월 기준).」
+   라고 말했다. 그 0.14 의 분자 957건에는 2026-08-21 수집분 128건과 확인 하한 2026-08-11 의
+   동향 426건이 들어 있다. 2025-08-31 은 **분모(생존자)의 날짜**일 뿐이다.
+   카드 자신의 caveat 는 그 어긋남을 인정하는데 화면 문장만 그 사실을 지웠다 —
+   이 프로젝트의 as-of 규약(숫자-기준일 결합)이 막으려던 바로 그 형태다. */
+console.log('▶ ②-d2 밀도 축 (분모·분자 기준일이 달라 날짜 금지)')
+const dHw = f.compare.density
+ok(dHw.mixedAsOf === true && dHw.asOfDenominator === extra.analysis.cards.find(c => c.id === 'record-density-gap').asOfAxes.denominator.asOf,
+  `밀도가 단일 기준일 없음으로 표시되고 분모의 기준일(${dHw.asOfDenominator})을 따로 갖는다`)
+ok(
+  validateGuide({ lines: ['안내입니다.', `생존자 한 분당 남은 공식 기록은 ${dHw.v}건으로 가장 적습니다(2025년 8월 기준).`], next: N }, f) === null,
+  '밀도에 분모의 기준일(2025-08) → 폐기 — 화면이 실제로 쓰던 문장이다',
+)
+ok(
+  validateGuide({ lines: ['안내입니다.', `생존자 한 분당 남은 공식 기록은 ${dHw.v}건입니다(2026년 8월 21일 수집 기준).`], next: N }, f) === null,
+  '밀도에 신규 수집분의 수집일(2026-08-21) → 폐기 — 분자 한 계열의 날짜일 뿐이다',
+)
+ok(
+  validateGuide({ lines: ['안내입니다.', `광복 당시 고향 ${f.compare.of}곳의 기록 격차는 ${dHw.gapX}배입니다(2025년 8월 기준).`], next: N }, f) === null,
+  '격차 배수에 기준일 → 폐기 (밀도와 같은 축이다)',
+)
+/* 순위합은 한 자리 수일 때 축 판별에 쓸 수 없다(토큰 길이 2 이상만 쓴다 — 한 자리는 너무 흔하다).
+   그래서 두 자리 순위합을 가진 고향으로 시험한다. 한 자리 고향에서는 이 조합이 통과할 수 있고,
+   그것은 알고 있는 한계다 — 규칙 문장이 애초에 그런 문장을 만들지 않는 것으로 막는다(아래 마지막 시험). */
+{
+  const two = pack.map.regionsOld
+    .map((o) => buildGuideFacts({ mode: 'old', id: o.id }, pack, extra))
+    .find((g) => (g?.compare?.priority?.sum ?? 0) >= 10)
+  ok(
+    two != null
+    && validateGuide({ lines: ['안내입니다.', `기록 우선순위의 순위합은 ${two.compare.priority.sum}입니다(2025년 8월 기준).`], next: N }, two) === null,
+    `순위합(${two?.compare?.priority?.sum ?? '—'})에 기준일 → 폐기 (밀도 순위로 만든 값이라 같은 축이다)`,
+  )
+}
+ok(
+  validateGuide({ lines: ['안내입니다.', `생존자 한 분당 남은 공식 기록은 ${dHw.v}건으로 가장 적습니다. 분모는 2025년 8월 생존자 수이고, 분자는 계열마다 기준일이 다릅니다.`], next: N }, f) !== null,
+  '수치 문장에 날짜 주장을 두지 않고 축을 밝히면 → 통과 (양성 대조군 · 규칙 문장이 쓰는 형태)',
+)
+ok(
+  pack.map.regionsOld.every((o) => {
+    const g = buildGuideFacts({ mode: 'old', id: o.id }, pack, extra)
+    const line = fallbackGuide(g).lines.find((l) => /곳 가운데|순위합/.test(l)) ?? ''
+    return !/기준\)/.test(line) && /분자는 계열마다 기준일이 다릅니다/.test(line)
+  }),
+  '규칙 문장의 비교 줄은 단일 기준일을 붙이지 않고 축이 다르다는 사실을 함께 적는다',
+)
+
 /* ── ②-e 발표되지 않은 순위를 만들지 않는다 ── */
 console.log('▶ ②-e 순위 정책 (발표된 자리만 순위로)')
 const pubOnly = pack.map.regionsOld.every((o) => {
@@ -257,5 +306,13 @@ if (WITH_LLM) {
 }
 
 console.log(`\n${fail === 0 ? '✓ 통과' : '✗ 실패'} — ${pass}건 통과 · ${fail}건 실패`)
+
+/* 실적을 파일로 남긴다 — 기획서가 「고향 안내인 N/N」을 손으로 적다가 실제 실행 결과와
+   어긋났다(29 로 적혀 있었고 실측은 36 이었다). 이제 문서가 이 파일에서 값을 가져온다. */
+fs.writeFileSync(
+  path.join(root, '북한자료-api', 'guide-check.json'),
+  JSON.stringify({ ranAt: new Date().toISOString().slice(0, 10), passed: pass, failed: fail, total: pass + fail }, null, 2) + '\n',
+  'utf8',
+)
 /* fetch 직후 process.exit() 는 Windows 에서 libuv 종료 어서션을 낸다(실측) — exitCode 로 둔다 */
 process.exitCode = fail === 0 ? 0 : 1

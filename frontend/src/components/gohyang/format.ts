@@ -35,9 +35,14 @@ export function gapText(days?: number | null): string {
   return mo >= 1 ? `${y}년 ${mo}개월` : `${y}년`
 }
 /* 원자료 정제 — 연표 제목에 전각 쉼표(U+FF0C)가 그대로 들어 있다
-   (조사 처리 josa() 는 theme/gohyang.ts 에 있다 — 화면 전체가 같은 규칙을 쓴다) */
+   (조사 처리 josa() 는 theme/gohyang.ts 에 있다 — 화면 전체가 같은 규칙을 쓴다)
+
+   박물관 사료 제목은 인용부호로 백틱(`)을 쓴 것이 있다(원문 표기 그대로).
+   화면에 그대로 두면 글자가 코드처럼 보이므로 **표시할 때만** 「 」로 바꾼다 —
+   원본 값은 건드리지 않아 원문 대조가 그대로 가능하다. */
 export function clean(s?: string | null): string {
   return String(s ?? '')
+    .replace(/`([^`]+)`/g, '「$1」')
     .replace(/，/g, ', ').replace(/．/g, '. ')
     .replace(/～/g, '~').replace(/－/g, '-').replace(/･/g, '·')
     .replace(/[ \t]{2,}/g, ' ')

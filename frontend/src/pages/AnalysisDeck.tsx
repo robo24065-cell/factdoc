@@ -57,6 +57,7 @@ type Source = {
   asOf?: string
   accessedAt?: string
   coverageEnd?: string
+  builtAt?: string
   items?: number
   note?: string
   usedBy?: string[]
@@ -592,6 +593,7 @@ function ScatterPanel({ panel, cardTitle }: { panel: Panel; cardTitle: string })
 const COL_KO: Record<string, string> = {
   axis: '축', key: '항목', month: '월', delta: '증감', monthlyMedianAbs: '월 증감 중앙값', ratio: '중앙값 대비 배수',
   date: '날짜', event: '사건', region: '고향', era: '시대', n: '건수',
+  기록계_신규반영전: '신규 반영 전 기록 계', 밀도_신규반영전: '신규 반영 전 밀도',
 }
 
 function DataTable({ rows }: { rows: Array<Record<string, string | number | null>> }) {
@@ -736,7 +738,7 @@ function SourceLine({ sources, card }: { sources: Source[]; card: Card }) {
             <li key={s.name} className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
               · {s.name}
               {s.org ? ` — ${s.org}` : ''}
-              {s.asOf ? ` · 기준 ${s.asOf}` : s.coverageEnd ? ` · 수록 종료 ${s.coverageEnd}` : ''}
+              {s.asOf ? ` · 기준 ${s.asOf}` : s.coverageEnd ? ` · 수록 종료 ${s.coverageEnd}` : s.builtAt ? ` · 작성 ${s.builtAt}` : ''}
               {href(s) && (
                 <>
                   {' '}
@@ -766,7 +768,7 @@ function DeckCard({ card, index, total, sources }: { card: Card; index: number; 
           <span aria-hidden="true">{v.glyph}</span> <span className="sr-only">판정: </span>
           {v.label}
         </span>
-        <span className={`rounded px-2 py-0.5 ${TYPE.cap} font-semibold tabular-nums ${SURFACE.inset} ${TEXT.soft}`}>표본 n = {nf(card.n)}</span>
+        <span className={`rounded px-2 py-0.5 ${TYPE.cap} font-semibold tabular-nums ${SURFACE.inset} ${TEXT.soft}`}>표본 {nf(card.n)}개</span>
         <span className={`rounded px-2 py-0.5 ${TYPE.cap} font-semibold tabular-nums ${SURFACE.inset} ${TEXT.soft}`}>기준일 {card.asOf}</span>
       </div>
 
@@ -984,7 +986,8 @@ function SummaryBlock({ sum, cards, onGo }: { sum: DeckSummary; cards: Card[]; o
         <dl className={`mt-2.5 flex flex-wrap gap-x-4 gap-y-1 border-t pt-2.5 ${SURFACE.hair}`}>
           {[
             ['만든 날', ymdKo(sum.builtAt)],
-            ['쓴 모델', sum.model],
+            /* 내부 모델 식별자(쓴 모델)는 화면에서 뺐다 — 바로 위 문단이 이미
+               생성형 AI 가 옮겨 썼다고 밝히므로 사실이 흐려지지 않는다. */
             ['카드까지 되짚은 수치', `${nf(sum.verified.figures)}개`],
             ['통과한 검사', `${nf(sum.verified.checks)}종`],
             ['근거 카드', `${nf(sum.verified.cardsCited)}장`],
@@ -1040,7 +1043,7 @@ export default function AnalysisDeck() {
     let alive = true
     fetch(`${PACK}/analysis.json`)
       .then(r => {
-        if (!r.ok) throw new Error(`analysis.json 로드 실패 (${r.status})`)
+        if (!r.ok) throw new Error('분석 자료를 불러오지 못했습니다.')
         return r.json()
       })
       .then((j: Analysis) => { if (alive) setData(j) })
@@ -1128,7 +1131,7 @@ export default function AnalysisDeck() {
         <p className={`${TYPE.h2} ${TEXT.ink} ${PROSE}`}>분석 자료를 불러오지 못했습니다.</p>
         <p className={`mt-1.5 ${TYPE.body} ${TEXT.soft} ${PROSE}`}>{err}</p>
         <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-          <code>node scripts/nk-gohyang-pack.mjs</code> 를 실행해 <code>frontend/public/gohyang/analysis.json</code> 을 채운 뒤 새로고침하세요.
+          잠시 뒤 다시 시도해 주세요.
         </p>
       </div>
     )
@@ -1166,8 +1169,8 @@ export default function AnalysisDeck() {
           {' '}무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이기 때문입니다.
         </p>
         <p className={`mt-2 max-w-3xl ${TYPE.sub} ${TEXT.faint}`}>
-          {data.note} · 산출 {data.builtAt} · <code>{data.generator}</code>
-          {data.corpus ? ` · 코퍼스 ${nf(data.corpus.records)}건 / ${nf(data.corpus.datasets)}종 (${data.corpus.builtAt})` : ''}
+          {data.note} · 산출 {data.builtAt}
+          {data.corpus ? ` · 통일부 자료 ${nf(data.corpus.records)}건 / ${nf(data.corpus.datasets)}종 (${data.corpus.builtAt})` : ''}
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-2">
           <Link to="/" className={BTN.ghost}>
@@ -1314,6 +1317,18 @@ export default function AnalysisDeck() {
         <ul className={`mt-3 divide-y ${SURFACE.hair}`}>
           {data.sources.map(s => {
             const href = s.landing ?? s.url ?? s.urls?.[0] ?? null
+            /* 기준일은 asOf → 수록 종료 → 작성일 순으로 있는 것을 쓴다.
+               「표기 없음」은 정말 아무 날짜도 없을 때만 말한다 — 모른다(stale)와
+               없다(frozen)를 가르는 것이 이 서비스의 규약인데, 화면이 있는 날짜를
+               없다고 말하면 그 규약이 화면에서 뒤집힌다. */
+            const when: string[] = []
+            if (s.asOf) when.push(`기준 ${s.asOf}`)
+            else if (s.coverageEnd) when.push(`수록 종료 ${s.coverageEnd}`)
+            else if (s.builtAt) when.push(`작성 ${s.builtAt}`)
+            if (s.accessedAt) when.push(`접근 ${s.accessedAt}`)
+            if (when.length === 0) when.push('기준일 표기 없음')
+            if (typeof s.items === 'number') when.push(`${nf(s.items)}건`)
+            if (s.usedBy?.length) when.push(`쓰인 카드 ${nf(s.usedBy.length)}장`)
             return (
               <li key={s.name} className="py-2.5">
                 <p className={`${TYPE.sub} ${TEXT.ink} ${PROSE}`}>
@@ -1321,10 +1336,7 @@ export default function AnalysisDeck() {
                   {s.org ? <span className={`ml-1.5 ${TYPE.cap} ${TEXT.faint}`}>{s.org}</span> : null}
                 </p>
                 <p className={`mt-0.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-                  {s.asOf ? `기준 ${s.asOf}` : s.coverageEnd ? `수록 종료 ${s.coverageEnd}` : '기준일 표기 없음'}
-                  {s.accessedAt ? ` · 접근 ${s.accessedAt}` : ''}
-                  {typeof s.items === 'number' ? ` · ${nf(s.items)}건` : ''}
-                  {s.usedBy?.length ? ` · 쓰인 카드 ${nf(s.usedBy.length)}장` : ''}
+                  {when.join(' · ')}
                   {href && (
                     <>
                       {' · '}

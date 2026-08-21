@@ -427,7 +427,7 @@ const milestones = milestonesOf(base)
 const milestonesCalibrated = cal ? milestonesOf(cal) : null
 const range = (a, b) => (a == null || b == null ? null : (a === b ? String(a) : `${Math.min(a, b)}~${Math.max(a, b)}`))
 const milestoneRange = milestonesCalibrated ? {
-  note: '생명표 원값(빠른 쪽) ~ 실측 교정(느린 쪽) 범위. 발표·기획서에는 이 범위를 쓰는 것이 정직하다.',
+  note: '생명표 원값(빠른 쪽) ~ 실측 교정(느린 쪽) 범위입니다.',
   below20000: range(milestones.below20000, milestonesCalibrated.below20000),
   below10000: range(milestones.below10000, milestonesCalibrated.below10000),
   below5000: range(milestones.below5000, milestonesCalibrated.below5000),
@@ -438,7 +438,7 @@ const out = {
   builtAt: TODAY,
   sources: [
     {
-      name: `통계청 완전생명표(1세별) ${year}년 — 성·연령별 사망확률(qx)·정지인구(Lx)`,
+      name: `통계청 완전생명표(1세별) ${year}년 — 성·연령별 사망확률·정지인구`,
       org: '통계청(KOSIS)', orgId: '101', tblId: 'DT_1B42', usedYear: year, lastChanged: published,
       items: { qxMale: 'T15', qxFemale: 'T25', LxMale: 'T13', LxFemale: 'T23' },
       url: 'https://kosis.kr/statHtml/statHtml.do?orgId=101&tblId=DT_1B42',
@@ -454,7 +454,7 @@ const out = {
     },
     {
       name: '통일부_이산가족찾기 등록현황 월별 통계 정보 (검증·교정용 실측)', asOf: last.date,
-      org: '공공데이터포털(data.go.kr) — 통일부 제공 파일데이터',
+      org: '공공데이터포털 — 통일부 제공 파일데이터',
       url: 'https://www.data.go.kr/data/15034465/fileData.do',
       localFile: '북한자료/자료집/통일부_이산가족찾기 등록현황 월별 통계 정보_20250831.csv',
       span: `${first.date} ~ ${last.date} (${monthly.length}개월)`, loadedVia: M.src,
@@ -462,13 +462,13 @@ const out = {
   ],
   headline: {
     asOf: BASE.asOf, survivors: BASE.total,
-    note: '생명표 원값 시나리오와 실측 교정 시나리오의 범위로 읽어야 한다. 단일 수치로 단정하지 말 것.',
+    note: '두 시나리오의 범위로 읽어야 합니다.',
     survivors2030: cal ? `${Math.round(N(2030, base)).toLocaleString()}~${Math.round(N(2030, cal)).toLocaleString()}` : String(Math.round(N(2030, base))),
     survivors2040: cal ? `${Math.round(N(2040, base)).toLocaleString()}~${Math.round(N(2040, cal)).toLocaleString()}` : String(Math.round(N(2040, base))),
     below10000Year: milestoneRange?.below10000 ?? milestones.below10000,
   },
   method: {
-    summary: '성·연령별 코호트에 완전생명표 사망확률(qx)을 매년 적용하는 단순 생잔(生殘) 추계. 신규 유입 없음(실측으로 미미함 확인). 연나이→만나이 보정 적용, 실측 교정계수 시나리오 병기.',
+    summary: '성·연령별로 나눈 생존자에게 완전생명표의 사망확률을 매년 적용하는 단순 생잔(生殘) 추계입니다. 신규 유입은 실측으로 미미해 넣지 않았고, 연나이를 만나이로 보정했으며, 실측 교정 시나리오를 함께 냅니다.',
     steps: [
       '연령 5구간을 단일 연령으로 배분: 80-89·70-79·60-69 균등, 59세이하→50~59세 균등 가정',
       `90세이상은 완전생명표 정지인구(Lx) 비례로 90~99세 배분 — 지수감소 근사(연비 남 ${((Lx.m[99] / Lx.m[90]) ** (1 / 9)).toFixed(2)}·여 ${((Lx.f[99] / Lx.f[90]) ** (1 / 9)).toFixed(2)}), 100세+ 초기인원 0`,
@@ -485,11 +485,11 @@ const out = {
   },
   assumptions: [
     `신규 등록 유입 무시 — 실측 최근 24개월 월 중앙값 +${newRegMed.toFixed(1)}명(연 ${pct(newRegMed * 12 / last.surv, 2)}%)${recentInflow ? `, 최신 공표(${recentInflow.months.map((d) => d.asOf).join('·')}) 기준 월 ${recentInflow.monthlyAvg}명(연 ${recentInflow.annualisedPctOfSurvivors}%)` : ''} — 사망률의 수십 분의 1이라 무시해도 결과가 바뀌지 않는다`,
-    '59세이하(1,816명)는 50~59세 균등분포로 가정 — 실제 하한 불명(민감도: sensitivity 표의 ageOffset 행으로 간접 확인)',
-    '90세이상(11,431명)은 90~99세에 생명표 정지인구(Lx) 비례 배분, 100세 이상 초기 인원 0으로 가정 — 균등배분 대안은 sensitivity의 dist90plus=uniform',
+    '59세이하(1,816명)는 50~59세 균등분포로 가정했습니다 — 실제 하한은 알 수 없습니다.',
+    '90세이상(11,431명)은 90~99세에 생명표 정지인구 비례로 배분하고, 100세 이상은 초기 인원 0으로 가정했습니다.',
     '남녀 비율(남 60.9%)을 전 연령 구간에 동일 적용 — 구간별 실제 성비는 미공표',
     `사망확률은 ${year}년 완전생명표를 전 기간 고정 적용 — 미래 사망률 개선(수명 연장) 미반영 → 감소 속도 과대추정 방향`,
-    '공표 연령은 연나이로 판정(1월 톱니 실측)했고 만나이 -0.5 보정을 적용했다. 다만 월별 CSV의 공표 평균연령(2025-08 83.02세)은 공표 연령분포에서 계산되는 평균(81.6~82.4세)과 1~2세 차이가 있다 — 두 공표계열의 연령체계가 완전히 같다고 단정할 수 없어 sensitivity에 ageOffset 0/-0.5/-1.0/-1.5를 모두 실었다',
+    '공표 연령은 연나이로 판정했고 만나이 -0.5 보정을 적용했습니다. 다만 월별 등록현황의 공표 평균연령(2025-08 83.02세)은 공표 연령분포에서 계산되는 평균(81.6~82.4세)과 1~2세 차이가 있습니다 — 두 공표의 연령체계가 같다고 단정할 수 없어 보정 폭을 여러 값으로 나눠 함께 검사했습니다.',
     '이산가족 생존자 집단의 사망률 = 전국 평균이라는 가정은 실측과 어긋난다 — 교정계수 k로 정량화해 병렬 시나리오로 제시(원값 시나리오도 그대로 보존)',
     '생존자 감소 실측치에는 사망 신고·확인 지연이 섞여 있어 실측 사망률이 실제 사망보다 낮게(느리게) 기록될 수 있음 — 진실은 두 시나리오 사이',
   ],

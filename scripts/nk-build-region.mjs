@@ -296,10 +296,10 @@ async function probeYears(years) {
   for (const y of years) {
     try {
       const res = await fetch(`${GSOD_BASE}/${y}/`, { method: 'HEAD', signal: AbortSignal.timeout(60_000) })
-      availability[y] = res.ok ? 'available' : `unavailable (HTTP ${res.status})`
+      availability[y] = res.ok ? '열려 있음' : '아직 게시되지 않음'
       if (res.ok) usable.push(y)
     } catch (e) {
-      availability[y] = `probe failed (${String(e.message || e)})`
+      availability[y] = '확인 실패'
     }
   }
   return { availability, usable }
@@ -400,9 +400,9 @@ async function collectWeather() {
   summary.earliestObsDate = dates.length ? dates[0] : null
   summary.usedYears = [...new Set(all.map(r => r.usedYear))].sort()
   if (summary.usedYears.length && !summary.usedYears.includes(WEATHER_YEARS[0])) {
-    summary.asOfNote = `요청 연도 ${WEATHER_YEARS[0]} 자료는 NOAA에 아직 게시되지 않음(${availability[WEATHER_YEARS[0]]}). `
-      + `실제 사용 연도 ${summary.usedYears.join('/')}, 최신 관측일 ${summary.latestObsDate} — `
-      + `이후 기상 관측은 확인되지 않음(stale).`
+    summary.asOfNote = `${WEATHER_YEARS[0]}년 자료는 NOAA에 아직 게시되지 않았습니다. `
+      + `실제로 쓴 것은 ${summary.usedYears.join('/')}년 자료이고, 최신 관측일은 ${summary.latestObsDate} 이며 `
+      + `그 이후는 확인되지 않았습니다.`
   }
   return { byRegion, summary }
 }
@@ -519,7 +519,7 @@ async function main() {
   const out = {
     builtAt: BUILT_AT,
     sources: [
-      { name: '통합 인덱스(nk-index.json) — 남북관계연표·통일부 보도자료·북한이탈주민 재북 출신지역별 현황',
+      { name: '남북관계연표 · 통일부 보도자료 · 북한이탈주민 재북 출신지역별 현황',
         file: 'frontend/src/data/nk-index.json', builtAt: idx.builtAt,
         urls: ['https://www.data.go.kr/data/15090949/fileData.do', 'https://www.unikorea.go.kr'] },
       { name: '북한정보포털 동향', file: '북한자료-api/nkinfoTrend.json',
@@ -527,10 +527,10 @@ async function main() {
         coverageEnd: trend._meta?.coverageEnd || null, items: trendItems.length },
       { name: '북한개황(포털)', file: '북한자료-api/nkinfoOverview.json',
         url: 'https://nkinfo.unikorea.go.kr', asOf: overview._meta?.asOf || null, items: ovItems.length },
-      { name: 'NOAA ISD 지점이력(CTRY=KN 현행 지점)', url: ISD_HISTORY_URL, accessedAt: BUILT_AT },
-      { name: 'NOAA GSOD 일별 요약(지점별 최신 관측일 1행)', url: `${GSOD_BASE}/{year}/{USAF}{WBAN}.csv`,
-        accessedAt: BUILT_AT, note: '2026 → 2025 순으로 시도, 실제 사용 연도는 각 관측의 usedYear' },
-      { name: '구행정구역 crosswalk(이산가족 출신지 축 대응)', file: 'frontend/src/data/nk-map.json',
+      { name: 'NOAA 관측지점 이력(북한 지점)', url: ISD_HISTORY_URL, accessedAt: BUILT_AT },
+      { name: 'NOAA 일별 기상 요약', url: `${GSOD_BASE}/{year}/{USAF}{WBAN}.csv`,
+        accessedAt: BUILT_AT },
+      { name: '구행정구역 대응표(이산가족 출신지 축)', file: 'frontend/src/data/nk-map.json',
         builtAt: nkMap.builtAt },
     ],
     regions,
@@ -542,15 +542,15 @@ async function main() {
       defectorOriginEtc: defectorEtc,   // '기타(재외 등)' — 지역 아님
       weather: weatherSummary,
       matching: {
-        method: '지역명·별칭 + 도시명(오탐 가드 정규식) 부분일치. 연표·보도자료는 제목+본문, 동향은 제목(sj)만, 개황은 제목+본문(문서 단위).',
+        method: '지역명·별칭과 도시명의 부분일치. 연표·보도자료는 제목과 본문, 동향은 제목만, 개황은 제목과 본문(문서 단위)을 훑는다.',
         kangwonRule: '북측 도시(원산·금강산·통천·문천·안변·마식령·장전항·평강군·세포군 등) 매칭 우선. "강원도" 단독 표기는 북측 단서(북한/북측/이북/북강원)가 있고 남측 도시(속초·강릉·춘천 등)가 없을 때만 북한 강원으로 집계.',
         caveats: [
-          '개성 건수에는 개성공단 문서가 대량 포함된다(의도된 동작 — 핵심 콘텐츠).',
+          '개성 건수에는 개성공단 문서가 많이 포함된다.',
           '백두산 언급은 지리적 실체(량강도)로 집계하나 상징적 용례가 섞일 수 있음.',
-          '해주·나진 등 한글 동형이의어는 가드 정규식으로 오탐을 줄였으나 완전하지 않음.',
+          '해주·나진처럼 이름이 같은 남측 지명이 섞이는 것을 줄였으나 완전하지 않음.',
         ],
       },
-      isanNote: 'isanOrigin은 이산가족 출신지(광복 당시 구행정구역) 축 대응키만 기록 — 수치는 화면에서 이산가족 데이터와 조인. 근사 매핑(nk-map.json crosswalk 참조).',
+      isanNote: '이산가족 출신지(광복 당시 구행정구역) 축의 대응키만 기록한다 — 수치는 화면에서 이산가족 자료와 맞물린다. 근사 대응이다.',
     },
   }
 

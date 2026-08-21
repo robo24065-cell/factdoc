@@ -46,6 +46,10 @@ const QUIET = has('quiet')
 const DRY = has('dry')
 const SELFTEST = has('selftest')
 const REQUIRE = has('require')
+/* --think : thinkingBudget 0 을 빼고 모델의 기본 추론을 켠다.
+   검사가 14종이라 무추론 출력은 「카드 제목 재진술」·「구획별 필수 수치 누락」에서 자주 걸린다(실측).
+   느리고 토큰을 더 쓰지만 판정 기준은 그대로다 — 검사를 통과한 출력만 저장된다. */
+const THINK = has('think')
 const TODAY = arg('today') || process.env.TODAY || '2026-08-19'
 
 const SRC = path.join(root, '북한자료-api/analysis.json')
@@ -68,10 +72,14 @@ export const cardsHash = 'sha256:' + crypto.createHash('sha256').update(JSON.str
 
 /* 정상 인용 — 전부 카드 원문에 있는 수치다. 한 문장도 걸리면 안 된다.
    ★ 구획은 카드 판정을 따른다(검사 12) — 그래서 이 표는 카드 id 만 적고 자리는 판정에서 뽑는다. */
+/* ★ 이 표의 숫자는 **현재 카드에 실제로 있는 값**이어야 한다. 카드 수치가 움직이면
+   여기 문장이 「카드에 없는 수치다」로 걸리고 --selftest 가 실패한다 — 그게 의도된 알림장치다.
+   실패하면 fixture 를 새 값으로 고쳐라. 검사를 느슨하게 만들어 통과시키지 마라.
+   (2026-08-21: 이산가족정보통합시스템 신규 수집분이 분자에 들어가면서 밀도 3개 값을 갱신했다) */
 const GOOD = [
   ['exchange-terminus', '당국차원 교류는 2018년을 끝으로 89개월 동안 0건이다.'],
   ['deaths-since-last-reunion', '게시판 공표 기준 마지막 상봉 이후 2만 5천 분이 사망으로 기록됐다.'],
-  ['record-density-gap', '미수복강원의 기록 밀도는 1.878건/인이고 황해도(구)는 0.121건/인이다.'],
+  ['record-density-gap', '미수복강원의 기록 밀도는 1.944건/인이고 황해도(구)는 0.14건/인이다.'],
   ['two-homeland-maps', '함경북도(구)는 이산 5.9%와 탈북 59.4%로 53.5%p 차다.'],
   ['aging-deficit', '평균연령은 8.09년 동안 2.25세 올랐다.'],
   ['origin-known-erosion', '원적 확인 생존자는 36,749명에서 18,294명으로 줄었다.'],
@@ -80,7 +88,7 @@ const GOOD = [
   ['death-seasonality', '겨울 사망률은 여름의 1.23배였지만 표본이 얇다.'],
   ['opinion-vs-survivors', '생존자 60,076명과 응답 53.8%는 같은 기간 함께 내려갔다고까지만 말할 수 있다.'],
   ['museum-production-era', '생산연도가 확인되는 사료 3,098건 가운데 2019년 이후는 0건이다.'],
-  ['legacy-priority', '평안북도(구)는 생존 53.1% 감소에 기록 0.4건/인으로 순위합 4이다.'],
+  ['legacy-priority', '평안북도(구)는 생존 53.1% 감소에 기록 0.424건/인으로 순위합 4이다.'],
   ['series-breaks', '2018-10-31 에는 부모가 1,418명 줄고 형제자매가 779명 늘었다.'],
   ['museum-region-by-era', '고향 × 시대 사료 교차표는 42칸 중 27칸이 10건 미만이라 지역 간 비교를 할 수 없다.'],
   ['region-survivor-record-corr', '구행정구역 7개로는 생존자와 사료의 상관을 판정할 수 없다.'],
@@ -99,7 +107,7 @@ const BAD = [
   ['stale 을 frozen 으로', 'talks-humanitarian', '남북회담 인도 분야는 2019년 이후 열리지 않았다.'],
   ['합쇼체', 'exchange-terminus', '당국차원 교류는 2018년을 끝으로 89개월 동안 0건입니다.'],
   ['카드 제목 베끼기', 'record-density-gap', '가장 많은 사람이 그리는 고향에, 가장 적은 기록이 남았다.'],
-  ['제목 어미만 바꾼 재진술', 'record-density-gap', '가장 많은 사람이 그리는 고향에, 가장 적은 0.121건/인의 기록이 남아 있다.'],
+  ['제목 어미만 바꾼 재진술', 'record-density-gap', '가장 많은 사람이 그리는 고향에, 가장 적은 0.14건/인의 기록이 남아 있다.'],
   ['아라비아 반올림', 'origin-known-erosion', '원적 확인 비중은 61.1%에서 52%로 내려갔다.'],
   ['만 단위 과대 반올림', 'deaths-since-last-reunion', '게시판 공표 기준 마지막 상봉 이후 2만 분이 사망으로 기록됐다.'],
   ['감정 연출', 'deaths-since-last-reunion', '끝내 만나지 못한 채 게시판 공표까지 2만 5천 분이 사망으로 기록됐다.'],
@@ -216,7 +224,9 @@ function selftest() {
   const s2 = scanNumbers('2만 5천 분')
   ok(s2.length === 1 && s2[0].value === 25000 && s2[0].step === 1000 && s2[0].family === 'person',
     '"2만 5천" → 25000 (step 1000 · person)', JSON.stringify(s2))
-  const s3 = scanNumbers('0.121건/인 · 53.5%p · 15.5배')
+  /* 토큰화 시험이라 문자열 내용은 무관하지만, 현행 값을 쓴다 —
+     옛 세대 수치(0.121·15.5배)가 저장소에 남아 있으면 grep 감사가 헛짚는다. */
+  const s3 = scanNumbers('0.14건/인 · 53.5%p · 13.9배')
   ok(s3.length === 3 && s3[0].family === 'density' && s3[1].unit === '%p' && s3[2].unit === '배',
     '건/인 · %p · 배가 각각 한 토큰이다', JSON.stringify(s3))
   /* 「만큼」의 만을 10,000 으로 읽던 버그 — 오탐과 오통과를 동시에 만들었다 */
@@ -247,8 +257,14 @@ export function toRaw(baked) {
 
 /* ══════════════════════ 굽기 ══════════════════════ */
 
-const MODELS = ['gemini-2.5-flash-lite', 'gemini-3.1-flash-lite', 'gemini-2.5-flash']
-const MAX_ATTEMPT = 3
+/* 순서는 실측 성적순이다(2026-08-21 재굽기): gemini-3.1-flash-lite 가 지적 1~3건까지 내려오고,
+   gemini-2.5-flash-lite 는 404/429 로 응답 자체를 못 주는 일이 잦아 뒤로 물렸다.
+   어느 모델이 구웠는지는 산출물의 model 필드에 남는다. */
+const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-flash-lite']
+/* 모델당 시도 횟수. 검사가 14종이라 한 번에 통과하는 일이 드물고, 지적을 되먹여 주면
+   회를 거듭할수록 지적 수가 줄어든다(실측: 9건 → 5건 → 1건). 카드가 바뀐 직후에는
+   --attempts 를 올려 다시 굽는다. 늘려도 안전하다 — 검사를 통과한 출력만 저장되기 때문이다. */
+const MAX_ATTEMPT = Math.max(1, Math.min(12, +((argv.find((a) => a.startsWith('--attempts=')) || '').split('=')[1] || 3)))
 
 async function callGemini(model, key, userText, noThinking) {
   const body = {
@@ -300,7 +316,7 @@ async function bake() {
         const key = keys[ki % keys.length]
         ki += 1
         let res
-        try { res = await callGemini(model, key, userText, false) } catch (e) {
+        try { res = await callGemini(model, key, userText, THINK) } catch (e) {
           say(`  · ${model} 호출 실패(${String(e?.name ?? e)}) — 다음 키 조합`)
           continue
         }

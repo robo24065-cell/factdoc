@@ -2,7 +2,7 @@
  "builtAt": "2026-08-15",
  "sources": [
   {
-   "name": "Natural Earth 1:10m Admin 1 – States, Provinces (martynafford GeoJSON)",
+   "name": "Natural Earth 1:10m 행정구역 경계",
    "url": "https://raw.githubusercontent.com/martynafford/natural-earth-geojson/master/10m/cultural/ne_10m_admin_1_states_provinces.json",
    "license": "Public Domain (Natural Earth)",
    "retrieved": "2026-08-15"
@@ -325,7 +325,7 @@
     ]
    }
   },
-  "note": "1945년 이전 구행정구역과 현행 북한 행정구역의 근사 매핑임. 실제 경계는 일치하지 않으며(예: 구 평안북도 일부 군이 현 량강도에, 구 함경남도 일부가 현 강원도에 편입 등) 시각화 용도로만 사용할 것. 개성 일대는 이 지오메트리 판본에서 현행 황해북도 폴리곤에 포함돼 있어 미수복경기는 개성 위치 원형 마커로 표현한다. 남포는 별도 폴리곤이 없어 평안남도 폴리곤에 포함돼 있으므로 평안남도(구)의 members에 별도 항목으로 나타나지 않는다. crosswalk.map[*].modern은 regionsModern에 실재하는 id만 담으며, 폴리곤이 없는 단위는 missing[]에 분리 기록한다."
+  "note": "1945년 이전 구행정구역과 현행 북한 행정구역의 근사 대응입니다. 실제 경계는 일치하지 않습니다(예: 구 평안북도 일부 군이 현 량강도에, 구 함경남도 일부가 현 강원도에 편입)."
  },
  "cities": [
   {

@@ -23,7 +23,7 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
        6년에 해당하는 조합은 이제 최대가 아니다. 하드코딩이라 갱신도 되지 않았다.
        그래서 문장의 숫자를 표에서 뽑고, frozen 포함·제외를 문장에서 갈라 말한다. */
   const rows: SourceRow[] = [
-    { name: '이산가족 신청 현황 (월별 공표 HWP)', org: '통일부 이산가족정보통합시스템', end: pack.isan.latest.asOf, fresh: 'live', url: pack.isan.latest.boardUrl },
+    { name: '이산가족 신청 현황 (월별 공표)', org: '통일부 이산가족정보통합시스템', end: pack.isan.latest.asOf, fresh: 'live', url: pack.isan.latest.boardUrl },
     /* 합산 한 줄(sources.find 가 동향 기준일을 참칭하던 자리) → 계열별 병기.
        기준일은 카탈로그 coverageEnd(coverageEndOf), 배지는 notice() 가 계산한다. */
     { name: datasetLabel('timeline'), org: '통일부', end: coverageEndOf('timeline') ?? pack.region.builtAt, fresh: 'live', url: 'https://www.data.go.kr/data/15090949/fileData.do' },
@@ -31,8 +31,8 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
     { name: datasetLabel('nkinfoTrend'), org: '북한정보포털', end: coverageEndOf('nkinfoTrend') ?? pack.region.builtAt, fresh: 'live', url: 'https://nkinfo.unikorea.go.kr' },
     { name: datasetLabel('nkinfoOverview'), org: '북한정보포털', end: coverageEndOf('nkinfoOverview') ?? pack.region.builtAt, fresh: 'live', url: 'https://nkinfo.unikorea.go.kr' },
     { name: '이산가족찾기 등록현황 월별 통계 (파일데이터)', org: '공공데이터포털 — 통일부', end: pack.isan.monthly.at(-1)?.month ?? '', fresh: 'live', url: pack.isan.sources[0]?.landing },
-    { name: '기상 관측 (Global Summary of the Day)', org: 'NOAA NCEI', end: pack.region.meta.weather.latestObsDate, fresh: 'stale', url: 'https://www.ncei.noaa.gov/data/global-summary-of-the-day/' },
-    { name: '이산가족 교류 현황 (월별 공표 HWP)', org: '통일부 이산가족정보통합시스템', end: pack.isan.exchange.asOf, fresh: 'live', url: pack.isan.exchange.boardUrl },
+    { name: '기상 관측 일별 요약', org: 'NOAA NCEI', end: pack.region.meta.weather.latestObsDate, fresh: 'stale', url: 'https://www.ncei.noaa.gov/data/global-summary-of-the-day/' },
+    { name: '이산가족 교류 현황 (월별 공표)', org: '통일부 이산가족정보통합시스템', end: pack.isan.exchange.asOf, fresh: 'live', url: pack.isan.exchange.boardUrl },
     { name: '북한이탈주민 재북 출신지역별 현황', org: '통일부', end: pack.region.regions['평양']?.defectorOrigin?.asOf ?? '', fresh: 'stale', url: 'https://www.data.go.kr/data/15090949/fileData.do' },
     { name: '남북이산가족 관련 연표 (파일데이터)', org: '공공데이터포털 — 통일부', end: pack.isan.chronology.at(-1)?.date ?? '', fresh: 'stale', url: pack.isan.sources[3]?.landing },
     /* ★ frozen 도 **주제 단위**로 갈라야 한다 — 한 행에 묶으면 금강산이 8년 늦은 개성공단 날짜를
@@ -40,6 +40,11 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
     { name: '개성공단', org: '통일부 (주제 종료)', end: '2016-02-10', fresh: 'frozen', url: null, reason: '2016-02-10 개성공단 전면중단 이후 신규 데이터가 생성되지 않습니다.' },
     { name: '금강산 관광', org: '통일부 (주제 종료)', end: '2008-07-11', fresh: 'frozen', url: null, reason: '2008-07-11 관광 중단 이후 신규 데이터가 생성되지 않습니다. 배포 파일명이 20201231 이어도 관광은 2008-07 에 끊겼습니다.' },
     { name: `남북이산가족 디지털박물관 공개 사료 ${nf(pack.museum.archive.totCnt)}건`, org: '통일부 이산가족정보통합시스템', end: pack.paths.meta.measured?.archiveNewestProducedOn ?? pack.museum.builtAt, fresh: 'stale', url: pack.museum.sources[0]?.url ?? null },
+    /* ★ 신규 수집분을 여기 적지 않으면, manifest 는 출처로 선언했는데 출처 화면은 그것을 밝히지 않는 상태가 된다.
+         기준일은 **수집일**이다 — 사진의 촬영일도 영상의 제작연도도 아니다. 그래서 stale 로 둔다
+         (사이트가 갱신됐는지 우리는 모른다). */
+    { name: `이산가족정보통합시스템 「나의 살던 고향은」 사진 ${nf(pack.reunion.htgallery.collected)}건 (수집일)`, org: '통일부 · 제공처 별도 표기', end: pack.reunion.collectedAt.htgallery, fresh: 'stale', url: 'https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/info.do' },
+    { name: `이산가족정보통합시스템 영상편지 ${nf(pack.reunion.vletter.collected)}건 (수집일)`, org: '통일부', end: pack.reunion.collectedAt.vletter, fresh: 'stale', url: 'https://reunion.unikorea.go.kr/reuni/home/vle/vletter/promote/list_vle.do' },
     { name: `후손이 신청할 수 있는 제도 ${nf(pack.paths.summary.totalPaths)}종 (창구 링크 실측)`, org: '통일부 · 법제처 국가법령정보', end: pack.paths.builtAt, fresh: 'live', url: pack.paths.sources[0]?.url ?? null },
     { name: '통일의식조사 — 남북한 통일의 필요성', org: '서울대학교 통일평화연구원', end: pack.opinion.reports.at(-1)?.fieldPeriod?.to ?? '', fresh: 'stale', url: pack.opinion.licenseUrl, outside: true },
   ]
@@ -102,6 +107,12 @@ export default function SourcesScene({ pack }: { pack: Pack }) {
             {' '}— 나머지 {nf(pack.museum.meta.slim.droppedRecords)}건은 고향이 없어서가 아니라 본문에 지명이 적혀 있지 않아 지도에 걸 자리가 없는 것입니다.
             {' '}사료 이미지는 저장하지 않고 박물관 원본을 그대로 참조합니다.
             {' '}통일의식조사만 통일부 자료가 아닙니다 — {pack.opinion.licenseFullText}
+          </p>
+          <p className={`mt-1 text-[11px] leading-relaxed text-[#767676] ${PROSE}`}>
+            이산가족정보통합시스템 신규 수집분(수집일 {pack.reunion.collectedAt.htgallery})은 사진 {nf(pack.reunion.htgallery.collected)}건 중 {nf(pack.reunion.htgallery.mapped)}건,
+            {' '}영상편지 {nf(pack.reunion.vletter.collected)}건 중 {nf(pack.reunion.vletter.mapped)}건에만 고향을 붙였습니다 — 나머지는 원문에 고향 근거가 없습니다.
+            {' '}사진은 통일부가 게시했으나 <b className="font-medium">저작권자가 통일부가 아닌 것이 많아</b> 화면의 사진마다 제공처를 함께 적습니다.
+            {' '}영상은 내려받지 않고 링크와 제목만 둡니다.
           </p>
         </div>
       </div>

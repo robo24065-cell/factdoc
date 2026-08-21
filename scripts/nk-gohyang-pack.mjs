@@ -204,6 +204,12 @@ const INPUTS = [
     require: ['builtAt', 'generator', 'note', 'asOfByLane', 'sources', 'cards', 'meta'],
     role: '분석 덱(/deck)이 넘기는 카드 — 성립·약함·불가를 한 벌로 싣는다(불가도 숨기지 않는다)',
   },
+  {
+    out: 'reunion.json',
+    src: '북한자료-api/reunion-region.json',
+    require: ['builtAt', 'builder', 'collectedAt', 'axis', 'crosswalk', 'dedup', 'htgallery', 'vletter', 'byOld', 'numeratorRule', 'judgement', 'numeratorDelta', 'caveats'],
+    role: '이산가족정보통합시스템 신규 수집분 — 고향 축에 붙은 「나의 살던 고향은」 사진과 영상편지, 그리고 왜 그것만 셌는지의 판정 근거',
+  },
 ]
 
 /* ══════════ 읽기 ══════════ */
@@ -238,6 +244,7 @@ const museumRaw = raw['museum.json']      // 원본 — 슬림이 원본을 배�
 const paths = byOut['paths.json']
 const opinion = byOut['opinion.json']
 const analysis = byOut['analysis.json']
+const reunion = byOut['reunion.json']
 
 /* ══════════ 조인 무결성 검사 ══════════
    화면이 하는 조인을 그대로 여기서 먼저 해 본다.
@@ -481,6 +488,47 @@ const coordsOf = (s) => s.points ?? s.rows ?? null
     `meta ${analysis.meta.tried}/${analysis.meta.accepted}/${analysis.meta.weak}/${analysis.meta.rejectedCount} vs 실제 ${analysis.cards.length}/${cnt('성립')}/${cnt('약함')}/${cnt('불가')}`)
 }
 
+/* ══════════ 신규 수집분(reunion.json) — 축 라벨과 **분자 대조** ══════════
+   이 팩의 존재 이유가 "한 곳에 옛 값이 남는 것"을 막는 것이다.
+   분석 카드의 「고향사진·영상편지」 열은 reunion.json 의 byOld 를 그대로 옮긴 값이어야 한다.
+   두 파일을 따로 만들면 언젠가 한쪽만 갱신되고, 그때 화면은 조용히 옛 수치를 그린다. */
+{
+  const axisNames = new Set(reunion.axis.map((a) => a.name))
+  const oldNames = new Set(map.regionsOld.map((r) => r.name))
+  const missing = [...axisNames].filter((n) => !oldNames.has(n))
+  ok(missing.length === 0 && axisNames.size === 7,
+    `신규 수집분 고향 축 ${axisNames.size}종 = 지도 구행정구역 축`,
+    `지도에 없는 축: ${missing.join(', ')}`)
+}
+{
+  const dens = analysis.cards.find((c) => c.id === 'record-density-gap')
+  const rows = dens?.table ?? []
+  const byName = Object.fromEntries(reunion.axis.map((a) => [a.name, reunion.byOld[a.key]]))
+  const bad = rows.filter((r) => {
+    const b = byName[r.고향]
+    return !b || r.고향사진 !== b.htgallery || r.영상편지 !== b.vletter
+  })
+  const addedRows = rows.reduce((s, r) => s + r.고향사진 + r.영상편지, 0)
+  ok(rows.length === 7 && bad.length === 0 && addedRows === reunion.numeratorDelta.totalAdded,
+    `기록 밀도 분자의 신규분 ${addedRows}건 = reunion.json byOld 합계 ${reunion.numeratorDelta.totalAdded}건`,
+    `어긋난 행: ${bad.map((r) => r.고향).join(', ') || '(없음)'} / 합계 ${addedRows} vs ${reunion.numeratorDelta.totalAdded}`)
+}
+{
+  /* 기록계 = 각 열의 합인가. 분자 정의가 조용히 바뀌면 여기서 잡힌다. */
+  const dens = analysis.cards.find((c) => c.id === 'record-density-gap')
+  const bad = (dens?.table ?? []).filter((r) =>
+    r.기록계 !== r.연표 + r.보도자료 + r.동향 + r.개황 + r.사료 + r.고향사진 + r.영상편지 ||
+    r.기록계_신규반영전 !== r.연표 + r.보도자료 + r.동향 + r.개황 + r.사료)
+  ok(bad.length === 0, '기록 밀도 표의 기록계 = 열의 합 (신규 반영 전/후 모두)', `어긋난 행: ${bad.map((r) => r.고향).join(', ')}`)
+}
+{
+  /* 중복 판정이 살아 있는가 — 「전량 중복」으로 적힌 코너가 실제로 신규 0건인지 본다.
+     여기가 무너지면 사료 4,342건이 두 번 세어진다. */
+  const mustBeZero = ['timetravel', 'handlttr', 'archive', 'collection', 'search']
+  const bad = mustBeZero.filter((c) => (reunion.dedup.corners[c]?.novel ?? -1) !== 0)
+  ok(bad.length === 0, `박물관과 겹치는 5개 코너의 신규 사료 0건 — 이중계상 없음`, `신규가 0이 아닌 코너: ${bad.join(', ')}`)
+}
+
 
 /* -- 덱 요약 (선택 입력) --
    * 이것만 **없어도 되는 입력**이다. INPUTS 에 넣지 않은 이유가 그것이다 —
@@ -534,19 +582,28 @@ console.log(`  합계 ${total.toLocaleString('en-US')} B — 페이지 1회 로�
 /* ══════════ 매니페스트 ══════════
    화면이 '이 데이터가 언제 것인지'를 말하려면 파일별 기준일이 필요하다.
    각 파일이 스스로 밝힌 값만 옮겨 적는다(추론하지 않는다). */
+/* 역할 설명은 **파일 이름으로** 찾는다. 예전에는 INPUTS[n] 첨자로 옮겼는데,
+   INPUTS 에 파일이 하나 늘어난 뒤 museum.json 부터 아래로 설명이 한 칸씩 밀려 있었다
+   (공개 manifest 에 남의 역할이 적혀 나갔다). 첨자는 표가 자라면 반드시 어긋난다. */
+const roleOf = (out) => {
+  const hit = INPUTS.find((i) => i.out === out)
+  if (!hit) die(`manifest 가 INPUTS 에 없는 파일을 적는다: ${out}`)
+  return hit.role
+}
+
 const manifest = {
   builtAt: TODAY,
   note: '고향ON(/gohyang) 지도 대시보드가 fetch 하는 데이터 팩. 원본 JSON을 가공 없이 그대로 복사한 것이며, 조인·집계는 화면에서 수행한다.',
   sources: [
     {
       file: 'map.json',
-      role: INPUTS[0].role,
+      role: roleOf('map.json'),
       builtAt: map.builtAt,
       upstream: (map.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, license: s.license ?? null })),
     },
     {
       file: 'region.json',
-      role: INPUTS[1].role,
+      role: roleOf('region.json'),
       builtAt: region.builtAt,
       asOf: {
         기록: region.sources?.find((s) => s.coverageEnd)?.coverageEnd ?? null,
@@ -557,7 +614,7 @@ const manifest = {
     },
     {
       file: 'isan.json',
-      role: INPUTS[2].role,
+      role: roleOf('isan.json'),
       builtAt: isan.builtAt,
       asOf: {
         월별CSV: isan.monthly.at(-1)?.month ?? null,
@@ -569,7 +626,7 @@ const manifest = {
     },
     {
       file: 'projection.json',
-      role: INPUTS[3].role,
+      role: roleOf('projection.json'),
       builtAt: proj.builtAt,
       asOf: proj.headline?.asOf ?? null,
       upstream: (proj.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, org: s.org ?? null, asOf: s.asOf ?? s.usedYear ?? null })),
@@ -577,15 +634,25 @@ const manifest = {
     },
     {
       file: 'descendant.json',
-      role: INPUTS[4].role,
+      role: roleOf('descendant.json'),
       builtAt: desc.builtAt,
       asOf: desc.survey?.publishedAt ?? null,
       upstream: (desc.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, asOf: s.asOf ?? null })),
       caution: '요약자료가 이미지 PDF라 이 수치는 사람이 판독해 옮긴 값이다. 조사 회차가 바뀌면 손으로 갱신할 것.',
     },
     {
+      /* 이 항목이 빠져 있어서 아래 파일들의 역할 설명이 한 칸씩 밀려 나가고 있었다(첨자 참조 시절).
+         팩에 싣는 파일은 전부 여기에 출처·주의를 달아야 한다 — 아래 대조 검사가 강제한다. */
+      file: 'museum-sections.json',
+      role: roleOf('museum-sections.json'),
+      builtAt: byOut['museum-sections.json'].builtAt,
+      asOf: byOut['museum-sections.json'].builtAt,
+      upstream: [{ name: byOut['museum-sections.json'].source?.name ?? '남북이산가족 디지털박물관', url: byOut['museum-sections.json'].source?.url ?? null, org: '통일부', asOf: byOut['museum-sections.json'].builtAt }],
+      caution: '묶음·코너 목록은 박물관 화면 구성을 옮긴 것이지 사료 건수가 아니다. 링크로만 쓴다.',
+    },
+    {
       file: 'museum.json',
-      role: INPUTS[5].role,
+      role: roleOf('museum.json'),
       builtAt: museum.builtAt,
       asOf: {
         수집일: museum.builtAt,
@@ -599,7 +666,7 @@ const manifest = {
     },
     {
       file: 'paths.json',
-      role: INPUTS[6].role,
+      role: roleOf('paths.json'),
       builtAt: paths.builtAt,
       asOf: paths.builtAt,
       upstream: (paths.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, asOf: s.asOf ?? null })),
@@ -610,7 +677,7 @@ const manifest = {
     },
     {
       file: 'opinion.json',
-      role: INPUTS[7].role,
+      role: roleOf('opinion.json'),
       builtAt: opinion.builtAt,
       asOf: opinion.reports?.at(-1)?.fieldPeriod?.to ?? null,
       upstream: (opinion.sources ?? []).map((s) => ({ name: s.name, url: s.url ?? null, org: s.org ?? null, asOf: s.asOf ?? null })),
@@ -622,7 +689,7 @@ const manifest = {
     },
     {
       file: 'analysis.json',
-      role: INPUTS[8].role,
+      role: roleOf('analysis.json'),
       builtAt: analysis.builtAt,
       asOf: analysis.asOfByLane ?? null,
       cards: {
@@ -641,6 +708,28 @@ const manifest = {
         '카드의 수치는 이 시제품이 계산한 결과이지 통일부 공표 통계가 아니다. 화면은 판정(성립·약함·불가)을 배지로 구분해 표시하고, ' +
         '「약함」·「불가」 카드를 숨기지 말 것 — 무엇이 재어졌고 무엇이 재어지지 않았는지가 이 덱의 내용이다. ' +
         '기준일이 다른 계열을 이은 카드는 카드 안에 그 사실이 적혀 있다.',
+    },
+    {
+      file: 'reunion.json',
+      role: roleOf('reunion.json'),
+      builtAt: reunion.builtAt,
+      asOf: reunion.collectedAt,
+      counts: {
+        htgalleryMapped: `${reunion.htgallery.mapped}/${reunion.htgallery.collected}`,
+        vletterMapped: `${reunion.vletter.mapped}/${reunion.vletter.collected}`,
+        addedToNumerator: reunion.numeratorDelta.totalAdded,
+      },
+      upstream: [{
+        name: '이산가족정보통합시스템(통일부) — 나의 살던 고향은 · 영상편지',
+        url: 'https://reunion.unikorea.go.kr/',
+        org: '통일부',
+        asOf: reunion.collectedAt.htgallery,
+      }],
+      caution:
+        '★ 사진의 저작권자가 통일부가 아닌 것이 많다(제공처: 미디어한국학·평화문제연구소·영남통일교육센터·국가기록원 등). ' +
+        '화면에 걸 때 제공처 표기와 원문 링크가 반드시 따라붙어야 한다. 공공누리(KOGL) 표기는 원문 어디에도 없다. ' +
+        '영상편지의 지역은 자막 자유텍스트에서 뽑은 것이라 전체의 고향 분포가 아니다 — 확정된 건만 담았고 나머지는 미상이다. ' +
+        'collectedAt 은 수집일이며 사진의 촬영일·영상의 제작연도와 다른 축이다.',
     },
     ...(summary
       ? [{
@@ -679,6 +768,19 @@ const manifest = {
       }
     : { present: false, note: '요약이 없거나 재검을 통과하지 못했다. 화면은 요약 구획을 그리지 않는다 — 정상 동작이다.' },
   limits: { perFileBytes: MAX_BYTES, note: 'Cloudflare Pages 자산 상한' },
+}
+
+/* manifest 가 파일 하나를 빠뜨리면 그 파일은 출처·라이선스·주의 없이 배포된다.
+   실제로 museum-sections.json 이 그렇게 빠져 있었고, 첨자 참조까지 겹쳐 아래 파일들의
+   역할 설명이 남의 것으로 나가고 있었다. 1:1 이 아니면 여기서 죽인다. */
+{
+  const listed = new Set(manifest.sources.map((s) => s.file))
+  const shipped = INPUTS.map((i) => i.out)
+  const missing = shipped.filter((f) => !listed.has(f))
+  const extra = [...listed].filter((f) => f !== SUMMARY_OUT && !shipped.includes(f))
+  if (missing.length || extra.length) {
+    die(`manifest 와 팩 파일이 1:1 이 아니다 — 빠짐: ${missing.join(', ') || '없음'} / 남음: ${extra.join(', ') || '없음'}`)
+  }
 }
 
 /* ══════════ 쓰기 ══════════ */

@@ -146,10 +146,12 @@ export function buildSummaryFacts(analysis) {
   if (!analysis || !Array.isArray(analysis.cards)) return null
   const cards = analysis.cards.map((c) => {
     const fs = Array.isArray(c.findings) ? c.findings : []
-    /* ★ 표시된 finding 을 앞으로 — 카드가 스스로 중요하다고 적어 둔 것이 먼저다 */
+    /* 중요 표시된 finding 을 앞으로 — 카드가 스스로 중요하다고 적어 둔 것이 먼저다.
+       표시는 이제 렌더되지 않는 필드 key 로 온다(예전에는 라벨 앞 ★ 글자였는데 그 글자가
+       화면에 그대로 나갔다). ★ 대조도 남겨 둔다 — 옛 산출물을 읽어도 같게 동작해야 한다. */
+    const isKey = (f) => f.key === true || starred(f.label) || starred(f.value) || starred(f.note)
     const ordered = [...fs.entries()].sort((a, b) => {
-      const sa = starred(a[1].label) || starred(a[1].value) || starred(a[1].note)
-      const sb = starred(b[1].label) || starred(b[1].value) || starred(b[1].note)
+      const sa = isKey(a[1]), sb = isKey(b[1])
       return sa === sb ? a[0] - b[0] : sa ? -1 : 1
     })
     const claims = ordered.slice(0, 5).map(([, f]) => {
@@ -157,11 +159,13 @@ export function buildSummaryFacts(analysis) {
       const note = plain(f.note)
       return cut(note ? `${base} (${note})` : base, 170)
     })
-    const cavStar = (c.caveats ?? []).find((x) => starred(x))
+    /* 카드가 적어 둔 결정적 한계 — limitIndex 가 가리키는 caveat 이다(옛 산출물은 ★ 로 표시했다) */
+    const cavs = c.caveats ?? []
+    const cavKey = Number.isInteger(c.limitIndex) ? cavs[c.limitIndex] : cavs.find((x) => starred(x))
     const limit = c.rejectWhy
       ? cut(plain(c.rejectWhy), 200)
-      : cavStar
-        ? cut(plain(cavStar), 200)
+      : cavKey
+        ? cut(plain(cavKey), 200)
         : ''
     const out = {
       id: c.id,

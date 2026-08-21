@@ -2,36 +2,36 @@
   "builtAt": "2026-08-19",
   "sources": [
     {
-      "name": "통일의식조사 인포그래픽 시계열 XLSX",
+      "name": "통일의식조사 인포그래픽 시계열",
       "kind": "xlsx",
       "url": "https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/korea-unity-infographic/",
       "org": "서울대학교 통일평화연구원",
       "asOf": "2022-12-31",
       "accessedAt": "2026-08-19",
-      "note": "지표 30종. 파일 목록은 https://ipus.snu.ac.kr/wp-content/themes/ipus/graph/main.js 의 setDownload() 호출에서 실측 추출."
+      "note": "지표 30종."
     },
     {
-      "name": "통일의식조사 데이터 아카이브(연도별 기초보고서 PDF)",
+      "name": "통일의식조사 데이터 아카이브(연도별 기초보고서)",
       "kind": "pdf",
       "url": "https://ipus.snu.ac.kr/data-archive",
       "org": "서울대학교 통일평화연구원",
       "asOf": "2025-09-01",
       "accessedAt": "2026-08-19",
-      "note": "11개 연도 「표 2. 남북한 통일의 필요성」 전체 행. 열 순서가 연도마다 달라 좌표 기반 추출."
+      "note": "11개 연도 「표 2. 남북한 통일의 필요성」 전체 행."
     },
     {
-      "name": "2025 통일의식조사 로데이터(ZIP: STATA/XLSX/SPSS)",
+      "name": "2025 통일의식조사 원자료",
       "kind": "zip",
       "url": "https://ipus.snu.ac.kr/wp-content/uploads/2026/02/1-2025-통일의식조사_로데이터.zip",
       "landing": "https://ipus.snu.ac.kr/blog/archives/research/11790",
       "org": "서울대학교 통일평화연구원",
       "asOf": "2025-09-01",
       "accessedAt": "2026-08-19",
-      "note": "전 연도 ZIP 을 받지 않는다(용량). 최신 2025년분 1개만 실측한다."
+      "note": "최신 2025년분만 확인했다."
     }
   ],
   "license": "서울대학교 통일평화연구원에서 실시한 통일의식조사",
-  "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임을 명기해 주시길 부탁 드립니다.",
+  "licenseFullText": "본 자료를 활용하실 경우 반드시 서울대학교 통일평화연구원에서 실시한 통일의식조사 자료임.",
   "licenseUrl": "https://ipus.snu.ac.kr/data-archive",
   "series": [
     {
@@ -252,7 +252,7 @@
             ]
           }
         ],
-        "note": "2007~2022 은 인포그래픽 XLSX, 그 이후는 연도별 기초보고서 표2 전체 행. 중복 8개 연도 대조 결과 최대 1.4%p 차이(산출 방식 상이) — extended.sourceByYear 로 출처를 구분할 것."
+        "note": "2007~2022 은 인포그래픽 자료, 그 이후는 연도별 기초보고서다. 겹치는 8개 연도에서 두 출처의 값이 최대 1.4%p 다르다."
       },
       "reportSeries": {
         "years": [
@@ -3519,7 +3519,7 @@
         "4": 287,
         "5": 76
       },
-      "note": "로데이터를 표준화 가중치(wt)로 재집계한 값. 같은 해 기초보고서 표2와 대조해 파서 정확도를 검증한다.",
+      "note": "원자료를 표준화 가중치로 다시 집계한 값. 같은 해 기초보고서 표2와 대조해 확인했다.",
       "matchesReport": true,
       "reportValues": {
         "need": 41.1,
@@ -3527,7 +3527,7 @@
         "notNeed": 30.4
       }
     },
-    "note": "전 연도 ZIP 을 받지 않는다(용량). 최신 2025년분 1개만 실측한다."
+    "note": "최신 2025년분만 확인했다."
   },
   "headline": {
     "needUnification": {

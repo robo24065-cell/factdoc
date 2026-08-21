@@ -238,9 +238,71 @@ export type OpinionData = {
   meta: { caveats: string[] }
 }
 
+/* 이산가족정보통합시스템(reunion.unikorea.go.kr) 신규 수집분 — 12개 코너 중 고향 축이 붙는 두 코너.
+   ★ 저작권 — 사진은 통일부가 게시했으나 저작권자는 제공처(미디어한국학·평화문제연구소·
+     영남통일교육센터·국가기록원 등)다. 화면에 걸 때 **제공처 표기와 원문 링크가 반드시 함께** 나가야 한다
+     (manifest.json 의 reunion.json caution 이 요구하는 조건). 우리는 이미지를 저장하지 않고
+     썸네일 URL 을 그대로 참조한다 — 원본(최대 7.4MB)은 부르지 않는다.
+   ★ 영상은 링크와 메타데이터만 갖는다. 내려받지 않는다. */
+export type ReunionPhoto = {
+  fileId: string
+  tab: string
+  placeName: string
+  areaRaw: string | null
+  provider: string | null
+  thumbUrl: string
+  viewUrl: string
+  sourceUrl: string
+  oldKeys: string[]
+  oldNames: string[]
+  via: string
+  evidence: string | null
+  tabAgrees: boolean | null
+}
+export type ReunionLetter = {
+  id: number
+  title: string
+  productionYear: number | null
+  sourceUrl: string
+  videoUrl: string | null
+  oldKeys: string[]
+  oldNames: string[]
+  via: string
+  evidence: string[]
+  evidenceLines?: string[]
+}
+export type ReunionData = {
+  builtAt: string
+  builder: string
+  collectedAt: Record<string, string>
+  axis: Array<{ key: string; name: string }>
+  htgallery: {
+    corner: string; siteBadgeTotal: number | null; collected: number; mapped: number
+    unmapped: number; mappingRate: number; multiRegion: number
+    byOld: Record<string, number>
+    unmappedReasons: Array<{ fileId: string; tab: string; placeName: string; why: string }>
+    items?: ReunionPhoto[]
+  }
+  /* ★ items 는 선택 사항이다 — 개인정보로 개별 항목을 배포물에서 빼는 코너가 있다.
+     영상편지가 실제로 그렇다(제목에 신청인 실명, 자막에 본적지). 그때는 itemsWithheld 와
+     축별 집계 byOld 만 온다. 여기에 `items: ReunionLetter[]` 라고 단언해 두면 타입 검사가
+     통과하면서 화면이 런타임에 죽는다 — 실제로 그 사고가 났다. 데이터 그대로 적는다. */
+  vletter: {
+    corner: string; siteBadgeTotal: number | null; collected: number; withCaption: number
+    mapped: number; mappingRateOfAll: number; mappingRateOfCaptioned: number; multiRegion: number
+    byOld: Record<string, number>
+    rule: string; ruleTradeoff: string
+    items?: ReunionLetter[]
+    itemsWithheld?: { n: number; why: string; seeOriginal?: string }
+  }
+  byOld: Record<string, { key: string; name: string; htgallery: number; vletter: number; total: number }>
+  caveats: string[]
+}
+
 export type Pack = {
   map: NkMapData; region: NkRegionData; isan: IsanData; proj: ProjData; desc: DescData
   museum: MuseumData; paths: PathData; opinion: OpinionData; tour: MuseumSections
+  reunion: ReunionData
 }
 
 /* 지도 모드 — 현행 행정구역 / 광복 당시 구행정구역(= 이산가족 '고향' 축) */

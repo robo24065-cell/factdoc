@@ -612,7 +612,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
           </p>
           <ul className={`mt-1.5 space-y-1 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
             <li>· 입력·미리보기·그림 파일 만들기까지 전부 이 기기의 브라우저 안에서 처리됩니다.</li>
-            <li>· 임시 저장 위치는 이 브라우저의 저장소(localStorage) 한 곳뿐이며, 다른 곳으로 전송되지 않습니다.</li>
+            <li>· 임시 저장 위치는 이 브라우저의 저장소 한 곳뿐이며, 다른 곳으로 전송되지 않습니다.</li>
             <li>· 아래 「이 기기에서 지우기」를 누르면 저장된 내용이 즉시 사라집니다.</li>
           </ul>
         </div>
@@ -933,7 +933,7 @@ export default function MemoryCard({ homes, donations, asOf }: Props) {
               aria-busy={pngBusy}
               className={`${BTN.primary} min-h-[56px] px-6 text-[1.0625rem] disabled:opacity-70`}
             >
-              그림 파일로 내려받기 (PNG)
+              그림 파일로 내려받기
             </button>
             {pngBusy && <span className={`${TYPE.sub} ${TEXT.faint}`}>카드를 그리는 중입니다</span>}
             <button type="button" onClick={() => window.print()} className={`${BTN.ghost} min-h-[56px] px-6 text-[1.0625rem]`}>

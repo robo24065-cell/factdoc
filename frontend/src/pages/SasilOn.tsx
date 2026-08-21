@@ -685,7 +685,7 @@ function SourceLine({ ds, no }: { ds?: NkDataset | null; no?: number }) {
         {' · '}{ds.provider}
         {ds.status === 'pending' && (
           <span className="ml-1 rounded bg-blue-50 px-1 py-0.5 text-[10px] text-blue-700 dark:bg-blue-950/40 dark:text-blue-300">
-            API 연계 예정
+            연계 예정
           </span>
         )}
         {' · '}
@@ -2076,7 +2076,7 @@ export default function SasilOn() {
           {!a && stats && (
             <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
-                { k: '데이터셋', v: `${stats.datasets}종`, h: `API 연계 예정 ${stats.pending}종` },
+                { k: '데이터셋', v: `${stats.datasets}종`, h: `연계 예정 ${stats.pending}종` },
                 { k: '공식 기록', v: nf(stats.records), h: '건' },
                 { k: '수치', v: nf(stats.measures), h: '건' },
                 { k: '종료 확정', v: `${stats.frozen}종`, h: '🔒 이후 데이터 없음' },

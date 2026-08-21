@@ -1,0 +1,344 @@
+{
+  "source": "통일부 이산가족정보통합시스템 — 디지털박물관 소개(허브)",
+  "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261",
+  "collectedAt": "2026-08-20T21:45:49.257Z",
+  "collectedOnKst": "2026-08-21",
+  "total": null,
+  "totalDisplayedBySite": false,
+  "collected": 11,
+  "items": [
+    {
+      "section": "collectionBanner",
+      "kind": "컬렉션",
+      "colId": 2,
+      "title": "가족",
+      "description": "시간이 흘러도 만나지 못해도 잊을 수 없는 소중한 가족사진을 담았습니다.",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=2",
+      "inMainNav": false,
+      "linkKind": "기존 코너(컬렉션)의 깊은 링크",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "collectionBanner",
+      "kind": "컬렉션",
+      "colId": 3,
+      "title": "향수",
+      "description": "나고자란 땅을 그리워 하는 이산가족의 마음을 담았습니다.",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=3",
+      "inMainNav": false,
+      "linkKind": "기존 코너(컬렉션)의 깊은 링크",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "collectionBanner",
+      "kind": "컬렉션",
+      "colId": 4,
+      "title": "만남 그리고 기약",
+      "description": "1985년 시작되어 2018년 21차까지 진행된 이산가족 상봉의 장면을 담았습니다.",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=4",
+      "inMainNav": false,
+      "linkKind": "기존 코너(컬렉션)의 깊은 링크",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "collectionBanner",
+      "kind": "컬렉션",
+      "colId": 5,
+      "title": "이산의 기록과 기억",
+      "description": "이산하고 실향한 아픔을 달래기 위한 기록을 담았습니다.",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=5",
+      "inMainNav": false,
+      "linkKind": "기존 코너(컬렉션)의 깊은 링크",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "introTile",
+      "kind": "박물관 코너",
+      "title": "손편지",
+      "description": "언젠가 받을 수 있을 것이라 기대하면서 써내려온 손편지",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/letter/HandLttr.do",
+      "inMainNav": true,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "introTile",
+      "kind": "박물관 코너",
+      "title": "기록관",
+      "description": "이산가족관련 기록물을 소개",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/FrmRecord.do",
+      "inMainNav": true,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "introTile",
+      "kind": "박물관 코너",
+      "title": "가족이야기",
+      "description": "만남의 기쁨과 가족에 대한, 그리움에 대한 이야기",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/family/FmlyStory.do",
+      "inMainNav": false,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": true
+    },
+    {
+      "section": "introTile",
+      "kind": "박물관 코너",
+      "title": "카드이야기",
+      "description": "이산가족관련 궁금했던 이야기를 카드뉴스 형태로 제공",
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/family/CardStory.do",
+      "inMainNav": false,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": true
+    },
+    {
+      "section": "icon",
+      "kind": "박물관 코너",
+      "title": "기증현황",
+      "description": null,
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do",
+      "inMainNav": true,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": false
+    },
+    {
+      "section": "icon",
+      "kind": "박물관 코너",
+      "title": "기증자 명단",
+      "description": null,
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/Donor.do",
+      "inMainNav": false,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": true
+    },
+    {
+      "section": "icon",
+      "kind": "박물관 코너",
+      "title": "연표",
+      "description": null,
+      "url": "https://reunion.unikorea.go.kr/reuni/home/museum/Yearbook.do",
+      "inMainNav": true,
+      "linkKind": "코너 입구",
+      "cornerAbsentFromNav": false
+    }
+  ],
+  "meta": {
+    "pageKind": "허브(소개) 페이지 — 수집할 사료 항목이 0건이다",
+    "countingWarning": "★ collected 는 이 페이지가 여는 입구(링크) 수이지 사료 건수가 아니다. 기록 밀도 분자에 절대 더하지 마라.",
+    "entryPointsBySection": {
+      "collectionBanner": 4,
+      "introTile": 4,
+      "icon": 3
+    },
+    "hiddenCorners": {
+      "count": 3,
+      "items": [
+        {
+          "title": "가족이야기",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/family/FmlyStory.do"
+        },
+        {
+          "title": "카드이야기",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/family/CardStory.do"
+        },
+        {
+          "title": "기증자 명단",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/Donor.do"
+        }
+      ],
+      "note": "상단 내비게이션 링크 경로 집합과 대조해 실측했다. 여기에 잡힌 것이 「이 페이지가 유일한 입구」인 코너다 — 브리핑의 12개 코너 목록에 빠져 있던 것들이다.",
+      "deepLinksOnly": [
+        {
+          "title": "가족",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=2"
+        },
+        {
+          "title": "향수",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=3"
+        },
+        {
+          "title": "만남 그리고 기약",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=4"
+        },
+        {
+          "title": "이산의 기록과 기억",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionView.do?col_id=5"
+        }
+      ],
+      "deepLinksOnlyNote": "컬렉션 배너 4개는 코너 자체(CollectionMain.do)가 내비에 있고 깊은 링크만 내비에 없다 — 「없는 코너」로 세지 않는다."
+    },
+    "searchForm": {
+      "method": "GET",
+      "action": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/search/SearchEngine.do",
+      "param": "search",
+      "example": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/search/SearchEngine.do?search=%EA%B3%A0%ED%96%A5"
+    },
+    "promoVideo": {
+      "url": "https://reunion.unikorea.go.kr/res/theme/reunion_new/vod/vodReuni.mp4",
+      "downloaded": false,
+      "downloadNote": "지시대로 영상은 내려받지 않았다 — URL 과 자막 텍스트만 기록한다.",
+      "captionText": "나레이션 : 남북이산가족 디지털 박물관(통일부)\n영원히 잊지 못 할 그 날의 기억.\n사진, 편지, 문서 등의 자료를 통해 소중히 간직하겠습니다.\n분단의 아픔을 견뎌내며 마침내 만난 나의 부모, 나의 형제.\n재회의 기억을 간직하고, 다시 만날 그 날을 기다리겠습니다.\n이산가족 \"어제\" 사진모음(이산 전 개인, 가족사진 등)\n이산가족 \"오늘\" 사진모음(상봉의 기쁨과 슬픔)\n이산가족 \"내일\" 사진모음(만남을 기약하며)\n영원히 잊지 못 할 그 날의 기억.\n사진, 편지, 문서 등의 자료를 통해 소중히 간직하겠습니다."
+    },
+    "pageText": {
+      "visualIntro": "영원히 잊지 못 할 그 날들의 기억.\n사진, 편지, 문서 등의 자료를 통해 소중히 간직하겠습니다.",
+      "museumIntro": "이산가족 디지털박물관은 이산가족의 아픔을 기억하고,\n현재를 재조명하며, 미래의 가족 상봉을 위한 희망을\n담고 있습니다."
+    },
+    "siteNavigation": {
+      "count": 32,
+      "links": [
+        {
+          "title": "남북이산가족교류현황",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/reqststat/list.do?mid=SM00000129"
+        },
+        {
+          "title": "공지사항",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/news/list.do?mid=SM00000138"
+        },
+        {
+          "title": "FAQ",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/faq/list_t1.do?mid=SM00000142"
+        },
+        {
+          "title": "질의응답",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/brd/bbsatcl/qna/list_qna.do?mid=SM00000143"
+        },
+        {
+          "title": "이산가족 신청/교류안내",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_info/view.do?mid=SM00000118"
+        },
+        {
+          "title": "이산가족 신청 및 취소",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/fml/registee/main.do?mid=SM00000119"
+        },
+        {
+          "title": "북한주민접촉신고,방문신청",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do?mid=SM00000120"
+        },
+        {
+          "title": "영상편지/유전자 정보 신청",
+          "url": "https://reunion.unikorea.go.kr/reuni/cmm/login_product.do?mid=SM00000125"
+        },
+        {
+          "title": "접수상담창구안내",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/counsel/list.do?mid=SM00000132"
+        },
+        {
+          "title": "각종서식관리",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/formula/list.do?mid=SM00000133"
+        },
+        {
+          "title": "나의 살던 고향은",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/htgallery/info.do?mid=SM00000283"
+        },
+        {
+          "title": "영상편지",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/vle/vletter/promote/list_vle.do?mid=SM00000127"
+        },
+        {
+          "title": "이산가족상봉 이모저모",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/pds/photo/gallery/new_list_t1.do?mid=SM00000271"
+        },
+        {
+          "title": "웹툰",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/webtoonList.do?mid=SM00000278"
+        },
+        {
+          "title": "시간여행",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/TimeTravel.do?mid=SM00000270"
+        },
+        {
+          "title": "디지털박물관소개",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261"
+        },
+        {
+          "title": "손편지",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/letter/HandLttr.do?mid=SM00000262"
+        },
+        {
+          "title": "컬렉션",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/collection/CollectionMain.do?mid=SM00000263"
+        },
+        {
+          "title": "기록관",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/FrmRecord.do?mid=SM00000264"
+        },
+        {
+          "title": "기증현황",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/DonationInfo.do?mid=SM00000265"
+        },
+        {
+          "title": "연표",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/Yearbook.do?mid=SM00000276"
+        },
+        {
+          "title": "박물관 통합검색",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/search/SearchEngine.do?mid=SM00000277"
+        },
+        {
+          "title": "북한주민접촉신고, 방문신청",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/uf_north_visiting/view.do"
+        },
+        {
+          "title": "디지털박물관 소개",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/view.do?gubn=A&mid=SM00000261"
+        },
+        {
+          "title": "History",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/eng/EngHistory.do"
+        },
+        {
+          "title": "Stories",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/museum/archive/eng/EngFamily01.do"
+        },
+        {
+          "title": "개인정보처리방침",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/s_privacy/view.do"
+        },
+        {
+          "title": "배너달기",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/s_banner_info/view.do"
+        },
+        {
+          "title": "이메일 무단수집거부",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/s_email/view.do"
+        },
+        {
+          "title": "이용안내",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/reuni_info/view.do?mid=SM00000147"
+        },
+        {
+          "title": "첨부파일보는방법",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/s_file_info/view.do"
+        },
+        {
+          "title": "찾아오시는길",
+          "url": "https://reunion.unikorea.go.kr/reuni/home/cms/page/reuni_map/view.do?mid=SM00000148"
+        }
+      ],
+      "note": "이 페이지 머리글이 실어 나르는 사이트 전체 코너 지도. 12개 코너 브리핑에 없던 항목(영문 History/Stories 등)도 여기에 그대로 남긴다."
+    },
+    "region": {
+      "hasStructuredRegionField": false,
+      "note": "지역 정보 없음. 이 페이지에는 지명이 나오지 않는다."
+    },
+    "overlapWithMuseum": {
+      "checked": true,
+      "overlappingRecords": 0,
+      "method": "이 페이지는 사료 레코드를 담지 않는다. museum.json 과 겹칠 항목 자체가 없다.",
+      "countsAsNewRecords": false
+    },
+    "rights": {
+      "koglMark": false,
+      "note": "공공누리(KOGL) 표시 없음. 홍보영상은 내려받지 않았다."
+    },
+    "failed": [],
+    "network": {
+      "calls": 0,
+      "fromCache": 1,
+      "failures": 0,
+      "bytes": 0,
+      "delayMs": 700
+    },
+    "note": "as-of: 수집일 2026-08-21(KST). 페이지에 갱신일 표시가 없어 자료의 기준일은 알 수 없다.\n세션: 이 주소가 JSESSIONID 발급처다. museum 계열의 다른 주소는 세션 없이 부르면 302 가 난다."
+  }
+}

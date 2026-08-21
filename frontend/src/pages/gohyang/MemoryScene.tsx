@@ -61,7 +61,7 @@ function SampleCard({ home, asOf }: { home: MemoryHome; asOf: string }) {
         ))}
       </dl>
       <p className={`mt-2 border-t pt-2 ${SURFACE.hair} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-        이렇게 한 장이 됩니다. 그림 파일(PNG)로 내려받거나 종이로 인쇄해 기증 창구에 첨부하실 수 있습니다.
+        이렇게 한 장이 됩니다. 그림 파일로 내려받거나 종이로 인쇄해 기증 창구에 첨부하실 수 있습니다.
       </p>
     </article>
   )

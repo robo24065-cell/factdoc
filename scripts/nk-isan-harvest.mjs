@@ -402,24 +402,23 @@ const out = {
     {
       name: '통일부_이산가족찾기 등록현황 월별 통계 정보', kind: 'csv(CP949)',
       landing: URLS.monthlyLanding, download: URLS.monthlyCsv,
-      org: '공공데이터포털(data.go.kr) — 통일부 파일데이터', asOf: lastCsv.month, accessedAt: TODAY,
+      org: '공공데이터포털 — 통일부 파일데이터', asOf: lastCsv.month, accessedAt: TODAY,
       note: '월말 기준 누적 스냅샷. 2017-07·08 행은 사망자 5열 공란.',
     },
     {
-      name: '이산가족 신청 현황(월별 공표 HWP) — 최신 3건', kind: 'hwp',
+      name: '이산가족 신청 현황(월별 공표) — 최신 3건', kind: 'hwp',
       landing: URLS.reqList, org: '통일부 이산가족정보통합시스템(국가통계 승인번호 제103003호)',
       asOf: cur.asOf, accessedAt: TODAY,
-      note: 'HWP BodyText 표를 python olefile로 직접 파싱(PrvText는 1023자 절단이라 미사용).',
     },
     {
-      name: '이산가족 교류 현황(월별 공표 HWP) — 최신 1건', kind: 'hwp',
+      name: '이산가족 교류 현황(월별 공표) — 최신 1건', kind: 'hwp',
       landing: URLS.excList, org: '통일부 이산가족정보통합시스템',
       asOf: exchange.asOf, accessedAt: TODAY,
     },
     {
       name: '통일부_남북이산가족 관련 연표', kind: 'csv(CP949)',
       landing: URLS.chronLanding, download: URLS.chronCsv,
-      org: '공공데이터포털(data.go.kr) — 통일부 파일데이터',
+      org: '공공데이터포털 — 통일부 파일데이터',
       asOf: chronology.at(-1).date, accessedAt: TODAY,
       note: `1954~2021 주요사건 ${chronology.length}건. 이후 연도는 원자료 미갱신.`,
     },
