@@ -4,8 +4,9 @@ import { BTN, FONT, SURFACE, TYPE, TEXT, PROSE, FOCUS, TAP_INLINE } from '../../
 import RegionStatBlock from '../../components/pick/RegionStatBlock'
 import PickShareCard, { type ShareModel } from '../../components/pick/PickShareCard'
 import { BALANCE_QUESTIONS, RECORD_TYPE_LABEL, RECORD_TYPE_NOTE, type BalanceOption, type RecordType } from '../../data/pick-balance'
+import TallyDeck from '../../components/pick/TallyDeck'
 import { ITEMS, loadPickStats, rememberLastHome, type PickStats } from '../../lib/pickData'
-import { recordPick } from '../../lib/pickTally'
+import { recordBalanceRun } from '../../lib/pickTally'
 import { PACK } from '../../components/gohyang/pack-types'
 import { DONATION_FIRST } from '../../components/gohyang/model'
 
@@ -111,15 +112,22 @@ export default function BalanceGame() {
 
   const homeStat = stats && home && home !== 'skip' ? stats.byId.get(home) ?? null : null
 
-  /* 결과 확정 — 집계 1회(상위 유형과 고향만, 실패 무해) */
+  /* 결과 확정 — 집계 1회(실패 무해): 판 요약 1행(상위 유형·고향) + 문항별 가/나 8행.
+     문항별 행은 순위덱의 「문항×선택」 집계(pick_balance_tally)의 원천이다.
+     두 insert 는 같은 일일 표식을 공유한다(pickTally.recordBalanceRun). */
   useEffect(() => {
     if (!done || sent.current) return
     sent.current = true
     const top = topTypes[0]
     const regionId = home && home !== 'skip' ? home : null
     rememberLastHome(regionId)
-    void recordPick('balance', top ? `type-${top}` : 'type-none', top ? RECORD_TYPE_LABEL[top] : '유형 없음', regionId)
-  }, [done, topTypes, home])
+    void recordBalanceRun(
+      answers.map((k, i) => ({ qId: BALANCE_QUESTIONS[i].id, choice: k })),
+      top ? `type-${top}` : 'type-none',
+      top ? RECORD_TYPE_LABEL[top] : '유형 없음',
+      regionId,
+    )
+  }, [done, topTypes, home, answers])
 
   const shareModel: ShareModel = {
     gameLabel: '우리 집 기억 밸런스',
@@ -295,6 +303,11 @@ export default function BalanceGame() {
             </p>
           )}
 
+          {/* 실시간 실선택 순위덱 — 밸런스 것 하나만(상위 유형 순위 + 문항별 상세보기) */}
+          <div className="max-w-md">
+            <TallyDeck games={['balance']} variant="result" />
+          </div>
+
           <div className={`flex flex-wrap items-center gap-2.5 border-t pt-4 ${SURFACE.hair}`}>
             <PickShareCard model={shareModel} fileName="고향잇기_우리집기억밸런스.png" />
             <button type="button" onClick={restart} className={BTN.ghost}>처음부터 다시</button>
@@ -312,7 +325,8 @@ export default function BalanceGame() {
       )}
 
       <p className={`mt-5 border-t pt-3 ${SURFACE.hair} ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-        답하신 내용은 저장되지 않습니다. 결과 확정 때 기록 유형과 (고르셨다면) 고향 이름만 익명으로 집계됩니다.
+        결과 확정 때 여덟 문항의 선택(가·나)과 기록 유형, (고르셨다면) 고향 이름만 익명으로 집계됩니다 —
+        나이·기기·위치는 묻지도 저장하지도 않고, 여덟 답이 한 사람의 것이라는 연결도 남기지 않습니다.
       </p>
     </div>
   )

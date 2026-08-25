@@ -1,0 +1,168 @@
+{
+ "note": "참여(/pick) 카드 사진 — 사람이 위키미디어 공용 파일 페이지에서 라이선스를 확인한 항목만 넣는다. 생성기 scripts/nk-pick-images.mjs 가 Commons API 로 라이선스를 재검증(화이트리스트: PD·CC0·CC-BY·CC-BY-SA)하고, 불일치·불명이면 그 항목을 실패시켜 산출물에서 뺀다. 맞는 사진을 못 찾은 항목(어복쟁반·찰강냉이떡·강계느릅쟁이국수·명태순대·고성해삼탕)은 넣지 않는다 — 글자 카드가 설계다.",
+ "curatedAt": "2026-08-26",
+ "items": [
+  {
+   "key": "food-pyeongyang-naengmyeon",
+   "slug": "food-pyeongyang-naengmyeon",
+   "commonsFile": "File:Pyongyang raengmyon 20150503.jpg",
+   "caption": "평양 현지에서 촬영된 평양랭면 — 참고 사진"
+  },
+  {
+   "key": "food-hamhung-naengmyeon",
+   "slug": "food-hamhung-naengmyeon",
+   "commonsFile": "File:Hamhung naengmyeon 20221209 001.jpg",
+   "caption": "남한식 함흥냉면 — 참고 사진"
+  },
+  {
+   "key": "food-gajami-sikhae",
+   "slug": "food-gajami-sikhae",
+   "commonsFile": "File:Gajamisikhae (fermented righteye flounders).jpg",
+   "caption": "가자미식해 — 참고 사진"
+  },
+  {
+   "key": "food-yeongchae-kimchi",
+   "slug": "food-yeongchae-kimchi",
+   "commonsFile": "File:Gat-gimchi 2.jpg",
+   "caption": "참고 사진: 갓김치 — 영채는 갓 계통 채소이며, 영채김치 그 자체의 사진은 아닙니다"
+  },
+  {
+   "key": "food-haeju-bibimbap",
+   "slug": "food-haeju-bibimbap",
+   "commonsFile": "File:Bibimbap 7.jpg",
+   "caption": "참고 사진: 일반 비빔밥 — 해주교반과 조리법이 다릅니다"
+  },
+  {
+   "key": "food-kimchi-mari",
+   "slug": "food-kimchi-mari",
+   "commonsFile": "File:Gimchi-mari-guksu 1.jpg",
+   "caption": "김치말이국수 — 참고 사진"
+  },
+  {
+   "key": "food-nammae-juk",
+   "slug": "food-nammae-juk",
+   "commonsFile": "File:Patjuk.jpg",
+   "caption": "참고 사진: 팥죽 — 남매죽은 팥죽에 밀반죽을 넣은 형태입니다"
+  },
+  {
+   "key": "food-joraengi-tteokguk",
+   "slug": "food-joraengi-tteokguk",
+   "commonsFile": "File:Tteokguk.jpg",
+   "caption": "참고 사진: 일반 떡국 — 조랭이떡은 누에고치 모양으로 다릅니다"
+  },
+  {
+   "key": "food-gaeseong-pyeonsu",
+   "slug": "food-gaeseong-pyeonsu",
+   "commonsFile": "File:Pyeonsu.jpg",
+   "caption": "편수 — 참고 사진"
+  },
+  {
+   "key": "food-gaeseong-juak",
+   "slug": "food-gaeseong-juak",
+   "commonsFile": "File:개성 주악.jpg",
+   "caption": "개성주악 — 참고 사진"
+  },
+  {
+   "key": "food-geumgang-jatjuk",
+   "slug": "food-geumgang-jatjuk",
+   "commonsFile": "File:Jatjuk.jpg",
+   "caption": "참고 사진: 잣죽 — 금강·고성 지역에서 촬영된 것은 아닙니다"
+  },
+  {
+   "key": "word-도시락|곽밥",
+   "slug": "word-dosirak",
+   "commonsFile": "File:Dosirak.jpg",
+   "caption": "도시락"
+  },
+  {
+   "key": "word-누룽지|가마치",
+   "slug": "word-nurungji",
+   "commonsFile": "File:Nurungji.jpg",
+   "caption": "누룽지"
+  },
+  {
+   "key": "word-노크|손기척",
+   "slug": "word-knock",
+   "commonsFile": "File:La main qui frappe the knocking hand (1112900443).jpg",
+   "caption": "손 모양 문 두드리개(노커)"
+  },
+  {
+   "key": "word-젤리|단묵",
+   "slug": "word-jelly",
+   "commonsFile": "File:Shameless Snacks gummy bears.jpg",
+   "caption": "젤리(곰젤리)"
+  },
+  {
+   "key": "word-도넛|가락지빵",
+   "slug": "word-doughnut",
+   "commonsFile": "File:Glazed doughnut (1387272).jpg",
+   "caption": "고리 모양 도넛"
+  },
+  {
+   "key": "word-주스|과일단물",
+   "slug": "word-juice",
+   "commonsFile": "File:Orange juice 1 edit1.jpg",
+   "caption": "과일 주스(오렌지 주스)"
+  },
+  {
+   "key": "word-수제비|뜨더국",
+   "slug": "word-sujebi",
+   "commonsFile": "File:Korean.cuisine-Sujebi-01.jpg",
+   "caption": "수제비"
+  },
+  {
+   "key": "word-달걀|닭알",
+   "slug": "word-egg",
+   "commonsFile": "File:Chicken eggs 20101113.jpg",
+   "caption": "달걀"
+  },
+  {
+   "key": "word-거위|게사니",
+   "slug": "word-goose",
+   "commonsFile": "File:Domestic Goose.jpg",
+   "caption": "거위"
+  },
+  {
+   "key": "word-원피스|달린옷",
+   "slug": "word-dress",
+   "commonsFile": "File:Black Floral Long Dress with comfortable hat in the fashion shop at Tuen Mun.jpg",
+   "caption": "원피스(위아래가 하나로 달린 옷)"
+  },
+  {
+   "key": "word-주차장|차마당",
+   "slug": "word-parking",
+   "commonsFile": "File:Tel Aviv parking lot.jpg",
+   "caption": "차를 세워 둔 주차장"
+  },
+  {
+   "key": "word-헬리콥터|직승기",
+   "slug": "word-helicopter",
+   "commonsFile": "File:Tengboche, Helicopter in flight, Mountains of Nepal.jpg",
+   "caption": "비행 중인 헬리콥터"
+  },
+  {
+   "key": "word-볼펜|원주필",
+   "slug": "word-ballpoint",
+   "commonsFile": "File:Ballpoint Pen DS.jpg",
+   "caption": "볼펜"
+  },
+  {
+   "key": "word-골키퍼|문지기",
+   "slug": "word-goalkeeper",
+   "commonsFile": "File:Soccer goalkeeper.jpg",
+   "caption": "공을 막는 골키퍼"
+  },
+  {
+   "key": "word-어묵|물고기떡",
+   "slug": "word-eomuk",
+   "commonsFile": "File:Eomuk-kkochi.jpg",
+   "caption": "어묵 꼬치"
+  },
+  {
+   "key": "word-에스컬레이터|계단승강기",
+   "slug": "word-escalator",
+   "commonsFile": "File:Front view of an illuminated outdoor escalator, Shinjuku Station, Tokyo.jpg",
+   "caption": "에스컬레이터"
+  }
+ ]
+}

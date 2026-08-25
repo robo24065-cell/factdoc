@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { FONT, SURFACE, TYPE, TEXT, PROSE } from '../../theme/gohyang'
 import type { PickFood, PickScenery, PickWord } from '../../lib/pickData'
+import PICK_PHOTOS, { type PickPhoto } from '../../data/pick-photos'
 
 /* ────────────────────────────────────────────────────────────────
    참여 월드컵 — 카드 한 장 (음식·풍경·말 공통 틀)
@@ -9,8 +10,13 @@ import type { PickFood, PickScenery, PickWord } from '../../lib/pickData'
      · 통일부 자료(말)          = 남색 칩
      · 문화적 통설(음식 지역)   = 회색 칩 + 「통일부 자료 아님」 문구
      · 풍경 사진               = 제공처 표기 필수(저작권자) + 지역은 근사 대응 고지
+     · 음식·말 참고 사진        = 위키미디어 공용(라이선스 재검증 산출물 pick-photos.ts)
+       — 캡션에 「참고 사진」임과 실물과의 차이를 적고, 작가·라이선스를 반드시 병기(CC 표시 의무).
+       사진이 없는 항목은 글자 카드가 설계다(엉뚱한 사진을 억지로 붙이는 것이 최악).
    명조 = 이름(사람의 말) · 고딕 = 배지·제공처·설명(기계의 값).
-   사진이 안 떠도 게임은 계속된다 — onerror 시 회색 상자 + 명소명 유지.
+   사진이 안 떠도 게임은 계속된다 — onerror 시 글자 카드로 폴백.
+   ★ 이 카드는 Tournament 에서 <button> 안에 렌더된다 — 카드 안에 <a> 금지.
+     사진 출처 링크는 결과 화면(PickResult — button 밖)에서만 건다.
    ──────────────────────────────────────────────────────────────── */
 
 export type CardItem =
@@ -66,22 +72,62 @@ function SceneImage({ scene, big }: { scene: PickScenery; big?: boolean }) {
   )
 }
 
+/** 카드에서 쓸 참고 사진 — 라이선스 재검증을 통과해 pick-photos.ts 에 실린 항목만 */
+export function photoOf(item: CardItem): PickPhoto | null {
+  if (item.game === 'scene') return null
+  return PICK_PHOTOS[itemKey(item)] ?? null
+}
+
+/** 음식·말 이름 글자 카드 — 사진이 없거나 못 불러온 항목의 기본 모습 */
+function TextFace({ item, big }: { item: CardItem; big?: boolean }) {
+  return (
+    <div className={`flex aspect-[4/3] w-full items-center justify-center ${SURFACE.inset} p-4`}>
+      <p
+        className={`${big ? 'text-[2.125rem]' : 'text-[1.75rem]'} font-bold leading-snug ${TEXT.ink} ${PROSE} text-center`}
+        style={{ fontFamily: FONT.serif }}
+      >
+        {item.game === 'food' ? item.food.name : item.game === 'word' ? item.word.nk : ''}
+      </p>
+    </div>
+  )
+}
+
+/** 음식·말 참고 사진 + 저작자 표시(CC 요구사항 — 글자만, 링크는 결과 화면에서) */
+function PhotoFace({ item, photo, big }: { item: CardItem; photo: PickPhoto; big?: boolean }) {
+  const [broken, setBroken] = useState(false)
+  if (broken) return <TextFace item={item} big={big} />
+  const caption =
+    item.game === 'word'
+      ? `표준어 '${item.word.ko}'의 참고 사진${photo.caption !== item.word.ko ? ` — ${photo.caption}` : ''}`
+      : photo.caption
+  return (
+    <div>
+      <img
+        src={photo.src}
+        alt={caption}
+        loading="lazy"
+        className="aspect-[4/3] w-full bg-[#f5f7fa] object-cover"
+        onError={() => setBroken(true)}
+      />
+      <p className={`px-3.5 pt-2 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        {caption} · {photo.author} · {photo.license} · 위키미디어 공용
+      </p>
+    </div>
+  )
+}
+
 export default function ItemCard({ item, big }: { item: CardItem; big?: boolean }) {
   const nameSize = big ? 'text-[1.625rem]' : 'text-[1.3125rem]'
+  const photo = photoOf(item)
   return (
     <div className={`overflow-hidden ${SURFACE.card}`}>
-      {/* ── 그림 구획 ── */}
+      {/* ── 그림 구획 — 비율 블록(4:3)이 동일해 사진/글자 혼재에도 그리드 균형이 맞는다 ── */}
       {item.game === 'scene' ? (
         <SceneImage scene={item.scene} big={big} />
+      ) : photo ? (
+        <PhotoFace item={item} photo={photo} big={big} />
       ) : (
-        <div className={`flex aspect-[4/3] w-full items-center justify-center ${SURFACE.inset} p-4`}>
-          <p
-            className={`${big ? 'text-[2.125rem]' : 'text-[1.75rem]'} font-bold leading-snug ${TEXT.ink} ${PROSE} text-center`}
-            style={{ fontFamily: FONT.serif }}
-          >
-            {item.game === 'food' ? item.food.name : item.word.nk}
-          </p>
-        </div>
+        <TextFace item={item} big={big} />
       )}
 
       {/* ── 글자 구획 ── */}

@@ -33,7 +33,7 @@ export type ShareModel = {
   } | null
   /** 말 월드컵 — 표준어 대응 */
   wordStandard: string | null
-  /** 화면에 실제로 보였을 때만 넘어온다(표본 20판 이상) */
+  /** 0판이면 null, 1판부터 「지금까지 N판 중 M번」으로 n 을 병기해 넘어온다 */
   tallyLine: string | null
   /** 출처 구분 꼬리 — 게임 종류별 두 줄 고정 */
   attributionLines: string[]

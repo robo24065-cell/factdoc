@@ -1,37 +1,25 @@
 import { useEffect, useState } from 'react'
 import { SURFACE, TYPE, TEXT, PROSE } from '../../theme/gohyang'
-import { loadPickStats, lastHome, REGION_NAME, type PickStats } from '../../lib/pickData'
-import { readTally, tallyByHome, type PickGame, type Tally } from '../../lib/pickTally'
+import { loadPickStats, lastHome, type PickStats } from '../../lib/pickData'
+import TallyDeck from './TallyDeck'
 
 /* ────────────────────────────────────────────────────────────────
-   참여 허브 사이드바 — 두 층
-     (가) 기록 계승 우선순위 표 — 통일부 실측(analysis.json), 항상 표시
-     (나) 참여 통계 — Supabase 집계, 게임별 표본 20판 이상일 때만.
-          미달·실패면 구획째 감춘다. 빈 표·0%·자리표시를 두지 않는다.
+   참여 허브 사이드바 — 두 층 (출처가 절대 섞이지 않게 표면·머리띠로 가른다)
+     (가) 기록 계승 우선순위 표 — 통일부 실측(analysis.json), 항상 표시. SURFACE.slab.
+     (나) 실시간 실선택 순위덱 — Supabase 실집계(TallyDeck). SURFACE.card.
+          0판도 「아직 참여 기록이 없습니다」로 정직하게 보여 주고(구 20판 문턱 폐지),
+          읽기 실패면 덱이 스스로 조용히 사라진다. 「가장 많이 뽑힌 고향」은 덱 꼬리로 흡수.
    ──────────────────────────────────────────────────────────────── */
 
 const nf = (v: number) => (Number.isFinite(v) ? v.toLocaleString('ko-KR') : '—')
 
-const GAME_LABEL: Record<PickGame, string> = {
-  food: '고향의 음식',
-  scene: '고향의 풍경',
-  word: '북녘의 말',
-  balance: '우리 집 기억 밸런스',
-}
-
 export default function PickSidebar() {
   const [stats, setStats] = useState<PickStats | null>(null)
-  const [tallies, setTallies] = useState<Array<{ game: PickGame; tally: Tally }>>([])
   const mine = lastHome()
 
   useEffect(() => {
     let alive = true
     void loadPickStats().then(s => { if (alive) setStats(s) })
-    void Promise.all(
-      (['food', 'scene', 'word', 'balance'] as PickGame[]).map(async g => ({ game: g, tally: await readTally(g) })),
-    ).then(rows => {
-      if (alive) setTallies(rows.filter((r): r is { game: PickGame; tally: Tally } => r.tally !== null))
-    })
     return () => { alive = false }
   }, [])
 
@@ -80,38 +68,8 @@ export default function PickSidebar() {
         </section>
       )}
 
-      {/* ── (나) 참여 통계 — 표본 20판 이상인 게임만, 없으면 구획째 없음 ── */}
-      {tallies.length > 0 && (
-        <section className={`${SURFACE.card} p-4`}>
-          <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>이 화면의 집계 · 통일부 자료 아님</p>
-          <h3 className={`mt-1 ${TYPE.h3} ${TEXT.ink}`}>지금까지 많이 뽑힌 것</h3>
-          <ul className="mt-2 space-y-3">
-            {tallies.map(({ game, tally }) => {
-              const byHome = game === 'food' || game === 'scene' ? tallyByHome(tally) : []
-              const rows = byHome.length
-                ? byHome.slice(0, 3).map(h => ({ label: REGION_NAME.get(h.homeOld) ?? h.homeOld, n: h.n }))
-                : tally.rows.slice(0, 3).map(r => ({ label: r.label, n: r.n }))
-              if (!rows.length) return null
-              return (
-                <li key={game}>
-                  <p className={`${TYPE.cap} font-semibold ${TEXT.soft}`}>{GAME_LABEL[game]} — 모두 {nf(tally.total)}판 기준</p>
-                  <ol className="mt-1 space-y-0.5">
-                    {rows.map((r, i) => (
-                      <li key={r.label} className={`flex items-baseline justify-between gap-2 ${TYPE.cap} ${TEXT.faint}`}>
-                        <span className={PROSE}>{i + 1}. {r.label}</span>
-                        <span className="tabular-nums">{nf(r.n)}번</span>
-                      </li>
-                    ))}
-                  </ol>
-                </li>
-              )
-            })}
-          </ul>
-          <p className={`mt-2 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-            이 통계는 이 화면에서 익명으로 모인 선택 횟수이며, 게임 종류·고른 항목·고향 이름 외에는 아무것도 저장하지 않습니다.
-          </p>
-        </section>
-      )}
+      {/* ── (나) 실시간 실선택 순위덱 — 실집계. 읽기 실패면 덱이 스스로 사라진다 ── */}
+      <TallyDeck games={['food', 'scene', 'word', 'balance']} variant="sidebar" />
     </aside>
   )
 }

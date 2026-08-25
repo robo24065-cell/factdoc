@@ -16,6 +16,9 @@ import { prefersReduced } from '../../components/gohyang/motion'
    · 진행 상태는 메모리뿐 — 저장하지 않는다. 떠나면 그냥 버려진다.
    · 모션은 prefers-reduced-motion 이면 전부 끈다. 켜져 있어도 불투명도 한 겹뿐.
    · 집계는 결승 확정 순간 1회 — 실패해도 조용히 넘어가고 게임은 그대로 끝난다.
+   · ★ 진행 중에는 실선택 순위덱(TallyDeck)을 보여주지 않는다 — 남들의 선택이
+     보이면 선택을 유도해 집계 자체를 오염시킨다. 덱은 허브 사이드바와
+     결과 화면(PickResult)에만 있다. 이 화면에 덱을 추가하지 마라.
    ──────────────────────────────────────────────────────────────── */
 
 const GAME_DEF: Record<Exclude<PickGame, 'balance'>, { title: string; ask: string; notice: string }> = {

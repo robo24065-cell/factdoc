@@ -1098,10 +1098,11 @@ try {
     { name: 'Access-Control-Allow-Headers', value: '*' },
     { name: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
   ]
+  /* game 열 필수 — pick_tally 가 게임별 집계로 바뀐 뒤(0013+순위덱) game 없는 행은 버려진다 */
   const fakeTally = JSON.stringify([
-    { winner_key: 'syn-a', winner_label: '합성표본A', home_old: 'pyongan-s-old', n: 9 },
-    { winner_key: 'syn-b', winner_label: '합성표본B', home_old: 'hwanghae-old', n: 8 },
-    { winner_key: 'syn-c', winner_label: '합성표본C', home_old: 'hamgyong-s-old', n: 7 },
+    { game: 'food', winner_key: 'syn-a', winner_label: '합성표본A', home_old: 'pyongan-s-old', n: 9 },
+    { game: 'food', winner_key: 'syn-b', winner_label: '합성표본B', home_old: 'hwanghae-old', n: 8 },
+    { game: 'food', winner_key: 'syn-c', winner_label: '합성표본C', home_old: 'hamgyong-s-old', n: 7 },
   ])
   await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*rest/v1/pick_event*' }, { urlPattern: '*rest/v1/pick_tally*' }] })
   let pumpOn = true
@@ -1225,10 +1226,14 @@ try {
     if (slug === 'food') {
       /* (c)-화면: 통설(통일부 자료 아님) 구분 + 주입한 집계의 「통일부 자료 아님」 꼬리 */
       check('음식 결과 화면 — 「통일부 자료 아님」 구분이 있다', end.doneText.includes('통일부 자료 아님'))
+      /* 결과 화면의 집계는 이제 순위덱(TallyDeck)이 그린다 — 마운트가 900ms 늦으므로 기다렸다 잰다.
+         24판 중 9명 = 38% 가 인원수 옆에 그대로 붙어야 한다(n 상시 병기). */
+      await waitFor(`document.body.innerText.includes('지금까지 24판')`, 24)
+      const resBody = await evl('document.body.innerText')
       check(
-        '집계 줄(표본 24판 주입)이 화면에 뜨고 「이 화면의 익명 집계 · 통일부 자료 아님」 꼬리가 붙는다',
-        end.doneText.includes('지금까지 24판 중') && end.doneText.includes('(이 화면의 익명 집계 · 통일부 자료 아님)'),
-        (end.doneText.match(/지금까지 [^\n]+/) ?? ['집계 줄 없음'])[0].slice(0, 60),
+        '집계 주입(표본 24판)이 결과 순위덱에 그대로 뜬다(24판 · 합성표본A 9명 (38%) · 「이 화면의 익명 집계 · 통일부 자료 아님」)',
+        resBody.includes('지금까지 24판') && resBody.includes('합성표본A') && /9명 \(38%\)/.test(resBody) && resBody.includes('이 화면의 익명 집계 · 통일부 자료 아님'),
+        (resBody.match(/지금까지 [^\n]+/) ?? ['집계 줄 없음'])[0].slice(0, 60),
       )
 
       /* (c)-PNG: 캔버스에 실제로 그려진 글자를 fillText 후킹으로 걷는다 —

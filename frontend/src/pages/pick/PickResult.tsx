@@ -1,18 +1,19 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { BTN, FONT, SURFACE, TYPE, TEXT, PROSE, FOCUS, TAP_INLINE, josa } from '../../theme/gohyang'
-import ItemCard, { itemKey, itemName, itemRegionId, itemRegionName, type CardItem } from '../../components/pick/ItemCard'
+import ItemCard, { itemKey, itemName, itemRegionId, itemRegionName, photoOf, type CardItem } from '../../components/pick/ItemCard'
 import RegionStatBlock from '../../components/pick/RegionStatBlock'
 import PickShareCard, { type ShareModel } from '../../components/pick/PickShareCard'
-import { ITEMS, loadPickStats, shuffle, REGION_NAME, type PickStats, type PickWord } from '../../lib/pickData'
-import { readTally, tallyByHome, type PickGame, type Tally } from '../../lib/pickTally'
+import TallyDeck from '../../components/pick/TallyDeck'
+import { ITEMS, loadPickStats, shuffle, type PickStats, type PickWord } from '../../lib/pickData'
+import { readAllTallies, tallyByKey, type PickGame, type Tally } from '../../lib/pickTally'
 
 /* ────────────────────────────────────────────────────────────────
    월드컵 결과 — 취향에서 기록 공백으로 건너가는 자리
 
    구성(위에서 아래로): 우승 카드 → 통일부 실측 구획(순위·남은 분·1인당 기록)
    → 연결 문장(명조 — 사람에게 하는 말) → 행동 3단추(지도·기억 카드·그 고향의 기록)
-   → 참여 통계 한 줄(표본 20판 이상일 때만) → 공유 그림 · 처음부터.
+   → 참여 통계 한 줄(0판이면 없음, 1판부터 「지금까지 N판 중 M번」으로 n 병기) → 공유 그림 · 처음부터.
 
    ★ 기증 사료는 여기서 「그 고향에서 온 기록 보기」 링크로만 등장한다 —
      놀이 콘텐츠에 남의 집 기록을 쓰지 않는다(절대규칙).
@@ -39,8 +40,12 @@ export default function PickResult({ game, item, onRestart }: {
   useEffect(() => {
     let alive = true
     void loadPickStats().then(s => { if (alive) setStats(s) })
-    void readTally(game).then(t => { if (alive) setTally(t) })
-    return () => { alive = false }
+    /* 자기 판의 INSERT 직후라 한 박자 늦춰 읽는다 — TallyDeck 의 지연과 같은 이유.
+       3초 캐시(pickTally) 덕에 TallyDeck 과 합쳐 요청은 1건이다. */
+    const t = setTimeout(() => {
+      void readAllTallies().then(r => { if (alive && r.ok) setTally(r.byGame.get(game) ?? null) })
+    }, 900)
+    return () => { alive = false; clearTimeout(t) }
   }, [game])
 
   const regionId = itemRegionId(item)
@@ -54,19 +59,15 @@ export default function PickResult({ game, item, onRestart }: {
     return shuffle(ITEMS.words.pairs.filter(p => p.id !== win)).slice(0, 3)
   }, [game, item])
 
-  /* 참여 통계 한 줄 — 표본 20판 이상일 때만 존재한다(readTally 가 그 미만이면 null) */
+  /* 공유 PNG 용 참여 통계 한 줄 — 실집계가 있으면 판수와 함께 적는다.
+     % 없이 「N판 중 M번」 꼴이라 소표본에서도 오해가 없다(정직성 규약: n 상시 병기).
+     화면의 순위덱은 아래 TallyDeck 이 따로 그린다. */
   const tallyLine = useMemo(() => {
-    if (!tally) return null
-    if (game === 'word') {
-      const top = tally.rows[0]
-      return top ? `지금까지 ${nf(tally.total)}판 중 「${top.label}」${josa(top.label, '이', '가')} ${nf(top.n)}번 뽑혔습니다.` : null
-    }
-    const byHome = tallyByHome(tally)
-    const top = byHome[0]
+    if (!tally || tally.total === 0) return null
+    const top = tallyByKey(tally)[0]
     if (!top) return null
-    const name = REGION_NAME.get(top.homeOld) ?? top.homeOld
-    return `지금까지 ${nf(tally.total)}판 중 ${name}${josa(name, '이', '가')} ${nf(top.n)}번 뽑혔습니다.`
-  }, [tally, game])
+    return `지금까지 ${nf(tally.total)}판 중 「${top.label}」${josa(top.label, '이', '가')} ${nf(top.n)}번 뽑혔습니다.`
+  }, [tally])
 
   /* 연결 문장 — 명조(사람에게 하는 말). 수치는 확정값 인용, 배수 재계산 없음 */
   const bridge = useMemo(() => {
@@ -125,6 +126,16 @@ export default function PickResult({ game, item, onRestart }: {
       {/* 우승 카드 */}
       <div className="max-w-md">
         <ItemCard item={item} big />
+        {/* 참고 사진 출처 — 카드는 button 안에서도 쓰이는 부품이라 링크를 못 담는다.
+            결과 화면(여기)이 링크를 거는 유일한 자리다. CC 표시 의무의 링크 이행. */}
+        {photoOf(item) && (
+          <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+            <a href={photoOf(item)!.sourcePage} target="_blank" rel="noreferrer" className={`${TAP_INLINE} underline underline-offset-2 ${FOCUS}`}>
+              사진 출처 열기(위키미디어 공용)<span aria-hidden="true">↗</span>
+            </a>
+            {item.game === 'food' && <> · 참고 사진은 그 지역의 조리법 그대로가 아닐 수 있습니다.</>}
+          </p>
+        )}
         {item.game === 'food' && (
           <p className={`mt-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
             귀속 근거 — {item.food.basis} ·{' '}
@@ -199,8 +210,10 @@ export default function PickResult({ game, item, onRestart }: {
         </>
       )}
 
-      {/* 참여 통계 — 표본 20판 이상일 때만 이 줄 자체가 생긴다 */}
-      {tallyLine && <p className={`${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{tallyLine} <span className={`${TYPE.cap} ${TEXT.faint}`}>(이 화면의 익명 집계 · 통일부 자료 아님)</span></p>}
+      {/* 실시간 실선택 순위덱 — 이 게임 것 하나만. 자기 판이 반영된 값을 보게 된다 */}
+      <div className="max-w-md">
+        <TallyDeck games={[game]} variant="result" />
+      </div>
 
       <div className={`flex flex-wrap items-center gap-2.5 border-t pt-4 ${SURFACE.hair}`}>
         <PickShareCard model={shareModel} fileName={`고향잇기_${GAME_TITLE[game]}_${itemName(item)}.png`} />
