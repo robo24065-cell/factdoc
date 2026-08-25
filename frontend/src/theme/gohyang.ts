@@ -234,9 +234,12 @@ export const RULE = 'border-l-[3px] border-[#1a4e9c] pl-2.5 dark:border-[#7aa9e8
 
 /* ══════════ 조사 ══════════
    지역명이 데이터에서 오므로 문장에 그대로 붙이면 반드시 어긋난다("현행 개성는").
-   한글 음절은 (코드-0xAC00)%28 이 0 이면 받침이 없다. */
+   한글 음절은 (코드-0xAC00)%28 이 0 이면 받침이 없다.
+   ★ 꼬리 괄호는 벗기고 잰다 — 「칠보산(명천군)」의 조사는 관행상 괄호 앞 낱말이 정한다
+     (「칠보산(명천군)이」). ')' 로 재면 무받침으로 오판한다(실측 지적 2026-08-25). */
 export function josa(word: string, withT: string, withoutT: string): string {
-  const last = String(word ?? '').trim().slice(-1)
+  const stem = String(word ?? '').trim().replace(/\([^()]*\)\s*$/, '').trim()
+  const last = stem.slice(-1)
   const c = last.charCodeAt(0)
   if (Number.isNaN(c) || c < 0xac00 || c > 0xd7a3) return withoutT
   return (c - 0xac00) % 28 === 0 ? withoutT : withT

@@ -61,6 +61,13 @@ const TARGETS = [
      산출물(public/gohyang/deck-summary.json)은 아래 디렉터리 검사로 이미 걸리지만,
      문구의 출처인 이 파일도 함께 본다 — 굽기 전에 새는 것을 여기서 잡는다. */
   'frontend/src/engine/nk-summary.mjs',
+  /* 참여(/pick) — 월드컵 3종·기억 밸런스. 새 화면·데이터가 검사 밖에 남지 않게 여기 못 박는다 */
+  'frontend/src/pages/pick',
+  'frontend/src/components/pick',
+  'frontend/src/data/pick-items.ts',
+  'frontend/src/data/pick-balance.ts',
+  'frontend/src/lib/pickTally.ts',
+  'frontend/src/lib/pickData.ts',
   'frontend/public/gohyang',
   ...extra,
 ]

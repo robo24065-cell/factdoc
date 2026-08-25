@@ -27,6 +27,7 @@
    ──────────────────────────────────────────────────────────────── */
 
 import { SURFACE, TYPE, TEXT, ASOF, BTN, josa } from '../../theme/gohyang'
+import { Link } from 'react-router-dom'
 import type { DescData, PathData, PathItem } from '../../components/gohyang/pack-types'
 import { nf, nf1, plain } from '../../components/gohyang/format'
 import { FOCUS, PROSE, TONE, OutLink } from '../../components/gohyang/bits'
@@ -338,6 +339,18 @@ export function ClosedScene({ paths }: { paths: PathData }) {
           출처 {plain(paths.sources[0]?.name)} 외 {nf(paths.sources.length - 1)}종 · 링크 생존 확인 {paths.builtAt} ·{' '}
         </span>
         <OutLink href={paths.sources[0]?.url}>이산가족정보통합시스템</OutLink>
+      </p>
+
+      {/* 씬 서사의 끝에서 가벼운 문 하나 — 통계·기증이 무겁게 느껴진 3·4세대를 위한 입구(/pick).
+          씬 구조는 건드리지 않고 꼬리에 한 줄만 둔다. */}
+      <p className={`mt-6 border-t pt-4 ${SURFACE.hair} ${TYPE.body} ${TEXT.soft} ${PROSE}`}>
+        아직 무엇부터 할지 막막하시면, 고향을 취향으로 먼저 만나 보셔도 됩니다.{' '}
+        <Link
+          to="/pick"
+          className={`inline-flex min-h-[48px] items-center gap-1 font-medium text-[#1a4e9c] underline decoration-1 underline-offset-[3px] dark:text-[#7aa9e8] ${FOCUS}`}
+        >
+          참여 — 고향의 음식·풍경·말 골라 보기 <span aria-hidden="true">→</span>
+        </Link>
       </p>
     </section>
   )

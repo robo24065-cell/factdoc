@@ -13,6 +13,8 @@ import { SURFACE, TEXT, TYPE, PROSE, FOCUS, BTN, C, STAGE, STAGE_WIDE } from '..
 const NAV = [
   { to: '/', label: '고향잇기', alias: '/gohyang' },
   { to: '/deck', label: '분석' },
+  /* 「참여」 — 정부 누리집 관용어(참여마당 계열). 취향으로 고향을 만나는 입구(/pick) */
+  { to: '/pick', label: '참여' },
   { to: '/factcheck', label: '사실은ON 팩트체커' },
 ] as const
 
@@ -21,7 +23,9 @@ const NAV = [
    장식 이모지 금지 — 기하 도형만 쓴다(theme/gohyang.ts 제약 ①). */
 const BOTTOM_TABS = [
   { to: '/', match: '/', label: '고향', glyph: '●' },
-  { to: '/#extinction', match: '/', label: '골든타임', glyph: '▲' },
+  /* 「골든타임」 자리를 「참여」로 교체(2026-08-25) — 골든타임은 홈 스크롤·상단 메뉴로 여전히 닿지만
+     /pick 은 이 탭이 없으면 모바일 진입로가 없다. "가벼운 문"이 목적이므로 문을 엄지에 둔다. */
+  { to: '/pick', match: '/pick', label: '참여', glyph: '▲' },
   { to: '/#actions', match: '/', label: '할 수 있는 일', glyph: '■' },
   { to: '/factcheck', match: '/factcheck', label: '팩트체커', glyph: '◆' },
 ] as const
@@ -33,7 +37,7 @@ export default function SasilOnLayout() {
        레일이 갈리면 주메뉴 밑줄과 표제의 시작점이 어긋나 화면이 흔들린다(theme/gohyang.ts STAGE).
        고향잇기 홈만 새 무대(64rem)로 옮긴다 — 팩트체커·분석은 기존 폭을 유지해
        이번 정렬 작업이 그 화면들의 실측을 흔들지 않게 한다. */
-  const home = pathname === '/' || pathname === '/gohyang'
+  const home = pathname === '/' || pathname === '/gohyang' || pathname === '/pick' || pathname.startsWith('/pick/')
   const stage = home ? STAGE : STAGE_WIDE
 
   return (
@@ -63,7 +67,11 @@ export default function SasilOnLayout() {
         <nav aria-label="주요 화면" className={`${stage} border-t ${SURFACE.hair}`}>
           <ul className="-mb-px flex items-center gap-1">
             {NAV.map(item => {
-              const active = pathname === item.to || ('alias' in item && pathname === item.alias)
+              /* /pick/food 같은 하위 경로에서도 상위 항목이 켜져 있어야 길을 잃지 않는다 */
+              const active =
+                pathname === item.to ||
+                ('alias' in item && pathname === item.alias) ||
+                (item.to !== '/' && pathname.startsWith(item.to + '/'))
               return (
                 <li key={item.to}>
                   <NavLink
@@ -105,7 +113,8 @@ export default function SasilOnLayout() {
       >
         <ul className="mx-auto grid max-w-2xl grid-cols-4">
           {BOTTOM_TABS.map(t => {
-            const on = pathname === t.match && !t.to.includes('#')
+            const on =
+              (pathname === t.match || (t.match !== '/' && pathname.startsWith(t.match + '/'))) && !t.to.includes('#')
             return (
               <li key={t.to}>
                 <NavLink

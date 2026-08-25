@@ -1068,6 +1068,230 @@ try {
     'legacy-priority 가 발표한 자리는 1순위·2순위·가장 여유 있는 곳 셋뿐이다',
   )
 
+  /* ══════════ ⑤ 참여(/pick) 회귀 — 월드컵 3종·출처 구분·48px·키보드 ══════════
+     "게임이 돌아간다"는 코드가 있다는 말이지 돌아갔다는 말이 아니다 — 세 월드컵을
+     실제로 끝까지 누르고, 결과 수치를 analysis.json 확정값과 대조하고,
+     「통일부 자료 아님」 구분이 결과 화면과 공유 PNG(캔버스에 실제로 그려진 글자) 양쪽에
+     있는지를 잰다. 집계(tallyLine)는 표본 20판 미만이면 화면에서 사라지는 설계라,
+     실 DB 를 기다리면 이 검사가 영원히 잠복한다 — 그래서 Supabase 응답을 CDP Fetch 로
+     가로채 합성 집계(표본 24판)를 주입한다. 덤으로 검증 실행이 실 통계에 가짜 행을
+     남기지 않게 된다(pick_event POST 도 여기서 201 로 삼킨다). */
+  if (!AS_JSON) console.log(`\n▶ 참여 /pick 회귀 (월드컵 3종 · 출처 구분 · 48px · 키보드)`)
+
+  const pickItemsTs = fs.readFileSync(path.join(root, 'frontend/src/data/pick-items.ts'), 'utf8')
+  const pickItems = JSON.parse(pickItemsTs.slice(pickItemsTs.indexOf('const data = ') + 'const data = '.length, pickItemsTs.lastIndexOf('\n\nexport default')))
+  const lpCard = analysis.cards.find((c) => c.id === 'legacy-priority')
+  const rdCard = analysis.cards.find((c) => c.id === 'record-density-gap')
+  const rankRows = [...lpCard.series.find((s) => s.key === 'priority').rows].sort((a, b) => a.y - b.y)
+  const expectRegion = new Map(rankRows.map((r, i) => {
+    const t = rdCard.table.find((x) => x['고향'] === r.x)
+    return [r.x, { rank: i + 1, survivors: t['생존자'], density: t['밀도'] }]
+  }))
+  const regionOfItem = new Map([
+    ...pickItems.foods.map((f) => [f.name, f.region]),
+    ...pickItems.sceneries.map((s) => [s.name, s.region]),
+  ])
+
+  /* ── Supabase 가로채기 — 집계 주입 + 검증 실행의 통계 오염 차단 ── */
+  const CORS = [
+    { name: 'Access-Control-Allow-Origin', value: '*' },
+    { name: 'Access-Control-Allow-Headers', value: '*' },
+    { name: 'Access-Control-Allow-Methods', value: 'GET,POST,OPTIONS' },
+  ]
+  const fakeTally = JSON.stringify([
+    { winner_key: 'syn-a', winner_label: '합성표본A', home_old: 'pyongan-s-old', n: 9 },
+    { winner_key: 'syn-b', winner_label: '합성표본B', home_old: 'hwanghae-old', n: 8 },
+    { winner_key: 'syn-c', winner_label: '합성표본C', home_old: 'hamgyong-s-old', n: 7 },
+  ])
+  await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*rest/v1/pick_event*' }, { urlPattern: '*rest/v1/pick_tally*' }] })
+  let pumpOn = true
+  let pumpSeen = 0
+  let interceptedPosts = 0
+  const pump = (async () => {
+    while (pumpOn) {
+      while (pumpSeen < cdp.events.length) {
+        const ev = cdp.events[pumpSeen++]
+        if (ev.method !== 'Fetch.requestPaused') continue
+        const p = ev.params
+        try {
+          if (p.request.method === 'OPTIONS') {
+            await cdp.send('Fetch.fulfillRequest', { requestId: p.requestId, responseCode: 204, responseHeaders: CORS })
+          } else if (/pick_event/.test(p.request.url)) {
+            interceptedPosts++
+            await cdp.send('Fetch.fulfillRequest', {
+              requestId: p.requestId, responseCode: 201,
+              responseHeaders: [...CORS, { name: 'Content-Type', value: 'application/json' }],
+              body: Buffer.from('[]').toString('base64'),
+            })
+          } else if (/pick_tally/.test(p.request.url)) {
+            await cdp.send('Fetch.fulfillRequest', {
+              requestId: p.requestId, responseCode: 200,
+              responseHeaders: [...CORS, { name: 'Content-Type', value: 'application/json' }],
+              body: Buffer.from(fakeTally).toString('base64'),
+            })
+          } else {
+            await cdp.send('Fetch.continueRequest', { requestId: p.requestId })
+          }
+        } catch { /* 탭 전환 등으로 이미 사라진 요청 — 무해 */ }
+      }
+      await sleep(30)
+    }
+  })()
+
+  const pickBody = () => evl('document.body.innerText')
+  const pickCounter = async () => {
+    const m = (await pickBody()).match(/(\d+)번 골랐습니다/)
+    return m ? Number(m[1]) : null
+  }
+  const clickPickBtn = `(() => {
+    const b = [...document.querySelectorAll('button')].find(x => (x.getAttribute('aria-label')||'').includes('고르기'))
+    if (!b) return null
+    const name = (b.getAttribute('aria-label')||'').replace(/^왼쪽 — |^오른쪽 — /,'').replace(/ 고르기$/,'')
+    b.click(); return name
+  })()`
+  const pickNav = async (url, readyText) => {
+    await cdp.send('Page.navigate', { url })
+    return waitFor(`document.body.innerText.includes('${readyText}')`)
+  }
+  const finishTournament = async () => {
+    let winner = null
+    let maxSeen = 0
+    for (let i = 0; i < 20; i++) {
+      const name = await evl(clickPickBtn)
+      if (name == null) break
+      winner = name
+      await sleep(170)
+      const c = await pickCounter()
+      if (c != null && c > maxSeen) maxSeen = c
+    }
+    return { winner, maxSeen, doneText: await pickBody() }
+  }
+
+  /* ── (d)-키보드: 자동반복·연타 내성 — /pick/word 에서 잰다 ──
+       화살표를 「누르고 있으면」 keydown 이 자동반복으로 몰려온다. e.repeat 가드와
+       choose() 멱등 가드가 없으면 15판이 51판이 되고 진행 막대가 넘친다(실측 사고). */
+  check('말 월드컵이 뜬다 (/pick/word)', await pickNav(`${BASE}/pick/word`, '북녘의 말 월드컵'))
+  await evl(`document.body.focus()`)
+  const kbd = async (type, extra = {}) =>
+    cdp.send('Input.dispatchKeyEvent', { type, key: 'ArrowLeft', code: 'ArrowLeft', windowsVirtualKeyCode: 37, ...extra })
+  await kbd('keyDown')
+  for (let i = 0; i < 19; i++) await kbd('keyDown', { autoRepeat: true })
+  await kbd('keyUp')
+  await sleep(500)
+  const afterHold = await pickCounter()
+  const holdText = await pickBody()
+  check(
+    '화살표를 누르고 있어도(자동반복 20연발) 1판만 고른다 — 진행 표시가 자기모순 없다',
+    afterHold === 1 && holdText.includes('모두 15번 고릅니다') && /16강 · 2 \/ 8/.test(holdText),
+    `골랐습니다 ${afterHold}판 · ${(holdText.match(/16강 · \d+ \/ \d+/) ?? ['?'])[0]}`,
+  )
+  /* 되돌리기 뒤 다시 고를 수 있는가 — 멱등 가드가 되돌리기에서 풀리는지(같은 짝을 다시 골라야 한다) */
+  await evl(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('한 판 되돌리기'))?.click()`)
+  await sleep(250)
+  const afterUndo = await pickCounter()
+  await kbd('keyDown'); await kbd('keyUp')
+  await sleep(350)
+  const afterRedo = await pickCounter()
+  check('되돌리기 → 같은 짝을 키보드로 다시 고를 수 있다', afterUndo === 0 && afterRedo === 1, `되돌린 뒤 ${afterUndo} → 다시 ${afterRedo}`)
+  /* 진행 막대가 100% 를 넘지 않는가 (스타일 방어) */
+  const barW = await evl(`(() => {
+    const el = [...document.querySelectorAll('div[role="presentation"] > div')].find(d => d.style.width)
+    return el ? el.style.width : null
+  })()`)
+  check('진행 막대 폭이 0~100% 안이다', Boolean(barW) && parseFloat(barW) >= 0 && parseFloat(barW) <= 100, `width ${barW}`)
+
+  /* (a) 말 월드컵 완주 + 지역 축 없음 정직 고지 */
+  const wordEnd = await finishTournament()
+  check('말 월드컵 15판 완주 — 결과가 뜬다', wordEnd.doneText.includes('마지막까지 남은 것') && wordEnd.maxSeen <= 15,
+    `우승 「${wordEnd.winner}」 · 최대 판수 표시 ${wordEnd.maxSeen}`)
+  check('말: 지역 통계를 붙이지 않는다고 화면이 말하고, 순위 구획이 없다',
+    wordEnd.doneText.includes('지역 통계를 붙이지 않습니다') && !wordEnd.doneText.includes('위 / 7') && wordEnd.doneText.includes('21,985'))
+
+  /* (a)(b) 음식·풍경 완주 + 결과 수치 = analysis.json */
+  for (const [slug, title, label] of [['food', '고향의 음식 월드컵', '음식'], ['scene', '고향의 풍경 월드컵', '풍경']]) {
+    check(`${label} 월드컵이 뜬다 (/pick/${slug})`, await pickNav(`${BASE}/pick/${slug}`, title))
+    const end = await finishTournament()
+    const region = regionOfItem.get(end.winner)
+    const e = region ? expectRegion.get(region) : null
+    check(`${label} 15판 완주 — 결과가 뜬다`, end.doneText.includes('마지막까지 남은 것'), `우승 「${end.winner}」 → ${region}`)
+    check(
+      `${label} 결과 수치 = analysis.json (전국 ${e?.rank}위/7 · ${e?.survivors?.toLocaleString('ko-KR')}명 · ${e?.density}건 · 기준일 ${lpCard.asOf})`,
+      Boolean(e) && end.doneText.includes(`전국 ${e.rank}위`) && end.doneText.includes(`${e.survivors.toLocaleString('ko-KR')}명`)
+        && end.doneText.includes(`${e.density}건`) && end.doneText.includes(lpCard.asOf),
+    )
+    /* as-of 축 명시 — 분모(생존자)와 분자(기록 수)의 기준일이 다르다는 사실이 화면에 있다 */
+    check(`${label}: 기준일이 축을 명시한다(생존자 기준일 · 기록 수는 계열마다 수집일이 다름)`,
+      end.doneText.includes(`생존자 기준일 ${lpCard.asOf}`) && end.doneText.includes('수집일이 다'))
+    if (slug === 'food') {
+      /* (c)-화면: 통설(통일부 자료 아님) 구분 + 주입한 집계의 「통일부 자료 아님」 꼬리 */
+      check('음식 결과 화면 — 「통일부 자료 아님」 구분이 있다', end.doneText.includes('통일부 자료 아님'))
+      check(
+        '집계 줄(표본 24판 주입)이 화면에 뜨고 「이 화면의 익명 집계 · 통일부 자료 아님」 꼬리가 붙는다',
+        end.doneText.includes('지금까지 24판 중') && end.doneText.includes('(이 화면의 익명 집계 · 통일부 자료 아님)'),
+        (end.doneText.match(/지금까지 [^\n]+/) ?? ['집계 줄 없음'])[0].slice(0, 60),
+      )
+
+      /* (c)-PNG: 캔버스에 실제로 그려진 글자를 fillText 후킹으로 걷는다 —
+         「코드에 문구가 있다」가 아니라 「이 PNG 에 그 글자가 그려졌다」를 잰다 */
+      await evl(`(() => {
+        window.__painted = []
+        const orig = CanvasRenderingContext2D.prototype.fillText
+        CanvasRenderingContext2D.prototype.fillText = function (t, ...a) { window.__painted.push(String(t)); return orig.call(this, t, ...a) }
+        return true
+      })()`)
+      await evl(`[...document.querySelectorAll('button')].find(b => b.textContent.includes('공유 그림 저장'))?.click()`)
+      const gotPng = await waitFor(`(document.querySelector('a[download]')?.href || '').startsWith('data:image/png')`, 40)
+      check('공유 PNG — canvas 가 data:image/png 를 돌려준다', gotPng)
+      const painted = (await evl(`window.__painted`)) ?? []
+      const iTally = painted.findIndex((t) => t.startsWith('지금까지 24판'))
+      const iSep = painted.findIndex((t) => t.includes('고향잇기 참여 익명 집계 · 통일부 자료 아님'))
+      check(
+        '공유 PNG 에 집계 줄과 「통일부 자료 아님」 구분이 함께 그려진다 (집계 줄 바로 뒤)',
+        iTally >= 0 && iSep === iTally + 1,
+        `tally@${iTally} · 구분@${iSep} — ${painted[iSep] ?? '없음'}`,
+      )
+      check('공유 PNG 에 통설 고지(통일부 공표 자료가 아닙니다)와 공공데이터 출처가 갈라져 그려진다',
+        painted.some((t) => t.includes('통일부 공표 자료가 아닙니다')) && painted.some((t) => t.includes('수치는 통일부 공공데이터입니다')))
+      check('공유 PNG 의 기준일도 축을 명시한다(생존자 기준일)', painted.some((t) => t.includes(`생존자 기준일 ${lpCard.asOf}`)))
+
+      /* (d)-48px: 결과 화면 — 본문 속 출처 링크(귀속 근거·저장 링크)가 15px 였던 회귀 */
+      const sweepRes = await evl(`(() => {
+        const all = [...document.querySelectorAll('a[href],button,[role=button],input,select,summary')]
+          .filter(e => { const r = e.getBoundingClientRect(); return (r.width || r.height) })
+          .filter(e => !e.closest('svg'))
+        const tiny = all.filter(e => { const r = e.getBoundingClientRect(); return r.height < 48 || r.width < 48 })
+        return { total: all.length,
+          tiny: tiny.map(e => (e.tagName + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height) + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)) }
+      })()`)
+      check('음식 결과 화면 — 본문 출처 링크까지 전부 48px 이상', sweepRes.tiny.length === 0,
+        sweepRes.tiny.length ? `${sweepRes.total}개 중 미달 ${sweepRes.tiny.length}: ${sweepRes.tiny.slice(0, 3).join(' | ')}` : `타깃 ${sweepRes.total}개 전부 통과`)
+    }
+  }
+
+  /* (d)-48px: 허브·게임 중·결과 화면의 누르는 것 전수 — breadcrumb 「참여」가 22×15 였던 회귀 */
+  for (const [url, readyText, name] of [
+    [`${BASE}/pick`, '취향으로 먼저', '/pick 허브'],
+    [`${BASE}/pick/word`, '북녘의 말 월드컵', '/pick/word 게임 중'],
+  ]) {
+    await pickNav(url, readyText)
+    await sleep(400)
+    const sweep48 = await evl(`(() => {
+      const all = [...document.querySelectorAll('a[href],button,[role=button],input,select,summary')]
+        .filter(e => { const r = e.getBoundingClientRect(); return (r.width || r.height) })
+        .filter(e => !e.closest('svg'))
+      const tiny = all.filter(e => { const r = e.getBoundingClientRect(); return r.height < 48 || r.width < 48 })
+      return { total: all.length,
+        tiny: tiny.map(e => (e.tagName + ' ' + Math.round(e.getBoundingClientRect().width) + 'x' + Math.round(e.getBoundingClientRect().height) + ' ' + (e.getAttribute('aria-label') || e.textContent || '').replace(/\\s+/g, ' ')).slice(0, 44)) }
+    })()`)
+    check(`${name} — 누르는 것 전부 48px 이상 (breadcrumb 포함)`, sweep48.tiny.length === 0,
+      sweep48.tiny.length ? `${sweep48.total}개 중 미달 ${sweep48.tiny.length}: ${sweep48.tiny.slice(0, 3).join(' | ')}` : `타깃 ${sweep48.total}개 전부 통과`)
+  }
+
+  check('검증 실행이 실 집계에 행을 남기지 않았다 (pick_event POST 전부 가로채 201 처리)', interceptedPosts >= 3, `가로챈 POST ${interceptedPosts}건`)
+  pumpOn = false
+  await pump
+  await cdp.send('Fetch.disable')
+
   /* 콘솔 오류 */
   const errs = cdp.events
     .filter((e) => e.method === 'Log.entryAdded' && e.params?.entry?.level === 'error')

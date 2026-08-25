@@ -11,6 +11,10 @@ import GohyangOn from './pages/GohyangOn'
 const SasilOn = lazy(() => import('./pages/SasilOn'))
 // 분석 덱(지연로딩) — analysis.json 234KB 를 첫 화면 비용에 얹지 않는다
 const AnalysisDeck = lazy(() => import('./pages/AnalysisDeck'))
+// 참여(지연로딩) — 월드컵 3종 + 기억 밸런스. 취향으로 고향을 만나는 입구
+const PickHub = lazy(() => import('./pages/pick/PickHub'))
+const PickTournament = lazy(() => import('./pages/pick/Tournament'))
+const PickBalance = lazy(() => import('./pages/pick/BalanceGame'))
 // 사용자(지연로딩)
 const Home = lazy(() => import('./pages/Home'))
 const Trending = lazy(() => import('./pages/Trending'))
@@ -37,6 +41,11 @@ createRoot(document.getElementById('root')!).render(
           <Route path="gohyang" element={<GohyangOn />} />
           {/* 분석 덱 — 재본 것과 재보지 못한 것을 한 장씩 넘긴다 */}
           <Route path="deck" element={<AnalysisDeck />} />
+          {/* 참여 — 월드컵 3종(음식·풍경·북녘 말) + 우리 집 기억 밸런스.
+              결과는 별도 경로를 파지 않는다(새로고침이면 처음부터 — 집계 중복 방지). */}
+          <Route path="pick" element={<PickHub />} />
+          <Route path="pick/balance" element={<PickBalance />} />
+          <Route path="pick/:game" element={<PickTournament />} />
           {/* 사이트구조.md 시절 주소 — 화면이 한 장으로 합쳐져 홈으로 보낸다 */}
           <Route path="map" element={<Navigate to="/" replace />} />
           <Route path="clock" element={<Navigate to="/" replace />} />
