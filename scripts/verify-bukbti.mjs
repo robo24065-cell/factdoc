@@ -25,6 +25,10 @@
     [12] ★ 저장·서버 — bukbti_v1 유지(키를 올리면 집계가 오염된다) · 옛 저장분 호환 ·
          비율을 못 내는 경로가 축 통계를 지운다 · 0015 는 유형 4글자뿐(스키마 무변경)
     [13] ★ 화면 — 축 막대·자세히 보기·유형 순위·게임 결과 한 줄
+    [14] ★ 모바일 축 막대 — 375px 에서 네 축이 한 줄(좌우 양 끝). 줄바꿈을 CSS 로 막았는지,
+         폭을 먹던 「내 글자」 배지가 형태 신호(● · 굵기 · 밑줄)로 바뀌었는지를 소스에서 단언한다
+    [15] ★ 정직 문구의 사실성 — 표본 안내가 실측 분포와 맞는지 · 맥락 밖으로 나가는 공유 그림과
+         게임 결과 조각이 사유(note)와 한계 고지를 떨어뜨리지 않는지 · 내부 용어 누출
 
    사용법: node scripts/verify-bukbti.mjs
    나가는 값: 전부 통과 0 · 실패 1
@@ -296,6 +300,89 @@ console.log('▶ [13] 화면 — 축 막대·자세히 보기·순위·게임 �
   check('공유 그림 — 네 축 비율 블록(사진 없음 규약 유지)',
     res.includes('네 자리 비율 — ') && /if \(!measure\) \{\s*\n\s*const mineIsA/.test(res))
   check('게임 결과 화면 — 그 축의 비율 한 줄', nudge.includes('data-bukbti-ratio') && nudge.includes('bukbtiAxisView'))
+}
+
+console.log('▶ [14] ★ 모바일 축 막대 — 375px 에서 네 축이 한 줄(좌우 양 끝)')
+{
+  /* 실측(CDP 9810, 개발서버 5178, 저장분 food 7/9 · scene 2/11 · word 3/6 동률 · balance 비율 없음)
+       320·375·414·768·1280px 다섯 폭 × 글자크기 보통/아주 크게 두 벌에서 네 축 전부 한 줄,
+       가로 초과 0px. 320px·20px 글자에서도 왼쪽 조각은 x=125 에서 끝나고 오른쪽 조각은
+       x=237 에서 시작해 112px 이 남는다.
+     이 검사는 그 결과를 **CSS 규칙으로** 못 박는다 — 글자가 짧아 우연히 붙어 있는 것과
+     줄바꿈이 불가능한 것은 다르다. 배지 하나만 되살려도 다시 터진다(그게 원래 사고였다). */
+  const res = read('frontend/src/pages/pick/BukbtiResult.tsx')
+  const side = res.slice(res.indexOf('function AxisSide('), res.indexOf('function AxisRow('))
+  const row = res.slice(res.indexOf('function AxisRow('), res.indexOf('/* ══════════ 공유 PNG'))
+  check('AxisSide/AxisRow 두 함수를 찾았다(아래 단언의 전제)', side.length > 200 && row.length > 400, `side ${side.length} · row ${row.length}`)
+
+  const labels = row.split('\n').find((l) => l.includes('data-axis-labels')) ?? ''
+  const labelsCls = row.slice(Math.max(0, row.indexOf('data-axis-labels') - 260), row.indexOf('data-axis-labels'))
+  check('라벨 줄 — flex-nowrap(줄바꿈 금지) + justify-between(좌우 양 끝)',
+    /flex-nowrap/.test(labelsCls) && /justify-between/.test(labelsCls) && labels.includes('data-axis-labels'))
+  check('양쪽 조각 — whitespace-nowrap + shrink-0 (조각 안에서도 안 쪼개지고 안 줄어든다)',
+    /whitespace-nowrap/.test(side) && /shrink-0/.test(side))
+  check('라벨 줄에 min-w-0 이 없다(0 까지 줄어들면 글자가 세로로 쌓인다 — 원래 사고의 원인)',
+    !/min-w-0/.test(side) && !/min-w-0/.test(labelsCls))
+  check('한쪽은 왼쪽 정렬 · 다른 쪽은 오른쪽 정렬(양 끝에 선다)',
+    /text-right/.test(side) && /text-left/.test(side) && /end \? /.test(side))
+
+  /* 「내 글자」 — 보이는 배지를 없앴다. 대신 형태 신호 셋. 색만으로 구분하지 않는다는 규약은 그대로 */
+  const visibleBadge = [...row.matchAll(/내 글자/g)].length
+  check('라벨 줄에 「내 글자」 배지 글자가 없다(폭을 먹어 줄을 터뜨리던 원인)', visibleBadge === 0, `AxisRow 안 ${visibleBadge}건`)
+  check('「내 글자」는 읽어 주는 기계에만 남는다(sr-only)', /sr-only[^>]*>\s*[^<]*내 글자/.test(side))
+  check('내 글자 3중 부호화 — ● 도형 · 굵기 · 밑줄(색만으로 구분하지 않는다)',
+    side.includes('●') && /font-bold/.test(side) && /underline/.test(side) && /decoration-2/.test(side))
+
+  /* 횟수 줄 — 각 글자 쪽 끝. 이 줄도 한 줄이어야 한다 */
+  const counts = row.slice(row.indexOf('data-axis-counts') - 320, row.indexOf('</p>', row.indexOf('data-axis-counts')))
+  check('횟수 줄 — 각 글자 쪽 끝에 붙고(n 상시 병기) 이 줄도 flex-nowrap 한 줄',
+    /data-axis-counts/.test(row) && /flex-nowrap/.test(counts) && /justify-between/.test(counts) &&
+    (counts.match(/whitespace-nowrap/g) ?? []).length >= 3)
+  check('횟수는 반올림한 %에서 되계산하지 않는다 — 저장된 분자·분모를 그대로 쓴다',
+    /\{view\.a\}번/.test(counts) && /\{view\.d - view\.a\}번/.test(counts) && /\{view\.d\}번/.test(counts))
+  check('막대 안에 글자를 넣지 않는다(22% 칸에는 11px 도 안 들어간다)',
+    /aria-hidden="true"\s*\n\s*className=\{`block h-full/.test(row))
+  check('비율이 없는 축은 막대 대신 점선(없는 비율을 그리지 않는다)', /border-dashed/.test(row))
+}
+
+console.log('▶ [15] ★ 정직 문구의 사실성 — 표본 안내 · 공유 그림 · 조각 · 내부 용어')
+{
+  const res = read('frontend/src/pages/pick/BukbtiResult.tsx')
+  const nudge = read('frontend/src/components/pick/BukbtiNudge.tsx')
+  const files = { 'data/bukbti.ts': bukbtiTs, 'lib/bukbti.ts': libTs, 'BukbtiResult.tsx': res, 'BukbtiNudge.tsx': nudge }
+
+  /* ① 표본 안내는 실측이어야 한다. 옛 문구 「여섯에서 여덟」은 실측 분포의 65%밖에 덮지 못했다
+       (대진 규칙 그대로 120만 판: 네 번~열한 번이 98.4% · 중앙 여섯 · 최소 1 · 최대 15).
+       네 파일 어디에도 옛 숫자가 남으면 안 된다 — 한 곳만 고치면 다음 사람이 옛 숫자를 되살린다 */
+  const stale = Object.entries(files).filter(([, s]) => s.includes('여섯에서 여덟'))
+  check('옛 표본 안내(「여섯에서 여덟」)가 네 파일 어디에도 없다', stale.length === 0, stale.map(([f]) => f).join(','))
+  check('표본 안내가 실측 범위(네 번~열한 번)로 적혀 있다',
+    /네 번에서 열한 번/.test(bukbtiTs) && bukbtiTs.includes('대결 수는 판마다 다릅니다'))
+  check('lib 주석도 같은 실측 숫자를 가리킨다(둘이 어긋나면 옛 숫자가 되살아난다)',
+    /네 번에서 열한 번/.test(libTs))
+
+  /* ② 내부 용어 누출 — 「대비 매치」·「대비된 대결」은 우리끼리 쓰는 말이다.
+       화면 문구(따옴표 안 한국어)에 나오면 안 된다. 주석·식별자는 그대로 둔다 */
+  const leak = Object.entries(files).filter(([, s]) =>
+    [...s.matchAll(/[`'"]([^`'"\n]*대비[^`'"\n]*)[`'"]/g)].some((m) => /대비된 대결|대비 매치 \d|「대비/.test(m[1])))
+  check('화면 문구에 내부 용어(「대비된 대결」)가 새지 않는다', leak.length === 0, leak.map(([f]) => f).join(','))
+  check('동률 사유도 다른 자리와 같은 말을 쓴다(「서로 다른 쪽이 맞붙은 대결 …」)',
+    /note = `서로 다른 쪽이 맞붙은 대결 \$\{st\.d\}번을/.test(libTs))
+
+  /* ③ 공유 그림 — 맥락 밖으로 나가는 유일한 산출물이다. 비율이 있는 가지에서도
+       사유(note)를 떨어뜨리면 그림만 보는 사람에게 그 글자의 근거가 사라진다 */
+  const paint = res.slice(res.indexOf('function paintBukbti('), res.indexOf('async function renderBukbtiPng('))
+  const branches = (paint.match(/if \(v\.note\) line\(v\.note,/g) ?? []).length
+  check('공유 그림 — 비율이 있는 가지·없는 가지 **둘 다** 사유(note)를 싣는다', branches === 2, `실측 ${branches}가지`)
+  check('공유 그림 — 한계 고지(비율은 취향의 세기가 아님)를 함께 싣는다',
+    paint.includes('BUKBTI_RATIO_LIMIT_SHORT') && bukbtiTs.includes('취향의 세기가 아닙니다'))
+  check('공유 그림 — measure/paint 대칭(글자는 두 패스 모두, 사각형만 !measure 안)',
+    !/if \(!measure\)[^\n]*\n\s*line\(/.test(paint) && /if \(!measure\) \{\s*\n\s*const mineIsA/.test(paint))
+
+  /* ④ 게임 결과 조각 — 비율과 사유가 배타적이면 동률 판에서 「50%입니다」로 끝난다 */
+  check('조각 — 비율과 사유가 배타적이지 않다(삼항으로 하나만 고르지 않는다)',
+    !/const ratioLine = [^\n]*: view\.note/.test(nudge) && /ratioLine && noteLine|ratioLine \|\| noteLine/.test(nudge))
+  check('조각 — 한계 고지 한 줄이 함께 간다', nudge.includes('BUKBTI_RATIO_LIMIT_SHORT'))
 }
 
 const failed = results.filter((r) => !r.pass).length
