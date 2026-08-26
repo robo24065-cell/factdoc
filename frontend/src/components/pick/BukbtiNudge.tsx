@@ -1,8 +1,11 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { SURFACE, TYPE, TEXT, PROSE, FOCUS, TAP_INLINE } from '../../theme/gohyang'
-import { BUKBTI_AXIS_OF, type BukbtiGame } from '../../data/bukbti'
-import { BUKBTI_EVENT, bukbtiCode, bukbtiFilled, bukbtiRemaining, readBukbti, type BukbtiState } from '../../lib/bukbti'
+import { BUKBTI_AXIS_OF, BUKBTI_RATIO_LIMIT_SHORT, type BukbtiGame } from '../../data/bukbti'
+import {
+  BUKBTI_EVENT, bukbtiAxisView, bukbtiCode, bukbtiCountLine, bukbtiFilled, bukbtiMinePct,
+  bukbtiRemaining, readBukbti, type BukbtiState,
+} from '../../lib/bukbti'
 
 /* ────────────────────────────────────────────────────────────────
    북BTI 한 줄 조각 — 게임 결과 화면(PickResult·BalanceGame)에 붙는다
@@ -31,6 +34,16 @@ export default function BukbtiNudge({ game }: { game: BukbtiGame }) {
   const remaining = bukbtiRemaining(state.letters)
   const axis = BUKBTI_AXIS_OF.get(game)
 
+  /* 이 게임 축의 비율 한 줄 — 횟수를 늘 병기한다(대비 매치는 실측 네 번에서 열한 번이 98.4%다).
+     비율을 못 내는 판(밸런스·대비 0회·반반)과 옛 기록은 그 사실을 그대로 적는다.
+     ★ 비율과 사유(note)는 배타적이지 않다 — 정확히 반씩 고르신 판은 비율도 있고 사유도
+       있어서, 예전처럼 삼항으로 하나만 고르면 「50%입니다」로 끝나 근거가 사라진다. */
+  const view = bukbtiAxisView(game, state)
+  const pct = bukbtiMinePct(view)
+  const counted = bukbtiCountLine(view)
+  const ratioLine = pct != null && counted ? `이 판에서는 ${counted} — ${pct}%입니다.` : null
+  const noteLine = view.note
+
   return (
     <p className={`max-w-[46rem] rounded-md ${SURFACE.inset} px-3.5 py-2.5 ${TYPE.sub} ${TEXT.soft} ${PROSE}`} data-bukbti-nudge>
       <span className={`${TYPE.eyebrow} ${TEXT.faint}`}>북BTI · 재미로 보는 취향 놀이</span>
@@ -53,6 +66,14 @@ export default function BukbtiNudge({ game }: { game: BukbtiGame }) {
             </span>
           ))}
         </>
+      )}
+      {(ratioLine || noteLine) && (
+        <span className={`mt-1 block ${TYPE.cap} ${TEXT.faint} ${PROSE}`} data-bukbti-ratio>
+          {ratioLine}
+          {ratioLine && noteLine && <br />}
+          {noteLine}
+          {ratioLine && <span className="mt-0.5 block">{BUKBTI_RATIO_LIMIT_SHORT}</span>}
+        </span>
       )}
     </p>
   )

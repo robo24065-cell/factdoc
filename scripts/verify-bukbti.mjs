@@ -17,6 +17,14 @@
      [6] 문안 어휘 — 이산·사망·상실 계열 금지(놀이 소재로 쓰지 않는다) · 점수/등급 화법 금지
      [7] 고지 — 「심리검사가 아니며」·「통일부 자료가 아닙니다」·누적(완성 기록) 정직 문구
      [8] 이모지 0 — 새 파일 4종(data/lib/components/pages)
+     [9] ★ 축 비율 산식 — 화면이 실제로 쓰는 bukbti-ratio.mjs 를 그대로 불러 단위 검사
+         (대비 매치만 셈 · 정확히 반반·대비 0회 폴백 · 비율 합 100 · 되돌린 선택 제외)
+    [10] ★ 밸런스 — 여덟 문항에 「눈 답 대 귀 답」이 0개임을 단언(비율을 내지 않는 근거).
+         누가 나중에 답에 눈/귀 태그를 붙이면 여기서 알람이 울린다
+    [11] ★ 한 줄 요약 16종 · 자리 설명(measures·from) 4축
+    [12] ★ 저장·서버 — bukbti_v1 유지(키를 올리면 집계가 오염된다) · 옛 저장분 호환 ·
+         비율을 못 내는 경로가 축 통계를 지운다 · 0015 는 유형 4글자뿐(스키마 무변경)
+    [13] ★ 화면 — 축 막대·자세히 보기·유형 순위·게임 결과 한 줄
 
    사용법: node scripts/verify-bukbti.mjs
    나가는 값: 전부 통과 0 · 실패 1
@@ -25,6 +33,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { countContrast, decideLetter, ratioPct } from '../frontend/src/lib/bukbti-ratio.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8')
@@ -120,7 +129,7 @@ console.log('▶ [6] 문안 어휘 — 놀이 소재 금지')
 console.log('▶ [7] 고지')
 {
   check('상시 고지 — 「심리검사가 아니며 통일부 자료가 아닙니다」', bukbtiTs.includes('심리검사가 아니며 통일부 자료가 아닙니다'))
-  check('상시 고지 — 「마지막 선택을 그대로 접었을 뿐」', bukbtiTs.includes('마지막 선택을 그대로 접었'))
+  check('상시 고지 — 「고르신 선택을 그대로 세었을 뿐」(축 비율 도입 후 사실이 되는 문구)', bukbtiTs.includes('고르신 선택을 그대로 세었'))
   check('누적 정직 문구 — 「사람 수가 아니라 북BTI 완성 기록의 누적」', bukbtiTs.includes('사람 수가 아니라 북BTI 완성 기록의 누적'))
   check('결과 화면 — 같은 유형 수를 「명」이 아니라 「N번 기록」으로 적는다',
     read('frontend/src/pages/pick/BukbtiResult.tsx').includes('번 기록되었습니다'))
@@ -132,12 +141,161 @@ console.log('▶ [8] 이모지 0 — 새 파일')
 {
   const BANNED = /\p{Emoji_Presentation}|\p{Extended_Pictographic}️/gu
   const files = [
-    'frontend/src/data/bukbti.ts', 'frontend/src/lib/bukbti.ts',
+    'frontend/src/data/bukbti.ts', 'frontend/src/lib/bukbti.ts', 'frontend/src/lib/bukbti-ratio.mjs',
     'frontend/src/components/pick/BukbtiBoard.tsx', 'frontend/src/components/pick/BukbtiNudge.tsx',
     'frontend/src/pages/pick/BukbtiResult.tsx', 'supabase/migrations/0015_bukbti.sql',
   ]
   const bad = files.filter((f) => (read(f).match(BANNED) ?? []).length > 0)
   check(`새 파일 ${files.length}종 이모지 0`, bad.length === 0, bad.join(','))
+}
+
+/* ══════════════════════════════════════════════════════════════════════════
+   여기부터 — 축별 비율(2026-08-26 추가). 산식은 화면이 쓰는 파일을 그대로 부른다.
+   검사가 규칙을 베껴 적으면 베낀 쪽만 맞고 화면은 틀린다.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+console.log('▶ [9] 축 비율 산식 — 화면이 쓰는 bukbti-ratio.mjs 단위 검사')
+{
+  const T = (k) => tag.get(k)
+  const 국1 = 'food-kimchi-mari', 국2 = 'food-nammae-juk', 국3 = 'food-geumgang-jatjuk'
+  const 찬1 = 'food-gajami-sikhae', 찬2 = 'food-myeongtae-sundae', 찬3 = 'food-yeongchae-kimchi'
+  const sane = [T(국1), T(국2), T(국3)].every((v) => v === '국') && [T(찬1), T(찬2), T(찬3)].every((v) => v === '찬')
+  check('시험용 항목 6건의 태그가 국 3 · 찬 3 (아래 손계산의 전제)', sane)
+
+  /* ① 같은 편끼리 붙은 대결은 분모에서 빠진다 — 무엇을 골라도 같은 글자라 취향을 말해 주지 않는다 */
+  const mixed = [
+    { win: 국1, lose: 국2 },   // 국 대 국 — 세지 않는다
+    { win: 국1, lose: 찬1 },   // 대비 · 국 쪽
+    { win: 찬3, lose: 국2 },   // 대비 · 찬 쪽
+    { win: 찬1, lose: 찬2 },   // 찬 대 찬 — 세지 않는다
+    { win: 국3, lose: 찬2 },   // 대비 · 국 쪽
+  ]
+  const r1 = countContrast(mixed, T, '국')
+  check('대비 매치만 센다 — 다섯 대결 중 대비 3, 국 쪽 2 (분모는 15가 아니다)', r1.d === 3 && r1.a === 2, `a ${r1.a} · d ${r1.d}`)
+  const d1 = decideLetter(r1.a, r1.d, '국', '찬')
+  check('과반이면 그 쪽이 글자 — 2/3 이면 「국」', d1.letter === '국' && d1.src === 'ratio', `${d1.letter} · ${d1.src}`)
+  const p1 = ratioPct(r1.a, r1.d)
+  check('비율 반올림 — 2/3 은 67% · 33% (합 100)', p1.pctA === 67 && p1.pctB === 33 && p1.pctA + p1.pctB === 100, `${p1.pctA}/${p1.pctB}`)
+
+  /* ② 정확히 반반 — 글자를 비율로 정하지 않고 결승 선택으로 넘긴다(화면이 그 사실을 밝힌다) */
+  const tie = [{ win: 국1, lose: 찬1 }, { win: 찬2, lose: 국2 }, { win: 국3, lose: 국1 }]
+  const r2 = countContrast(tie, T, '국')
+  const d2 = decideLetter(r2.a, r2.d, '국', '찬')
+  check('정확히 반반이면 글자를 비율로 정하지 않는다(src=final)', r2.d === 2 && r2.a === 1 && d2.letter === null && d2.src === 'final', `a ${r2.a} · d ${r2.d} · ${d2.src}`)
+
+  /* ③ 대비 매치 0회 — 대진표가 한쪽으로만 붙은 판 */
+  const none = [{ win: 국1, lose: 국2 }, { win: 찬1, lose: 찬2 }]
+  const r3 = countContrast(none, T, '국')
+  const d3 = decideLetter(r3.a, r3.d, '국', '찬')
+  check('대비 매치 0회면 비율을 내지 않는다(src=none)', r3.d === 0 && d3.letter === null && d3.src === 'none', `d ${r3.d} · ${d3.src}`)
+
+  /* ④ 태그 밖 key 는 조용히 건너뛴다 — 놀이가 깨지지 않는다 */
+  const r4 = countContrast([{ win: 'food-없는것', lose: 찬1 }, { win: 국1, lose: 찬1 }], T, '국')
+  check('태그에 없는 항목이 섞여도 그 대결만 건너뛴다', r4.d === 1 && r4.a === 1, `a ${r4.a} · d ${r4.d}`)
+
+  /* ⑤ 비율 합은 언제나 100 — 분모 1~15 전수 */
+  let sum100 = true
+  for (let d = 1; d <= 15; d += 1) for (let a = 0; a <= d; a += 1) {
+    const p = ratioPct(a, d)
+    if (p.pctA + p.pctB !== 100 || p.pctA < 0 || p.pctA > 100) sum100 = false
+  }
+  check('분모 1~15 · 분자 전수에서 두 쪽 비율 합이 항상 100', sum100)
+
+  /* ⑥ 되돌린 선택은 분모·분자 어디에도 남지 않는다 — Tournament 의 push/pop 을 그대로 재현 */
+  const picks = []
+  picks.push({ win: 국1, lose: 찬1 })     // 국 쪽
+  picks.push({ win: 찬2, lose: 국2 })     // 찬 쪽
+  picks.pop()                              // ← 한 판 되돌리기
+  picks.push({ win: 국3, lose: 찬2 })     // 다시 고름 — 국 쪽
+  const r5 = countContrast(picks, T, '국')
+  check('되돌린 선택은 비율에 남지 않고, 다시 고른 선택이 들어간다 — 2/2', r5.d === 2 && r5.a === 2, `a ${r5.a} · d ${r5.d}`)
+}
+
+console.log('▶ [10] 밸런스 — 「눈 답 대 귀 답」 문항이 0개(그래서 비율을 내지 않는다)')
+{
+  const balTs = read('frontend/src/data/pick-balance.ts')
+  const arr = balTs.slice(balTs.indexOf('export const BALANCE_QUESTIONS'))
+  const blocks = arr.split(/\n {2}\{\n/).slice(1)
+  const letters = (chunk) => {
+    const m = chunk.match(/types:\s*\[([^\]]*)\]/)
+    if (!m) return new Set()
+    return new Set([...m[1].matchAll(/'([^']+)'/g)].map((x) => tag.get(`type-${x[1]}`)).filter(Boolean))
+  }
+  const contrast = []
+  for (const b of blocks) {
+    const cut = b.indexOf('\n    b: {')
+    if (cut < 0) continue
+    const la = letters(b.slice(0, cut))
+    const lb = letters(b.slice(cut))
+    if (la.size === 1 && lb.size === 1 && [...la][0] !== [...lb][0]) contrast.push(b.slice(0, b.indexOf('\n')))
+  }
+  check('밸런스 8문항을 훑어 대비 문항 0개 확인', blocks.length === 8 && contrast.length === 0, `문항 ${blocks.length} · 대비 ${contrast.length}`)
+  check('데이터 파일이 밸런스 축은 비율을 내지 않는다고 밝힌다', bukbtiTs.includes('눈과 귀로 갈리지 않아 비율을 내지 않습니다'))
+  check('lib — 밸런스 축은 비율 대신 그 이유를 화면에 준다',
+    /game === 'balance'/.test(libTs) && /눈과 귀로 갈리지 않아 비율을 내지 않습니다/.test(libTs))
+}
+
+console.log('▶ [11] 한 줄 요약 16종 · 자리 설명 4축')
+{
+  const ones = [...bukbtiTs.matchAll(/oneLine:\s*'([^']+)'/g)].map((m) => m[1])
+  const aliases = [...bukbtiTs.matchAll(/alias:\s*'([^']+)'/g)].map((m) => m[1])
+  const texts = [...bukbtiTs.matchAll(/text:\s*'([^']+)'/g)].map((m) => m[1])
+  check('한 줄 요약 16종 · 전부 유일', ones.length === 16 && new Set(ones).size === 16, `실측 ${ones.length}`)
+  check('한 줄 요약이 별칭·문안과 겹치지 않는다',
+    ones.every((o) => !aliases.includes(o) && !texts.includes(o)))
+  const banned = ['이산', '사망', '상실', '죽음', '이별', '눈물', '실향', '전쟁', '헤어', '매우', '강한', '뚜렷']
+  const hit = banned.filter((w) => ones.join('\n').includes(w))
+  check('한 줄 요약에 금지 어휘·정도 부사(매우·강한·뚜렷)가 없다', hit.length === 0, hit.join(','))
+  check('한 줄 요약에 점수·등급·백분율 화법이 없다', !/점수|등급|%|퍼센트/.test(ones.join('\n')))
+  const measures = [...bukbtiTs.matchAll(/\n\s+measures:\s*'([^']+)'/g)].map((m) => m[1])
+  const froms = [...bukbtiTs.matchAll(/\n\s+from:\s*'([^']+)'/g)].map((m) => m[1])
+  check('네 축 전부 measures(이 자리가 재는 것) 보유', measures.length === 4 && new Set(measures).size === 4, `실측 ${measures.length}`)
+  check('네 축 전부 from(어느 게임에서 어떻게 나왔는지) 보유', froms.length === 4 && new Set(froms).size === 4, `실측 ${froms.length}`)
+}
+
+console.log('▶ [12] 저장·서버 — 기기 안에만, 스키마 무변경')
+{
+  const lib = libTs
+  check('localStorage 키를 올리지 않았다(bukbti_v1 유지 — 올리면 같은 유형이 한 번 더 INSERT 된다)',
+    /const KEY = 'bukbti_v1'/.test(lib) && !/'bukbti_v2'/.test(lib))
+  check('axes 는 선택적 필드 — 옛 저장분(비율 없음)과 그대로 호환된다', /axes\?:\s*BukbtiAxes/.test(lib))
+  check('옛 저장분은 「이전에 하신 판」으로 정직하게 떨어진다',
+    /'legacy'/.test(lib) && lib.includes('이전에 하신 판이라 비율이 남아 있지 않습니다'))
+  check('저장분 검증 — 정수·0<=a<=d<=total<=15·src 세 리터럴',
+    /Number\.isInteger/.test(lib) && /an > dn \|\| dn > tn \|\| tn > 15/.test(lib))
+  check('★ 비율을 못 내는 경로가 그 축의 옛 비율을 지운다(거짓 비율 방지)', /delete .*axes\[game\]/.test(lib))
+  check('lib — 여전히 항상 덮어쓰기(마지막 판 기준)', /s\.letters\[game\] = tag/.test(lib))
+  check('서버로 가는 것은 유형 4글자뿐 — insert 는 type_code 하나', /insert\(\{ type_code: code \}\)/.test(lib))
+  check('0015 무변경 — 비율·횟수 컬럼이 없다', !/ratio|axes|pct|percent|contrast/i.test(sql))
+}
+
+console.log('▶ [13] 화면 — 축 막대·자세히 보기·순위·게임 결과 한 줄')
+{
+  const res = read('frontend/src/pages/pick/BukbtiResult.tsx')
+  const nudge = read('frontend/src/components/pick/BukbtiNudge.tsx')
+  const tour = read('frontend/src/pages/pick/Tournament.tsx')
+  const chooseBody = tour.slice(tour.indexOf('function choose('), tour.indexOf('function undo('))
+  const undoBody = tour.slice(tour.indexOf('function undo('), tour.indexOf('/* 키보드'))
+  check('Tournament — 선택 이력은 멱등 가드 뒤에서만 쌓인다(중복 스냅샷 회귀 방지)',
+    /acted\.current = k[\s\S]*setPicks\(p => \[\.\.\.p/.test(chooseBody))
+  check('Tournament — 되돌리기가 선택 이력도 함께 뺀다', /setPicks\(p => p\.slice\(0, -1\)\)/.test(undoBody))
+  check('Tournament — 처음부터가 선택 이력을 비운다', /setPicks\(\[\]\)/.test(tour))
+  check('Tournament — 결승 확정이 고르신 것 전부로 비율을 낸다', /updateBukbtiFromMatches\(g, picks, itemKey\(winner\)\)/.test(tour))
+  check('결과 화면 — 네 자리 축 막대 구획', res.includes('data-bukbti-axes') && res.includes('data-bukbti-axis'))
+  check('결과 화면 — 비율 옆에 횟수를 늘 병기한다(n 상시 병기 규약)',
+    res.includes('bukbtiCountLine') && res.includes('번이 그런 대결이었습니다'))
+  check('결과 화면 — 「같은 편끼리 맞붙은 대결은 세지 않았습니다」 설명',
+    bukbtiTs.includes('같은 편끼리 맞붙은 대결은 세지 않았습니다') && res.includes('BUKBTI_RATIO_HOW'))
+  check('결과 화면 — 비율을 취향의 세기로 읽지 않게 하는 문구', res.includes('BUKBTI_RATIO_LIMIT') && bukbtiTs.includes('취향의 세기나 확신을 재는 값이 아니고'))
+  check('결과 화면 — 자리별 설명 「자세히 보기」(접힘 기본 · 48px · 키보드 기본 동작)',
+    /<details/.test(res) && res.includes('네 자리가 각각 무엇인지 자세히 보기') && /<summary[\s\S]{0,200}\$\{TAP\}/.test(res))
+  check('결과 화면 — 유형 코드 옆 한 줄 요약', res.includes('type.oneLine'))
+  check('결과 화면 — 내 유형 순위 한 줄(사람 수가 아니라 완성 기록의 순위)',
+    res.includes('번째</b>로 기록이 많습니다') && res.includes('사람 수가 아니라 완성 기록의 순위입니다'))
+  check('결과 화면 — 「명」으로 세는 문장이 없다(없는 통계 금지)', !/[0-9}]\s*명/.test(res))
+  check('공유 그림 — 네 축 비율 블록(사진 없음 규약 유지)',
+    res.includes('네 자리 비율 — ') && /if \(!measure\) \{\s*\n\s*const mineIsA/.test(res))
+  check('게임 결과 화면 — 그 축의 비율 한 줄', nudge.includes('data-bukbti-ratio') && nudge.includes('bukbtiAxisView'))
 }
 
 const failed = results.filter((r) => !r.pass).length

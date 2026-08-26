@@ -2,7 +2,7 @@
    음식 16(문화적 통설·통일부 자료 아님) · 풍경 16(통일부 게재·저작권은 제공처·이미지 비보관)
    · 북녘 말 16(통일부 「남북한 언어비교」 원문). 지역 축은 map.json regionsOld 7종. */
 const data = {
- "builtAt": "2026-08-25",
+ "builtAt": "2026-08-26",
  "generator": "scripts/nk-pick-items.mjs",
  "note": "참여(/pick) 월드컵 항목. 말은 통일부 공공데이터 원문, 풍경은 통일부 게재·제공처 저작(이미지 비보관), 음식 지역 귀속은 문화적 통설이며 통일부 공표 자료가 아니다 — 화면에서 이 셋을 섞지 않는다.",
  "regionsOld": [
@@ -555,7 +555,7 @@ const data = {
  "words": {
   "nonRegional": true,
   "note": "문화어-표준어 대응(통일부 「남북한 언어비교」 21,985쌍) — 지역 방언이 아니므로 고향 축을 붙이지 않는다.",
-  "source": "북한자료-api/wordCmp.json",
+  "source": "https://www.data.go.kr/data/15151340/openapi.do",
   "total": 21985,
   "attribution": {
    "kind": "mou",

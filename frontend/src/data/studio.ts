@@ -16,6 +16,11 @@ export {
   LENGTH_GUIDE,
   PLATFORM_GUIDE,
   STUDIO_NOTICES,
+  STUDIO_SOURCE_LABELS,
+  STUDIO_LINE_BADGES,
+  STUDIO_REPRO_TOOLS,
+  NEG_SWAP,
+  studioPromptOf,
 } from '../engine/nk-studio.mjs'
 
 export type {
@@ -25,6 +30,10 @@ export type {
   StudioStoryPick,
   StudioInput,
   StudioOutput,
+  StudioBlock,
+  StudioVariant,
+  StudioLine,
+  StudioLineSrc,
 } from '../engine/nk-studio.mjs'
 
 export { default as STUDIO_PHOTOS } from './studio-photos'

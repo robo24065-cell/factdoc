@@ -188,6 +188,7 @@ as-of 배지 + 출처 + 면책 (항상 동반)
 node scripts/eval.mjs       # 회귀 48건 — 현재 48/48
 node scripts/wild.mjs       # 실사용 난문 52건 — 현재 52/52
 node scripts/verify-nk-db.mjs  # DB 스키마·적재 18건 — 현재 18/18
+node scripts/nk-devnote-audit.mjs  # 화면 문구에 파일명·함수명·내부 용어가 새는지 — 현재 0건
 node scripts/shot.mjs <디렉터리>  # 화면 13종 캡처 + 가로 오버플로 감사
 ```
 

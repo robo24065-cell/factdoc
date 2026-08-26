@@ -12,11 +12,11 @@
      실패는 전부 조용히 null 이고 화면은 템플릿 산출을 그대로 유지한다.
    ──────────────────────────────────────────────────────────────── */
 
-import { buildStudioOutput, validateStudio } from '../engine/nk-studio.mjs'
-import type { StudioInput, StudioOutput } from '../engine/nk-studio.mjs'
+import { buildStudioOutput, validateStudio, applyStudioRefine, studioPromptOf } from '../engine/nk-studio.mjs'
+import type { StudioInput, StudioOutput, StudioVariant } from '../engine/nk-studio.mjs'
 
-export { buildStudioOutput }
-export type { StudioInput, StudioOutput }
+export { buildStudioOutput, applyStudioRefine, studioPromptOf }
+export type { StudioInput, StudioOutput, StudioVariant }
 
 const ENDPOINT = '/api/llm'
 
@@ -40,10 +40,18 @@ export function probeStudioLLM(): Promise<boolean> {
   return probing
 }
 
-/** Gemini 로 ko/en 프롬프트만 다듬는다. 실패·스키마 밖·새 숫자 = null(템플릿 유지). */
+/** Gemini 로 「들려주신 이야기」 블록의 문장만 다듬는다.
+ *
+ *  ★ 페이로드에서 연출 설정·시대 일반 표현·금지·재현 설정 블록을 통째로 뺀다(설계 §10-B).
+ *    값이 많아질수록 다듬기가 촬영 숫자를 자리바꿈할 확률이 오르는데(5200K ↔ 42도 따위),
+ *    숫자 「집합」 검사는 그 자리바꿈을 통과시킨다. 아예 보내지 않는 것이 유일하게 확실한 차단이다.
+ *    돌아온 문장은 원래 블록 자리에 끼워 넣는다 — 촬영값은 LLM 을 지나가지 않는다.
+ *  ★ relicNames 를 함께 보내 사료 제목이 한글 원문 그대로 살아 있는지 검사한다(설계 §10-A).
+ *    실측 날조가 「청진시 수성천」을 영어로 의역하며 없는 수식을 붙인 것이었다. */
 export async function refineStudio(out: StudioOutput): Promise<{ ko: string; en: string } | null> {
   if (available !== true) return null
-  const payload = { ko: out.promptKo, en: out.promptEn, story: out.storyRaw }
+  const payload = { ko: out.refineKo, en: out.refineEn, story: out.storyRaw, relicNames: out.relicNames }
+  if (!payload.ko && !payload.en) return null
   try {
     const r = await fetch(ENDPOINT, {
       method: 'POST',

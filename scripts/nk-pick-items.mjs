@@ -203,7 +203,7 @@ const out = {
   words: {
     nonRegional: true,
     note: '문화어-표준어 대응(통일부 「남북한 언어비교」 21,985쌍) — 지역 방언이 아니므로 고향 축을 붙이지 않는다.',
-    source: '북한자료-api/wordCmp.json',
+    source: 'https://www.data.go.kr/data/15151340/openapi.do',
     total: wordItems.length,
     attribution: { kind: 'mou', label: '통일부 공공데이터 「남북한 언어비교」' },
     pairs: words,

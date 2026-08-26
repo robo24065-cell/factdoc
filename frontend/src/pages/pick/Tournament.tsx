@@ -5,7 +5,7 @@ import ItemCard, { itemKey, itemName, itemRegionId, type CardItem } from '../../
 import PickResult from './PickResult'
 import { ITEMS, shuffle, rememberLastHome } from '../../lib/pickData'
 import { recordPick, type PickGame } from '../../lib/pickTally'
-import { updateBukbtiLetter } from '../../lib/bukbti'
+import { updateBukbtiFromMatches } from '../../lib/bukbti'
 import { prefersReduced } from '../../components/gohyang/motion'
 
 /* ────────────────────────────────────────────────────────────────
@@ -51,6 +51,9 @@ function buildDeck(game: Exclude<PickGame, 'balance'>): CardItem[] {
 }
 
 type Snap = { round: CardItem[]; next: CardItem[]; idx: number }
+/** 대결 한 번 — 이긴 쪽·진 쪽의 항목 key 만. 북BTI 축 비율의 원천이다.
+ *  카드를 통째로 담지 않는다(사진·이름을 붙들어 둘 이유가 없다). */
+type Match = { win: string; lose: string }
 
 export default function Tournament() {
   const { game } = useParams()
@@ -60,6 +63,13 @@ export default function Tournament() {
   const [next, setNext] = useState<CardItem[]>([])
   const [idx, setIdx] = useState(0)
   const [history, setHistory] = useState<Snap[]>([])
+  /* ★ 실제 선택 이력 — history 와 1:1로 움직인다(같은 핸들러·같은 가드 뒤에서 push,
+     되돌리기에서 함께 pop). 그래서 picks.length === history.length 가 늘 성립하고
+     되돌린 선택은 북BTI 비율의 분모·분자 어디에도 남지 않는다.
+     history 에서 역산하지 않는 이유: 마지막(진행 중) 스냅샷의 승자가 history 에 없어
+     라운드 넘어감 여부로 분기가 갈리고, 두 벌 규칙이 생기면 되돌리기 회귀가 조용히 난다.
+     저장하지 않는다 — 「진행 상태는 메모리뿐」 규약 그대로다. */
+  const [picks, setPicks] = useState<Match[]>([])
   const [winner, setWinner] = useState<CardItem | null>(null)
   const sent = useRef(false)
   /* ★ 멱등 가드 — 같은 짝(라운드 크기:짝 위치)에 두 번 반응하지 않는다.
@@ -75,6 +85,7 @@ export default function Tournament() {
     setNext([])
     setIdx(0)
     setHistory([])
+    setPicks([])
     setWinner(null)
     sent.current = false
     acted.current = ''
@@ -91,6 +102,8 @@ export default function Tournament() {
     if (acted.current === k) return
     acted.current = k
     setHistory(h => [...h, { round, next, idx }])
+    /* 같은 가드 뒤·같은 배치에서 쌓는다 — history 와 개수가 어긋날 수 없다 */
+    setPicks(p => [...p, { win: itemKey(pick), lose: itemKey(pick === round[idx] ? round[idx + 1] : round[idx]) }])
     const grown = [...next, pick]
     if (idx + 2 >= round.length) {
       if (grown.length === 1) {
@@ -110,6 +123,7 @@ export default function Tournament() {
     setWinner(null)
     sent.current = false
     acted.current = ''
+    setPicks(p => p.slice(0, -1))
     setHistory(h => {
       const last = h[h.length - 1]
       if (!last) return h
@@ -139,9 +153,10 @@ export default function Tournament() {
     const regionId = itemRegionId(winner)
     rememberLastHome(regionId)
     void recordPick(g, itemKey(winner), itemName(winner), regionId)
-    /* 북BTI — 마지막 판 기준으로 글자를 덮어쓴다(기기 안 localStorage, 일일 집계 표식과 무관) */
-    updateBukbtiLetter(g, itemKey(winner))
-  }, [winner, g])
+    /* 북BTI — 이 판에서 실제로 고르신 열다섯 번 전부로 축 비율을 내고 글자를 덮어쓴다.
+       비율은 기기 안 localStorage 에만 남고 서버로 가지 않는다(0015 는 유형 4글자뿐). */
+    updateBukbtiFromMatches(g, picks, itemKey(winner))
+  }, [winner, g, picks])
 
   if (!g) return <Navigate to="/pick" replace />
   const def = GAME_DEF[g]

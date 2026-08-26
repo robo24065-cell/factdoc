@@ -75,7 +75,7 @@ export default function PickHub() {
 
           {/* ③ 항목 자료 기준 캡션 */}
           <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
-            항목 자료 기준 — 음식·풍경·말 각 16종, {ITEMS.builtAt} 생성(scripts/nk-pick-items.mjs).
+            항목 자료 기준 — 음식·풍경·말 각 16종, {ITEMS.builtAt} 기준입니다.
             {' '}풍경 사진은 저장하지 않고 통일부 원본 주소를 그대로 불러오며, 저작권은 각 제공처에 있습니다.
           </p>
 

@@ -27,7 +27,9 @@
           모순 회귀 · RLS — anon 이 bukbti_event 원시행(0015)을 읽지 못한다
      [6c] AI 스튜디오 회귀 — 위저드 6단계 완주로 템플릿 산출 성립(화면 프롬프트 = 엔진
           buildStudioOutput 글자 단위 · dev 는 /api/llm 없음 = 템플릿 경로) · 고지 3종(개인정보·권리·
-          상상 재현) · 시대 단정(1940년대) 없음 · 복사 단추가 5구획 전체를 실제로 담는다 ·
+          상상 재현) + 신규 3종(연출 설정·시대 일반 표현·재현성) · 시대 단정(1940년대) 없음 ·
+          출처 라벨 4종 배지 · 정밀/간단 토글(기본 정밀·48px) · 산출 ⑤네거티브 ⑥재현 설정 구획 ·
+          복사 단추가 일곱 구획 전체를 라벨째 실제로 담는다 ·
           상단 배너가 참여·스튜디오 값에 통일부 출처를 부여하지 않는다
      [7] 375px 모바일 — 가로 넘침 0
      [8] 집계 전송 — pick_event 본문 4필드 · pick_balance_answer (q_id·choice) · bukbti_event
@@ -655,7 +657,11 @@ try {
     /* 권리 고지 전문(rights)은 ⑥단계 화면의 것이다 — 결과 화면에서는 relicUse 변형이 그 역할을 한다 */
     check('⑥ 권리 고지 전문 — 사료는 보며 참고·본인 가족 소장 사진만', (await body()).includes(STUDIO_NOTICES.rights))
     const relic = studioPhotos.items.find((it) => (it.oldKeys ?? []).includes('hwanghae-old'))
-    const relicPicked = await evl(`(() => { const b = [...document.querySelectorAll('button')].find(x => (x.getAttribute('aria-label')||'') === ${JSON.stringify(`${relic.name} — 참고 사료로 선택`)}); if (!b) return false; b.click(); return true })()`)
+    /* aria-label 에 지역(areaRaw)이 함께 들어간다 — 화면 글자로는 카드에 적히지만
+       aria-label 이 그것을 가리므로 라벨 쪽에도 넣어야 스크린리더가 지역을 읽는다 */
+    const relicPicked = await evl(`(() => { const b = [...document.querySelectorAll('button')].find(x => (x.getAttribute('aria-label')||'') === ${JSON.stringify(`${relic.name} — ${relic.areaRaw} — 참고 사료로 선택`)}); if (!b) return false; b.click(); return true })()`)
+    check('⑥ 사료 카드에 지역이 함께 적힌다(무관한 도의 사료를 그 고향의 것으로 오인하지 않게)',
+      await evl(`document.body.innerText.includes(${JSON.stringify(`${relic.areaRaw} · `)})`), relic.areaRaw)
     check(`⑥ 사료 1장 선택(「${relic.name}」)`, relicPicked); await sleep(250)
     check('⑥ 1장 골라 프롬프트 만들기', await clickBtn('1장 골라 프롬프트 만들기'))
     await waitFor(`document.body.innerText.includes('산출 ① 최종 프롬프트')`, 40)
@@ -683,16 +689,62 @@ try {
     check('상단 배너 — 스튜디오 화면에서도 「모든 값 = 통일부 데이터」 단정 없음',
       !stText.includes('모든 값은 공개된 통일부 데이터') && stText.includes('통일부 공식 서비스가 아니며'))
 
-    /* ── 복사 단추 — 클립보드를 가로채 5구획 전체가 실제로 담기는지 잰다 ── */
+    /* ── 정밀 프롬프트 — 출처 라벨 4종 · 8구획 값 · 재현 설정 · 시대 일반 표현 고지 ── */
+    check('출처 라벨 4종이 화면에 뜬다(이야기·사료·연출·시대 일반)',
+      ['● 들려주신 이야기', '● 고른 사료에서', '● 연출 설정', '● 시대 일반 표현'].every((b) => stText.includes(b)))
+    check('연출 설정이 사실 주장이 아님을 화면이 밝힌다', stText.includes(STUDIO_NOTICES.directionNote))
+    check('「시대 일반 표현」 고지 한 줄이 기존 상상 재현 고지 아래에 붙는다', stText.includes(STUDIO_NOTICES.periodGeneric))
+    check('재현성 고지가 과장 없이 그대로 뜬다', stText.includes(STUDIO_NOTICES.reproNote))
+    check('네거티브 칸 없는 도구용 폴백 고지 + 긍정 치환문', stText.includes(STUDIO_NOTICES.negFallback) && stText.includes('소달구지 바퀴 자국만 난 흙길'))
+    check('산출 ⑤ 네거티브 · ⑥ 재현 설정 구획이 있다', stText.includes('산출 ⑤ 네거티브 프롬프트') && stText.includes('산출 ⑥ 재현 설정'))
+    check('권장 시드가 화면 수치로 뜬다', stText.includes(`권장 시드 ${expect6c.seed}`))
+    check('프롬프트에 7블록 머리 문자열이 전부 실린다(라벨 뗀 복사본 0)',
+      ['[화면]', '[들려주신 이야기', '[고른 사료에서', '[연출 설정', '[시대 일반 표현', '[금지', '[재현 설정'].every((h) => expect6c.promptKo.includes(h)))
+
+    /* ── 날조 방지 회귀 — 화면에서도 출처가 갈리고, 과잉 주장·권리 누락이 없다 ── */
+    const sec3 = await evl(`(() => { const s = [...document.querySelectorAll('section')].find(x => x.innerText.startsWith('산출 ③')); return s ? s.innerText : '' })()`)
+    check('산출 ③ 각 줄에 출처 배지가 붙는다(이야기·사료·연출 중)',
+      ['● 연출 설정', '● 고른 사료에서'].every((b) => sec3.includes(b)), sec3.slice(0, 60).replace(/\n/g, ' '))
+    check('산출 ③ 이 지역과 사료를 한 문장에 묶지 않는다(「사료의 지형처럼」 0 · 「가족의 요소」 0)',
+      !sec3.includes('사료의 지형') && !sec3.includes('가족의 요소') && sec3.includes('참고 사료: 「'))
+    check('권리 고지가 결과 화면에도 남는다(6단계에서만 뜨던 것을 산출 ② 로 옮겼다)',
+      stText.includes(STUDIO_NOTICES.rights))
+    check('정밀판 안내가 조건 없이 「같은 그림이 잘 나옵니다」라고 말하지 않는다',
+      !stText.includes('값이 많은 만큼 같은 그림이 잘 나옵니다') && stText.includes('같은 모델에 같은 시드를 쓰시면 결과가 덜 흔들립니다'))
+    check('연출 설정 블록이 갈래 배치를 「흔히 보이는 배치」로 밝혀 싣는다(사료 블록에 두지 않는다)',
+      expect6c.blocks.find((b) => b.id === 'direction').bodyKo.includes('흔히 보이는 배치입니다')
+      && !expect6c.blocks.find((b) => b.id === 'archive').bodyKo.includes('전경은'))
+
+    /* ── 정밀 ↔ 간단 토글 ── */
+    check('정밀/간단 토글 2칸 · 기본 선택은 정밀',
+      await evl(`(() => { const b = [...document.querySelectorAll('button')].filter(x => x.textContent.trim() === '정밀' || x.textContent.trim() === '간단'); return b.length === 2 && b[0].getAttribute('aria-pressed') === 'true' && b[1].getAttribute('aria-pressed') === 'false' })()`))
+    check('토글 단추가 48px 이상',
+      await evl(`(() => { const b = [...document.querySelectorAll('button')].filter(x => x.textContent.trim() === '정밀' || x.textContent.trim() === '간단'); return b.every(x => x.getBoundingClientRect().height >= 48) })()`))
+    await clickBtn('간단'); await sleep(300)
+    const simpleText = await body()
+    check('간단판으로 바꾸면 간단 프롬프트가 글자 단위로 뜬다',
+      await evl(`[...document.querySelectorAll('p')].some(p => p.innerText === ${JSON.stringify(expect6c.promptKoSimple)})`)
+      && simpleText.includes('못박은 값이 적어 정밀판보다 결과가 더 흔들립니다'))
+    check('간단판도 같은 시드를 쓴다', expect6c.promptKoSimple.includes(String(expect6c.seed)))
+    await clickBtn('정밀'); await sleep(300)
+    check('정밀로 되돌리면 정밀 프롬프트가 돌아온다',
+      await evl(`[...document.querySelectorAll('p')].some(p => p.innerText === ${JSON.stringify(expect6c.promptKo)})`))
+
+    /* ── 복사 단추 — 클립보드를 가로채 7구획 전체가 실제로 담기는지 잰다 ── */
     await evl(`(() => { window.__copied = null; try { navigator.clipboard.writeText = (t) => { window.__copied = t; return Promise.resolve() } } catch { /* 무해 */ } return true })()`)
     await evl(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === '복사')?.click()`)
     await sleep(400)
     const copied = await evl(`window.__copied`)
-    const heads = ['■ 최종 프롬프트 (한글)', '■ 최종 프롬프트 (영문)', '■ 사용할 이미지 순서', '■ 영상 구성(장면별)', '■ 권장 길이', '■ 생성형 AI 플랫폼 안내']
-    check('복사 — 다섯 구획 머리 전부 + 프롬프트 원문 + 장면 전부 + 상상 재현 고지가 한 문서로 담긴다',
+    const heads = ['■ 최종 프롬프트 (정밀판 · 한글)', '■ 최종 프롬프트 (정밀판 · 영문)', '■ 사용할 이미지 순서',
+      '■ 영상 구성(장면별)', '■ 권장 길이', '■ 네거티브 프롬프트 (한글)', '■ 네거티브 프롬프트 (영문)',
+      '■ 재현 설정', '■ 생성형 AI 플랫폼 안내']
+    check('복사 — 일곱 구획 머리 전부 + 프롬프트 원문 + 장면 전부 + 고지가 한 문서로 담긴다',
       typeof copied === 'string' && heads.every((h) => copied.includes(h)) && copied.includes(expect6c.promptKo) && copied.includes(expect6c.promptEn)
-      && (expect6c.scenes ?? []).every((s) => copied.includes(s)) && copied.includes(STUDIO_NOTICES.imagined),
+      && (expect6c.scenes ?? []).every((s) => s.parts.every((p) => copied.includes(p.text))) && copied.includes(STUDIO_NOTICES.imagined)
+      && copied.includes(STUDIO_NOTICES.periodGeneric) && copied.includes(STUDIO_NOTICES.reproNote),
       typeof copied === 'string' ? `${copied.length}자` : '클립보드 미포착')
+    check('복사본에도 출처 라벨 머리 문자열이 함께 나간다',
+      typeof copied === 'string' && copied.includes('[들려주신 이야기 — 적어 주신 말 그대로]') && copied.includes('[연출 설정 —'))
     check('복사 피드백 — 단추가 「복사되었습니다」로 바뀐다', await evl(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === '복사되었습니다')`))
     /* 기획서 증빙 — 산출 화면 캡처 */
     try {
