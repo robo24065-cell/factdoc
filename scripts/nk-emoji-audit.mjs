@@ -68,6 +68,15 @@ const TARGETS = [
   'frontend/src/data/pick-balance.ts',
   'frontend/src/lib/pickTally.ts',
   'frontend/src/lib/pickData.ts',
+  /* 북BTI — 유형 문안·태그·진행 문자열이 검사 밖에 남지 않게 못 박는다(화면 파일은 위 pick 디렉터리가 덮는다) */
+  'frontend/src/data/bukbti.ts',
+  'frontend/src/lib/bukbti.ts',
+  /* AI 스튜디오(/studio) — 화면·데이터·엔진 문자열이 검사 밖에 남지 않게 못 박는다 */
+  'frontend/src/pages/studio',
+  'frontend/src/data/studio.ts',
+  'frontend/src/data/studio-photos.ts',
+  'frontend/src/engine/nk-studio.mjs',
+  'frontend/src/lib/studioPrompt.ts',
   'frontend/public/gohyang',
   ...extra,
 ]

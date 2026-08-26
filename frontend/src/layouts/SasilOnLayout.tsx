@@ -46,7 +46,8 @@ export default function SasilOnLayout() {
       <div className={`border-b bg-[#f5f7fa] ${SURFACE.hair} dark:bg-[#14181e]`}>
         <p className={`${stage} py-1.5 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
           이 화면은 <b className="font-semibold">2026년 통일부 공공데이터 활용 공모전 출품 시제품</b>입니다.
-          {' '}통일부 공식 서비스가 아니며, 표시되는 모든 값은 공개된 통일부 데이터를 그대로 대조한 결과입니다.
+          {' '}통일부 공식 서비스가 아니며, 데이터 값에는 출처와 기준일을 함께 표기합니다 —
+          통일부 자료가 아닌 값(익명 참여 집계·생성 문장 등)은 그 자리에서 구분해 적습니다.
         </p>
       </div>
 

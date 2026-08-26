@@ -7,6 +7,8 @@ import { BALANCE_QUESTIONS, RECORD_TYPE_LABEL, RECORD_TYPE_NOTE, type BalanceOpt
 import TallyDeck from '../../components/pick/TallyDeck'
 import { ITEMS, loadPickStats, rememberLastHome, type PickStats } from '../../lib/pickData'
 import { recordBalanceRun } from '../../lib/pickTally'
+import { updateBukbtiLetter } from '../../lib/bukbti'
+import BukbtiNudge from '../../components/pick/BukbtiNudge'
 import { PACK } from '../../components/gohyang/pack-types'
 import { DONATION_FIRST } from '../../components/gohyang/model'
 
@@ -127,6 +129,8 @@ export default function BalanceGame() {
       top ? RECORD_TYPE_LABEL[top] : '유형 없음',
       regionId,
     )
+    /* 북BTI — 상위 기록유형(topKey)을 그대로 접어 마지막 판 기준으로 글자를 덮어쓴다 */
+    updateBukbtiLetter('balance', top ? `type-${top}` : 'type-none')
   }, [done, topTypes, home, answers])
 
   const shareModel: ShareModel = {
@@ -302,6 +306,9 @@ export default function BalanceGame() {
               <Link to="/pick" className={`${TAP_INLINE} underline underline-offset-2 ${FOCUS}`}>참여 첫 화면의 표</Link>에서 보실 수 있습니다.
             </p>
           )}
+
+          {/* 북BTI 한 줄 조각 — 이 판으로 채워진 글자와 남은 게임 */}
+          <BukbtiNudge game="balance" />
 
           {/* 실시간 실선택 순위덱 — 밸런스 것 하나만(상위 유형 순위 + 문항별 상세보기) */}
           <div className="max-w-md">

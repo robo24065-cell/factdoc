@@ -21,6 +21,7 @@ import { LLM_NORMALIZE_PROMPT } from '../../src/engine/nk-normalize.mjs'
 import { LLM_TIME_PROMPT } from '../../src/engine/nk-time.mjs'
 import { RERANK_PROMPT, INTENT_PROMPT, RERANK_MAX, TITLE_MAX } from '../../src/engine/nk-judge.mjs'
 import { GUIDE_PROMPT } from '../../src/engine/nk-guide.mjs'
+import { STUDIO_PROMPT } from '../../src/engine/nk-studio.mjs'
 
 /* ⚠ 2026-08-12 실측: 이전 폴백 2종(gemini-2.0-flash-lite / gemini-2.0-flash)이
    **404 — 모델 없어짐** 이었다. 3단계처럼 보였지만 사실상 1단계였고,
@@ -31,10 +32,12 @@ const MODELS = ['gemini-3.1-flash-lite', 'gemini-2.5-flash-lite', 'gemini-3.5-fl
 const Q_MAX = 200                     // 질의 길이 상한 — 프롬프트 주입·비용 폭주 방지
 /* guide 만 사실 묶음(JSON)을 통째로 받아 상한이 다르다. 대신 JSON 파싱 검사를 걸어
    자유 문장을 실어 나르는 중계기로 쓰지 못하게 한다(아래 onRequestPost 참조). */
-const Q_MAX_BY_KIND = { guide: 2000 }
+/* studio 는 스튜디오의 템플릿 산출(ko/en 프롬프트 + 이야기 원문) JSON 을 받아 문장만 다듬는다.
+   guide 와 같은 JSON 파싱 게이트를 걸어 자유 문장 중계기로 쓰지 못하게 한다. */
+const Q_MAX_BY_KIND = { guide: 2000, studio: 2000 }
 const PROMPTS = {
   normalize: LLM_NORMALIZE_PROMPT, time: LLM_TIME_PROMPT,
-  rerank: RERANK_PROMPT, intent: INTENT_PROMPT, guide: GUIDE_PROMPT,
+  rerank: RERANK_PROMPT, intent: INTENT_PROMPT, guide: GUIDE_PROMPT, studio: STUDIO_PROMPT,
 }
 /* rerank 만 후보 목록을 함께 받는다. 그래도 이 엔드포인트가 범용 LLM 중계기가 되지는 않는다 —
    출력 스키마가 번호와 0~3 점수뿐이라 자유 문장을 꺼낼 문법이 없다.
@@ -71,7 +74,7 @@ export async function onRequestPost({ request, env }) {
   if (!q) return json({ error: 'empty_q' }, 400)
   /* guide 의 q 는 buildGuideFacts() 가 만든 사실 묶음이어야 한다.
      JSON 이 아니면 거부 — 이 kind 를 자유 문장 중계기로 쓰는 것을 막는다. */
-  if (kind === 'guide') {
+  if (kind === 'guide' || kind === 'studio') {
     try { JSON.parse(q) } catch { return json({ error: 'bad_facts' }, 400) }
   }
 
@@ -86,7 +89,8 @@ export async function onRequestPost({ request, env }) {
     systemInstruction: { parts: [{ text: PROMPTS[kind] }] },
     contents: [{ role: 'user', parts: [{ text: user }] }],
     generationConfig: {
-      temperature: 0, responseMimeType: 'application/json', maxOutputTokens: 800,
+      /* studio 만 상한이 크다 — 출력이 한글+영문 프롬프트 두 벌(JSON {ko,en})이라 800 으로는 잘린다 */
+      temperature: 0, responseMimeType: 'application/json', maxOutputTokens: kind === 'studio' ? 1600 : 800,
       // 분류·심사에 사고 토큰은 낭비다. 다만 이 인자를 거부하는 모델이 있어 400 이면 뺀다.
       ...(thinking ? { thinkingConfig: { thinkingBudget: 0 } } : {}),
     },

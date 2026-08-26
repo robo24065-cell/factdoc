@@ -15,6 +15,10 @@ const AnalysisDeck = lazy(() => import('./pages/AnalysisDeck'))
 const PickHub = lazy(() => import('./pages/pick/PickHub'))
 const PickTournament = lazy(() => import('./pages/pick/Tournament'))
 const PickBalance = lazy(() => import('./pages/pick/BalanceGame'))
+// 북BTI 완성 화면 — 재미로 보는 취향 놀이(심리검사·통일부 자료 아님)
+const BukbtiResult = lazy(() => import('./pages/pick/BukbtiResult'))
+// AI 스튜디오(지연로딩) — 후손의 도구: 가족 이야기 → 생성 AI 프롬프트. 놀이가 아니라 도구라 /pick 밖의 경로다
+const Studio = lazy(() => import('./pages/studio/Studio'))
 // 사용자(지연로딩)
 const Home = lazy(() => import('./pages/Home'))
 const Trending = lazy(() => import('./pages/Trending'))
@@ -45,7 +49,11 @@ createRoot(document.getElementById('root')!).render(
               결과는 별도 경로를 파지 않는다(새로고침이면 처음부터 — 집계 중복 방지). */}
           <Route path="pick" element={<PickHub />} />
           <Route path="pick/balance" element={<PickBalance />} />
+          {/* 북BTI — 반드시 pick/:game 앞에 선언한다(파라미터 라우트에 먹히지 않게) */}
+          <Route path="pick/bukbti" element={<BukbtiResult />} />
           <Route path="pick/:game" element={<PickTournament />} />
+          {/* AI 스튜디오 — 산출은 프롬프트뿐(영상·사진 생성 없음). 입력은 브라우저 안에서만 처리 */}
+          <Route path="studio" element={<Studio />} />
           {/* 사이트구조.md 시절 주소 — 화면이 한 장으로 합쳐져 홈으로 보낸다 */}
           <Route path="map" element={<Navigate to="/" replace />} />
           <Route path="clock" element={<Navigate to="/" replace />} />

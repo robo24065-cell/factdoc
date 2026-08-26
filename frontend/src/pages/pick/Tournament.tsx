@@ -5,6 +5,7 @@ import ItemCard, { itemKey, itemName, itemRegionId, type CardItem } from '../../
 import PickResult from './PickResult'
 import { ITEMS, shuffle, rememberLastHome } from '../../lib/pickData'
 import { recordPick, type PickGame } from '../../lib/pickTally'
+import { updateBukbtiLetter } from '../../lib/bukbti'
 import { prefersReduced } from '../../components/gohyang/motion'
 
 /* ────────────────────────────────────────────────────────────────
@@ -138,6 +139,8 @@ export default function Tournament() {
     const regionId = itemRegionId(winner)
     rememberLastHome(regionId)
     void recordPick(g, itemKey(winner), itemName(winner), regionId)
+    /* 북BTI — 마지막 판 기준으로 글자를 덮어쓴다(기기 안 localStorage, 일일 집계 표식과 무관) */
+    updateBukbtiLetter(g, itemKey(winner))
   }, [winner, g])
 
   if (!g) return <Navigate to="/pick" replace />

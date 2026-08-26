@@ -21,8 +21,17 @@
          + 우승 카드 사진·위키미디어 저작자 표시·출처 링크 · 저작자 실명이 pick-photos.ts 와 일치
      [5b] 사진 폴백 — pick-img 전 요청을 실패시킨 상태에서도 글자 카드로 서고 게임이 진행된다
      [6] 밸런스 — 8문항 + 고향 선택 → 경로 카드(paths.json 연락처) · 지역 수치 대조 · 순위덱 동반
+     [6b] 북BTI 회귀 — 진행(허브 0/4 「참여해서 북BTI를 채워보세요」)→네 게임 완주로 완성(유형 카드
+          코드·별칭·범례) · 재미용 구분 문구(심리검사·통일부 자료 아님) · 16유형 분포 화면 수치 =
+          bukbti_tally 실응답(글자 단위, 0건 유형 전부 나열·n 상시 병기·as-of) · n=0 「내 기록 포함」
+          모순 회귀 · RLS — anon 이 bukbti_event 원시행(0015)을 읽지 못한다
+     [6c] AI 스튜디오 회귀 — 위저드 6단계 완주로 템플릿 산출 성립(화면 프롬프트 = 엔진
+          buildStudioOutput 글자 단위 · dev 는 /api/llm 없음 = 템플릿 경로) · 고지 3종(개인정보·권리·
+          상상 재현) · 시대 단정(1940년대) 없음 · 복사 단추가 5구획 전체를 실제로 담는다 ·
+          상단 배너가 참여·스튜디오 값에 통일부 출처를 부여하지 않는다
      [7] 375px 모바일 — 가로 넘침 0
-     [8] 집계 전송 — pick_event 본문 4필드 · pick_balance_answer 본문 (q_id·choice)뿐(개인정보 0)
+     [8] 집계 전송 — pick_event 본문 4필드 · pick_balance_answer (q_id·choice) · bukbti_event
+         (type_code 1필드)뿐 — 개인 식별·연결키 0
      [9] JS 예외 0 (외부 이미지 404 는 허용 — onerror 폴백이 설계다)
 
    사용법: node scripts/nk-verify-pick.mjs [--base http://localhost:5178] [--png 경로.png]
@@ -35,6 +44,9 @@ import path from 'node:path'
 import os from 'node:os'
 import { spawn } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
+/* 엔진을 직접 불러 화면과 글자 단위로 대조한다 — [6c] 스튜디오 템플릿 산출 회귀용.
+   nk-studio.mjs 는 의존 0개라 node 에서 그대로 돈다(파일 머리 규약). */
+import { buildStudioOutput, STUDIO_NOTICES } from '../frontend/src/engine/nk-studio.mjs'
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const argv = process.argv.slice(2)
@@ -77,6 +89,13 @@ const paths = JSON.parse(fs.readFileSync(path.join(root, 'frontend/public/gohyan
 /* 카드 사진 산출물(TS)을 JSON 으로 되읽는다 — nk-pick-images.mjs 생성물 */
 const photosTs = fs.readFileSync(path.join(root, 'frontend/src/data/pick-photos.ts'), 'utf8')
 const photos = JSON.parse(photosTs.slice(photosTs.indexOf('PickPhoto> = ') + 'PickPhoto> = '.length, photosTs.lastIndexOf('\n\nexport default')))
+/* 북BTI 16유형(코드·별칭) — 데이터 파일(TS)에서 정규식으로 긁는다(verify-bukbti.mjs 관용) */
+const bukbtiTs = fs.readFileSync(path.join(root, 'frontend/src/data/bukbti.ts'), 'utf8')
+const BUKBTI = [...bukbtiTs.matchAll(/code:\s*'([국찬][산길][밥삶][눈귀])',\s*alias:\s*'([^']+)'/g)].map((m) => ({ code: m[1], alias: m[2] }))
+const bukbtiDot = (code) => [...code].join('·')
+/* 스튜디오 사료 매니페스트 — [6c]에서 화면과 같은 항목을 골라 엔진 입력을 재구성한다 */
+const studioTs = fs.readFileSync(path.join(root, 'frontend/src/data/studio-photos.ts'), 'utf8')
+const studioPhotos = JSON.parse(studioTs.slice(studioTs.indexOf('const data = ') + 'const data = '.length, studioTs.indexOf('\n\nexport type')))
 
 /* ── CDP ── */
 async function targets() { return (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json() }
@@ -156,8 +175,11 @@ try {
      Network.requestWillBeSent 가 여전히 발생하므로 그대로 유효하다. */
   /* pick_balance_answer(0014, 문항×선택 8행)도 같은 이유로 삼킨다 — 반복 실행이 실 집계를 오염시키면
      순위덱이 가짜 순위를 보여 주게 된다. 집계 읽기(pick_tally·pick_balance_tally GET)는 실 요청 그대로다. */
+  /* bukbti_event(0015) — 이 검증이 네 게임을 완주하면 북BTI 4글자가 완성되어 실 Supabase 에
+     유형 기록 1행이 쌓인다(새 프로필이라 표식이 없다). 같은 이유로 삼킨다 —
+     북BTI 실기록 검증은 별도 하니스(2026-08-26 실측 45/46 + 순서 재확인)가 이미 했다. */
   /* '*pick-img*' 은 [5b] 사진 폴백 검사용 — blockImg 가 켜졌을 때만 실패시키고 평소엔 그대로 통과 */
-  await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*rest/v1/pick_event*' }, { urlPattern: '*rest/v1/pick_balance_answer*' }, { urlPattern: '*/pick-img/*' }] })
+  await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*rest/v1/pick_event*' }, { urlPattern: '*rest/v1/pick_balance_answer*' }, { urlPattern: '*rest/v1/bukbti_event*' }, { urlPattern: '*/pick-img/*' }] })
   const FETCH_CORS = [
     { name: 'Access-Control-Allow-Origin', value: '*' },
     { name: 'Access-Control-Allow-Headers', value: '*' },
@@ -215,6 +237,15 @@ try {
   /* ══════════ [1] 허브 ══════════ */
   console.log(`\n▶ 참여 허브 /pick  (${BASE})`)
   check('/pick 이 렌더된다', await nav(`${BASE}/pick`, `document.body.innerText.includes('취향으로 먼저')`))
+  /* ── 회귀 [6b] 전반부: 북BTI 진행판 — 새 프로필이라 반드시 0/4 에서 시작한다 ── */
+  {
+    const hubText = await body()
+    check('북BTI 진행판 — 「참여해서 북BTI를 채워보세요」 + 0/4 채워짐(새 프로필)',
+      hubText.includes('참여해서 북BTI를 채워보세요') && hubText.includes('0/4 채워짐'))
+    check('북BTI 진행판 — 재미용 구분 문구(「재미로 보는 취향 놀이 · 통일부 자료 아님」 + 심리검사 아님)',
+      hubText.includes('재미로 보는 취향 놀이 · 통일부 자료 아님') && hubText.includes('심리검사가 아니며 통일부 자료가 아닙니다'))
+    check('북BTI 진행판 — 「마지막 판 기준」 덮어쓰기 정직 고지', hubText.includes('다시 하면 마지막 판 기준으로 글자가 바뀝니다'))
+  }
   const tableRows = await evl(`[...document.querySelectorAll('aside table tbody tr')].map(tr => [...tr.querySelectorAll('td')].map(td => td.textContent.trim()))`)
   const rowsOk = Array.isArray(tableRows) && tableRows.length === 7 && rankRows.every((r, i) => {
     const e = expect.get(r.x)
@@ -501,6 +532,177 @@ try {
   check('밸런스: 문항별 집계 고지(여덟 문항의 선택이 집계됨을 정직하게)', balText.includes('여덟 문항의 선택'))
   checkResultDeck('밸런스', await resultDeck())
 
+  /* ══════════ [6b] 북BTI 회귀 — 네 게임 완주가 곧 완성이다 ══════════
+     [2][4][5][6]이 실제로 완주했으므로 이 시점의 localStorage 에는 4글자가 서 있어야 한다.
+     완성 코드는 판마다 다르다(승자가 다르므로) — 기대값은 화면이 아니라 기기 상태에서 읽어
+     화면·실집계와 삼각 대조한다. bukbti_event POST 는 위 Fetch 인터셉트가 삼켜
+     실 DB 를 오염시키지 않으면서 recorded 표식은 화면 쪽에 정상으로 남는다. */
+  console.log('\n▶ 북BTI 회귀 /pick/bukbti')
+  {
+    const stRaw = await evl(`localStorage.getItem('bukbti_v1')`)
+    let st = null
+    try { st = JSON.parse(stRaw) } catch { /* 아래 check 가 실패로 남긴다 */ }
+    const letters = st?.letters ?? {}
+    const myCode = ['food', 'scene', 'word', 'balance'].map((g) => letters[g] ?? '').join('')
+    const myType = BUKBTI.find((t) => t.code === myCode)
+    check('네 게임 완주로 4글자 완성(음식·풍경·말·밸런스 축 순서)', myCode.length === 4 && Boolean(myType), `코드 「${myCode}」`)
+
+    check('/pick/bukbti — 유형 카드(「당신의 북BTI」 + 코드 대활자)', await nav(`${BASE}/pick/bukbti`, `document.body.innerText.includes('당신의 북BTI')`))
+    const resText = await body()
+    check('유형 카드 — 코드(가운뎃점 표기)·별칭·글자별 범례 4줄(첫째~넷째)',
+      Boolean(myType) && resText.includes(bukbtiDot(myCode)) && resText.includes(myType.alias) &&
+      ['첫째', '둘째', '셋째', '넷째'].every((w) => resText.includes(w)))
+    check('재미용 구분 — 「심리검사가 아니며 통일부 자료가 아닙니다」가 결과 화면에도 있다',
+      resText.includes('심리검사가 아니며 통일부 자료가 아닙니다'))
+    check('상단 배너가 「모든 값 = 통일부 데이터」를 단정하지 않는다(익명 집계 구분 문구로 교체)',
+      !resText.includes('모든 값은 공개된 통일부 데이터') && resText.includes('통일부 공식 서비스가 아니며') && resText.includes('구분해 적습니다'))
+
+    /* ── 분포 실집계 일치 — 화면 수치 = 페이지가 실제로 받은 bukbti_tally 응답 ── */
+    const tallyUp = await waitFor(`!!document.querySelector('[data-bukbti-tally]')`, 40)
+    if (tallyUp) {
+      const respEv = [...cdp.events].reverse().find((e) => e.method === 'Network.responseReceived' && /rest\/v1\/bukbti_tally/.test(e.params.response?.url ?? ''))
+      let rows = null
+      try {
+        const b = await cdp.send('Network.getResponseBody', { requestId: respEv.params.requestId })
+        rows = JSON.parse(b.base64Encoded ? Buffer.from(b.body, 'base64').toString('utf8') : b.body)
+      } catch { /* 미포착 — 아래 check 가 실패로 남긴다 */ }
+      if (Array.isArray(rows)) {
+        const byCode = new Map()
+        let total = 0
+        for (const r of rows) {
+          const c = String(r.type_code ?? '')
+          const n = Number(r.n ?? 0)
+          if (!BUKBTI.some((t) => t.code === c) || !(n > 0)) continue
+          byCode.set(c, (byCode.get(c) ?? 0) + n)
+          total += n
+        }
+        const lis = await evl(`[...document.querySelectorAll('[data-bukbti-tally] ol li')].map(li => li.innerText)`)
+        const bad = []
+        for (const t of BUKBTI) {
+          const li = (lis ?? []).find((s) => s.includes(bukbtiDot(t.code)))
+          const n = byCode.get(t.code) ?? 0
+          const pct = total > 0 ? Math.round((n / total) * 100) : 0
+          if (!li) { bad.push(`${t.code}: 행 없음`); continue }
+          if (!li.includes(`${n.toLocaleString('ko-KR')}건`) || !li.includes(`(${pct}%)`)) bad.push(`${t.code}: 화면 「${li.replace(/\n/g, ' ').slice(0, 40)}」 ≠ ${n}건 (${pct}%)`)
+        }
+        check('16유형 분포 — 0건 유형 포함 16행 전부 나열', Array.isArray(lis) && lis.length === 16, `실측 ${lis?.length}행`)
+        check('16유형 분포 — 화면 수치 = bukbti_tally 실응답(각 행 N건 (x%), 글자 단위)', bad.length === 0, bad.join(' | ').slice(0, 200))
+        check('내 유형 표식이 내 코드 행에 붙는다', (lis ?? []).some((s) => s.includes(bukbtiDot(myCode)) && s.includes('내 유형')))
+        const sect = await evl(`document.querySelector('[data-bukbti-tally]')?.innerText ?? ''`)
+        const mTotal = sect.match(/지금까지 ([\d,]+)건 · \d\d:\d\d 불러옴/)
+        check('as-of — 「지금까지 N건 · HH:MM 불러옴」의 N = 실응답 총건수',
+          Boolean(mTotal) && Number(mTotal[1].replace(/,/g, '')) === total, mTotal ? `화면 ${mTotal[1]}건 · 응답 ${total}건` : 'as-of 미검출')
+        check('누적 정직 문구 — 「사람 수가 아니라 북BTI 완성 기록의 누적」', sect.includes('사람 수가 아니라 북BTI 완성 기록의 누적'))
+        /* n=0 「내 기록 포함」 모순 회귀 — 부가문은 실집계 1건 이상 + recorded 일 때만.
+           이 문장은 집계 도착 후에 그려지므로 본문을 다시 읽는다(resText 는 도착 전 캡처) */
+        const mSame = (await body()).match(/같은 유형이 지금까지 ([\d,]+)번 기록되었습니다(\(이번 내 기록 포함\))?/)
+        const myN = byCode.get(myCode) ?? 0
+        const recorded = st?.recorded === myCode
+        check('「같은 유형 N번」의 N = 실응답 · 「(이번 내 기록 포함)」은 N>0 이고 기록됐을 때만',
+          Boolean(mSame) && Number(mSame[1].replace(/,/g, '')) === myN && Boolean(mSame[2]) === (myN > 0 && recorded),
+          mSame ? `화면 ${mSame[1]}번${mSame[2] ?? ''} · 응답 ${myN}건 · recorded ${recorded}` : '문장 미검출')
+
+        /* ── RLS(0015) — 페이지와 같은 anon 자격으로 bukbti_event 원시행을 두드린다 ── */
+        const reqEv = [...cdp.events].reverse().find((e) => e.method === 'Network.requestWillBeSent' && e.params.request.method === 'GET' && /rest\/v1\/bukbti_tally/.test(e.params.request.url))
+        const reqId = reqEv?.params.requestId ?? respEv?.params.requestId
+        const extraEv = reqId ? cdp.events.find((e) => e.method === 'Network.requestWillBeSentExtraInfo' && e.params.requestId === reqId) : null
+        const hdrs = { ...(reqEv?.params.request.headers ?? {}), ...(extraEv?.params.headers ?? {}) }
+        const auth = {}
+        for (const [k, v] of Object.entries(hdrs)) if (/^(apikey|authorization)$/i.test(k)) auth[k.toLowerCase()] = v
+        const tallyUrl = reqEv?.params.request.url ?? respEv?.params.response?.url
+        if (tallyUrl && auth.apikey) {
+          const origin = new URL(tallyUrl).origin
+          const r = await evl(`fetch(${JSON.stringify(`${origin}/rest/v1/bukbti_event?select=*&limit=3`)}, { headers: ${JSON.stringify(auth)} }).then(async (res) => { let len = -1; try { const j = await res.json(); len = Array.isArray(j) ? j.length : -1 } catch { /* 본문 없음 */ } return { status: res.status, len } })`)
+          check('RLS — anon 이 bukbti_event 원시행(0015)을 읽지 못한다(4xx 또는 0행)',
+            r && !(r.status >= 200 && r.status < 300 && r.len > 0), r ? `HTTP ${r.status} · ${r.len}행` : '요청 실패')
+        } else {
+          check('RLS — anon 자격 헤더를 포착해 bukbti_event 차단을 확인', false, 'bukbti_tally 요청 미포착')
+        }
+      } else {
+        check('북BTI 분포 — bukbti_tally 응답 본문을 확보해 화면과 대조', false, '응답 미포착')
+      }
+      /* 기획서 증빙 — 유형 화면 캡처(있으면 덮어쓴다) */
+      try {
+        const shot = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
+        const p = path.join(root, '기획서-캡처/bukbti-result.png')
+        fs.writeFileSync(p, Buffer.from(shot.data, 'base64'))
+        check('북BTI 유형 화면 캡처 저장', fs.statSync(p).size > 10000, path.relative(root, p))
+      } catch { check('북BTI 유형 화면 캡처 저장', false, '캡처 실패') }
+    } else {
+      /* DB 가 죽으면 ②③ 구획만 사라지고 놀이(유형 카드)는 남는 것이 설계다 — 그 사실만 잰다 */
+      check('북BTI 분포 — 집계 읽기 실패로 ②③ 구획만 조용히 숨고 유형 카드는 남는다(설계 동작)',
+        resText.includes('당신의 북BTI') && !resText.includes('16유형 분포'), '집계 불가')
+    }
+  }
+
+  /* ══════════ [6c] AI 스튜디오 회귀 — 위저드 완주 = 엔진 산출(글자 단위) ══════════
+     dev 에는 /api/llm 이 없으므로 템플릿 경로가 그대로 화면이 된다(LLM 4원칙 ④).
+     같은 입력을 엔진(buildStudioOutput)에 직접 넣어 화면 프롬프트와 글자 단위로 대조한다. */
+  console.log('\n▶ AI 스튜디오 회귀 /studio')
+  {
+    check('/studio 렌더 + 저장 안 함 고지', await nav(`${BASE}/studio`, `document.body.innerText.includes('AI 스튜디오')`) && (await body()).includes('이 화면을 떠나면 입력한 내용이 사라집니다'))
+    const clickBtn = async (text) => evl(`(() => { const b = [...document.querySelectorAll('button')].find(x => x.textContent.includes(${JSON.stringify(text)})); if (!b) return false; b.click(); return true })()`)
+    /* ①형식 ②비율 ③고향 */
+    check('① 영상 생성', await clickBtn('영상 생성')); await sleep(250)
+    check('② 16:9', await clickBtn('가로 — TV·유튜브')); await sleep(250)
+    check('③ 황해도(구)', await clickBtn('황해도(구)')); await sleep(250)
+    /* ④이야기 — 「장소」 갈래를 펼쳐 「우물가」 칩 하나 */
+    check('④ 장소 갈래 펼침', await clickBtn('장소')); await sleep(250)
+    check('④ 「우물가」 칩 선택', await clickBtn('우물가')); await sleep(250)
+    check('④ 다음', await clickBtn('다음')); await sleep(250)
+    /* ⑤분위기 ⑥사료 — 황해도(구)로 걸러진 첫 사료 1장을 화면과 같은 규칙으로 고른다 */
+    check('⑤ 옛 사진 다큐', await clickBtn('옛 사진 다큐')); await sleep(300)
+    /* 권리 고지 전문(rights)은 ⑥단계 화면의 것이다 — 결과 화면에서는 relicUse 변형이 그 역할을 한다 */
+    check('⑥ 권리 고지 전문 — 사료는 보며 참고·본인 가족 소장 사진만', (await body()).includes(STUDIO_NOTICES.rights))
+    const relic = studioPhotos.items.find((it) => (it.oldKeys ?? []).includes('hwanghae-old'))
+    const relicPicked = await evl(`(() => { const b = [...document.querySelectorAll('button')].find(x => (x.getAttribute('aria-label')||'') === ${JSON.stringify(`${relic.name} — 참고 사료로 선택`)}); if (!b) return false; b.click(); return true })()`)
+    check(`⑥ 사료 1장 선택(「${relic.name}」)`, relicPicked); await sleep(250)
+    check('⑥ 1장 골라 프롬프트 만들기', await clickBtn('1장 골라 프롬프트 만들기'))
+    await waitFor(`document.body.innerText.includes('산출 ① 최종 프롬프트')`, 40)
+
+    const expect6c = buildStudioOutput({
+      medium: 'video', ratio: '16:9', region: { kind: 'old', id: 'hwanghae-old' },
+      story: { sceneryOnly: false, picks: [{ group: 'place', chipIds: ['well'], text: '' }] },
+      mood: 'docu',
+      relics: [{ fileId: relic.fileId, name: relic.name, category: relic.category, provider: relic.provider, sourceUrl: relic.sourceUrl }],
+    })
+    const stText = await body()
+    check('화면 한글 프롬프트 = 엔진 buildStudioOutput(글자 단위)',
+      await evl(`[...document.querySelectorAll('p')].some(p => p.innerText === ${JSON.stringify(expect6c.promptKo)})`))
+    check('화면 영문 프롬프트 = 엔진 buildStudioOutput(글자 단위)',
+      await evl(`[...document.querySelectorAll('p')].some(p => p.innerText === ${JSON.stringify(expect6c.promptEn)})`))
+    check('시대 단정 없음 — 화면 어디에도 「1940」이 없다(폭 문구는 엔진 산출에 있음)',
+      !stText.includes('1940') && expect6c.promptKo.includes('분단 이전부터 1950년대 초'))
+    check('dev = 템플릿 경로 — 「AI로 다듬기」 단추·문구가 화면에 없다(privacyNoLlm 2벌)',
+      !stText.includes('AI로 다듬기') && stText.includes(STUDIO_NOTICES.privacyNoLlm))
+    check('고지 3종 전문 — 개인정보(무전송)·권리(사료 relicUse 변형)·상상 재현',
+      stText.includes(STUDIO_NOTICES.privacyNoLlm) && stText.includes(STUDIO_NOTICES.relicUse) && stText.includes(STUDIO_NOTICES.imagined))
+    check('출처 구분 — 사료는 통일부 게재분, 그 밖의 안내는 통일부 자료 아님',
+      stText.includes(STUDIO_NOTICES.sourceSplit))
+    check('권장 길이 — 16:9 영상 = 30~60초 · 4~6장면(고정 표)', stText.includes('권장 길이 30~60초') && stText.includes('4~6장면'))
+    check('상단 배너 — 스튜디오 화면에서도 「모든 값 = 통일부 데이터」 단정 없음',
+      !stText.includes('모든 값은 공개된 통일부 데이터') && stText.includes('통일부 공식 서비스가 아니며'))
+
+    /* ── 복사 단추 — 클립보드를 가로채 5구획 전체가 실제로 담기는지 잰다 ── */
+    await evl(`(() => { window.__copied = null; try { navigator.clipboard.writeText = (t) => { window.__copied = t; return Promise.resolve() } } catch { /* 무해 */ } return true })()`)
+    await evl(`[...document.querySelectorAll('button')].find(b => b.textContent.trim() === '복사')?.click()`)
+    await sleep(400)
+    const copied = await evl(`window.__copied`)
+    const heads = ['■ 최종 프롬프트 (한글)', '■ 최종 프롬프트 (영문)', '■ 사용할 이미지 순서', '■ 영상 구성(장면별)', '■ 권장 길이', '■ 생성형 AI 플랫폼 안내']
+    check('복사 — 다섯 구획 머리 전부 + 프롬프트 원문 + 장면 전부 + 상상 재현 고지가 한 문서로 담긴다',
+      typeof copied === 'string' && heads.every((h) => copied.includes(h)) && copied.includes(expect6c.promptKo) && copied.includes(expect6c.promptEn)
+      && (expect6c.scenes ?? []).every((s) => copied.includes(s)) && copied.includes(STUDIO_NOTICES.imagined),
+      typeof copied === 'string' ? `${copied.length}자` : '클립보드 미포착')
+    check('복사 피드백 — 단추가 「복사되었습니다」로 바뀐다', await evl(`[...document.querySelectorAll('button')].some(b => b.textContent.trim() === '복사되었습니다')`))
+    /* 기획서 증빙 — 산출 화면 캡처 */
+    try {
+      const shot = await cdp.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true })
+      const p = path.join(root, '기획서-캡처/studio-output.png')
+      fs.writeFileSync(p, Buffer.from(shot.data, 'base64'))
+      check('스튜디오 산출 화면 캡처 저장', fs.statSync(p).size > 10000, path.relative(root, p))
+    } catch { check('스튜디오 산출 화면 캡처 저장', false, '캡처 실패') }
+  }
+
   /* ══════════ [7] 375px 모바일 ══════════ */
   console.log('\n▶ 375px 모바일 가로 넘침')
   await cdp.send('Emulation.setDeviceMetricsOverride', { width: 375, height: 812, deviceScaleFactor: 2, mobile: true })
@@ -514,12 +716,14 @@ try {
   /* ══════════ [8] 집계 전송 본문 — 허용 필드뿐인가(개인정보 0) ══════════ */
   const posts = []
   const balPosts = []
+  const bukbtiPosts = []
   for (const ev of cdp.events) {
     if (ev.method === 'Network.requestWillBeSent') {
       const r = ev.params.request
       if (r.method !== 'POST') continue
       if (/supabase\.co\/rest\/v1\/pick_event/.test(r.url)) posts.push(r.postData ?? '')
       else if (/supabase\.co\/rest\/v1\/pick_balance_answer/.test(r.url)) balPosts.push(r.postData ?? '')
+      else if (/supabase\.co\/rest\/v1\/bukbti_event/.test(r.url)) bukbtiPosts.push(r.postData ?? '')
     }
   }
   const bodyFieldsOk = (list, allow) => list.every((p) => {
@@ -541,6 +745,8 @@ try {
   } else {
     check('밸런스 문항 전송 — 이번 실행에서 전송 없음(표식 존재 등). 게임은 그와 무관하게 완주했다', true)
   }
+  check(`북BTI 완성 전송 ${bukbtiPosts.length}건 — 본문이 type_code 1필드뿐(개인 식별·연결키 0)`,
+    bukbtiPosts.length >= 1 && bodyFieldsOk(bukbtiPosts, ['type_code']), bukbtiPosts.length ? '' : '전송 미발생(네 게임 완주 후에는 1건이 있어야 한다)')
 
   /* ══════════ [9] JS 예외 0 ══════════ */
   const errs = cdp.events.filter((e) => e.method === 'Runtime.exceptionThrown')

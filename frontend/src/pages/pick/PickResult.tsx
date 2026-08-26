@@ -5,6 +5,7 @@ import ItemCard, { itemKey, itemName, itemRegionId, itemRegionName, photoOf, typ
 import RegionStatBlock from '../../components/pick/RegionStatBlock'
 import PickShareCard, { type ShareModel } from '../../components/pick/PickShareCard'
 import TallyDeck from '../../components/pick/TallyDeck'
+import BukbtiNudge from '../../components/pick/BukbtiNudge'
 import { ITEMS, loadPickStats, shuffle, type PickStats, type PickWord } from '../../lib/pickData'
 import { readAllTallies, tallyByKey, type PickGame, type Tally } from '../../lib/pickTally'
 
@@ -209,6 +210,9 @@ export default function PickResult({ game, item, onRestart }: {
           </div>
         </>
       )}
+
+      {/* 북BTI 한 줄 조각 — 이 판으로 채워진 글자와 남은 게임 */}
+      <BukbtiNudge game={game} />
 
       {/* 실시간 실선택 순위덱 — 이 게임 것 하나만. 자기 판이 반영된 값을 보게 된다 */}
       <div className="max-w-md">

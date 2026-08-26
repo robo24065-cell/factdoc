@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
 import { FONT, SURFACE, TYPE, TEXT, PROSE, FOCUS } from '../../theme/gohyang'
 import PickSidebar from '../../components/pick/PickSidebar'
+import BukbtiBoard from '../../components/pick/BukbtiBoard'
 import { ITEMS } from '../../lib/pickData'
 
 /* ────────────────────────────────────────────────────────────────
@@ -52,23 +53,45 @@ export default function PickHub() {
       </header>
 
       <div className="mt-5 grid gap-6 lg:grid-cols-[1fr_20rem]">
-        {/* ── 게임 카드 2×2 — 카드 전체가 눌린다 ── */}
-        <div className="grid gap-3 sm:grid-cols-2">
-          {GAMES.map(g => (
-            <Link key={g.to} to={g.to} className={`block min-h-[48px] rounded-md ${FOCUS}`}>
-              <div className={`h-full ${SURFACE.card} p-4 hover:border-[#1a4e9c] dark:hover:border-[#7aa9e8]`}>
-                <p className={`text-[1.3125rem] font-bold leading-snug ${TEXT.ink} ${PROSE}`} style={{ fontFamily: FONT.serif }}>
-                  {g.name}
-                </p>
-                <p className={`mt-1.5 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{g.sub}</p>
-                <p className={`mt-2.5 ${TYPE.cap} font-semibold tabular-nums ${TEXT.blue}`}>{g.badge} <span aria-hidden="true">→</span></p>
-              </div>
-            </Link>
-          ))}
-          <p className={`sm:col-span-2 ${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
+        {/* ── 좌측 열(위→아래): ① 북BTI 진행판 ② 게임 카드 2×2 ③ 항목 자료 캡션 ④ AI 스튜디오 카드 ── */}
+        <div className="space-y-3">
+          {/* ① 북BTI 진행판 — 네 게임의 마지막 판이 글자 넷을 채운다(재미용 놀이) */}
+          <BukbtiBoard />
+
+          {/* ② 게임 카드 2×2 — 카드 전체가 눌린다 (불변) */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            {GAMES.map(g => (
+              <Link key={g.to} to={g.to} className={`block min-h-[48px] rounded-md ${FOCUS}`}>
+                <div className={`h-full ${SURFACE.card} p-4 hover:border-[#1a4e9c] dark:hover:border-[#7aa9e8]`}>
+                  <p className={`text-[1.3125rem] font-bold leading-snug ${TEXT.ink} ${PROSE}`} style={{ fontFamily: FONT.serif }}>
+                    {g.name}
+                  </p>
+                  <p className={`mt-1.5 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>{g.sub}</p>
+                  <p className={`mt-2.5 ${TYPE.cap} font-semibold tabular-nums ${TEXT.blue}`}>{g.badge} <span aria-hidden="true">→</span></p>
+                </div>
+              </Link>
+            ))}
+          </div>
+
+          {/* ③ 항목 자료 기준 캡션 */}
+          <p className={`${TYPE.cap} ${TEXT.faint} ${PROSE}`}>
             항목 자료 기준 — 음식·풍경·말 각 16종, {ITEMS.builtAt} 생성(scripts/nk-pick-items.mjs).
             {' '}풍경 사진은 저장하지 않고 통일부 원본 주소를 그대로 불러오며, 저작권은 각 제공처에 있습니다.
           </p>
+
+          {/* ④ AI 스튜디오 — 놀이가 아니라 후손의 도구라 표면(slab)을 게임 카드와 가른다 */}
+          <Link to="/studio" className={`block min-h-[48px] rounded-md ${FOCUS}`} data-studio-card>
+            <div className={`${SURFACE.slab} p-4 hover:border-[#1a4e9c] dark:hover:border-[#7aa9e8]`}>
+              <p className={`${TYPE.eyebrow} ${TEXT.faint}`}>후손의 도구</p>
+              <p className={`mt-1 text-[1.3125rem] font-bold leading-snug ${TEXT.ink} ${PROSE}`} style={{ fontFamily: FONT.serif }}>
+                AI 스튜디오 — 가족 이야기를 생성 AI 프롬프트로
+              </p>
+              <p className={`mt-1.5 ${TYPE.sub} ${TEXT.soft} ${PROSE}`}>
+                들은 이야기를 영상·사진 생성 AI에 넣을 프롬프트로 바꿔 드립니다. 이야기는 이 브라우저 안에서만 처리됩니다.
+              </p>
+              <p className={`mt-2.5 ${TYPE.cap} font-semibold ${TEXT.blue}`}>여섯 단계로 만들기 <span aria-hidden="true">→</span></p>
+            </div>
+          </Link>
         </div>
 
         {/* ── 사이드바 — 통일부 실측 표(항상) + 참여 집계(표본 20판 이상만) ── */}
